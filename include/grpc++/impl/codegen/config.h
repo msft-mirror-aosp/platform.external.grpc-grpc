@@ -63,6 +63,12 @@
 #endif
 #endif
 
+#if defined(ANDROID) || defined(__ANDROID__)
+// TODO: Android has correct std::thread support but enabling it causes a 
+//       crash at startup. Falling back to grpc::thread until fixed.
+#define GRPC_CXX0X_NO_THREAD
+#endif
+
 #endif
 
 #ifdef GRPC_CXX0X_NO_FINAL

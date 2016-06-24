@@ -567,7 +567,6 @@ target_link_libraries(grpc++_unsecure
   libprotobuf
   gpr
   grpc_unsecure
-  grpc
 )
 
   

@@ -41,15 +41,16 @@ cmake_minimum_required(VERSION 2.8)
 if (NOT BORINGSSL_ROOT_DIR)
   set(BORINGSSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl)
 endif()
+if (NOT NANOPB_ROOT_DIR)
+  set(NANOPB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/nanopb)
+endif()
 if (NOT PROTOBUF_ROOT_DIR)
   set(PROTOBUF_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protobuf)
 endif()
 if (NOT ZLIB_ROOT_DIR)
   set(ZLIB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/zlib)
 endif()
-if (NOT NANOPB_ROOT_DIR)
-  set(NANOPB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/nanopb)
-endif()
+
 
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
@@ -116,6 +117,7 @@ target_include_directories(gpr
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${NANOPB_ROOT_DIR}
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
 )
 
@@ -293,6 +295,7 @@ target_include_directories(grpc
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${NANOPB_ROOT_DIR}
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
 )
 
@@ -454,6 +457,7 @@ target_include_directories(grpc_unsecure
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${NANOPB_ROOT_DIR}
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
 )
 
@@ -470,6 +474,7 @@ target_include_directories(grpc_zookeeper
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${NANOPB_ROOT_DIR}
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
 )
 
@@ -517,6 +522,7 @@ target_include_directories(grpc++
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${NANOPB_ROOT_DIR}
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
 )
 
@@ -560,6 +566,7 @@ target_include_directories(grpc++_unsecure
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${NANOPB_ROOT_DIR}
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
 )
 
@@ -583,6 +590,7 @@ target_include_directories(grpc_plugin_support
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${NANOPB_ROOT_DIR}
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
 )
 
@@ -599,6 +607,7 @@ target_include_directories(grpc_csharp_ext
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${NANOPB_ROOT_DIR}
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
 )
 
@@ -617,6 +626,7 @@ target_include_directories(grpc_cpp_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${NANOPB_ROOT_DIR}
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
 )
 
@@ -634,6 +644,7 @@ target_include_directories(grpc_csharp_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${NANOPB_ROOT_DIR}
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
 )
 
@@ -651,6 +662,7 @@ target_include_directories(grpc_node_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${NANOPB_ROOT_DIR}
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
 )
 
@@ -668,6 +680,7 @@ target_include_directories(grpc_objective_c_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${NANOPB_ROOT_DIR}
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
 )
 
@@ -685,6 +698,7 @@ target_include_directories(grpc_python_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${NANOPB_ROOT_DIR}
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
 )
 
@@ -702,6 +716,7 @@ target_include_directories(grpc_ruby_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${NANOPB_ROOT_DIR}
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
 )
 

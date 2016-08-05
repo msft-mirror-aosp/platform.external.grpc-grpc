@@ -398,10 +398,11 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_config
-- name: grpc_secure
+- name: grpc_security_headers
   public_headers:
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
+- name: grpc_secure
   headers:
   - src/core/lib/security/auth_filters.h
   - src/core/lib/security/b64.h
@@ -432,6 +433,7 @@ filegroups:
   secure: true
   uses:
   - grpc_base
+  - grpc_security_headers
   - grpc_transport_chttp2_alpn
   - tsi
 - name: grpc_test_util_base
@@ -646,8 +648,6 @@ filegroups:
   - src/cpp/util/status.cc
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time.cc
-  deps:
-  - grpc
   uses:
   - grpc++_codegen
   - grpc++_config
@@ -816,6 +816,7 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
+  - grpc_security_headers
   - census
   generate_plugin_registry: true
   secure: false

@@ -804,6 +804,7 @@ cc_library(
     ".",
   ],
   deps = [
+    "//external:zlib",
     ":gpr",
     "//external:nanopb",
   ],

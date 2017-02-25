@@ -42,6 +42,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <sys/socket.h>
+#include <sys/un.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -211,14 +214,63 @@ finish:
   grpc_exec_ctx_enqueue(exec_ctx, closure, *ep != NULL, NULL);
 }
 
+// Two special handlings for Android Studio Profilers. Returns an existing
+// socket's file descriptor if it is encoded in the |addr|; returns -1
+// otherwise.
+//
+// (1) Supports Unix abstract domain socket if the input address is a
+//     Unix socket name and the input starts with '@'. For example,
+//     "unix:@AbstractSocketName". The name of the abstract socket doesn't
+//     include the '@' in "unix:@".
+//     Note the input |addr_len| will be reduce by 1. When GRPC handles a Unix
+//     socket, it assumes it is a pathname socket that "can be bound to a
+//     null-terminated filesystem pathname using bind(2)". Therefore, the
+//     length includes the null byte at the end of the sun_path. But for
+//     abstract sockets null bytes "have no special significance". We choose
+//     not to include the terminating null byte to make the socket name easy to
+//     see and type in shell (e.g., adb forward). See more details about lengths
+//     at http://man7.org/linux/man-pages/man7/unix.7.html .
+//
+// (2) Supports an existing socket if the file descriptor is provided in
+//     the format of "unix:&FD". For example, "unix:&123" means a socket
+//     of file descriptor 123 exists and is going to be used.
+//     Returns the provided socket's file descriptor.
+static int treat_for_android_studio_profilers(const struct sockaddr *addr,
+                                              size_t *addr_len) {
+  if (addr->sa_family == AF_UNIX) {
+    struct sockaddr_un* addr_un = (struct sockaddr_un*)addr;
+    if (addr_un->sun_path[0] == '@') {
+      addr_un->sun_path[0] = '\0';
+      (*addr_len)--;
+    } else if (addr_un->sun_path[0] == '&') {
+      // Copy the file descriptor as a string to a buffer and convert it to an
+      // integer.
+      // addr_un->sun_path contains the string with '&', e.g., '&123', but we
+      // cannot call atoi(addr_un->sun_path[1]) because the string may not be
+      // null-terminated since 'struct sockaddr_un' is supposed to used
+      // together with address length as another parameter to connect().
+      size_t fd_string_length =
+          *addr_len - offsetof(struct sockaddr_un, sun_path)
+              - 1 /* size of '&' */
+              - 1 /* terminating null byte not used by abstract socket */;
+      // Allocate 1 extra char to make it a null-terminated string.
+      char buffer[fd_string_length + 1];
+      strncpy(buffer, &(addr_un->sun_path[1]), fd_string_length);
+      buffer[fd_string_length] = '\0';
+      return atoi(buffer);
+    }
+  }
+  return -1;
+}
+
 static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
                                     grpc_closure *closure, grpc_endpoint **ep,
                                     grpc_pollset_set *interested_parties,
                                     const struct sockaddr *addr,
                                     size_t addr_len, gpr_timespec deadline) {
   int fd;
-  grpc_dualstack_mode dsmode;
-  int err;
+  grpc_dualstack_mode dsmode = GRPC_DSMODE_NONE;
+  int err = 0;
   async_connect *ac;
   struct sockaddr_in6 addr6_v4mapped;
   struct sockaddr_in addr4_copy;
@@ -234,25 +286,35 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
     addr_len = sizeof(addr6_v4mapped);
   }
 
-  fd = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode);
-  if (fd < 0) {
-    gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
-  }
-  if (dsmode == GRPC_DSMODE_IPV4) {
-    /* If we got an AF_INET socket, map the address back to IPv4. */
-    GPR_ASSERT(grpc_sockaddr_is_v4mapped(addr, &addr4_copy));
-    addr = (struct sockaddr *)&addr4_copy;
-    addr_len = sizeof(addr4_copy);
+  int provided_socket_fd = treat_for_android_studio_profilers(addr, &addr_len);
+
+  if (provided_socket_fd >= 0) {
+    fd = provided_socket_fd;
+  } else {
+    fd = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode);
+    if (fd < 0) {
+      gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
+    }
+    if (dsmode == GRPC_DSMODE_IPV4) {
+      /* If we got an AF_INET socket, map the address back to IPv4. */
+      GPR_ASSERT(grpc_sockaddr_is_v4mapped(addr, &addr4_copy));
+      addr = (struct sockaddr *)&addr4_copy;
+      addr_len = sizeof(addr4_copy);
+    }
   }
   if (!prepare_socket(addr, fd)) {
     grpc_exec_ctx_enqueue(exec_ctx, closure, false, NULL);
     return;
   }
 
-  do {
-    GPR_ASSERT(addr_len < ~(socklen_t)0);
-    err = connect(fd, addr, (socklen_t)addr_len);
-  } while (err < 0 && errno == EINTR);
+  if (provided_socket_fd == -1) {
+    // No provided socket fd detected by treat_for_android_studio_profilers().
+    // Perform connect() as usual.
+    do {
+      GPR_ASSERT(addr_len < ~(socklen_t)0);
+      err = connect(fd, addr, (socklen_t)addr_len);
+    } while (err < 0 && errno == EINTR);
+  }
 
   addr_str = grpc_sockaddr_to_uri(addr);
   gpr_asprintf(&name, "tcp-client:%s", addr_str);

@@ -102,7 +102,9 @@ cc_library(
     "src/core/lib/support/tmpfile_msys.c",
     "src/core/lib/support/tmpfile_posix.c",
     "src/core/lib/support/tmpfile_win32.c",
-    "src/core/lib/support/wrap_memcpy.c",
+   # This file has an error when compiling for x86_64 and it's
+   # not needed. See: https://bugs.chromium.org/p/chromium/issues/detail?id=661171
+   # "src/core/lib/support/wrap_memcpy.c",
   ],
   hdrs = [
     "include/grpc/support/alloc.h",

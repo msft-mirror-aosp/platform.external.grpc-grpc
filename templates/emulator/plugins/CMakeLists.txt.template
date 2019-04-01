@@ -1,0 +1,193 @@
+%YAML 1.2
+--- |
+  # THIS FILE IS FOR USE BY THE ANDROID EMULATOR CMAKE BUILD
+  # IT CONTAINS ALL THE GRPC PLUGINS THAT TARGET THE HOST.
+  # ========================================================
+  # This currently builds C and C++ code.
+  # This file has been automatically generated from a template file.
+  # Please look at the templates directory instead.
+  # This file can be regenerated from the template by running
+  # tools/buildgen/generate_projects.sh
+  #
+  #
+  # Copyright 2019 android emulator authors.
+  #
+  # Licensed under the Apache License, Version 2.0 (the "License");
+  # you may not use this file except in compliance with the License.
+  # You may obtain a copy of the License at
+  #
+  #     http://www.apache.org/licenses/LICENSE-2.0
+  #
+  # Unless required by applicable law or agreed to in writing, software
+  # distributed under the License is distributed on an "AS IS" BASIS,
+  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  # See the License for the specific language governing permissions and
+  # limitations under the License.
+  <%!
+
+  import re
+
+  proto_re = re.compile('(.*)\\.proto')
+
+  def proto_replace_ext(filename, ext):
+      m = proto_re.match(filename)
+      if not m:
+        return filename
+      return '${_gRPC_PROTO_GENS_DIR}/' + m.group(1) + ext
+
+  def get_deps(target_dict):
+    deps = []
+    if target_dict.get('build', None) in ['protoc']:
+      deps.append("${_gRPC_PROTOBUF_PROTOC_LIBRARIES}")
+    if target_dict.get('secure', False):
+      deps.append("${_gRPC_SSL_LIBRARIES}")
+    if target_dict.language == 'c++':
+      deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
+    deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
+    for d in target_dict.get('deps', []):
+      deps.append(d)
+    if target_dict.build == 'test' and target_dict.language == 'c++':
+      deps.append("${_gRPC_GFLAGS_LIBRARIES}")
+    return deps
+
+  def get_platforms_condition_begin(platforms):
+    if all(platform in platforms for platform in ['linux', 'mac', 'posix', 'windows']):
+      return ''
+    cond = ' OR '.join(['_gRPC_PLATFORM_%s' % platform.upper() for platform in platforms])
+    return 'if(%s)\n' % cond
+
+  def get_platforms_condition_end(platforms):
+    if not get_platforms_condition_begin(platforms):
+      return ''
+    return 'endif()\n'
+  %>
+  cmake_minimum_required(VERSION 3.5)
+  include(android)
+  set(PACKAGE_NAME      "grpc-protoc-plugin")
+  set(PACKAGE_VERSION   "${settings.cpp_version}")
+  set(PACKAGE_STRING    "<%text>${PACKAGE_NAME} ${PACKAGE_VERSION}</%text>")
+  set(PACKAGE_TARNAME   "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
+  set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
+  if (NOT _gRPC_ROOT)
+    get_filename_component(_gRPC_ROOT "<%text>${CMAKE_CURRENT_LIST_DIR}/../..</%text>" ABSOLUTE)
+  endif()
+  set(_gRPC_PROTOBUF_LIBRARIES libprotoc)
+
+  if (NOT TARGET protoc)
+    add_subdirectory(<%text>${ANDROID_QEMU2_TOP_DIR}/android/third_party/protobuf/</%text> protoc)
+  endif()
+
+  % for tgt in targets:
+  % if tgt.build in [ "protoc"] and tgt.name == 'grpc_cpp_plugin':
+  ${get_platforms_condition_begin(tgt.platforms)}\
+  ${cc_binary(tgt)}
+  ${get_platforms_condition_end(tgt.platforms)}\
+  % endif
+  % endfor
+
+  % for lib in libs:
+  % if lib.build in [ "protoc"] and not lib.boringssl:
+  % if not lib.get('build_system', []) or 'cmake' in lib.get('build_system', []):
+  ${cc_library(lib)}
+  % endif
+  % endif
+  % endfor
+
+  <%def name="cc_library(lib)">
+  % if any(proto_re.match(src) for src in lib.src):
+  if (gRPC_BUILD_CODEGEN)
+  % endif
+  set(${lib.name}_src
+  % for src in lib.src:
+  % if not proto_re.match(src):
+    <%text>${_gRPC_ROOT}/</%text>${src}
+  % else:
+    ${proto_replace_ext(src, '.pb.cc')}
+    ${proto_replace_ext(src, '.grpc.pb.cc')}
+    ${proto_replace_ext(src, '.pb.h')}
+    ${proto_replace_ext(src, '.grpc.pb.h')}
+    % if src in ["src/proto/grpc/testing/compiler_test.proto", "src/proto/grpc/testing/echo.proto"]:
+    ${proto_replace_ext(src, '_mock.grpc.pb.h')}
+    % endif
+  % endif
+  % endfor
+  )
+  ${'android_add_shared_library' if lib.get('dll', None) == 'only' else 'android_add_library'}(${lib.name})
+
+  % for src in lib.src:
+  % if proto_re.match(src):
+  protobuf_generate_grpc_cpp(SOURCE_DIR <%text>${_gRPC_ROOT}</%text> SOURCES <%text>${_gRPC_ROOT}/</%text>${src})
+  % endif
+  % endfor
+
+  target_compile_definitions(${lib.name} PRIVATE -DPB_FIELD_16BIT)
+  target_include_directories(${lib.name}
+                             PUBLIC  <%text>${_gRPC_ROOT}/include</%text>
+                             PRIVATE <%text>${_gRPC_ROOT}</%text>
+  % if lib.language == 'c++':
+                             PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>
+  % endif
+  )
+
+  % if len(get_deps(lib)) > 0:
+  target_link_libraries(${lib.name} PRIVATE
+  % for dep in get_deps(lib):
+    ${dep}
+  % endfor
+  )
+  % endif
+
+  % if any(proto_re.match(src) for src in lib.src):
+  endif (gRPC_BUILD_CODEGEN)
+  % endif
+  </%def>
+
+  <%def name="cc_binary(tgt)">
+  % if len(tgt.src) > 0:
+  set(${tgt.name}_src
+  % for src in tgt.src:
+  % if not proto_re.match(src):
+     <%text>${_gRPC_ROOT}/</%text>${src}
+  % else:
+            ${proto_replace_ext(src, '.pb.cc')}
+            ${proto_replace_ext(src, '.grpc.pb.cc')}
+            ${proto_replace_ext(src, '.pb.h')}
+            ${proto_replace_ext(src, '.grpc.pb.h')}
+  % endif
+  % endfor
+  )
+  % if tgt.build == 'test' and tgt.language == 'c++':
+    android_add_test(${tgt.name})
+    target_link_libraries(${tgt.name} PRIVATE gmock_main)
+    target_include_directories(${tgt.name} PRIVATE <%text>${_GRPC_ROOT}</%text>)
+  % else:
+    android_add_executable(${tgt.name})
+  % endif
+
+    target_compile_definitions(${tgt.name} PRIVATE -DPB_FIELD_16BIT)
+  % for src in tgt.src:
+  % if proto_re.match(src):
+  protobuf_generate_grpc_cpp(
+    SOURCE_DIR <%text>${_gRPC_ROOT}</%text>
+    SOURCES <%text>${_gRPC_ROOT}/</%text>${src}
+  )
+  % endif
+  % endfor
+
+   target_include_directories(${tgt.name}
+   PRIVATE <%text>${_gRPC_ROOT}</%text>
+   PRIVATE <%text>${_gRPC_ROOT}</%text>/include
+  % if tgt.language == 'c++':
+    PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>
+  % endif
+  )
+
+  % if len(get_deps(tgt)) > 0:
+    target_link_libraries(${tgt.name} PRIVATE
+  % for dep in get_deps(tgt):
+    ${dep}
+  % endfor
+  )
+  % endif
+  % endif
+  </%def>

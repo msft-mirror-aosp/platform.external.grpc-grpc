@@ -1,0 +1,291 @@
+%YAML 1.2
+--- |
+  # THIS FILE IS FOR USE BY THE ANDROID EMULATOR CMAKE BUILD
+  # THIS WILL ONLY BUILD THE TESTS
+  # ========================================================
+  # This currently builds C and C++ code.
+  # This file has been automatically generated from a template file.
+  # Please look at the templates directory instead.
+  # This file can be regenerated from the template by running
+  # tools/buildgen/generate_projects.sh
+  #
+  #
+  # Copyright 2019 android emulator authors.
+  #
+  # Licensed under the Apache License, Version 2.0 (the "License");
+  # you may not use this file except in compliance with the License.
+  # You may obtain a copy of the License at
+  #
+  #     http://www.apache.org/licenses/LICENSE-2.0
+  #
+  # Unless required by applicable law or agreed to in writing, software
+  # distributed under the License is distributed on an "AS IS" BASIS,
+  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  # See the License for the specific language governing permissions and
+  # limitations under the License.
+  <%!
+
+  import re
+
+  proto_re = re.compile('(.*)\\.proto')
+  # These test have compilation issues, so we just exclude them for now.
+  exclude_list = ['grpc_tool_test', 'proto_server_reflection_test', 'channelz_service_test', 'error_details_test', 'resolver_component_test', 'resolver_component_test_unsecure', 'resolver_component_tests_runner_invoker_unsecure', 'resolver_component_tests_runner_invoker' ]
+
+  def proto_replace_ext(filename, ext):
+      m = proto_re.match(filename)
+      if not m:
+        return filename
+      return '${_gRPC_PROTO_GENS_DIR}/' + m.group(1) + ext
+
+  def get_deps(target_dict):
+    deps = []
+    if target_dict.get('baselib', False) or target_dict['name'] == 'address_sorting':
+      deps.append("${_gRPC_BASELIB_LIBRARIES}")
+    if target_dict.get('build', None) in ['protoc']:
+      deps.append("libprotoc")
+    if target_dict.get('secure', False):
+      deps.append("ssl")
+      deps.append("crypto")
+    if target_dict.language == 'c++':
+      deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
+    if target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure']:
+      deps.append("zlib")
+      deps.append("cares")
+      deps.append("address_sorting")
+    deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
+    for d in target_dict.get('deps', []):
+      if d == 'benchmark':
+        deps.append("${_gRPC_BENCHMARK_LIBRARIES}")
+      else:
+        deps.append(d)
+    if target_dict.build == 'test' and target_dict.language == 'c++':
+      deps.append("${_gRPC_GFLAGS_LIBRARIES}")
+    return deps
+
+  def get_platforms_condition_begin(platforms):
+    if all(platform in platforms for platform in ['linux', 'mac', 'posix', 'windows']):
+      return ''
+    cond = ' OR '.join(['_gRPC_PLATFORM_%s' % platform.upper() for platform in platforms])
+    return 'if(%s)\n' % cond
+
+  def get_platforms_condition_end(platforms):
+    if not get_platforms_condition_begin(platforms):
+      return ''
+    return 'endif()\n'
+  %>
+  cmake_minimum_required(VERSION 3.5)
+
+  set(gRPC_BUILD_CODEGEN <%text>${gRPC_BUILD_TESTS}</%text>)
+
+    include(ExternalProject)
+    # Get the required test libs from somewhere else
+    message(WARNING "Including EXTERNAL project google benchmark & google flags")
+    ExternalProject_Add(project_benchmark
+            GIT_REPOSITORY https://github.com/google/benchmark.git
+            GIT_TAG 5b7683f # Version used by grpc v1.16
+            PREFIX <%text>${CMAKE_CURRENT_BINARY_DIR}/external/tmp/benchmark</%text>
+            INSTALL_DIR <%text>${CMAKE_CURRENT_BINARY_DIR}/external</%text>
+            BUILD_BYPRODUCTS <%text>${CMAKE_CURRENT_BINARY_DIR}/external/lib/${CMAKE_STATIC_LIBRARY_PREFIX}benchmark${CMAKE_STATIC_LIBRARY_SUFFIX}</%text>
+            CMAKE_ARGS
+            -DHAVE_STD_REGEX=TRUE
+            -DCMAKE_INSTALL_PREFIX=<%text>${CMAKE_CURRENT_BINARY_DIR}/external</%text>
+            -DCMAKE_TOOLCHAIN_FILE=<%text>${ANDROID_QEMU2_TOP_DIR}/android/build/cmake/toolchain-${ANDROID_HOST_TAG}.cmake</%text>
+            -DCMAKE_BUILD_TYPE=<%text>${CMAKE_BUILD_TYPE}</%text>
+            )
+    ExternalProject_Get_Property(project_benchmark install_dir)
+    add_library(google_benchmark STATIC IMPORTED GLOBAL)
+    set_property(TARGET google_benchmark PROPERTY IMPORTED_LOCATION <%text>${install_dir}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}benchmark${CMAKE_STATIC_LIBRARY_SUFFIX}</%text>)
+
+    set(_gRPC_BENCHMARK_LIBRARIES google_benchmark)
+    set(_gRPC_BENCHMARK_INCLUDE_DIR <%text>${install_dir}/include</%text>)
+
+    ExternalProject_Add(project_gflags
+            GIT_REPOSITORY https://github.com/gflags/gflags.git
+            GIT_TAG 30dbc81 # Version used by grpc v1.16
+            PREFIX <%text>${CMAKE_CURRENT_BINARY_DIR}/external/tmp/gflags</%text>
+            INSTALL_DIR <%text>${CMAKE_CURRENT_BINARY_DIR}/external</%text>
+            BUILD_BYPRODUCTS <%text>${CMAKE_CURRENT_BINARY_DIR}/external/lib/${CMAKE_STATIC_LIBRARY_PREFIX}gflags${CMAKE_STATIC_LIBRARY_SUFFIX}</%text>
+            CMAKE_ARGS
+            -DCMAKE_INSTALL_PREFIX=<%text>${CMAKE_CURRENT_BINARY_DIR}/external</%text>
+            -DCMAKE_TOOLCHAIN_FILE=<%text>${ANDROID_QEMU2_TOP_DIR}/android/build/cmake/toolchain-${ANDROID_HOST_TAG}.cmake</%text>
+            -DCMAKE_BUILD_TYPE=<%text>${CMAKE_BUILD_TYPE}</%text>
+            )
+    ExternalProject_Get_Property(project_gflags install_dir)
+    add_library(google_gflags STATIC IMPORTED GLOBAL)
+    set_property(TARGET google_gflags PROPERTY IMPORTED_LOCATION <%text>${install_dir}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}gflags${CMAKE_STATIC_LIBRARY_SUFFIX}</%text>)
+
+    set(_gRPC_GFLAGS_LIBRARIES google_gflags)
+    set(_gRPC_GFLAGS_INCLUDE_DIR <%text>${install_dir}/include</%text>)
+
+  if(NOT TARGET gmock_main)
+    message(STATUS "Including google test")
+    add_subdirectory(<%text>${ANDROID_QEMU2_TOP_DIR}/../googletest</%text> googletest)
+    # Okay, google test is not happy under msvc
+    android_target_compile_definitions(gmock_main windows_msvc-x86_64 PUBLIC
+            -DGTEST_INCLUDE_GTEST_INTERNAL_CUSTOM_GTEST_H_)
+    android_target_compile_definitions(gmock windows_msvc-x86_64 PUBLIC -DGTEST_INCLUDE_GTEST_INTERNAL_CUSTOM_GTEST_H_)
+    android_target_compile_definitions(gtest windows_msvc-x86_64 PUBLIC -DGTEST_INCLUDE_GTEST_INTERNAL_CUSTOM_GTEST_H_)
+    enable_testing()
+  endif()
+
+  <%text>set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib64)</%text>
+  <%text>set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})</%text>
+  <%text>set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/archives)</%text>
+  % for lib in libs:
+  % if lib.build in ["test", "private"] and not lib.name in ['ares', 'benchmark', 'z', 'cxxabi', 'grpc_dll']:
+  ${cc_library(lib)}
+  add_dependencies(${lib.name} project_benchmark project_gflags)
+  % endif
+  % endfor
+
+  % for tgt in targets:
+  % if tgt.build in ["test", "private"] and not tgt.name in exclude_list:
+  ${get_platforms_condition_begin(tgt.platforms)}\
+  ${cc_binary(tgt)}
+  % if len(tgt.src) > 0:
+      add_dependencies(${tgt.name} project_benchmark project_gflags)
+  % endif
+  ${get_platforms_condition_end(tgt.platforms)}\
+  % endif
+  % endfor
+
+  <%def name="cc_library(lib)">
+  set(${lib.name}_src
+  % for src in lib.src:
+  % if not proto_re.match(src):
+    <%text>${_gRPC_ROOT}/</%text>${src}
+  % else:
+    ${proto_replace_ext(src, '.pb.cc')}
+    ${proto_replace_ext(src, '.grpc.pb.cc')}
+    ${proto_replace_ext(src, '.pb.h')}
+    ${proto_replace_ext(src, '.grpc.pb.h')}
+    % if src in ["src/proto/grpc/testing/compiler_test.proto", "src/proto/grpc/testing/echo.proto"]:
+    ${proto_replace_ext(src, '_mock.grpc.pb.h')}
+    % endif
+  % endif
+  % endfor
+  )
+  ${'android_add_shared_library' if lib.get('dll', None) == 'only' else 'android_add_library'}(${lib.name})
+
+  % for src in lib.src:
+  % if proto_re.match(src):
+  protobuf_generate_grpc_cpp(SOURCE_DIR <%text>${_gRPC_ROOT}</%text> SOURCES <%text>${_gRPC_ROOT}/</%text>${src})
+  % endif
+  % endfor
+
+  % if lib.name in ['interop_client_helper']:
+  target_compile_options(${lib.name} PRIVATE -frtti)
+  % endif
+  target_compile_definitions(${lib.name} PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(${lib.name} PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+  target_include_directories(${lib.name}
+    PUBLIC  <%text>${_gRPC_ROOT}/include</%text>
+    PRIVATE <%text>${_gRPC_ROOT}</%text>
+    PRIVATE <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_BENCHMARK_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_CARES_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_GFLAGS_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_PROTOBUF_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_NANOPB_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
+  % if lib.build in ['test', 'private'] and lib.language == 'c++':
+    PRIVATE <%text>${_gRPC_GTEST_INCLUDE_DIR}</%text>
+  % endif
+  % if lib.language == 'c++':
+    PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>
+  % endif
+  )
+
+  % if len(get_deps(lib)) > 0:
+  target_link_libraries(${lib.name} PRIVATE
+  % for dep in get_deps(lib):
+    ${dep}
+  % endfor
+  )
+  % endif
+  </%def>
+
+  <%def name="cc_binary(tgt)">
+  % if len(tgt.src) > 0:
+    set(${tgt.name}_src
+  % for src in tgt.src:
+  % if not proto_re.match(src):
+     <%text>${_gRPC_ROOT}/</%text>${src}
+  % else:
+            ${proto_replace_ext(src, '.pb.cc')}
+            ${proto_replace_ext(src, '.grpc.pb.cc')}
+            ${proto_replace_ext(src, '.pb.h')}
+            ${proto_replace_ext(src, '.grpc.pb.h')}
+  % endif
+  % endfor
+  )
+  % if tgt.build == 'test' and tgt.language == 'c++':
+    android_add_test(${tgt.name})
+    target_link_libraries(${tgt.name} PRIVATE gmock_main ssl crypto)
+    target_include_directories(${tgt.name} PRIVATE <%text>${_gRPC_ROOT}</%text>)
+  % else:
+    android_add_executable(${tgt.name})
+  % endif
+
+    target_compile_definitions(${tgt.name} PRIVATE -DPB_FIELD_16BIT)
+    target_compile_definitions(${tgt.name} PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+  % for src in tgt.src:
+  % if proto_re.match(src):
+  protobuf_generate_grpc_cpp(
+    SOURCE_DIR <%text>${_gRPC_ROOT}</%text>
+    SOURCES <%text>${_gRPC_ROOT}/</%text>${src}
+  )
+  % endif
+  % endfor
+
+    target_include_directories(${tgt.name}
+    PRIVATE <%text>${_gRPC_ROOT}</%text>
+    PRIVATE <%text>${_gRPC_ROOT}</%text>/include
+    PRIVATE <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_BENCHMARK_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_GFLAGS_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_PROTOBUF_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_NANOPB_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
+  % if tgt.build in ['test', 'private'] and tgt.language == 'c++':
+    PRIVATE <%text>${_gRPC_GTEST_INCLUDE_DIR}</%text>
+  % endif
+  % if tgt.language == 'c++':
+    PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>
+  % endif
+  )
+
+  % if len(get_deps(tgt)) > 0:
+    target_link_libraries(${tgt.name} PRIVATE
+  % for dep in get_deps(tgt):
+    ${dep}
+  % endfor
+  )
+  % endif
+  % endif
+  </%def>
+
+  add_custom_target(buildtests_c)
+  % for tgt in targets:
+  % if tgt.build == 'test' and not tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl and not tgt.name in exclude_list:
+  ${get_platforms_condition_begin(tgt.platforms)}\
+  % if len(tgt.src) > 0:
+     add_dependencies(buildtests_c ${tgt.name})
+  % endif
+  ${get_platforms_condition_end(tgt.platforms)}\
+  % endif
+  % endfor
+
+  add_custom_target(buildtests_cxx)
+  % for tgt in targets:
+  % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl and not tgt.name in exclude_list:
+  ${get_platforms_condition_begin(tgt.platforms)}\
+  % if len(tgt.src) > 0:
+    add_dependencies(buildtests_cxx ${tgt.name})
+  %endif
+  ${get_platforms_condition_end(tgt.platforms)}\
+  % endif
+  % endfor
+
+  add_custom_target(buildtests
+    DEPENDS buildtests_c buildtests_cxx)

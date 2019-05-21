@@ -1,6 +1,7 @@
 cc_test {
     name: "alarm_test",
     defaults: ["grpc_defaults"],
+    test_suites: ["device-tests"],
     srcs: [
         "alarm_test.cc",
     ],

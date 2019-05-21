@@ -19,7 +19,7 @@ cc_library_host_static {
         "include",
     ],
     shared_libs: [
-        "libprotobuf-cpp-lite",
+        "libprotobuf-cpp-full",
     ],
 }
 
@@ -37,7 +37,6 @@ cc_binary_host {
     ],
     shared_libs: [
         "libprotoc",
-        "libprotobuf-cpp-lite",
     ],
 }
 
@@ -55,7 +54,6 @@ cc_binary_host {
     ],
     shared_libs: [
         "libprotoc",
-        "libprotobuf-cpp-lite",
     ],
 }
 

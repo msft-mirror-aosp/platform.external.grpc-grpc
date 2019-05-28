@@ -179,7 +179,7 @@
       message(SEND_ERROR "Error: PROTOBUF_GENERATE_GRPC_CPP() called without any proto files")
       return()
     endif()
-
+    set(GRPC_PROTO_GEN "")
     foreach(FIL <%text>${grpc_SOURCES}</%text>)
       get_filename_component(ABS_FIL <%text>${FIL}</%text> ABSOLUTE)
       get_filename_component(FIL_WE <%text>${FIL}</%text> NAME_WE)
@@ -205,15 +205,16 @@
         COMMENT "Running gRPC C++ protocol buffer compiler on <%text>${FIL}</%text>"
         VERBATIM)
 
+        <%text>list(APPEND GRPC_PROTO_GEN "${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.cc")</%text>
+        <%text>list(APPEND GRPC_PROTO_GEN "${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.h")</%text>
+        <%text>list(APPEND GRPC_PROTO_GEN "${grpc_OUTPUT_DIR}/${RELFIL_WE}_mock.grpc.pb.h")</%text>
+        <%text>list(APPEND GRPC_PROTO_GEN "${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.cc")</%text>
+        <%text>list(APPEND GRPC_PROTO_GEN "${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.h")</%text>
         <%text>set_source_files_properties("${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.cc" "${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.h"  "${grpc_OUTPUT_DIR}/${RELFIL_WE}_mock.grpc.pb.h" "${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.cc" "${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.h" PROPERTIES GENERATED TRUE)</%text>
-        if (grpc_GENERATED)
-          <%text>set(${grpc_GENERATED} "${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.cc"
-                            "${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.h"
-                            "${grpc_OUTPUT_DIR}/${RELFIL_WE}_mock.grpc.pb.h"
-                            "${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.cc"
-                            "${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.h" PARENT_SCOPE)</%text>
-        endif()
     endforeach()
+    if (grpc_GENERATED)
+      <%text>set(${grpc_GENERATED} "${GRPC_PROTO_GEN}" PARENT_SCOPE)</%text>
+    endif()
   endfunction()
 
   % for lib in libs:

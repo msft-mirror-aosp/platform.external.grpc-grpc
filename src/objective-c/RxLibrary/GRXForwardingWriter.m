@@ -1,39 +1,24 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #import "GRXForwardingWriter.h"
 
-@interface GRXForwardingWriter () <GRXWriteable>
+@interface GRXForwardingWriter ()<GRXWriteable>
 @end
 
 @implementation GRXForwardingWriter {
@@ -69,48 +54,65 @@
   [writeable writesFinishedWithError:errorOrNil];
 }
 
-// This is used to stop the input writer. It nillifies our reference to it
-// to release it.
-- (void)finishInput {
-  GRXWriter *writer = _writer;
-  _writer = nil;
-  writer.state = GRXWriterStateFinished;
-}
-
 #pragma mark GRXWriteable implementation
 
 - (void)writeValue:(id)value {
-  [_writeable writeValue:value];
+  @synchronized(self) {
+    [_writeable writeValue:value];
+  }
 }
 
 - (void)writesFinishedWithError:(NSError *)errorOrNil {
-  _writer = nil;
-  [self finishOutputWithError:errorOrNil];
+  @synchronized(self) {
+    _writer = nil;
+    [self finishOutputWithError:errorOrNil];
+  }
 }
 
 #pragma mark GRXWriter implementation
 
 - (GRXWriterState)state {
-  return _writer ? _writer.state : GRXWriterStateFinished;
+  GRXWriter *copiedWriter;
+  @synchronized(self) {
+    copiedWriter = _writer;
+  }
+  return copiedWriter ? copiedWriter.state : GRXWriterStateFinished;
 }
 
 - (void)setState:(GRXWriterState)state {
+  GRXWriter *copiedWriter = nil;
   if (state == GRXWriterStateFinished) {
-    _writeable = nil;
-    [self finishInput];
+    @synchronized(self) {
+      _writeable = nil;
+      copiedWriter = _writer;
+      _writer = nil;
+    }
+    copiedWriter.state = GRXWriterStateFinished;
   } else {
-    _writer.state = state;
+    @synchronized(self) {
+      copiedWriter = _writer;
+    }
+    copiedWriter.state = state;
   }
 }
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
-  _writeable = writeable;
-  [_writer startWithWriteable:self];
+  GRXWriter *copiedWriter = nil;
+  @synchronized(self) {
+    _writeable = writeable;
+    copiedWriter = _writer;
+  }
+  [copiedWriter startWithWriteable:self];
 }
 
 - (void)finishWithError:(NSError *)errorOrNil {
-  [self finishOutputWithError:errorOrNil];
-  [self finishInput];
+  GRXWriter *copiedWriter = nil;
+  @synchronized(self) {
+    [self finishOutputWithError:errorOrNil];
+    copiedWriter = _writer;
+    _writer = nil;
+  }
+  copiedWriter.state = GRXWriterStateFinished;
 }
 
 @end

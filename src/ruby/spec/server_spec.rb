@@ -1,33 +1,18 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-require 'grpc'
+require 'spec_helper'
 
 def load_test_certs
   test_root = File.join(File.dirname(__FILE__), 'testdata')
@@ -43,57 +28,68 @@ describe Server do
     GRPC::Core::ServerCredentials.new(*load_test_certs)
   end
 
-  before(:each) do
-    @cq = GRPC::Core::CompletionQueue.new
-  end
-
   describe '#start' do
     it 'runs without failing' do
-      blk = proc { Server.new(@cq, nil).start }
+      blk = proc { new_core_server_for_testing(nil).start }
       expect(&blk).to_not raise_error
     end
 
     it 'fails if the server is closed' do
-      s = Server.new(@cq, nil)
-      s.close(@cq)
+      s = new_core_server_for_testing(nil)
+      s.shutdown_and_notify(nil)
+      s.close
       expect { s.start }.to raise_error(RuntimeError)
     end
   end
 
-  describe '#destroy' do
+  describe '#shutdown_and_notify and #destroy' do
     it 'destroys a server ok' do
       s = start_a_server
-      blk = proc { s.destroy(@cq) }
+      blk = proc do
+        s.shutdown_and_notify(nil)
+        s.destroy
+      end
       expect(&blk).to_not raise_error
     end
 
     it 'can be called more than once without error' do
       s = start_a_server
       begin
-        blk = proc { s.destroy(@cq) }
+        blk = proc do
+          s.shutdown_and_notify(nil)
+          s.destroy
+        end
         expect(&blk).to_not raise_error
         blk.call
         expect(&blk).to_not raise_error
       ensure
-        s.close(@cq)
+        s.shutdown_and_notify(nil)
+        s.close
       end
     end
   end
 
-  describe '#close' do
+  describe '#shutdown_and_notify and #close' do
     it 'closes a server ok' do
       s = start_a_server
       begin
-        blk = proc { s.close(@cq) }
+        blk = proc do
+          s.shutdown_and_notify(nil)
+          s.close
+        end
         expect(&blk).to_not raise_error
       ensure
-        s.close(@cq)
+        s.shutdown_and_notify(nil)
+        s.close
       end
     end
 
     it 'can be called more than once without error' do
       s = start_a_server
-      blk = proc { s.close(@cq) }
+      blk = proc do
+        s.shutdown_and_notify(nil)
+        s.close
+      end
       expect(&blk).to_not raise_error
       blk.call
       expect(&blk).to_not raise_error
@@ -104,16 +100,18 @@ describe Server do
     describe 'for insecure servers' do
       it 'runs without failing' do
         blk = proc do
-          s = Server.new(@cq, nil)
+          s = new_core_server_for_testing(nil)
           s.add_http2_port('localhost:0', :this_port_is_insecure)
-          s.close(@cq)
+          s.shutdown_and_notify(nil)
+          s.close
         end
         expect(&blk).to_not raise_error
       end
 
       it 'fails if the server is closed' do
-        s = Server.new(@cq, nil)
-        s.close(@cq)
+        s = new_core_server_for_testing(nil)
+        s.shutdown_and_notify(nil)
+        s.close
         blk = proc do
           s.add_http2_port('localhost:0', :this_port_is_insecure)
         end
@@ -125,16 +123,18 @@ describe Server do
       let(:cert) { create_test_cert }
       it 'runs without failing' do
         blk = proc do
-          s = Server.new(@cq, nil)
+          s = new_core_server_for_testing(nil)
           s.add_http2_port('localhost:0', cert)
-          s.close(@cq)
+          s.shutdown_and_notify(nil)
+          s.close
         end
         expect(&blk).to_not raise_error
       end
 
       it 'fails if the server is closed' do
-        s = Server.new(@cq, nil)
-        s.close(@cq)
+        s = new_core_server_for_testing(nil)
+        s.shutdown_and_notify(nil)
+        s.close
         blk = proc { s.add_http2_port('localhost:0', cert) }
         expect(&blk).to raise_error(RuntimeError)
       end
@@ -142,8 +142,8 @@ describe Server do
   end
 
   shared_examples '#new' do
-    it 'takes a completion queue with nil channel args' do
-      expect { Server.new(@cq, nil) }.to_not raise_error
+    it 'takes nil channel args' do
+      expect { new_core_server_for_testing(nil) }.to_not raise_error
     end
 
     it 'does not take a hash with bad keys as channel args' do
@@ -194,14 +194,14 @@ describe Server do
 
   describe '#new with an insecure channel' do
     def construct_with_args(a)
-      proc { Server.new(@cq, a) }
+      proc { new_core_server_for_testing(a) }
     end
 
     it_behaves_like '#new'
   end
 
   def start_a_server
-    s = Server.new(@cq, nil)
+    s = new_core_server_for_testing(nil)
     s.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
     s.start
     s

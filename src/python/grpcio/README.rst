@@ -1,15 +1,28 @@
 gRPC Python
 ===========
 
+|compat_check_pypi|
+
 Package for gRPC Python.
+
+.. |compat_check_pypi| image:: https://python-compatibility-tools.appspot.com/one_badge_image?package=grpcio
+   :target: https://python-compatibility-tools.appspot.com/one_badge_target?package=grpcio
+
+Supported Python Versions
+-------------------------
+Python >= 3.5
+
+Deprecated Python Versions
+--------------------------
+Python == 2.7. Python 2.7 support will be removed on January 1, 2020.
 
 Installation
 ------------
 
-gRPC Python is available for Linux, Mac OS X, and Windows running Python 2.7.
+gRPC Python is available for Linux, macOS, and Windows.
 
-From PyPI
-~~~~~~~~~
+Installing From PyPI
+~~~~~~~~~~~~~~~~~~~~
 
 If you are installing locally...
 
@@ -37,8 +50,8 @@ n.b. On Windows and on Mac OS X one *must* have a recent release of :code:`pip`
 to retrieve the proper wheel from PyPI. Be sure to upgrade to the latest
 version!
 
-From Source
-~~~~~~~~~~~
+Installing From Source
+~~~~~~~~~~~~~~~~~~~~~~
 
 Building from source requires that you have the Python headers (usually a
 package named :code:`python-dev`).
@@ -46,7 +59,7 @@ package named :code:`python-dev`).
 ::
 
   $ export REPO_ROOT=grpc  # REPO_ROOT can be any directory of your choice
-  $ git clone https://github.com/grpc/grpc.git $REPO_ROOT
+  $ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc $REPO_ROOT
   $ cd $REPO_ROOT
   $ git submodule update --init
 

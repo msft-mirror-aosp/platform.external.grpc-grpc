@@ -3,10 +3,6 @@
 ## Bazel
 * [grpc.bzl](grpc.bzl)
 
-## Node
-* [binding.gyp](binding.gyp)
-* [package.json](package.json)
-
 ## Objective-C
 * [gRPC.podspec](gRPC.podspec)
 
@@ -19,7 +15,6 @@
 * [requirements.txt](requirements.txt)
 * [setup.cfg](setup.cfg)
 * [setup.py](setup.py)
-* [tox.ini](tox.ini)
 * [PYTHON-MANIFEST.in](PYTHON-MANIFEST.in)
 
 ## Ruby

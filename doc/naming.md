@@ -1,52 +1,77 @@
-#gRPC Naming and Discovery Support
+# gRPC Name Resolution
 
 ## Overview
 
-gRPC supports DNS as the default name-system. A number of alternative name-systems are used in various deployments. We propose an API that is general enough to support a range of name-systems and the corresponding syntax for names. The gRPC client library in various languages will provide a plugin mechanism so resolvers for different name-systems can be plugged in.
+gRPC supports DNS as the default name-system. A number of alternative
+name-systems are used in various deployments. We support an API that is
+general enough to support a range of name-systems and the corresponding
+syntax for names. The gRPC client library in various languages will
+provide a plugin mechanism so resolvers for different name-systems can
+be plugged in.
 
-## Detailed Proposal
+## Detailed Design
 
- A fully qualified, self contained name used for gRPC channel construction uses the syntax:
+### Name Syntax
 
-```
-scheme://authority/endpoint_name
-```
+A fully qualified, self contained name used for gRPC channel construction
+uses URI syntax as defined in [RFC 3986](https://tools.ietf.org/html/rfc3986).
 
-Here, scheme indicates the name-system to be used. Example schemes to be supported include: 
+The URI scheme indicates what resolver plugin to use.  If no scheme
+prefix is specified or the scheme is unknown, the `dns` scheme is used
+by default.
 
-* `dns`
+The URI path indicates the name to be resolved.
 
-* `zookeeper`
+Most gRPC implementations support the following URI schemes:
 
-* `etcd`
+- `dns:[//authority/]host[:port]` -- DNS (default)
+  - `host` is the host to resolve via DNS.
+  - `port` is the port to return for each address.  If not specified,
+    443 is used (but some implementations default to 80 for insecure
+    channels).
+  - `authority` indicates the DNS server to use, although this is only
+    supported by some implementations.  (In C-core, the default DNS
+    resolver does not support this, but the c-ares based resolver
+    supports specifying this in the form "IP:port".)
 
-Authority indicates some scheme-specific bootstrap information, e.g., for DNS, the authority may include the IP[:port] of the DNS server to use. Often, a DNS name may used as the authority, since the ability to resolve DNS names is already built into all gRPC client libraries.
+- `unix:path` or `unix://absolute_path` -- Unix domain sockets (Unix systems only)
+  - `path` indicates the location of the desired socket.
+  - In the first form, the path may be relative or absolute; in the
+    second form, the path must be absolute (i.e., there will actually be
+    three slashes, two prior to the path and another to begin the
+    absolute path).
 
-Finally, the  endpoint_name indicates a concrete name to be looked up in a given name-system identified by the scheme and the authority. The syntax of endpoint name is dictated by the scheme in use.
+The following schemes are supported by the gRPC C-core implementation,
+but may not be supported in other languages:
 
-### Plugins
+- `ipv4:address[:port][,address[:port],...]` -- IPv4 addresses
+  - Can specify multiple comma-delimited addresses of the form `address[:port]`:
+    - `address` is the IPv4 address to use.
+    - `port` is the port to use.  If not specified, 443 is used.
 
-The gRPC client library will switch on the scheme to pick the right resolver plugin and pass it the fully qualified name string.
+- `ipv6:address[:port][,address[:port],...]` -- IPv6 addresses
+  - Can specify multiple comma-delimited addresses of the form `address[:port]`:
+    - `address` is the IPv6 address to use. To use with a `port` the `address`
+      must enclosed in literal square brackets (`[` and `]`).  Example:
+      `ipv6:[2607:f8b0:400e:c00::ef]:443` or `ipv6:[::]:1234`
+    - `port` is the port to use.  If not specified, 443 is used.
 
-Resolvers should be able to contact the authority and get a resolution that they return back to the gRPC client library. The returned contents include a list of IP:port, an optional config and optional auth config data to be used for channel authentication. The plugin API allows the resolvers to continuously watch an endpoint_name and return updated resolutions as needed. 
+In the future, additional schemes such as `etcd` could be added.
 
-## Zookeeper
+### Resolver Plugins
 
-Apache [ZooKeeper](https://zookeeper.apache.org/) is a popular solution for building name-systems. Curator is a service discovery system built on to of ZooKeeper. We propose to organize names hierarchically as `/path/service/instance` similar to Apache Curator.
+The gRPC client library will use the specified scheme to pick the right
+resolver plugin and pass it the fully qualified name string.
 
-A fully-qualified ZooKeeper name used to construct a gRPC channel will look as follows:
+Resolvers should be able to contact the authority and get a resolution
+that they return back to the gRPC client library. The returned contents
+include:
 
-```
-zookeeper://host:port/path/service/instance
-```
-Here `zookeeper` is the scheme identifying the name-system. `host:port` identifies an authoritative name-server for this scheme (i.e., a  Zookeeper server). The host can be an IP address or a DNS name. 
-Finally `/path/service/instance` is the Zookeeper name to be resolved. 
+- A list of resolved addresses (both IP address and port).  Each address
+  may have a set of arbitrary attributes (key/value pairs) associated with
+  it, which can be used to communicate information from the resolver to the
+  [load balancing](load-balancing.md) policy.
+- A [service config](service_config.md).
 
-## Service Registration
-
-
-Service providers can register their services in Zookeeper by using a Zookeeper client.  
-
-Each service is a zookeeper node, and each instance is a child node of the corresponding service. For example, a MySQL service may have multiple instances, `/mysql/1`, `/mysql/2`, `/mysql/3`. The name of the service or instance, as well as an optional path is specified by the service provider.
-
-The data in service nodes is empty. Each instance node stores its address in the format of `host:port`, where host can be either hostname or IP address.
+The plugin API allows the resolvers to continuously watch an endpoint
+and return updated resolutions as needed.

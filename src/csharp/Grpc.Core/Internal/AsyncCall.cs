@@ -1,43 +1,24 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
-// All rights reserved.
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-// 
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #endregion
 
 using System;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Grpc.Core.Internal;
 using Grpc.Core.Logging;
 using Grpc.Core.Profiling;
 using Grpc.Core.Utils;
@@ -47,19 +28,25 @@ namespace Grpc.Core.Internal
     /// <summary>
     /// Manages client side native call lifecycle.
     /// </summary>
-    internal class AsyncCall<TRequest, TResponse> : AsyncCallBase<TRequest, TResponse>
+    internal class AsyncCall<TRequest, TResponse> : AsyncCallBase<TRequest, TResponse>, IUnaryResponseClientCallback, IReceivedStatusOnClientCallback, IReceivedResponseHeadersCallback
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<AsyncCall<TRequest, TResponse>>();
 
         readonly CallInvocationDetails<TRequest, TResponse> details;
         readonly INativeCall injectedNativeCall;  // for testing
 
+        bool registeredWithChannel;
+
+        // Dispose of to de-register cancellation token registration
+        IDisposable cancellationTokenRegistration;
+
         // Completion of a pending unary response if not null.
         TaskCompletionSource<TResponse> unaryResponseTcs;
 
-        // Indicates that steaming call has finished.
-        TaskCompletionSource<object> streamingCallFinishedTcs = new TaskCompletionSource<object>();
+        // Completion of a streaming response call if not null.
+        TaskCompletionSource<object> streamingResponseCallFinishedTcs;
 
+        // TODO(jtattermusch): this field could be lazy-initialized (only if someone requests the response headers).
         // Response headers set here once received.
         TaskCompletionSource<Metadata> responseHeadersTcs = new TaskCompletionSource<Metadata>();
 
@@ -67,7 +54,7 @@ namespace Grpc.Core.Internal
         ClientSideStatus? finishedStatus;
 
         public AsyncCall(CallInvocationDetails<TRequest, TResponse> callDetails)
-            : base(callDetails.RequestMarshaller.Serializer, callDetails.ResponseMarshaller.Deserializer, callDetails.Channel.Environment)
+            : base(callDetails.RequestMarshaller.ContextualSerializer, callDetails.ResponseMarshaller.ContextualDeserializer)
         {
             this.details = callDetails.WithOptions(callDetails.Options.Normalize());
             this.initialMetadataSent = true;  // we always send metadata at the very beginning of the call.
@@ -91,40 +78,61 @@ namespace Grpc.Core.Internal
             var profiler = Profilers.ForCurrentThread();
 
             using (profiler.NewScope("AsyncCall.UnaryCall"))
-            using (CompletionQueueSafeHandle cq = CompletionQueueSafeHandle.Create())
+            using (CompletionQueueSafeHandle cq = CompletionQueueSafeHandle.CreateSync())
             {
-                byte[] payload = UnsafeSerialize(msg);
-
-                unaryResponseTcs = new TaskCompletionSource<TResponse>();
-
-                lock (myLock)
+                bool callStartedOk = false;
+                try
                 {
-                    GrpcPreconditions.CheckState(!started);
-                    started = true;
-                    Initialize(cq);
+                    unaryResponseTcs = new TaskCompletionSource<TResponse>();
 
-                    halfcloseRequested = true;
-                    readingDone = true;
-                }
-
-                using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
-                using (var ctx = BatchContextSafeHandle.Create())
-                {
-                    call.StartUnary(ctx, payload, metadataArray, GetWriteFlagsForCall());
-
-                    var ev = cq.Pluck(ctx.Handle);
-
-                    bool success = (ev.success != 0);
-                    try
+                    lock (myLock)
                     {
-                        using (profiler.NewScope("AsyncCall.UnaryCall.HandleBatch"))
+                        GrpcPreconditions.CheckState(!started);
+                        started = true;
+                        Initialize(cq);
+
+                        halfcloseRequested = true;
+                        readingDone = true;
+                    }
+
+                    byte[] payload = UnsafeSerialize(msg);
+
+                    using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
+                    {
+                        var ctx = details.Channel.Environment.BatchContextPool.Lease();
+                        try
                         {
-                            HandleUnaryResponse(success, ctx.GetReceivedStatusOnClient(), ctx.GetReceivedMessage(), ctx.GetReceivedInitialMetadata());
+                            call.StartUnary(ctx, payload, GetWriteFlagsForCall(), metadataArray, details.Options.Flags);
+                            callStartedOk = true;
+
+                            var ev = cq.Pluck(ctx.Handle);
+                            bool success = (ev.success != 0);
+                            try
+                            {
+                                using (profiler.NewScope("AsyncCall.UnaryCall.HandleBatch"))
+                                {
+                                    HandleUnaryResponse(success, ctx.GetReceivedStatusOnClient(), ctx.GetReceivedMessageReader(), ctx.GetReceivedInitialMetadata());
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Logger.Error(e, "Exception occurred while invoking completion delegate.");
+                            }
+                        }
+                        finally
+                        {
+                            ctx.Recycle();
                         }
                     }
-                    catch (Exception e)
+                }
+                finally
+                {
+                    if (!callStartedOk)
                     {
-                        Logger.Error(e, "Exception occured while invoking completion delegate.");
+                        lock (myLock)
+                        {
+                            OnFailedToStartCallLocked();
+                        }
                     }
                 }
                     
@@ -141,22 +149,35 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                GrpcPreconditions.CheckState(!started);
-                started = true;
-
-                Initialize(environment.CompletionQueue);
-
-                halfcloseRequested = true;
-                readingDone = true;
-
-                byte[] payload = UnsafeSerialize(msg);
-
-                unaryResponseTcs = new TaskCompletionSource<TResponse>();
-                using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
+                bool callStartedOk = false;
+                try
                 {
-                    call.StartUnary(HandleUnaryResponse, payload, metadataArray, GetWriteFlagsForCall());
+                    GrpcPreconditions.CheckState(!started);
+                    started = true;
+
+                    Initialize(details.Channel.CompletionQueue);
+
+                    halfcloseRequested = true;
+                    readingDone = true;
+
+                    byte[] payload = UnsafeSerialize(msg);
+
+                    unaryResponseTcs = new TaskCompletionSource<TResponse>();
+                    using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
+                    {
+                        call.StartUnary(UnaryResponseClientCallback, payload, GetWriteFlagsForCall(), metadataArray, details.Options.Flags);
+                        callStartedOk = true;
+                    }
+
+                    return unaryResponseTcs.Task;
                 }
-                return unaryResponseTcs.Task;
+                finally
+                {
+                    if (!callStartedOk)
+                    {
+                        OnFailedToStartCallLocked();
+                    }
+                }
             }
         }
 
@@ -168,20 +189,32 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                GrpcPreconditions.CheckState(!started);
-                started = true;
-
-                Initialize(environment.CompletionQueue);
-
-                readingDone = true;
-
-                unaryResponseTcs = new TaskCompletionSource<TResponse>();
-                using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
+                bool callStartedOk = false;
+                try
                 {
-                    call.StartClientStreaming(HandleUnaryResponse, metadataArray);
-                }
+                    GrpcPreconditions.CheckState(!started);
+                    started = true;
 
-                return unaryResponseTcs.Task;
+                    Initialize(details.Channel.CompletionQueue);
+
+                    readingDone = true;
+
+                    unaryResponseTcs = new TaskCompletionSource<TResponse>();
+                    using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
+                    {
+                        call.StartClientStreaming(UnaryResponseClientCallback, metadataArray, details.Options.Flags);
+                        callStartedOk = true;
+                    }
+
+                    return unaryResponseTcs.Task;
+                }
+                finally
+                {
+                    if (!callStartedOk)
+                    {
+                        OnFailedToStartCallLocked();
+                    }
+                }
             }
         }
 
@@ -192,20 +225,33 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                GrpcPreconditions.CheckState(!started);
-                started = true;
-
-                Initialize(environment.CompletionQueue);
-
-                halfcloseRequested = true;
-
-                byte[] payload = UnsafeSerialize(msg);
-
-                using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
+                bool callStartedOk = false;
+                try
                 {
-                    call.StartServerStreaming(HandleFinished, payload, metadataArray, GetWriteFlagsForCall());
+                    GrpcPreconditions.CheckState(!started);
+                    started = true;
+
+                    Initialize(details.Channel.CompletionQueue);
+
+                    halfcloseRequested = true;
+
+                    byte[] payload = UnsafeSerialize(msg);
+
+                    streamingResponseCallFinishedTcs = new TaskCompletionSource<object>();
+                    using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
+                    {
+                        call.StartServerStreaming(ReceivedStatusOnClientCallback, payload, GetWriteFlagsForCall(), metadataArray, details.Options.Flags);
+                        callStartedOk = true;
+                    }
+                    call.StartReceiveInitialMetadata(ReceivedResponseHeadersCallback);
                 }
-                call.StartReceiveInitialMetadata(HandleReceivedResponseHeaders);
+                finally
+                {
+                    if (!callStartedOk)
+                    {
+                        OnFailedToStartCallLocked();
+                    }
+                }
             }
         }
 
@@ -217,26 +263,38 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                GrpcPreconditions.CheckState(!started);
-                started = true;
-
-                Initialize(environment.CompletionQueue);
-
-                using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
+                bool callStartedOk = false;
+                try
                 {
-                    call.StartDuplexStreaming(HandleFinished, metadataArray);
+                    GrpcPreconditions.CheckState(!started);
+                    started = true;
+
+                    Initialize(details.Channel.CompletionQueue);
+
+                    streamingResponseCallFinishedTcs = new TaskCompletionSource<object>();
+                    using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
+                    {
+                        call.StartDuplexStreaming(ReceivedStatusOnClientCallback, metadataArray, details.Options.Flags);
+                        callStartedOk = true;
+                    }
+                    call.StartReceiveInitialMetadata(ReceivedResponseHeadersCallback);
                 }
-                call.StartReceiveInitialMetadata(HandleReceivedResponseHeaders);
+                finally
+                {
+                    if (!callStartedOk)
+                    {
+                        OnFailedToStartCallLocked();
+                    }
+                }
             }
         }
 
         /// <summary>
         /// Sends a streaming request. Only one pending send action is allowed at any given time.
-        /// completionDelegate is called when the operation finishes.
         /// </summary>
-        public void StartSendMessage(TRequest msg, WriteFlags writeFlags, AsyncCompletionDelegate<object> completionDelegate)
+        public Task SendMessageAsync(TRequest msg, WriteFlags writeFlags)
         {
-            StartSendMessageInternal(msg, writeFlags, completionDelegate);
+            return SendMessageInternalAsync(msg, writeFlags);
         }
 
         /// <summary>
@@ -250,40 +308,43 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Sends halfclose, indicating client is done with streaming requests.
         /// Only one pending send action is allowed at any given time.
-        /// completionDelegate is called when the operation finishes.
         /// </summary>
-        public void StartSendCloseFromClient(AsyncCompletionDelegate<object> completionDelegate)
+        public Task SendCloseFromClientAsync()
         {
             lock (myLock)
             {
-                GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
-                CheckSendingAllowed(allowFinished: true);
+                GrpcPreconditions.CheckState(started);
 
-                if (!disposed && !finished)
+                var earlyResult = CheckSendPreconditionsClientSide();
+                if (earlyResult != null)
                 {
-                    call.StartSendCloseFromClient(HandleSendCloseFromClientFinished);
+                    return earlyResult;
                 }
-                else
+
+                if (disposed || finished)
                 {
                     // In case the call has already been finished by the serverside,
-                    // the halfclose has already been done implicitly, so we only
-                    // emit the notification for the completion delegate.
-                    Task.Run(() => HandleSendCloseFromClientFinished(true));
+                    // the halfclose has already been done implicitly, so just return
+                    // completed task here.
+                    halfcloseRequested = true;
+                    return TaskUtils.CompletedTask;
                 }
+                call.StartSendCloseFromClient(SendCompletionCallback);
 
                 halfcloseRequested = true;
-                sendCompletionDelegate = completionDelegate;
+                streamingWriteTcs = new TaskCompletionSource<object>();
+                return streamingWriteTcs.Task;
             }
         }
 
         /// <summary>
-        /// Get the task that completes once if streaming call finishes with ok status and throws RpcException with given status otherwise.
+        /// Get the task that completes once if streaming response call finishes with ok status and throws RpcException with given status otherwise.
         /// </summary>
-        public Task StreamingCallFinishedTask
+        public Task StreamingResponseCallFinishedTask
         {
             get
             {
-                return streamingCallFinishedTcs.Task;
+                return streamingResponseCallFinishedTcs.Task;
             }
         }
 
@@ -332,9 +393,23 @@ namespace Grpc.Core.Internal
             }
         }
 
-        protected override void OnAfterReleaseResources()
+        protected override void OnAfterReleaseResourcesLocked()
         {
-            details.Channel.RemoveCallReference(this);
+            if (registeredWithChannel)
+            {
+                details.Channel.RemoveCallReference(this);
+                registeredWithChannel = false;
+            }
+        }
+
+        protected override void OnAfterReleaseResourcesUnlocked()
+        {
+            // If cancellation callback is in progress, this can block
+            // so we need to do this outside of call's lock to prevent
+            // deadlock.
+            // See https://github.com/grpc/grpc/issues/14777
+            // See https://github.com/dotnet/corefx/issues/14903
+            cancellationTokenRegistration?.Dispose();
         }
 
         protected override bool IsClient
@@ -342,37 +417,92 @@ namespace Grpc.Core.Internal
             get { return true; }
         }
 
+        protected override Exception GetRpcExceptionClientOnly()
+        {
+            return new RpcException(finishedStatus.Value.Status, finishedStatus.Value.Trailers);
+        }
+
+        protected override Task CheckSendAllowedOrEarlyResult()
+        {
+            var earlyResult = CheckSendPreconditionsClientSide();
+            if (earlyResult != null)
+            {
+                return earlyResult;
+            }
+
+            if (finishedStatus.HasValue)
+            {
+                // throwing RpcException if we already received status on client
+                // side makes the most sense.
+                // Note that this throws even for StatusCode.OK.
+                // Writing after the call has finished is not a programming error because server can close
+                // the call anytime, so don't throw directly, but let the write task finish with an error.
+                var tcs = new TaskCompletionSource<object>();
+                tcs.SetException(new RpcException(finishedStatus.Value.Status, finishedStatus.Value.Trailers));
+                return tcs.Task;
+            }
+
+            return null;
+        }
+
+        private Task CheckSendPreconditionsClientSide()
+        {
+            GrpcPreconditions.CheckState(!halfcloseRequested, "Request stream has already been completed.");
+            GrpcPreconditions.CheckState(streamingWriteTcs == null, "Only one write can be pending at a time.");
+
+            if (cancelRequested)
+            {
+                // Return a cancelled task.
+                var tcs = new TaskCompletionSource<object>();
+                tcs.SetCanceled();
+                return tcs.Task;
+            }
+
+            return null;
+        }
+
         private void Initialize(CompletionQueueSafeHandle cq)
         {
-            using (Profilers.ForCurrentThread().NewScope("AsyncCall.Initialize"))
-            { 
-                var call = CreateNativeCall(cq);
+            var call = CreateNativeCall(cq);
 
-                details.Channel.AddCallReference(this);
-                InitializeInternal(call);
-                RegisterCancellationCallback();
-            }
+            details.Channel.AddCallReference(this);
+            registeredWithChannel = true;
+            InitializeInternal(call);
+
+            RegisterCancellationCallback();
+        }
+
+        private void OnFailedToStartCallLocked()
+        {
+            ReleaseResources();
+
+            // We need to execute the hook that disposes the cancellation token
+            // registration, but it cannot be done from under a lock.
+            // To make things simple, we just schedule the unregistering
+            // on a threadpool.
+            // - Once the native call is disposed, the Cancel() calls are ignored anyway
+            // - We don't care about the overhead as OnFailedToStartCallLocked() only happens
+            //   when something goes very bad when initializing a call and that should
+            //   never happen when gRPC is used correctly.
+            ThreadPool.QueueUserWorkItem((state) => OnAfterReleaseResourcesUnlocked());
         }
 
         private INativeCall CreateNativeCall(CompletionQueueSafeHandle cq)
         {
-            using (Profilers.ForCurrentThread().NewScope("AsyncCall.CreateNativeCall"))
-            { 
-                if (injectedNativeCall != null)
-                {
-                    return injectedNativeCall;  // allows injecting a mock INativeCall in tests.
-                }
+            if (injectedNativeCall != null)
+            {
+                return injectedNativeCall;  // allows injecting a mock INativeCall in tests.
+            }
 
-                var parentCall = details.Options.PropagationToken != null ? details.Options.PropagationToken.ParentCall : CallSafeHandle.NullInstance;
+            var parentCall = details.Options.PropagationToken.AsImplOrNull()?.ParentCall ?? CallSafeHandle.NullInstance;
 
-                var credentials = details.Options.Credentials;
-                using (var nativeCredentials = credentials != null ? credentials.ToNativeCredentials() : null)
-                {
-                    var result = details.Channel.Handle.CreateCall(environment.CompletionRegistry,
-                                 parentCall, ContextPropagationToken.DefaultMask, cq,
-                                 details.Method, details.Host, Timespec.FromDateTime(details.Options.Deadline.Value), nativeCredentials);
-                    return result;
-                }
+            var credentials = details.Options.Credentials;
+            using (var nativeCredentials = credentials != null ? credentials.ToNativeCredentials() : null)
+            {
+                var result = details.Channel.Handle.CreateCall(
+                             parentCall, ContextPropagationTokenImpl.DefaultMask, cq,
+                             details.Method, details.Host, Timespec.FromDateTime(details.Options.Deadline.Value), nativeCredentials);
+                return result;
             }
         }
 
@@ -382,7 +512,7 @@ namespace Grpc.Core.Internal
             var token = details.Options.CancellationToken;
             if (token.CanBeCanceled)
             {
-                token.Register(() => this.Cancel());
+                cancellationTokenRegistration = token.Register(() => this.Cancel());
             }
         }
 
@@ -400,47 +530,62 @@ namespace Grpc.Core.Internal
         /// </summary>
         private void HandleReceivedResponseHeaders(bool success, Metadata responseHeaders)
         {
+            // TODO(jtattermusch): handle success==false
             responseHeadersTcs.SetResult(responseHeaders);
         }
 
         /// <summary>
         /// Handler for unary response completion.
         /// </summary>
-        private void HandleUnaryResponse(bool success, ClientSideStatus receivedStatus, byte[] receivedMessage, Metadata responseHeaders)
+        private void HandleUnaryResponse(bool success, ClientSideStatus receivedStatus, IBufferReader receivedMessageReader, Metadata responseHeaders)
         {
             // NOTE: because this event is a result of batch containing GRPC_OP_RECV_STATUS_ON_CLIENT,
             // success will be always set to true.
 
-            using (Profilers.ForCurrentThread().NewScope("AsyncCall.HandleUnaryResponse"))
+            TaskCompletionSource<object> delayedStreamingWriteTcs = null;
+            TResponse msg = default(TResponse);
+            var deserializeException = TryDeserialize(receivedMessageReader, out msg);
+
+            bool releasedResources;
+            lock (myLock)
             {
-                TResponse msg = default(TResponse);
-                var deserializeException = TryDeserialize(receivedMessage, out msg);
+                finished = true;
 
-                lock (myLock)
+                if (deserializeException != null && receivedStatus.Status.StatusCode == StatusCode.OK)
                 {
-                    finished = true;
+                    receivedStatus = new ClientSideStatus(DeserializeResponseFailureStatus, receivedStatus.Trailers);
+                }
+                finishedStatus = receivedStatus;
 
-                    if (deserializeException != null && receivedStatus.Status.StatusCode == StatusCode.OK)
-                    {
-                        receivedStatus = new ClientSideStatus(DeserializeResponseFailureStatus, receivedStatus.Trailers);
-                    }
-                    finishedStatus = receivedStatus;
-
-                    ReleaseResourcesIfPossible();
+                if (isStreamingWriteCompletionDelayed)
+                {
+                    delayedStreamingWriteTcs = streamingWriteTcs;
+                    streamingWriteTcs = null;
                 }
 
-                responseHeadersTcs.SetResult(responseHeaders);
-
-                var status = receivedStatus.Status;
-
-                if (status.StatusCode != StatusCode.OK)
-                {
-                    unaryResponseTcs.SetException(new RpcException(status));
-                    return;
-                }
-
-                unaryResponseTcs.SetResult(msg);
+                releasedResources = ReleaseResourcesIfPossible();
             }
+
+            if (releasedResources)
+            {
+                OnAfterReleaseResourcesUnlocked();
+            }
+
+            responseHeadersTcs.SetResult(responseHeaders);
+
+            if (delayedStreamingWriteTcs != null)
+            {
+                delayedStreamingWriteTcs.SetException(GetRpcExceptionClientOnly());
+            }
+
+            var status = receivedStatus.Status;
+            if (status.StatusCode != StatusCode.OK)
+            {
+                unaryResponseTcs.SetException(new RpcException(status, receivedStatus.Trailers));
+                return;
+            }
+
+            unaryResponseTcs.SetResult(msg);
         }
 
         /// <summary>
@@ -451,23 +596,61 @@ namespace Grpc.Core.Internal
             // NOTE: because this event is a result of batch containing GRPC_OP_RECV_STATUS_ON_CLIENT,
             // success will be always set to true.
 
+            TaskCompletionSource<object> delayedStreamingWriteTcs = null;
+
+            bool releasedResources;
             lock (myLock)
             {
                 finished = true;
                 finishedStatus = receivedStatus;
+                if (isStreamingWriteCompletionDelayed)
+                {
+                    delayedStreamingWriteTcs = streamingWriteTcs;
+                    streamingWriteTcs = null;
+                }
 
-                ReleaseResourcesIfPossible();
+                releasedResources = ReleaseResourcesIfPossible();
+            }
+
+            if (releasedResources)
+            {
+                OnAfterReleaseResourcesUnlocked();
+            }
+
+            if (delayedStreamingWriteTcs != null)
+            {
+                delayedStreamingWriteTcs.SetException(GetRpcExceptionClientOnly());
             }
 
             var status = receivedStatus.Status;
-
             if (status.StatusCode != StatusCode.OK)
             {
-                streamingCallFinishedTcs.SetException(new RpcException(status));
+                streamingResponseCallFinishedTcs.SetException(new RpcException(status, receivedStatus.Trailers));
                 return;
             }
 
-            streamingCallFinishedTcs.SetResult(null);
+            streamingResponseCallFinishedTcs.SetResult(null);
+        }
+
+        IUnaryResponseClientCallback UnaryResponseClientCallback => this;
+
+        void IUnaryResponseClientCallback.OnUnaryResponseClient(bool success, ClientSideStatus receivedStatus, IBufferReader receivedMessageReader, Metadata responseHeaders)
+        {
+            HandleUnaryResponse(success, receivedStatus, receivedMessageReader, responseHeaders);
+        }
+
+        IReceivedStatusOnClientCallback ReceivedStatusOnClientCallback => this;
+
+        void IReceivedStatusOnClientCallback.OnReceivedStatusOnClient(bool success, ClientSideStatus receivedStatus)
+        {
+            HandleFinished(success, receivedStatus);
+        }
+
+        IReceivedResponseHeadersCallback ReceivedResponseHeadersCallback => this;
+
+        void IReceivedResponseHeadersCallback.OnReceivedResponseHeaders(bool success, Metadata responseHeaders)
+        {
+            HandleReceivedResponseHeaders(success, responseHeaders);
         }
     }
 }

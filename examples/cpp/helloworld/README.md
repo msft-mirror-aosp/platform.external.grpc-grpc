@@ -1,8 +1,8 @@
 # gRPC C++ Hello World Tutorial
 
 ### Install gRPC
-Make sure you have installed gRPC on your system. Follow the instructions here:
-[https://github.com/grpc/grpc/blob/master/INSTALL](../../../INSTALL.md).
+Make sure you have installed gRPC on your system. Follow the
+[BUILDING.md](../../../BUILDING.md) instructions.
 
 ### Get the tutorial source code
 
@@ -12,7 +12,7 @@ following command:
 
 
 ```sh
-$ git clone https://github.com/grpc/grpc.git
+$ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
 ```
 
 Change your current directory to examples/cpp/helloworld
@@ -98,7 +98,7 @@ $ protoc -I ../../protos/ --cpp_out=. ../../protos/helloworld.proto
     ```
 
 - Create a stub. A stub implements the rpc methods of a service and in the
-  generated code, a method is provided to created a stub with a channel:
+  generated code, a method is provided to create a stub with a channel:
 
     ```cpp
     auto stub = helloworld::Greeter::NewStub(channel);

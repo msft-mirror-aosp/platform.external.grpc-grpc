@@ -1,41 +1,23 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #import <UIKit/UIKit.h>
-#import <GRPCClient/GRPCCall+Tests.h>
 #import <RouteGuide/RouteGuide.pbrpc.h>
-#import <RxLibrary/GRXWriter+Immediate.h>
-#import <RxLibrary/GRXWriter+Transformations.h>
 
 static NSString * const kHostAddress = @"localhost:50051";
 
@@ -80,42 +62,72 @@ static NSString * const kHostAddress = @"localhost:50051";
  * Run the getFeature demo. Calls getFeature with a point known to have a feature and a point known
  * not to have a feature.
  */
-@interface GetFeatureViewController : UIViewController {
-  RTGRouteGuide *service;
-}
+@interface GetFeatureViewController : UIViewController<GRPCProtoResponseHandler>
+
+@property (weak, nonatomic) IBOutlet UILabel *outputLabel;
+
 @end
 
-@implementation GetFeatureViewController
+@implementation GetFeatureViewController {
+  RTGRouteGuide *_service;
+}
+
+- (dispatch_queue_t)dispatchQueue {
+  return dispatch_get_main_queue();
+}
+
+- (void)didReceiveProtoMessage:(GPBMessage *)message {
+  RTGFeature *response = (RTGFeature *)message;
+
+  // TODO(makdharma): Remove boilerplate by consolidating into one log function.
+  if (response.name.length != 0) {
+    NSString *str =[NSString stringWithFormat:@"%@\nFound feature called %@ at %@.", self.outputLabel.text, response.location, response.name];
+    self.outputLabel.text = str;
+    NSLog(@"Found feature called %@ at %@.", response.name, response.location);
+  } else if (response) {
+    NSString *str =[NSString stringWithFormat:@"%@\nFound no features at %@",  self.outputLabel.text,response.location];
+    self.outputLabel.text = str;
+    NSLog(@"Found no features at %@", response.location);
+  }
+}
+
+- (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
+  if (error) {
+    NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.outputLabel.text, error];
+    self.outputLabel.text = str;
+    NSLog(@"RPC error: %@", error);
+  }
+}
 
 - (void)execRequest {
-  void (^handler)(RTGFeature *response, NSError *error) = ^(RTGFeature *response, NSError *error) {
-    if (response.name.length) {
-      NSLog(@"Found feature called %@ at %@.", response.name, response.location);
-    } else if (response) {
-      NSLog(@"Found no features at %@", response.location);
-    } else {
-      NSLog(@"RPC error: %@", error);
-    }
-  };
-
   RTGPoint *point = [RTGPoint message];
   point.latitude = 409146138;
   point.longitude = -746188906;
 
-  [service getFeatureWithRequest:point handler:handler];
-  [service getFeatureWithRequest:[RTGPoint message] handler:handler];
+  GRPCUnaryProtoCall *call = [_service getFeatureWithMessage:point
+                                             responseHandler:self
+                                                 callOptions:nil];
+  [call start];
+  call = [_service getFeatureWithMessage:[RTGPoint message]
+                         responseHandler:self
+                             callOptions:nil];
+  [call start];
+
 }
 
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  // This only needs to be done once per host, before creating service objects for that host.
-  [GRPCCall useInsecureConnectionsForHost:kHostAddress];
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.transportType = GRPCTransportTypeInsecure;
 
-  service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+  _service = [[RTGRouteGuide alloc] initWithHost:kHostAddress callOptions:options];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
+  self.outputLabel.text = @"RPC log:";
+  self.outputLabel.numberOfLines = 0;
+  self.outputLabel.font = [UIFont fontWithName:@"Helvetica Neue" size:8.0];
   [self execRequest];
 }
 
@@ -128,13 +140,19 @@ static NSString * const kHostAddress = @"localhost:50051";
  * Run the listFeatures demo. Calls listFeatures with a rectangle containing all of the features in
  * the pre-generated database. Prints each response as it comes in.
  */
-@interface ListFeaturesViewController : UIViewController {
-  RTGRouteGuide *service;
-}
+@interface ListFeaturesViewController : UIViewController<GRPCProtoResponseHandler>
+
+@property (weak, nonatomic) IBOutlet UILabel *outputLabel;
 
 @end
 
-@implementation ListFeaturesViewController
+@implementation ListFeaturesViewController {
+  RTGRouteGuide *_service;
+}
+
+- (dispatch_queue_t)dispatchQueue {
+  return dispatch_get_main_queue();
+}
 
 - (void)execRequest {
   RTGRectangle *rectangle = [RTGRectangle message];
@@ -144,28 +162,46 @@ static NSString * const kHostAddress = @"localhost:50051";
   rectangle.hi.longitude = -745E6;
 
   NSLog(@"Looking for features between %@ and %@", rectangle.lo, rectangle.hi);
-  [service listFeaturesWithRequest:rectangle
-                      eventHandler:^(BOOL done, RTGFeature *response, NSError *error) {
-    if (response) {
-      NSLog(@"Found feature at %@ called %@.", response.location, response.name);
-    } else if (error) {
-      NSLog(@"RPC error: %@", error);
-    }
-  }];
+  GRPCUnaryProtoCall *call = [_service listFeaturesWithMessage:rectangle
+                                               responseHandler:self
+                                                   callOptions:nil];
+  [call start];
+}
+
+- (void)didReceiveProtoMessage:(GPBMessage *)message {
+  RTGFeature *response = (RTGFeature *)message;
+  if (response) {
+    NSString *str =[NSString stringWithFormat:@"%@\nFound feature at %@ called %@.", self.outputLabel.text, response.location, response.name];
+    self.outputLabel.text = str;
+    NSLog(@"Found feature at %@ called %@.", response.location, response.name);
+  }
+}
+
+- (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
+  if (error) {
+    NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.outputLabel.text, error];
+    self.outputLabel.text = str;
+    NSLog(@"RPC error: %@", error);
+  }
 }
 
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.transportType = GRPCTransportTypeInsecure;
+
+  _service = [[RTGRouteGuide alloc] initWithHost:kHostAddress callOptions:options];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
+  self.outputLabel.text = @"RPC log:";
+  self.outputLabel.numberOfLines = 0;
+  self.outputLabel.font = [UIFont fontWithName:@"Helvetica Neue" size:8.0];
   [self execRequest];
 }
 
 @end
-
 
 #pragma mark Demo: Record Route
 
@@ -174,48 +210,87 @@ static NSString * const kHostAddress = @"localhost:50051";
  * database with a variable delay in between. Prints the statistics when they are sent from the
  * server.
  */
-@interface RecordRouteViewController : UIViewController {
-  RTGRouteGuide *service;
-}
+@interface RecordRouteViewController : UIViewController<GRPCProtoResponseHandler>
+
+@property (weak, nonatomic) IBOutlet UILabel *outputLabel;
 
 @end
 
-@implementation RecordRouteViewController
+@implementation RecordRouteViewController {
+  RTGRouteGuide *_service;
+}
+
+- (dispatch_queue_t)dispatchQueue {
+  return dispatch_get_main_queue();
+}
 
 - (void)execRequest {
   NSString *dataBasePath = [NSBundle.mainBundle pathForResource:@"route_guide_db"
                                                          ofType:@"json"];
   NSData *dataBaseContent = [NSData dataWithContentsOfFile:dataBasePath];
-  NSArray *features = [NSJSONSerialization JSONObjectWithData:dataBaseContent options:0 error:NULL];
+  NSError *error;
+  NSArray *features = [NSJSONSerialization JSONObjectWithData:dataBaseContent options:0 error:&error];
 
-  GRXWriter *locations = [[GRXWriter writerWithContainer:features] map:^id(id feature) {
+  if (error) {
+    NSLog(@"Error reading database.");
+    NSString *str = @"Error reading database.";
+    self.outputLabel.text = str;
+    return;
+  }
+
+  GRPCStreamingProtoCall *call = [_service recordRouteWithResponseHandler:self
+                                                              callOptions:nil];
+  [call start];
+  for (id feature in features) {
     RTGPoint *location = [RTGPoint message];
     location.longitude = [((NSNumber *) feature[@"location"][@"longitude"]) intValue];
     location.latitude = [((NSNumber *) feature[@"location"][@"latitude"]) intValue];
+    NSString *str =[NSString stringWithFormat:@"%@\nVisiting point %@", self.outputLabel.text, location];
+    self.outputLabel.text = str;
     NSLog(@"Visiting point %@", location);
-    return location;
-  }];
+    [call writeMessage:location];
+  }
+  [call finish];
+}
 
-  [service recordRouteWithRequestsWriter:locations
-                                 handler:^(RTGRouteSummary *response, NSError *error) {
-    if (response) {
-      NSLog(@"Finished trip with %i points", response.pointCount);
-      NSLog(@"Passed %i features", response.featureCount);
-      NSLog(@"Travelled %i meters", response.distance);
-      NSLog(@"It took %i seconds", response.elapsedTime);
-    } else {
-      NSLog(@"RPC error: %@", error);
-    }
-  }];
+- (void)didReceiveProtoMessage:(GPBMessage *)message {
+  RTGRouteSummary *response = (RTGRouteSummary *)message;
+
+  if (response) {
+    NSString *str =[NSString stringWithFormat:
+                    @"%@\nFinished trip with %i points\nPassed %i features\n"
+                    "Travelled %i meters\nIt took %i seconds",
+                    self.outputLabel.text, response.pointCount, response.featureCount,
+                    response.distance, response.elapsedTime];
+    self.outputLabel.text = str;
+    NSLog(@"Finished trip with %i points", response.pointCount);
+    NSLog(@"Passed %i features", response.featureCount);
+    NSLog(@"Travelled %i meters", response.distance);
+    NSLog(@"It took %i seconds", response.elapsedTime);
+  }
+}
+
+- (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
+  if (error) {
+    NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.outputLabel.text, error];
+    self.outputLabel.text = str;
+    NSLog(@"RPC error: %@", error);
+  }
 }
 
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.transportType = GRPCTransportTypeInsecure;
+
+  _service = [[RTGRouteGuide alloc] initWithHost:kHostAddress callOptions:options];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
+  self.outputLabel.text = @"RPC log:";
+  self.outputLabel.numberOfLines = 0;
+  self.outputLabel.font = [UIFont fontWithName:@"Helvetica Neue" size:8.0];
   [self execRequest];
 }
 
@@ -228,44 +303,69 @@ static NSString * const kHostAddress = @"localhost:50051";
  * Run the routeChat demo. Send some chat messages, and print any chat messages that are sent from
  * the server.
  */
-@interface RouteChatViewController : UIViewController {
-  RTGRouteGuide *service;
-}
+@interface RouteChatViewController : UIViewController<GRPCProtoResponseHandler>
+
+@property (weak, nonatomic) IBOutlet UILabel *outputLabel;
 
 @end
 
-@implementation RouteChatViewController
+@implementation RouteChatViewController {
+  RTGRouteGuide *_service;
+}
+
+- (dispatch_queue_t)dispatchQueue {
+  return dispatch_get_main_queue();
+}
 
 - (void)execRequest {
   NSArray *notes = @[[RTGRouteNote noteWithMessage:@"First message" latitude:0 longitude:0],
                      [RTGRouteNote noteWithMessage:@"Second message" latitude:0 longitude:1],
                      [RTGRouteNote noteWithMessage:@"Third message" latitude:1 longitude:0],
                      [RTGRouteNote noteWithMessage:@"Fourth message" latitude:0 longitude:0]];
-  GRXWriter *notesWriter = [[GRXWriter writerWithContainer:notes] map:^id(RTGRouteNote *note) {
-    NSLog(@"Sending message %@ at %@", note.message, note.location);
-    return note;
-  }];
 
-  [service routeChatWithRequestsWriter:notesWriter
-                          eventHandler:^(BOOL done, RTGRouteNote *note, NSError *error) {
-    if (note) {
-      NSLog(@"Got message %@ at %@", note.message, note.location);
-    } else if (error) {
-      NSLog(@"RPC error: %@", error);
-    }
-    if (done) {
-      NSLog(@"Chat ended.");
-    }
-  }];
+  GRPCStreamingProtoCall *call = [_service routeChatWithResponseHandler:self
+                                                            callOptions:nil];
+  [call start];
+  for (RTGRouteNote *note in notes) {
+    [call writeMessage:note];
+  }
+  [call finish];
+}
+
+- (void)didReceiveProtoMessage:(GPBMessage *)message {
+  RTGRouteNote *note = (RTGRouteNote *)message;
+  if (note) {
+    NSString *str =[NSString stringWithFormat:@"%@\nGot message %@ at %@",
+                    self.outputLabel.text, note.message, note.location];
+    self.outputLabel.text = str;
+    NSLog(@"Got message %@ at %@", note.message, note.location);
+  }
+}
+
+- (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
+  if (!error) {
+    NSLog(@"Chat ended.");
+  } else {
+    NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.outputLabel.text, error];
+    self.outputLabel.text = str;
+    NSLog(@"RPC error: %@", error);
+  }
 }
 
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.transportType = GRPCTransportTypeInsecure;
+
+  _service = [[RTGRouteGuide alloc] initWithHost:kHostAddress callOptions:options];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
+  // TODO(makarandd): Set these properties through UI builder
+  self.outputLabel.text = @"RPC log:";
+  self.outputLabel.numberOfLines = 0;
+  self.outputLabel.font = [UIFont fontWithName:@"Helvetica Neue" size:8.0];
   [self execRequest];
 }
 

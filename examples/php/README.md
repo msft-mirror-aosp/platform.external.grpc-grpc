@@ -11,13 +11,13 @@ INSTALL
  - Install the gRPC PHP extension
 
    ```sh
-   $ [sudo] pecl install grpc-beta
+   $ [sudo] pecl install grpc
    ```
 
  - Clone this repository
 
    ```sh
-   $ git clone https://github.com/grpc/grpc.git
+   $ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
    ```
 
  - Install composer
@@ -37,13 +37,15 @@ TRY IT!
    ```
    $ cd examples/node
    $ npm install
-   $ nodejs greeter_server.js
+   $ cd dynamic_codegen or cd static_codegen
+   $ node greeter_server.js
    ```
 
- - Run the client
+ - Generate proto files and run the client
 
    ```
    $ cd examples/php
+   $ ./greeter_proto_gen.sh
    $ ./run_greeter_client.sh
    ```
 
@@ -59,4 +61,4 @@ TUTORIAL
 You can find a more detailed tutorial in [gRPC Basics: PHP][]
 
 [Node]:https://github.com/grpc/grpc/tree/master/examples/node
-[gRPC Basics: PHP]:http://www.grpc.io/docs/tutorials/basic/php.html
+[gRPC Basics: PHP]:https://grpc.io/docs/tutorials/basic/php.html

@@ -1,170 +1,260 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #import "GRPCChannel.h"
 
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
+#import "../internal/GRPCCallOptions+Internal.h"
+#import "ChannelArgsUtil.h"
+#import "GRPCChannelFactory.h"
+#import "GRPCChannelPool.h"
 #import "GRPCCompletionQueue.h"
+#import "GRPCCronetChannelFactory.h"
+#import "GRPCInsecureChannelFactory.h"
+#import "GRPCSecureChannelFactory.h"
+#import "version.h"
 
-void freeChannelArgs(grpc_channel_args *channel_args) {
-  for (size_t i = 0; i < channel_args->num_args; ++i) {
-    grpc_arg *arg = &channel_args->args[i];
-    gpr_free(arg->key);
-    if (arg->type == GRPC_ARG_STRING) {
-      gpr_free(arg->value.string);
-    }
-  }
-  gpr_free(channel_args);
-}
+#import <GRPCClient/GRPCCall+Cronet.h>
+#import <GRPCClient/GRPCCallOptions.h>
 
-/**
- * Allocates a @c grpc_channel_args and populates it with the options specified in the
- * @c dictionary. Keys must be @c NSString. If the value responds to @c @selector(UTF8String) then
- * it will be mapped to @c GRPC_ARG_STRING. If not, it will be mapped to @c GRPC_ARG_INTEGER if the
- * value responds to @c @selector(intValue). Otherwise, an exception will be raised. The caller of
- * this function is responsible for calling @c freeChannelArgs on a non-NULL returned value.
- */
-grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
-  if (!dictionary) {
-    return NULL;
-  }
+@implementation GRPCChannelConfiguration
 
-  NSArray *keys = [dictionary allKeys];
-  NSUInteger argCount = [keys count];
-
-  grpc_channel_args *channelArgs = gpr_malloc(sizeof(grpc_channel_args));
-  channelArgs->num_args = argCount;
-  channelArgs->args = gpr_malloc(argCount * sizeof(grpc_arg));
-
-  // TODO(kriswuollett) Check that keys adhere to GRPC core library requirements
-
-  for (NSUInteger i = 0; i < argCount; ++i) {
-    grpc_arg *arg = &channelArgs->args[i];
-    arg->key = gpr_strdup([keys[i] UTF8String]);
-
-    id value = dictionary[keys[i]];
-    if ([value respondsToSelector:@selector(UTF8String)]) {
-      arg->type = GRPC_ARG_STRING;
-      arg->value.string = gpr_strdup([value UTF8String]);
-    } else if ([value respondsToSelector:@selector(intValue)]) {
-      arg->type = GRPC_ARG_INTEGER;
-      arg->value.integer = [value intValue];
-    } else {
-      [NSException raise:NSInvalidArgumentException
-                  format:@"Invalid value type: %@", [value class]];
-    }
-  }
-
-  return channelArgs;
-}
-
-@implementation GRPCChannel {
-  // Retain arguments to channel_create because they may not be used on the thread that invoked
-  // the channel_create function.
-  NSString *_host;
-  grpc_channel_args *_channelArgs;
-}
-
-
-- (instancetype)initWithHost:(NSString *)host
-                      secure:(BOOL)secure
-                 credentials:(struct grpc_channel_credentials *)credentials
-                 channelArgs:(NSDictionary *)channelArgs {
-  if (!host) {
-    [NSException raise:NSInvalidArgumentException format:@"host argument missing"];
-  }
-
-  if (secure && !credentials) {
+- (instancetype)initWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions {
+  NSAssert(host.length > 0, @"Host must not be empty.");
+  NSAssert(callOptions != nil, @"callOptions must not be empty.");
+  if (host.length == 0 || callOptions == nil) {
     return nil;
   }
 
-  if (self = [super init]) {
-    _channelArgs = buildChannelArgs(channelArgs);
+  if ((self = [super init])) {
     _host = [host copy];
-    if (secure) {
-      _unmanagedChannel = grpc_secure_channel_create(credentials, _host.UTF8String, _channelArgs,
-                                                     NULL);
-    } else {
-      _unmanagedChannel = grpc_insecure_channel_create(_host.UTF8String, _channelArgs, NULL);
-    }
+    _callOptions = [callOptions copy];
   }
-
   return self;
 }
 
-- (void)dealloc {
-  // TODO(jcanizales): Be sure to add a test with a server that closes the connection prematurely,
-  // as in the past that made this call to crash.
-  grpc_channel_destroy(_unmanagedChannel);
-  freeChannelArgs(_channelArgs);
+- (id<GRPCChannelFactory>)channelFactory {
+  GRPCTransportType type = _callOptions.transportType;
+  switch (type) {
+    case GRPCTransportTypeChttp2BoringSSL:
+      // TODO (mxyan): Remove when the API is deprecated
+#ifdef GRPC_COMPILE_WITH_CRONET
+      if (![GRPCCall isUsingCronet]) {
+#else
+    {
+#endif
+        NSError *error;
+        id<GRPCChannelFactory> factory = [GRPCSecureChannelFactory
+            factoryWithPEMRootCertificates:_callOptions.PEMRootCertificates
+                                privateKey:_callOptions.PEMPrivateKey
+                                 certChain:_callOptions.PEMCertificateChain
+                                     error:&error];
+        NSAssert(factory != nil, @"Failed to create secure channel factory");
+        if (factory == nil) {
+          NSLog(@"Error creating secure channel factory: %@", error);
+        }
+        return factory;
+      }
+      // fallthrough
+    case GRPCTransportTypeCronet:
+      return [GRPCCronetChannelFactory sharedInstance];
+    case GRPCTransportTypeInsecure:
+      return [GRPCInsecureChannelFactory sharedInstance];
+  }
 }
 
-+ (GRPCChannel *)secureChannelWithHost:(NSString *)host {
-  return [[GRPCChannel alloc] initWithHost:host secure:YES credentials:NULL channelArgs:NULL];
+- (NSDictionary *)channelArgs {
+  NSMutableDictionary *args = [NSMutableDictionary new];
+
+  NSString *userAgent = @"grpc-objc/" GRPC_OBJC_VERSION_STRING;
+  NSString *userAgentPrefix = _callOptions.userAgentPrefix;
+  if (userAgentPrefix.length != 0) {
+    args[@GRPC_ARG_PRIMARY_USER_AGENT_STRING] =
+        [_callOptions.userAgentPrefix stringByAppendingFormat:@" %@", userAgent];
+  } else {
+    args[@GRPC_ARG_PRIMARY_USER_AGENT_STRING] = userAgent;
+  }
+
+  NSString *hostNameOverride = _callOptions.hostNameOverride;
+  if (hostNameOverride) {
+    args[@GRPC_SSL_TARGET_NAME_OVERRIDE_ARG] = hostNameOverride;
+  }
+
+  if (_callOptions.responseSizeLimit) {
+    args[@GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH] =
+        [NSNumber numberWithUnsignedInteger:_callOptions.responseSizeLimit];
+  }
+
+  if (_callOptions.compressionAlgorithm != GRPC_COMPRESS_NONE) {
+    args[@GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM] =
+        [NSNumber numberWithInt:_callOptions.compressionAlgorithm];
+  }
+
+  if (_callOptions.keepaliveInterval != 0) {
+    args[@GRPC_ARG_KEEPALIVE_TIME_MS] =
+        [NSNumber numberWithUnsignedInteger:(NSUInteger)(_callOptions.keepaliveInterval * 1000)];
+    args[@GRPC_ARG_KEEPALIVE_TIMEOUT_MS] =
+        [NSNumber numberWithUnsignedInteger:(NSUInteger)(_callOptions.keepaliveTimeout * 1000)];
+  }
+
+  if (!_callOptions.retryEnabled) {
+    args[@GRPC_ARG_ENABLE_RETRIES] = [NSNumber numberWithInt:_callOptions.retryEnabled ? 1 : 0];
+  }
+
+  if (_callOptions.connectMinTimeout > 0) {
+    args[@GRPC_ARG_MIN_RECONNECT_BACKOFF_MS] =
+        [NSNumber numberWithUnsignedInteger:(NSUInteger)(_callOptions.connectMinTimeout * 1000)];
+  }
+  if (_callOptions.connectInitialBackoff > 0) {
+    args[@GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS] = [NSNumber
+        numberWithUnsignedInteger:(NSUInteger)(_callOptions.connectInitialBackoff * 1000)];
+  }
+  if (_callOptions.connectMaxBackoff > 0) {
+    args[@GRPC_ARG_MAX_RECONNECT_BACKOFF_MS] =
+        [NSNumber numberWithUnsignedInteger:(NSUInteger)(_callOptions.connectMaxBackoff * 1000)];
+  }
+
+  if (_callOptions.logContext != nil) {
+    args[@GRPC_ARG_MOBILE_LOG_CONTEXT] = _callOptions.logContext;
+  }
+
+  if (_callOptions.channelPoolDomain.length != 0) {
+    args[@GRPC_ARG_CHANNEL_POOL_DOMAIN] = _callOptions.channelPoolDomain;
+  }
+
+  [args addEntriesFromDictionary:_callOptions.additionalChannelArgs];
+
+  return args;
 }
 
-+ (GRPCChannel *)secureChannelWithHost:(NSString *)host
-                           credentials:(struct grpc_channel_credentials *)credentials
-                           channelArgs:(NSDictionary *)channelArgs {
-  return [[GRPCChannel alloc] initWithHost:host
-                                    secure:YES
-                               credentials:credentials
-                               channelArgs:channelArgs];
+- (id)copyWithZone:(NSZone *)zone {
+  GRPCChannelConfiguration *newConfig =
+      [[GRPCChannelConfiguration alloc] initWithHost:_host callOptions:_callOptions];
 
+  return newConfig;
 }
 
-+ (GRPCChannel *)insecureChannelWithHost:(NSString *)host
-                             channelArgs:(NSDictionary *)channelArgs {
-  return [[GRPCChannel alloc] initWithHost:host
-                                    secure:NO
-                               credentials:NULL
-                               channelArgs:channelArgs];
+- (BOOL)isEqual:(id)object {
+  if (![object isKindOfClass:[GRPCChannelConfiguration class]]) {
+    return NO;
+  }
+  GRPCChannelConfiguration *obj = (GRPCChannelConfiguration *)object;
+  if (!(obj.host == _host || (_host != nil && [obj.host isEqualToString:_host]))) return NO;
+  if (!(obj.callOptions == _callOptions || [obj.callOptions hasChannelOptionsEqualTo:_callOptions]))
+    return NO;
+
+  return YES;
+}
+
+- (NSUInteger)hash {
+  NSUInteger result = 31;
+  result ^= _host.hash;
+  result ^= _callOptions.channelOptionsHash;
+
+  return result;
+}
+
+@end
+
+@implementation GRPCChannel {
+  GRPCChannelConfiguration *_configuration;
+
+  grpc_channel *_unmanagedChannel;
+}
+
+- (instancetype)initWithChannelConfiguration:(GRPCChannelConfiguration *)channelConfiguration {
+  NSAssert(channelConfiguration != nil, @"channelConfiguration must not be empty.");
+  if (channelConfiguration == nil) {
+    return nil;
+  }
+
+  if ((self = [super init])) {
+    _configuration = [channelConfiguration copy];
+
+    // Create gRPC core channel object.
+    NSString *host = channelConfiguration.host;
+    NSAssert(host.length != 0, @"host cannot be nil");
+    NSDictionary *channelArgs;
+    if (channelConfiguration.callOptions.additionalChannelArgs.count != 0) {
+      NSMutableDictionary *args = [channelConfiguration.channelArgs mutableCopy];
+      [args addEntriesFromDictionary:channelConfiguration.callOptions.additionalChannelArgs];
+      channelArgs = args;
+    } else {
+      channelArgs = channelConfiguration.channelArgs;
+    }
+    id<GRPCChannelFactory> factory = channelConfiguration.channelFactory;
+    _unmanagedChannel = [factory createChannelWithHost:host channelArgs:channelArgs];
+    NSAssert(_unmanagedChannel != NULL, @"Failed to create channel");
+    if (_unmanagedChannel == NULL) {
+      NSLog(@"Unable to create channel.");
+      return nil;
+    }
+  }
+  return self;
 }
 
 - (grpc_call *)unmanagedCallWithPath:(NSString *)path
-                     completionQueue:(GRPCCompletionQueue *)queue {
-  return grpc_channel_create_call(_unmanagedChannel,
-                                  NULL, GRPC_PROPAGATE_DEFAULTS,
-                                  queue.unmanagedQueue,
-                                  path.UTF8String,
-                                  // Get "host" from "host:port"
-                                  // TODO(jcanizales): Use NSURLs throughout, to clarify these.
-                                  [_host componentsSeparatedByString:@":"][0].UTF8String,
-                                  gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+                     completionQueue:(GRPCCompletionQueue *)queue
+                         callOptions:(GRPCCallOptions *)callOptions {
+  NSAssert(path.length > 0, @"path must not be empty.");
+  NSAssert(queue != nil, @"completionQueue must not be empty.");
+  NSAssert(callOptions != nil, @"callOptions must not be empty.");
+  if (path.length == 0) return NULL;
+  if (queue == nil) return NULL;
+  if (callOptions == nil) return NULL;
+
+  grpc_call *call = NULL;
+  // No need to lock here since _unmanagedChannel is only changed in _dealloc
+  NSAssert(_unmanagedChannel != NULL, @"Channel should have valid unmanaged channel.");
+  if (_unmanagedChannel == NULL) return NULL;
+
+  NSString *serverAuthority =
+      callOptions.transportType == GRPCTransportTypeCronet ? nil : callOptions.serverAuthority;
+  NSTimeInterval timeout = callOptions.timeout;
+  NSAssert(timeout >= 0, @"Invalid timeout");
+  if (timeout < 0) return NULL;
+  grpc_slice host_slice = serverAuthority
+                              ? grpc_slice_from_copied_string(serverAuthority.UTF8String)
+                              : grpc_empty_slice();
+  grpc_slice path_slice = grpc_slice_from_copied_string(path.UTF8String);
+  gpr_timespec deadline_ms =
+      timeout == 0 ? gpr_inf_future(GPR_CLOCK_REALTIME)
+                   : gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                  gpr_time_from_millis((int64_t)(timeout * 1000), GPR_TIMESPAN));
+  call = grpc_channel_create_call(_unmanagedChannel, NULL, GRPC_PROPAGATE_DEFAULTS,
+                                  queue.unmanagedQueue, path_slice,
+                                  serverAuthority ? &host_slice : NULL, deadline_ms, NULL);
+  if (serverAuthority) {
+    grpc_slice_unref(host_slice);
+  }
+  grpc_slice_unref(path_slice);
+  NSAssert(call != nil, @"Unable to create call.");
+  if (call == NULL) {
+    NSLog(@"Unable to create call.");
+  }
+  return call;
+}
+
+- (void)dealloc {
+  if (_unmanagedChannel) {
+    grpc_channel_destroy(_unmanagedChannel);
+  }
 }
 
 @end

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -36,82 +21,114 @@
 
 #include <memory>
 
-#include <grpc++/channel.h>
 #include <grpc/grpc.h>
-#include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include <grpcpp/channel.h>
+#include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
 
 // Function pointer for custom checks.
-using CheckerFn =
-    std::function<void(const InteropClientContextInspector&,
-                       const SimpleRequest*, const SimpleResponse*)>;
+typedef std::function<void(const InteropClientContextInspector&,
+                           const SimpleRequest*, const SimpleResponse*)>
+    CheckerFn;
+
+typedef std::function<std::shared_ptr<Channel>(void)> ChannelCreationFunc;
 
 class InteropClient {
  public:
-  explicit InteropClient(std::shared_ptr<Channel> channel);
-  explicit InteropClient(
-      std::shared_ptr<Channel> channel,
-      bool new_stub_every_test_case);  // If new_stub_every_test_case is true,
-                                       // a new TestService::Stub object is
-                                       // created for every test case below
+  /// If new_stub_every_test_case is true, a new TestService::Stub object is
+  /// created for every test case
+  /// If do_not_abort_on_transient_failures is true, abort() is not called in
+  /// case of transient failures (like connection failures)
+  explicit InteropClient(ChannelCreationFunc channel_creation_func,
+                         bool new_stub_every_test_case,
+                         bool do_not_abort_on_transient_failures);
   ~InteropClient() {}
 
-  void Reset(std::shared_ptr<Channel> channel);
+  void Reset(const std::shared_ptr<Channel>& channel);
 
-  void DoEmpty();
-  void DoLargeUnary();
-  void DoLargeCompressedUnary();
-  void DoPingPong();
-  void DoHalfDuplex();
-  void DoRequestStreaming();
-  void DoResponseStreaming();
-  void DoResponseCompressedStreaming();
-  void DoResponseStreamingWithSlowConsumer();
-  void DoCancelAfterBegin();
-  void DoCancelAfterFirstResponse();
-  void DoTimeoutOnSleepingServer();
-  void DoEmptyStream();
-  void DoStatusWithMessage();
-  void DoCustomMetadata();
+  bool DoEmpty();
+  bool DoLargeUnary();
+  bool DoServerCompressedUnary();
+  bool DoClientCompressedUnary();
+  bool DoPingPong();
+  bool DoHalfDuplex();
+  bool DoRequestStreaming();
+  bool DoResponseStreaming();
+  bool DoServerCompressedStreaming();
+  bool DoClientCompressedStreaming();
+  bool DoResponseStreamingWithSlowConsumer();
+  bool DoCancelAfterBegin();
+  bool DoCancelAfterFirstResponse();
+  bool DoTimeoutOnSleepingServer();
+  bool DoEmptyStream();
+  bool DoStatusWithMessage();
+  bool DoCustomMetadata();
+  bool DoUnimplementedMethod();
+  bool DoUnimplementedService();
+  bool DoCacheableUnary();
+
+  // The following interop test are not yet part of the interop spec, and are
+  // not implemented cross-language. They are considered experimental for now,
+  // but at some point in the future, might be codified and implemented in all
+  // languages
+  bool DoChannelSoakTest(int32_t soak_iterations);
+  bool DoRpcSoakTest(int32_t soak_iterations);
+  bool DoLongLivedChannelTest(int32_t soak_iterations,
+                              int32_t iteration_interval);
+
   // Auth tests.
   // username is a string containing the user email
-  void DoJwtTokenCreds(const grpc::string& username);
-  void DoComputeEngineCreds(const grpc::string& default_service_account,
+  bool DoJwtTokenCreds(const grpc::string& username);
+  bool DoComputeEngineCreds(const grpc::string& default_service_account,
                             const grpc::string& oauth_scope);
   // username the GCE default service account email
-  void DoOauth2AuthToken(const grpc::string& username,
+  bool DoOauth2AuthToken(const grpc::string& username,
                          const grpc::string& oauth_scope);
   // username is a string containing the user email
-  void DoPerRpcCreds(const grpc::string& json_key);
+  bool DoPerRpcCreds(const grpc::string& json_key);
+  // default_service_account is the GCE default service account email
+  bool DoGoogleDefaultCredentials(const grpc::string& default_service_account);
 
  private:
   class ServiceStub {
    public:
     // If new_stub_every_call = true, pointer to a new instance of
     // TestServce::Stub is returned by Get() everytime it is called
-    ServiceStub(std::shared_ptr<Channel> channel, bool new_stub_every_call);
+    ServiceStub(ChannelCreationFunc channel_creation_func,
+                bool new_stub_every_call);
 
     TestService::Stub* Get();
+    UnimplementedService::Stub* GetUnimplementedServiceStub();
 
-    void Reset(std::shared_ptr<Channel> channel);
+    // forces channel to be recreated.
+    void ResetChannel();
 
    private:
+    ChannelCreationFunc channel_creation_func_;
     std::unique_ptr<TestService::Stub> stub_;
+    std::unique_ptr<UnimplementedService::Stub> unimplemented_service_stub_;
     std::shared_ptr<Channel> channel_;
     bool new_stub_every_call_;  // If true, a new stub is returned by every
                                 // Get() call
   };
 
-  void PerformLargeUnary(SimpleRequest* request, SimpleResponse* response);
+  bool PerformLargeUnary(SimpleRequest* request, SimpleResponse* response);
 
   /// Run \a custom_check_fn as an additional check.
-  void PerformLargeUnary(SimpleRequest* request, SimpleResponse* response,
-                         CheckerFn custom_checks_fn);
-  void AssertOkOrPrintErrorStatus(const Status& s);
+  bool PerformLargeUnary(SimpleRequest* request, SimpleResponse* response,
+                         const CheckerFn& custom_checks_fn);
+  bool AssertStatusOk(const Status& s,
+                      const grpc::string& optional_debug_string);
+  bool AssertStatusCode(const Status& s, StatusCode expected_code,
+                        const grpc::string& optional_debug_string);
+  bool TransientFailureOrAbort();
+
   ServiceStub serviceStub_;
+  /// If true, abort() is not called for transient failures
+  bool do_not_abort_on_transient_failures_;
 };
 
 }  // namespace testing

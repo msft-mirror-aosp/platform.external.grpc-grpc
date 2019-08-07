@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -51,6 +36,10 @@
 #import <RxLibrary/GRXWriter.h>
 
 #include <AvailabilityMacros.h>
+
+#include "GRPCCallOptions.h"
+
+NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark gRPC errors
 
@@ -146,7 +135,8 @@ typedef NS_ENUM(NSUInteger, GRPCErrorCode) {
 
   /**
    * The server is currently unavailable. This is most likely a transient condition and may be
-   * corrected by retrying with a backoff.
+   * corrected by retrying with a backoff. Note that it is not always safe to retry
+   * non-idempotent operations.
    */
   GRPCErrorCodeUnavailable = 14,
 
@@ -158,13 +148,172 @@ typedef NS_ENUM(NSUInteger, GRPCErrorCode) {
  * Keys used in |NSError|'s |userInfo| dictionary to store the response headers and trailers sent by
  * the server.
  */
-extern id const kGRPCHeadersKey;
-extern id const kGRPCTrailersKey;
+extern NSString *const kGRPCHeadersKey;
+extern NSString *const kGRPCTrailersKey;
+
+/** An object can implement this protocol to receive responses from server from a call. */
+@protocol GRPCResponseHandler<NSObject>
+
+@required
+
+/**
+ * All the responses must be issued to a user-provided dispatch queue. This property specifies the
+ * dispatch queue to be used for issuing the notifications.
+ */
+@property(atomic, readonly) dispatch_queue_t dispatchQueue;
+
+@optional
+
+/**
+ * Issued when initial metadata is received from the server.
+ */
+- (void)didReceiveInitialMetadata:(nullable NSDictionary *)initialMetadata;
+
+/**
+ * This method is deprecated and does not work with interceptors. To use GRPCCall2 interface with
+ * interceptor, implement didReceiveData: instead. To implement an interceptor, please leave this
+ * method unimplemented and implement didReceiveData: method instead. If this method and
+ * didReceiveRawMessage are implemented at the same time, implementation of this method will be
+ * ignored.
+ *
+ * Issued when a message is received from the server. The message is the raw data received from the
+ * server, with decompression and without proto deserialization.
+ */
+- (void)didReceiveRawMessage:(nullable NSData *)message;
+
+/**
+ * Issued when a decompressed message is received from the server. The message is decompressed, and
+ * deserialized if a marshaller is provided to the call (marshaller is work in progress).
+ */
+- (void)didReceiveData:(id)data;
+
+/**
+ * Issued when a call finished. If the call finished successfully, \a error is nil and \a
+ * trainingMetadata consists any trailing metadata received from the server. Otherwise, \a error
+ * is non-nil and contains the corresponding error information, including gRPC error codes and
+ * error descriptions.
+ */
+- (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
+                               error:(nullable NSError *)error;
+
+/**
+ * Issued when flow control is enabled for the call and a message written with writeData: method of
+ * GRPCCall2 is passed to gRPC core with SEND_MESSAGE operation.
+ */
+- (void)didWriteData;
+
+@end
+
+/**
+ * Call related parameters. These parameters are automatically specified by Protobuf. If directly
+ * using the \a GRPCCall2 class, users should specify these parameters manually.
+ */
+@interface GRPCRequestOptions : NSObject<NSCopying>
+
+- (instancetype)init NS_UNAVAILABLE;
+
++ (instancetype) new NS_UNAVAILABLE;
+
+/** Initialize with all properties. */
+- (instancetype)initWithHost:(NSString *)host
+                        path:(NSString *)path
+                      safety:(GRPCCallSafety)safety NS_DESIGNATED_INITIALIZER;
+
+/** The host serving the RPC service. */
+@property(copy, readonly) NSString *host;
+/** The path to the RPC call. */
+@property(copy, readonly) NSString *path;
+/**
+ * Specify whether the call is idempotent or cachable. gRPC may select different HTTP verbs for the
+ * call based on this information. The default verb used by gRPC is POST.
+ */
+@property(readonly) GRPCCallSafety safety;
+
+@end
 
 #pragma mark GRPCCall
 
-/** Represents a single gRPC remote call. */
+/**
+ * A \a GRPCCall2 object represents an RPC call.
+ */
+@interface GRPCCall2 : NSObject
+
+- (instancetype)init NS_UNAVAILABLE;
+
++ (instancetype) new NS_UNAVAILABLE;
+
+/**
+ * Designated initializer for a call.
+ * \param requestOptions Protobuf generated parameters for the call.
+ * \param responseHandler The object to which responses should be issued.
+ * \param callOptions Options for the call.
+ */
+- (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
+                       responseHandler:(id<GRPCResponseHandler>)responseHandler
+                           callOptions:(nullable GRPCCallOptions *)callOptions
+    NS_DESIGNATED_INITIALIZER;
+/**
+ * Convenience initializer for a call that uses default call options (see GRPCCallOptions.m for
+ * the default options).
+ */
+- (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
+                       responseHandler:(id<GRPCResponseHandler>)responseHandler;
+
+/**
+ * Starts the call. This function must only be called once for each instance.
+ */
+- (void)start;
+
+/**
+ * Cancel the request of this call at best effort. It attempts to notify the server that the RPC
+ * should be cancelled, and issue didCloseWithTrailingMetadata:error: callback with error code
+ * CANCELED if no other error code has already been issued.
+ */
+- (void)cancel;
+
+/**
+ * Send a message to the server. The data is subject to marshaller serialization and compression
+ * (marshaller is work in progress).
+ */
+- (void)writeData:(id)data;
+
+/**
+ * Finish the RPC request and half-close the call. The server may still send messages and/or
+ * trailers to the client. The method must only be called once and after start is called.
+ */
+- (void)finish;
+
+/**
+ * Tell gRPC to receive the next N gRPC message from gRPC core.
+ *
+ * This method should only be used when flow control is enabled. When flow control is not enabled,
+ * this method is a no-op.
+ */
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages;
+
+/**
+ * Get a copy of the original call options.
+ */
+@property(readonly, copy) GRPCCallOptions *callOptions;
+
+/** Get a copy of the original request options. */
+@property(readonly, copy) GRPCRequestOptions *requestOptions;
+
+@end
+
+NS_ASSUME_NONNULL_END
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnullability-completeness"
+
+/**
+ * This interface is deprecated. Please use \a GRPCcall2.
+ *
+ * Represents a single gRPC remote call.
+ */
 @interface GRPCCall : GRXWriter
+
+- (instancetype)init NS_UNAVAILABLE;
 
 /**
  * The container of the request headers of an RPC conforms to this protocol, which is a subset of
@@ -220,10 +369,12 @@ extern id const kGRPCTrailersKey;
  * messages to the response side of the call indefinitely (depending on the semantics of the
  * specific remote method called).
  * To finish a call right away, invoke cancel.
+ * host parameter should not contain the scheme (http:// or https://), only the name or IP addr
+ * and the port number, for example @"localhost:5050".
  */
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
-              requestsWriter:(GRXWriter *)requestsWriter NS_DESIGNATED_INITIALIZER;
+              requestsWriter:(GRXWriter *)requestWriter;
 
 /**
  * Finishes the request side of this call, notifies the server that the RPC should be cancelled, and
@@ -231,14 +382,21 @@ extern id const kGRPCTrailersKey;
  */
 - (void)cancel;
 
-// TODO(jcanizales): Let specify a deadline. As a category of GRXWriter?
+/**
+ * The following methods are deprecated.
+ */
++ (void)setCallSafety:(GRPCCallSafety)callSafety host:(NSString *)host path:(NSString *)path;
+@property(atomic, copy, readwrite) NSString *serverName;
+@property NSTimeInterval timeout;
+- (void)setResponseDispatchQueue:(dispatch_queue_t)queue;
+
 @end
 
 #pragma mark Backwards compatibiity
 
 /** This protocol is kept for backwards compatibility with existing code. */
 DEPRECATED_MSG_ATTRIBUTE("Use NSDictionary or NSMutableDictionary instead.")
-@protocol GRPCRequestHeaders <NSObject>
+@protocol GRPCRequestHeaders<NSObject>
 @property(nonatomic, readonly) NSUInteger count;
 
 - (id)objectForKeyedSubscript:(id)key;
@@ -251,6 +409,7 @@ DEPRECATED_MSG_ATTRIBUTE("Use NSDictionary or NSMutableDictionary instead.")
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated"
 /** This is only needed for backwards-compatibility. */
-@interface NSMutableDictionary (GRPCRequestHeaders) <GRPCRequestHeaders>
+@interface NSMutableDictionary (GRPCRequestHeaders)<GRPCRequestHeaders>
 @end
+#pragma clang diagnostic pop
 #pragma clang diagnostic pop

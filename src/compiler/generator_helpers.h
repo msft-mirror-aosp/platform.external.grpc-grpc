@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -44,7 +29,7 @@
 
 namespace grpc_generator {
 
-inline bool StripSuffix(grpc::string *filename, const grpc::string &suffix) {
+inline bool StripSuffix(grpc::string* filename, const grpc::string& suffix) {
   if (filename->length() >= suffix.length()) {
     size_t suffix_pos = filename->length() - suffix.length();
     if (filename->compare(suffix_pos, grpc::string::npos, suffix) == 0) {
@@ -56,7 +41,7 @@ inline bool StripSuffix(grpc::string *filename, const grpc::string &suffix) {
   return false;
 }
 
-inline bool StripPrefix(grpc::string *name, const grpc::string &prefix) {
+inline bool StripPrefix(grpc::string* name, const grpc::string& prefix) {
   if (name->length() >= prefix.length()) {
     if (name->substr(0, prefix.size()) == prefix) {
       *name = name->substr(prefix.size());
@@ -73,8 +58,8 @@ inline grpc::string StripProto(grpc::string filename) {
   return filename;
 }
 
-inline grpc::string StringReplace(grpc::string str, const grpc::string &from,
-                                  const grpc::string &to, bool replace_all) {
+inline grpc::string StringReplace(grpc::string str, const grpc::string& from,
+                                  const grpc::string& to, bool replace_all) {
   size_t pos = 0;
 
   do {
@@ -84,18 +69,18 @@ inline grpc::string StringReplace(grpc::string str, const grpc::string &from,
     }
     str.replace(pos, from.length(), to);
     pos += to.length();
-  } while(replace_all);
+  } while (replace_all);
 
   return str;
 }
 
-inline grpc::string StringReplace(grpc::string str, const grpc::string &from,
-                                  const grpc::string &to) {
+inline grpc::string StringReplace(grpc::string str, const grpc::string& from,
+                                  const grpc::string& to) {
   return StringReplace(str, from, to, true);
 }
 
-inline std::vector<grpc::string> tokenize(const grpc::string &input,
-                                          const grpc::string &delimiters) {
+inline std::vector<grpc::string> tokenize(const grpc::string& input,
+                                          const grpc::string& delimiters) {
   std::vector<grpc::string> tokens;
   size_t pos, last_pos = 0;
 
@@ -139,8 +124,8 @@ inline grpc::string LowerUnderscoreToUpperCamel(grpc::string str) {
   return result;
 }
 
-inline grpc::string FileNameInUpperCamel(const grpc::protobuf::FileDescriptor *file,
-                                         bool include_package_path) {
+inline grpc::string FileNameInUpperCamel(
+    const grpc::protobuf::FileDescriptor* file, bool include_package_path) {
   std::vector<grpc::string> tokens = tokenize(StripProto(file->name()), "/");
   grpc::string result = "";
   if (include_package_path) {
@@ -152,7 +137,8 @@ inline grpc::string FileNameInUpperCamel(const grpc::protobuf::FileDescriptor *f
   return result;
 }
 
-inline grpc::string FileNameInUpperCamel(const grpc::protobuf::FileDescriptor *file) {
+inline grpc::string FileNameInUpperCamel(
+    const grpc::protobuf::FileDescriptor* file) {
   return FileNameInUpperCamel(file, true);
 }
 
@@ -163,7 +149,8 @@ enum MethodType {
   METHODTYPE_BIDI_STREAMING
 };
 
-inline MethodType GetMethodType(const grpc::protobuf::MethodDescriptor *method) {
+inline MethodType GetMethodType(
+    const grpc::protobuf::MethodDescriptor* method) {
   if (method->client_streaming()) {
     if (method->server_streaming()) {
       return METHODTYPE_BIDI_STREAMING;
@@ -179,8 +166,8 @@ inline MethodType GetMethodType(const grpc::protobuf::MethodDescriptor *method) 
   }
 }
 
-inline void Split(const grpc::string &s, char delim,
-                  std::vector<grpc::string> *append_to) {
+inline void Split(const grpc::string& s, char delim,
+                  std::vector<grpc::string>* append_to) {
   std::istringstream iss(s);
   grpc::string piece;
   while (std::getline(iss, piece)) {
@@ -196,14 +183,14 @@ enum CommentType {
 
 // Get all the raw comments and append each line without newline to out.
 template <typename DescriptorType>
-inline void GetComment(const DescriptorType *desc, CommentType type,
-                       std::vector<grpc::string> *out) {
+inline void GetComment(const DescriptorType* desc, CommentType type,
+                       std::vector<grpc::string>* out) {
   grpc::protobuf::SourceLocation location;
   if (!desc->GetSourceLocation(&location)) {
     return;
   }
   if (type == COMMENTTYPE_LEADING || type == COMMENTTYPE_TRAILING) {
-    const grpc::string &comments = type == COMMENTTYPE_LEADING
+    const grpc::string& comments = type == COMMENTTYPE_LEADING
                                        ? location.leading_comments
                                        : location.trailing_comments;
     Split(comments, '\n', out);
@@ -223,8 +210,8 @@ inline void GetComment(const DescriptorType *desc, CommentType type,
 // For file level leading and detached leading comments, we return comments
 // above syntax line. Return nothing for trailing comments.
 template <>
-inline void GetComment(const grpc::protobuf::FileDescriptor *desc,
-                       CommentType type, std::vector<grpc::string> *out) {
+inline void GetComment(const grpc::protobuf::FileDescriptor* desc,
+                       CommentType type, std::vector<grpc::string>* out) {
   if (type == COMMENTTYPE_TRAILING) {
     return;
   }
@@ -251,9 +238,10 @@ inline void GetComment(const grpc::protobuf::FileDescriptor *desc,
 // Add prefix and newline to each comment line and concatenate them together.
 // Make sure there is a space after the prefix unless the line is empty.
 inline grpc::string GenerateCommentsWithPrefix(
-    const std::vector<grpc::string> &in, const grpc::string &prefix) {
+    const std::vector<grpc::string>& in, const grpc::string& prefix) {
   std::ostringstream oss;
-  for (const grpc::string &elem : in) {
+  for (auto it = in.begin(); it != in.end(); it++) {
+    const grpc::string& elem = *it;
     if (elem.empty()) {
       oss << prefix << "\n";
     } else if (elem[0] == ' ') {
@@ -265,10 +253,10 @@ inline grpc::string GenerateCommentsWithPrefix(
   return oss.str();
 }
 
-// Get leading or trailing comments in a string. Comment lines start with "// ".
-// Leading detached comments are put in in front of leading comments.
 template <typename DescriptorType>
-inline grpc::string GetCppComments(const DescriptorType *desc, bool leading) {
+inline grpc::string GetPrefixedComments(const DescriptorType* desc,
+                                        bool leading,
+                                        const grpc::string& prefix) {
   std::vector<grpc::string> out;
   if (leading) {
     grpc_generator::GetComment(
@@ -281,7 +269,7 @@ inline grpc::string GetCppComments(const DescriptorType *desc, bool leading) {
     grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_TRAILING,
                                &out);
   }
-  return GenerateCommentsWithPrefix(out, "//");
+  return GenerateCommentsWithPrefix(out, prefix);
 }
 
 }  // namespace grpc_generator

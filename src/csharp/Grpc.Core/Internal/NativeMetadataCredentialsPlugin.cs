@@ -1,32 +1,17 @@
 #region Copyright notice and license
-// Copyright 2015, Google Inc.
-// All rights reserved.
+// Copyright 2015 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 #endregion
 using System;
 using System.Runtime.InteropServices;
@@ -38,27 +23,22 @@ using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
-    internal delegate void NativeMetadataInterceptor(IntPtr statePtr, IntPtr serviceUrlPtr, IntPtr methodNamePtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy);
-
     internal class NativeMetadataCredentialsPlugin
     {
-        const string GetMetadataExceptionMsg = "Exception occured in metadata credentials plugin.";
+        const string GetMetadataExceptionStatusMsg = "Exception occurred in metadata credentials plugin.";
+        const string GetMetadataExceptionLogMsg = GetMetadataExceptionStatusMsg + " This is likely not a problem with gRPC itself. Please verify that the code supplying the metadata (usually an authentication token) works correctly.";
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<NativeMetadataCredentialsPlugin>();
         static readonly NativeMethods Native = NativeMethods.Get();
 
         AsyncAuthInterceptor interceptor;
-        GCHandle gcHandle;
-        NativeMetadataInterceptor nativeInterceptor;
         CallCredentialsSafeHandle credentials;
+        NativeCallbackRegistration callbackRegistration;
 
         public NativeMetadataCredentialsPlugin(AsyncAuthInterceptor interceptor)
         {
             this.interceptor = GrpcPreconditions.CheckNotNull(interceptor, "interceptor");
-            this.nativeInterceptor = NativeMetadataInterceptorHandler;
-
-            // Make sure the callback doesn't get garbage collected until it is destroyed.
-            this.gcHandle = GCHandle.Alloc(this.nativeInterceptor, GCHandleType.Normal);
-            this.credentials = Native.grpcsharp_metadata_credentials_create_from_plugin(nativeInterceptor);
+            this.callbackRegistration = NativeCallbackDispatcher.RegisterCallback(HandleUniversalCallback);
+            this.credentials = Native.grpcsharp_metadata_credentials_create_from_plugin(this.callbackRegistration.Tag);
         }
 
         public CallCredentialsSafeHandle Credentials
@@ -66,28 +46,34 @@ namespace Grpc.Core.Internal
             get { return credentials; }
         }
 
-        private void NativeMetadataInterceptorHandler(IntPtr statePtr, IntPtr serviceUrlPtr, IntPtr methodNamePtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy)
+        private int HandleUniversalCallback(IntPtr arg0, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5)
+        {
+            NativeMetadataInterceptorHandler(arg0, arg1, arg2, arg3, arg4 != IntPtr.Zero);
+            return 0;
+        }
+
+        private void NativeMetadataInterceptorHandler(IntPtr serviceUrlPtr, IntPtr methodNamePtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy)
         {
             if (isDestroy)
             {
-                gcHandle.Free();
+                this.callbackRegistration.Dispose();
                 return;
             }
 
             try
             {
-                var context = new AuthInterceptorContext(Marshal.PtrToStringAnsi(serviceUrlPtr),
-                                                         Marshal.PtrToStringAnsi(methodNamePtr));
-                StartGetMetadata(context, callbackPtr, userDataPtr);
+                var context = new AuthInterceptorContext(Marshal.PtrToStringAnsi(serviceUrlPtr), Marshal.PtrToStringAnsi(methodNamePtr));
+                // Make a guarantee that credentials_notify_from_plugin is invoked async to be compliant with c-core API.
+                ThreadPool.QueueUserWorkItem(async (stateInfo) => await GetMetadataAsync(context, callbackPtr, userDataPtr));
             }
             catch (Exception e)
             {
-                Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionMsg);
-                Logger.Error(e, GetMetadataExceptionMsg);
+                // eat the exception, we must not throw when inside callback from native code.
+                Logger.Error(e, "Exception occurred while invoking native metadata interceptor handler.");
             }
         }
 
-        private async Task StartGetMetadata(AuthInterceptorContext context, IntPtr callbackPtr, IntPtr userDataPtr)
+        private async Task GetMetadataAsync(AuthInterceptorContext context, IntPtr callbackPtr, IntPtr userDataPtr)
         {
             try
             {
@@ -101,8 +87,9 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionMsg);
-                Logger.Error(e, GetMetadataExceptionMsg);
+                string detail = GetMetadataExceptionStatusMsg + " " + e.ToString();
+                Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, detail);
+                Logger.Error(e, GetMetadataExceptionLogMsg);
             }
         }
     }

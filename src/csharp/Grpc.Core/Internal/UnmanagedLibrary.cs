@@ -1,33 +1,18 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
-// All rights reserved.
+// Copyright 2015 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #endregion
 
@@ -44,10 +29,9 @@ namespace Grpc.Core.Internal
 {
     /// <summary>
     /// Represents a dynamically loaded unmanaged library in a (partially) platform independent manner.
-    /// An important difference in library loading semantics is that on Windows, once we load a dynamic library using LoadLibrary,
-    /// that library becomes instantly available for <c>DllImport</c> P/Invoke calls referring to the same library name.
-    /// On Unix systems, dlopen has somewhat different semantics, so we need to use dlsym and <c>Marshal.GetDelegateForFunctionPointer</c>
-    /// to obtain delegates to native methods.
+    /// First, the native library is loaded using dlopen (on Unix systems) or using LoadLibrary (on Windows).
+    /// dlsym or GetProcAddress are then used to obtain symbol addresses. <c>Marshal.GetDelegateForFunctionPointer</c>
+    /// transforms the addresses into delegates to native methods.
     /// See http://stackoverflow.com/questions/13461989/p-invoke-to-dynamically-loaded-library-on-mono.
     /// </summary>
     internal class UnmanagedLibrary
@@ -67,11 +51,12 @@ namespace Grpc.Core.Internal
 
             Logger.Debug("Attempting to load native library \"{0}\"", this.libraryPath);
 
-            this.handle = PlatformSpecificLoadLibrary(this.libraryPath);
+            this.handle = PlatformSpecificLoadLibrary(this.libraryPath, out string loadLibraryErrorDetail);
 
             if (this.handle == IntPtr.Zero)
             {
-                throw new IOException(string.Format("Error loading native library \"{0}\"", this.libraryPath));
+                throw new IOException(string.Format("Error loading native library \"{0}\". {1}",
+                                                    this.libraryPath, loadLibraryErrorDetail));
             }
         }
 
@@ -80,13 +65,43 @@ namespace Grpc.Core.Internal
         /// </summary>
         /// <param name="symbolName"></param>
         /// <returns></returns>
-        public IntPtr LoadSymbol(string symbolName)
+        private IntPtr LoadSymbol(string symbolName)
         {
+            if (PlatformApis.IsWindows)
+            {
+                // See http://stackoverflow.com/questions/10473310 for background on this.
+                if (PlatformApis.Is64Bit)
+                {
+                    return Windows.GetProcAddress(this.handle, symbolName);
+                }
+                else
+                {
+                    // Yes, we could potentially predict the size... but it's a lot simpler to just try
+                    // all the candidates. Most functions have a suffix of @0, @4 or @8 so we won't be trying
+                    // many options - and if it takes a little bit longer to fail if we've really got the wrong
+                    // library, that's not a big problem. This is only called once per function in the native library.
+                    symbolName = "_" + symbolName + "@";
+                    for (int stackSize = 0; stackSize < 128; stackSize += 4)
+                    {
+                        IntPtr candidate = Windows.GetProcAddress(this.handle, symbolName + stackSize);
+                        if (candidate != IntPtr.Zero)
+                        {
+                            return candidate;
+                        }
+                    }
+                    // Fail.
+                    return IntPtr.Zero;
+                }
+            }
             if (PlatformApis.IsLinux)
             {
                 if (PlatformApis.IsMono)
                 {
                     return Mono.dlsym(this.handle, symbolName);
+                }
+                if (PlatformApis.IsNetCore)
+                {
+                    return CoreCLR.dlsym(this.handle, symbolName);
                 }
                 return Linux.dlsym(this.handle, symbolName);
             }
@@ -105,31 +120,52 @@ namespace Grpc.Core.Internal
             {
                 throw new MissingMethodException(string.Format("The native method \"{0}\" does not exist", methodName));
             }
-            return Marshal.GetDelegateForFunctionPointer(ptr, typeof(T)) as T;
+#if NETSTANDARD1_5 || NETSTANDARD2_0
+            return Marshal.GetDelegateForFunctionPointer<T>(ptr);  // non-generic version is obsolete
+#else
+            return Marshal.GetDelegateForFunctionPointer(ptr, typeof(T)) as T;  // generic version not available in .NET45
+#endif
         }
 
         /// <summary>
         /// Loads library in a platform specific way.
         /// </summary>
-        private static IntPtr PlatformSpecificLoadLibrary(string libraryPath)
+        private static IntPtr PlatformSpecificLoadLibrary(string libraryPath, out string errorMsg)
         {
             if (PlatformApis.IsWindows)
             {
+                // TODO(jtattermusch): populate the error on Windows
+                errorMsg = null;
                 return Windows.LoadLibrary(libraryPath);
             }
             if (PlatformApis.IsLinux)
             {
                 if (PlatformApis.IsMono)
                 {
-                    return Mono.dlopen(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
+                    return LoadLibraryPosix(Mono.dlopen, Mono.dlerror, libraryPath, out errorMsg);
                 }
-                return Linux.dlopen(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
+                if (PlatformApis.IsNetCore)
+                {
+                    return LoadLibraryPosix(CoreCLR.dlopen, CoreCLR.dlerror, libraryPath, out errorMsg);
+                }
+                return LoadLibraryPosix(Linux.dlopen, Linux.dlerror, libraryPath, out errorMsg);
             }
             if (PlatformApis.IsMacOSX)
             {
-                return MacOSX.dlopen(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
+                return LoadLibraryPosix(MacOSX.dlopen, MacOSX.dlerror, libraryPath, out errorMsg);
             }
             throw new InvalidOperationException("Unsupported platform.");
+        }
+
+        private static IntPtr LoadLibraryPosix(Func<string, int, IntPtr> dlopenFunc, Func<IntPtr> dlerrorFunc, string libraryPath, out string errorMsg)
+        {
+            errorMsg = null;
+            IntPtr ret = dlopenFunc(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
+            if (ret == IntPtr.Zero)
+            {
+                errorMsg = Marshal.PtrToStringAnsi(dlerrorFunc());
+            }
+            return ret;
         }
 
         private static string FirstValidLibraryPath(string[] libraryPathAlternatives)
@@ -142,19 +178,27 @@ namespace Grpc.Core.Internal
                     return path;
                 }
             }
-            throw new FileNotFoundException(String.Format("Error loading native library. Not found in any of the possible locations {0}", libraryPathAlternatives));
+            throw new FileNotFoundException(
+                String.Format("Error loading native library. Not found in any of the possible locations: {0}", 
+                    string.Join(",", libraryPathAlternatives)));
         }
 
         private static class Windows
         {
             [DllImport("kernel32.dll")]
             internal static extern IntPtr LoadLibrary(string filename);
+
+            [DllImport("kernel32.dll")]
+            internal static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
         }
 
         private static class Linux
         {
             [DllImport("libdl.so")]
             internal static extern IntPtr dlopen(string filename, int flags);
+
+            [DllImport("libdl.so")]
+            internal static extern IntPtr dlerror();
 
             [DllImport("libdl.so")]
             internal static extern IntPtr dlsym(IntPtr handle, string symbol);
@@ -164,6 +208,9 @@ namespace Grpc.Core.Internal
         {
             [DllImport("libSystem.dylib")]
             internal static extern IntPtr dlopen(string filename, int flags);
+
+            [DllImport("libSystem.dylib")]
+            internal static extern IntPtr dlerror();
 
             [DllImport("libSystem.dylib")]
             internal static extern IntPtr dlsym(IntPtr handle, string symbol);
@@ -182,6 +229,26 @@ namespace Grpc.Core.Internal
             internal static extern IntPtr dlopen(string filename, int flags);
 
             [DllImport("__Internal")]
+            internal static extern IntPtr dlerror();
+
+            [DllImport("__Internal")]
+            internal static extern IntPtr dlsym(IntPtr handle, string symbol);
+        }
+
+        /// <summary>
+        /// Similarly as for Mono on Linux, we load symbols for
+        /// dlopen and dlsym from the "libcoreclr.so",
+        /// to avoid the dependency on libc-dev Linux.
+        /// </summary>
+        private static class CoreCLR
+        {
+            [DllImport("libcoreclr.so")]
+            internal static extern IntPtr dlopen(string filename, int flags);
+
+            [DllImport("libcoreclr.so")]
+            internal static extern IntPtr dlerror();
+
+            [DllImport("libcoreclr.so")]
             internal static extern IntPtr dlsym(IntPtr handle, string symbol);
         }
     }

@@ -53,8 +53,7 @@
         target_dict['name'] == 'grpc++' or
         target_dict['name'] == 'grpc++_codegen_lib'):
       deps.append("//external:protobuf_clib")
-    elif (target_dict['name'] == 'grpc' or
-          target_dict['name'] == 'grpc_unsecure'):
+    elif target_dict['name'] == 'grpc':
       deps.append("//external:zlib")
     for d in target_dict.get('deps', []):
       if d.find('//') == 0 or d[0] == ':':

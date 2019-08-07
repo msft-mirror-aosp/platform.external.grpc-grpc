@@ -117,11 +117,7 @@
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
-#ifdef _LP64
-#define GPR_ARCH_64 1
-#else /* _LP64 */
 #define GPR_ARCH_32 1
-#endif /* _LP64 */
 #define GPR_CPU_LINUX 1
 #define GPR_GCC_SYNC 1
 #define GPR_GCC_TLS 1
@@ -134,6 +130,7 @@
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_FILE 1
 #define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_LOG
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1

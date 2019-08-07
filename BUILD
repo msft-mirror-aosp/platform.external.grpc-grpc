@@ -102,9 +102,7 @@ cc_library(
     "src/core/lib/support/tmpfile_msys.c",
     "src/core/lib/support/tmpfile_posix.c",
     "src/core/lib/support/tmpfile_win32.c",
-   # This file has an error when compiling for x86_64 and it's
-   # not needed. See: https://bugs.chromium.org/p/chromium/issues/detail?id=661171
-   # "src/core/lib/support/wrap_memcpy.c",
+    "src/core/lib/support/wrap_memcpy.c",
   ],
   hdrs = [
     "include/grpc/support/alloc.h",
@@ -797,8 +795,6 @@ cc_library(
     "include/grpc/impl/codegen/sync_posix.h",
     "include/grpc/impl/codegen/sync_win32.h",
     "include/grpc/impl/codegen/time.h",
-    "include/grpc/grpc_security.h",
-    "include/grpc/grpc_security_constants.h",
     "include/grpc/census.h",
   ],
   includes = [
@@ -806,7 +802,6 @@ cc_library(
     ".",
   ],
   deps = [
-    "//external:zlib",
     ":gpr",
     "//external:nanopb",
   ],
@@ -1132,6 +1127,7 @@ cc_library(
     "//external:protobuf_clib",
     ":gpr",
     ":grpc_unsecure",
+    ":grpc",
   ],
 )
 
@@ -1726,5 +1722,83 @@ cc_binary(
   deps = [
     "//external:protobuf_compiler",
     ":grpc_plugin_support",
+  ],
+)
+
+
+
+
+
+
+
+
+objc_path = "src/objective-c"
+
+rx_library_path = objc_path + "/RxLibrary"
+
+objc_library(
+  name = "rx_library",
+  hdrs = glob([
+    rx_library_path + "/*.h",
+    rx_library_path + "/transformations/*.h",
+  ]),
+  srcs = glob([
+    rx_library_path + "/*.m",
+    rx_library_path + "/transformations/*.m",
+  ]),
+  includes = [objc_path],
+  deps = [
+    ":rx_library_private",
+  ],
+)
+
+objc_library(
+  name = "rx_library_private",
+  hdrs = glob([rx_library_path + "/private/*.h"]),
+  srcs = glob([rx_library_path + "/private/*.m"]),
+  visibility = ["//visibility:private"],
+)
+
+objc_client_path = objc_path + "/GRPCClient"
+
+objc_library(
+  name = "grpc_client",
+  hdrs = glob([
+    objc_client_path + "/*.h",
+    objc_client_path + "/private/*.h",
+  ]),
+  srcs = glob([
+    objc_client_path + "/*.m",
+    objc_client_path + "/private/*.m",
+  ]),
+  includes = [objc_path],
+  bundles = [":gRPCCertificates"],
+  deps = [
+    ":grpc_objc",
+    ":rx_library",
+  ],
+)
+
+objc_bundle_library(
+    # The choice of name is signicant here, since it determines the bundle name.
+    name = "gRPCCertificates",
+    resources = ["etc/roots.pem"],
+)
+
+proto_objc_rpc_path = objc_path + "/ProtoRPC"
+
+objc_library(
+  name = "proto_objc_rpc",
+  hdrs = glob([
+    proto_objc_rpc_path + "/*.h",
+  ]),
+  srcs = glob([
+    proto_objc_rpc_path + "/*.m",
+  ]),
+  includes = [objc_path],
+  deps = [
+    ":grpc_client",
+    ":rx_library",
+    "//external:protobuf_objc",
   ],
 )

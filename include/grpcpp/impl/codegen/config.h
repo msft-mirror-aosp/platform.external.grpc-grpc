@@ -34,7 +34,8 @@ namespace grpc {
 
 typedef GRPC_CUSTOM_STRING string;
 
-using std::to_string;
+// Android Studio: std::to_string not available on android
+// using std::to_string;
 
 }  // namespace grpc
 

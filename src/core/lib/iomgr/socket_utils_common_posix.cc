@@ -431,7 +431,14 @@ grpc_error* grpc_create_dualstack_socket_using_factory(
     family = AF_INET;
   }
   *dsmode = family == AF_INET ? GRPC_DSMODE_IPV4 : GRPC_DSMODE_NONE;
-  *newfd = create_socket(factory, family, type, protocol);
+  // Special handling for Android Studio Profilers.
+  // Check whether a connected fd is already provided by the caller of gRPC.
+  if (family == AF_UNIX && addr->sa_data[0] == '&') {
+    // Use the provided connected fd directly.
+    *newfd = atoi(&addr->sa_data[1]);
+  } else {
+    *newfd = create_socket(factory, family, type, protocol);
+  }
   return error_for_fd(*newfd, resolved_addr);
 }
 

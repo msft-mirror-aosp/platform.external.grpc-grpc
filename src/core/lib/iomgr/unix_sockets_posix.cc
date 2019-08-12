@@ -63,6 +63,24 @@ grpc_error* grpc_resolve_unix_domain_address(const char* name,
   strncpy(un->sun_path, name, sizeof(un->sun_path));
   (*addrs)->addrs->len =
       static_cast<socklen_t>(strlen(un->sun_path) + sizeof(un->sun_family) + 1);
+  // Special handling for Android Studio Profilers.
+  // Supports Unix abstract domain socket if the input address is a
+  // unix socket name and the socket name starts with '@'. For example,
+  // "unix:@AbstractSocketName". The name of the abstract socket doesn't
+  // include the '@' in "unix:@".
+  //
+  // Note the length of address will be reduce by 1. When GRPC handles a Unix
+  // socket, it assumes it is a pathname socket that "can be bound to a
+  // null-terminated filesystem pathname using bind(2)". Therefore, the
+  // length includes the null byte at the end of the sun_path. But for
+  // abstract sockets null bytes "have no special significance". We choose
+  // not to include the terminating null byte to make the socket name easy to
+  // see and type in shell (e.g., adb forward). See more details about lengths
+  // at http://man7.org/linux/man-pages/man7/unix.7.html .
+  if (un->sun_path[0] == '@') {
+    un->sun_path[0] = '\0';
+    (*addrs)->addrs->len--;
+  }
   return GRPC_ERROR_NONE;
 }
 

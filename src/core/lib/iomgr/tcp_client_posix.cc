@@ -28,6 +28,7 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/un.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -295,13 +296,35 @@ void grpc_tcp_client_create_from_prepared_fd(
     const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
     grpc_millis deadline, grpc_endpoint** ep) {
   const int fd = grpc_fd_wrapped_fd(fdobj);
-  int err;
+  int err = 0;
   async_connect* ac;
-  do {
-    err = connect(fd, reinterpret_cast<const grpc_sockaddr*>(addr->addr),
-                  addr->len);
-  } while (err < 0 && errno == EINTR);
+  // Special handling for Android Studio Profilers.
+  // Check Unix-specific socket types.
+  auto* un = reinterpret_cast<const struct sockaddr_un*>(addr->addr);
+  if (un->sun_path[0] == '&') {
+    // A connected fd is provided by the caller of gRPC.
+    // No need to call connect(). Do nothing here.
+  } else {
+    // Make a copy of addr so it can be modified to support abstract socket.
+    grpc_resolved_address addr_copy = *addr;
+    auto* un_copy = reinterpret_cast<struct sockaddr_un*>(&addr_copy.addr);
+    if (un_copy->sun_path[0] == '@') {
+      // This is a Unix abstract domain socket. Set the first char to '\0'.
+      un_copy->sun_path[0] = '\0';
+      // The length includes the leading '\0' but not the terminating '\0'.
+      // Not including the terminating null byte to make the socket name easy to
+      // see and type in shell (e.g., adb forward).
+      addr_copy.len =
+          1 + strlen(&un_copy->sun_path[1]) + sizeof(un_copy->sun_family);
+    }
+    do {
+      err = connect(fd, reinterpret_cast<const grpc_sockaddr*>(addr_copy.addr),
+                    addr_copy.len);
+    } while (err < 0 && errno == EINTR);
+  }
   if (err >= 0) {
+    // Use addr not addr_copy to obtain the string representation as
+    // grpc_sockaddr_to_uri(..) considers string null-terminated.
     char* addr_str = grpc_sockaddr_to_uri(addr);
     *ep = grpc_tcp_client_create_from_fd(fdobj, channel_args, addr_str);
     gpr_free(addr_str);
@@ -321,6 +344,8 @@ void grpc_tcp_client_create_from_prepared_fd(
   ac->ep = ep;
   ac->fd = fdobj;
   ac->interested_parties = interested_parties;
+  // Use addr not addr_copy to obtain the string representation as
+  // grpc_sockaddr_to_uri(..) considers strings null-terminated.
   ac->addr_str = grpc_sockaddr_to_uri(addr);
   gpr_mu_init(&ac->mu);
   ac->refs = 2;

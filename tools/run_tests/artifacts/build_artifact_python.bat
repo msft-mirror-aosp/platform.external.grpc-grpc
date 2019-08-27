@@ -22,6 +22,10 @@ pip install -rrequirements.txt
 
 set GRPC_PYTHON_BUILD_WITH_CYTHON=1
 
+@rem Allow build_ext to build C/C++ files in parallel
+@rem by enabling a monkeypatch. It speeds up the build a lot.
+set GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=2
+
 mkdir -p %ARTIFACTS_OUT%
 set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 
@@ -41,6 +45,10 @@ python setup.py bdist_wheel || goto :error
 pushd tools\distrib\python\grpcio_tools
 python setup.py bdist_wheel || goto :error
 popd
+
+@rem Ensure the generate artifacts are valid.
+python -m pip install twine
+python -m twine check dist\* tools\distrib\python\grpcio_tools\dist\* || goto :error
 
 xcopy /Y /I /S dist\* %ARTIFACT_DIR% || goto :error
 xcopy /Y /I /S tools\distrib\python\grpcio_tools\dist\* %ARTIFACT_DIR% || goto :error

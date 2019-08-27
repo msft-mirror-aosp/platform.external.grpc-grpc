@@ -37,6 +37,12 @@ class ChannelTest extends PHPUnit_Framework_TestCase
         $this->assertSame('Grpc\Channel', get_class($this->channel));
     }
 
+    public function testConstructorCreateSsl()
+    {
+        new Grpc\Channel('localhost:50033', 
+            ['credentials' => \Grpc\ChannelCredentials::createSsl()]);
+    }
+
     public function testGetConnectivityState()
     {
         $this->channel = new Grpc\Channel('localhost:50001',
@@ -599,10 +605,10 @@ class ChannelTest extends PHPUnit_Framework_TestCase
     public function testPersistentChannelForceNewOldChannelIdle2()
     {
 
-        $this->channel1 = new Grpc\Channel('localhost:50029', [
+        $this->channel1 = new Grpc\Channel('localhost:50032', [
             "grpc_target_persist_bound" => 2,
         ]);
-        $this->channel2 = new Grpc\Channel('localhost:50029', []);
+        $this->channel2 = new Grpc\Channel('localhost:50032', []);
 
         // try to connect on channel2
         $state = $this->channel1->getConnectivityState(true);

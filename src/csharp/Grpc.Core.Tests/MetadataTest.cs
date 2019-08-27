@@ -73,6 +73,23 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public void KeysAreNormalized_UppercaseKey()
+        {
+            var uppercaseKey = "ABC";
+            var entry = new Metadata.Entry(uppercaseKey, "XYZ");
+            Assert.AreEqual("abc", entry.Key);
+        }
+
+        [Test]
+        public void KeysAreNormalized_LowercaseKey()
+        {
+            var lowercaseKey = "abc";
+            var entry = new Metadata.Entry(lowercaseKey, "XYZ");
+            // no allocation if key already lowercase
+            Assert.AreSame(lowercaseKey, entry.Key);
+        }
+
+        [Test]
         public void Entry_ConstructionPreconditions()
         {
             Assert.Throws(typeof(ArgumentNullException), () => new Metadata.Entry(null, "xyz"));
@@ -94,25 +111,31 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
-        public void Entry_CreateUnsafe_Ascii()
+        public unsafe void Entry_CreateUnsafe_Ascii()
         {
             var bytes = new byte[] { (byte)'X', (byte)'y' };
-            var entry = Metadata.Entry.CreateUnsafe("abc", bytes);
-            Assert.IsFalse(entry.IsBinary);
-            Assert.AreEqual("abc", entry.Key);
-            Assert.AreEqual("Xy", entry.Value);
-            CollectionAssert.AreEqual(bytes, entry.ValueBytes);
+            fixed (byte* ptr = bytes)
+            {
+                var entry = Metadata.Entry.CreateUnsafe("abc", new IntPtr(ptr), bytes.Length);
+                Assert.IsFalse(entry.IsBinary);
+                Assert.AreEqual("abc", entry.Key);
+                Assert.AreEqual("Xy", entry.Value);
+                CollectionAssert.AreEqual(bytes, entry.ValueBytes);
+            }
         }
 
         [Test]
-        public void Entry_CreateUnsafe_Binary()
+        public unsafe void Entry_CreateUnsafe_Binary()
         {
             var bytes = new byte[] { 1, 2, 3 };
-            var entry = Metadata.Entry.CreateUnsafe("abc-bin", bytes);
-            Assert.IsTrue(entry.IsBinary);
-            Assert.AreEqual("abc-bin", entry.Key);
-            Assert.Throws(typeof(InvalidOperationException), () => { var v = entry.Value; });
-            CollectionAssert.AreEqual(bytes, entry.ValueBytes);
+            fixed (byte* ptr = bytes)
+            {
+                var entry = Metadata.Entry.CreateUnsafe("abc-bin", new IntPtr(ptr), bytes.Length);
+                Assert.IsTrue(entry.IsBinary);
+                Assert.AreEqual("abc-bin", entry.Key);
+                Assert.Throws(typeof(InvalidOperationException), () => { var v = entry.Value; });
+                CollectionAssert.AreEqual(bytes, entry.ValueBytes);
+            }
         }
 
         [Test]

@@ -14,6 +14,12 @@
 
 FROM gcr.io/oss-fuzz-base/base-builder
 
+# -------------------------- WARNING --------------------------------------
+# If you are making changes to this file, consider changing
+# https://github.com/google/oss-fuzz/blob/master/projects/grpc/Dockerfile
+# accordingly.
+# -------------------------------------------------------------------------
+
 # Install basic packages and Bazel dependencies.
 RUN apt-get update && apt-get install -y software-properties-common python-software-properties
 RUN add-apt-repository ppa:webupd8team/java
@@ -44,9 +50,17 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 t
 
 #========================
 # Bazel installation
-RUN echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" > /etc/apt/sources.list.d/bazel.list
-RUN curl https://bazel.build/bazel-release.pub.gpg | apt-key add -
-RUN apt-get -y update && apt-get -y install bazel=0.15.0 && apt-get clean
+
+# Must be in sync with tools/bazel
+ENV BAZEL_VERSION 0.26.0
+
+# The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
+ENV DISABLE_BAZEL_WRAPPER 1
+
+RUN apt-get update && apt-get install -y wget && apt-get clean
+RUN wget "https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/bazel-$BAZEL_VERSION-installer-linux-x86_64.sh" && \
+  bash ./bazel-$BAZEL_VERSION-installer-linux-x86_64.sh && \
+  rm bazel-$BAZEL_VERSION-installer-linux-x86_64.sh
 
 
 RUN mkdir -p /var/local/jenkins

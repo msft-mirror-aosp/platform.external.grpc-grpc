@@ -18,6 +18,9 @@ import sys
 
 import setuptools
 
+_PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
+_README_PATH = os.path.join(_PACKAGE_PATH, 'README.rst')
+
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -69,7 +72,7 @@ try:
         'grpcio-tools=={version}'.format(version=grpc_version.VERSION),)
     COMMAND_CLASS = {
         # Run preprocess from the repository *before* doing any packaging!
-        'preprocess': _reflection_commands.CopyProtoModules,
+        'preprocess': _reflection_commands.Preprocess,
         'build_package_protos': _reflection_commands.BuildPackageProtos,
     }
 except ImportError:
@@ -85,6 +88,7 @@ setuptools.setup(
     version=grpc_version.VERSION,
     license='Apache License 2.0',
     description='Standard Protobuf Reflection Service for gRPC',
+    long_description=open(_README_PATH, 'r').read(),
     author='The gRPC Authors',
     author_email='grpc-io@googlegroups.com',
     classifiers=CLASSIFIERS,

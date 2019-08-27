@@ -21,6 +21,7 @@
 
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
+#include <grpcpp/channel.h>
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server_builder.h>
@@ -152,6 +153,7 @@ class Server {
 std::unique_ptr<Server> CreateSynchronousServer(const ServerConfig& config);
 std::unique_ptr<Server> CreateAsyncServer(const ServerConfig& config);
 std::unique_ptr<Server> CreateAsyncGenericServer(const ServerConfig& config);
+std::unique_ptr<Server> CreateCallbackServer(const ServerConfig& config);
 
 }  // namespace testing
 }  // namespace grpc

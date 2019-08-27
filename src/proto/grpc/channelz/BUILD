@@ -24,3 +24,21 @@ grpc_proto_library(
     has_services = True,
     well_known_protos = True,
 )
+
+proto_library(
+    name = "channelz_proto_descriptors",
+    srcs = ["channelz.proto"],
+    deps = [
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:timestamp_proto",
+        "@com_google_protobuf//:wrappers_proto",
+    ],
+)
+
+filegroup(
+    name = "channelz_proto_file",
+    srcs = [
+        "channelz.proto",
+    ],
+)

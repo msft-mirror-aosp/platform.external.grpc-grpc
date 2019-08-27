@@ -24,7 +24,33 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//:gpr",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "global_config_test",
+    srcs = ["global_config_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "global_config_env_test",
+    srcs = ["global_config_env_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -34,7 +60,30 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//:gpr",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "host_port_test",
+    srcs = ["host_port_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "grpc_core_map_test",
+    srcs = ["map_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr_base",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -47,7 +96,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//:gpr_base",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -60,7 +109,20 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//:inlined_vector",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "optional_test",
+    srcs = ["optional_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:optional",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -73,7 +135,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//:orphanable",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -86,7 +148,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//:ref_counted",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -100,7 +162,20 @@ grpc_cc_test(
     deps = [
         "//:ref_counted",
         "//:ref_counted_ptr",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "string_view_test",
+    srcs = ["string_view_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr_base",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -110,6 +185,6 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//:gpr",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
     ],
 )

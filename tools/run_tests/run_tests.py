@@ -61,7 +61,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 }
 
 _POLLING_STRATEGIES = {
-    'linux': ['epollex', 'epollsig', 'epoll1', 'poll', 'poll-cv'],
+    'linux': ['epollex', 'epoll1', 'poll'],
     'mac': ['poll'],
 }
 
@@ -106,6 +106,7 @@ def platform_string():
 
 
 _DEFAULT_TIMEOUT_SECONDS = 5 * 60
+_PRE_BUILD_STEP_TIMEOUT_SECONDS = 10 * 60
 
 
 def run_shell_command(cmd, env=None, cwd=None):
@@ -344,15 +345,6 @@ class CLanguage(object):
                         # Scale overall test timeout if running under various sanitizers.
                         # scaling value is based on historical data analysis
                         timeout_scaling *= 3
-                    elif polling_strategy == 'poll-cv':
-                        # scale test timeout if running with poll-cv
-                        # sanitizer and poll-cv scaling is not cumulative to ensure
-                        # reasonable timeout values.
-                        # TODO(jtattermusch): based on historical data and 5min default
-                        # test timeout poll-cv scaling is currently not useful.
-                        # Leaving here so it can be reintroduced if the default test timeout
-                        # is decreased in the future.
-                        timeout_scaling *= 1
 
                 if self.config.build_config in target['exclude_configs']:
                     continue
@@ -756,17 +748,23 @@ class PythonLanguage(object):
 
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/python_%s_%s' % (
-            self.python_manager_name(), _docker_arch_suffix(self.args.arch))
+            self._python_manager_name(), _docker_arch_suffix(self.args.arch))
 
-    def python_manager_name(self):
-        if self.args.compiler in ['python3.5', 'python3.6']:
-            return 'pyenv'
+    def _python_manager_name(self):
+        """Choose the docker image to use based on python version."""
+        if self.args.compiler in [
+                'python2.7', 'python3.5', 'python3.6', 'python3.7', 'python3.8'
+        ]:
+            return 'stretch_' + self.args.compiler[len('python'):]
         elif self.args.compiler == 'python_alpine':
             return 'alpine'
-        else:
+        elif self.args.compiler == 'python3.4':
             return 'jessie'
+        else:
+            return 'stretch_3.7'
 
     def _get_pythons(self, args):
+        """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
         if args.arch == 'x86':
             bits = '32'
         else:
@@ -825,6 +823,18 @@ class PythonLanguage(object):
             minor='6',
             bits=bits,
             config_vars=config_vars)
+        python37_config = _python_config_generator(
+            name='py37',
+            major='3',
+            minor='7',
+            bits=bits,
+            config_vars=config_vars)
+        python38_config = _python_config_generator(
+            name='py38',
+            major='3',
+            minor='8',
+            bits=bits,
+            config_vars=config_vars)
         pypy27_config = _pypy_config_generator(
             name='pypy', major='2', config_vars=config_vars)
         pypy32_config = _pypy_config_generator(
@@ -836,7 +846,7 @@ class PythonLanguage(object):
             else:
                 return (
                     python27_config,
-                    python34_config,
+                    python37_config,
                 )
         elif args.compiler == 'python2.7':
             return (python27_config,)
@@ -846,6 +856,10 @@ class PythonLanguage(object):
             return (python35_config,)
         elif args.compiler == 'python3.6':
             return (python36_config,)
+        elif args.compiler == 'python3.7':
+            return (python37_config,)
+        elif args.compiler == 'python3.8':
+            return (python38_config,)
         elif args.compiler == 'pypy':
             return (pypy27_config,)
         elif args.compiler == 'pypy3':
@@ -858,6 +872,8 @@ class PythonLanguage(object):
                 python34_config,
                 python35_config,
                 python36_config,
+                python37_config,
+                # TODO: Add Python 3.8 once it's released.
             )
         else:
             raise Exception('Compiler %s not supported.' % args.compiler)
@@ -922,19 +938,12 @@ class CSharpLanguage(object):
         self.config = config
         self.args = args
         if self.platform == 'windows':
-            _check_compiler(self.args.compiler, ['coreclr', 'default'])
+            _check_compiler(self.args.compiler, ['default', 'coreclr'])
             _check_arch(self.args.arch, ['default'])
             self._cmake_arch_option = 'x64'
-            self._make_options = []
         else:
             _check_compiler(self.args.compiler, ['default', 'coreclr'])
-            self._docker_distro = 'jessie'
-
-            if self.platform == 'mac':
-                # TODO(jtattermusch): EMBED_ZLIB=true currently breaks the mac build
-                self._make_options = ['EMBED_OPENSSL=true']
-            else:
-                self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
+            self._docker_distro = 'stretch'
 
     def test_specs(self):
         with open('src/csharp/tests.json') as f:
@@ -946,7 +955,7 @@ class CSharpLanguage(object):
         assembly_extension = '.exe'
 
         if self.args.compiler == 'coreclr':
-            assembly_subdir += '/netcoreapp1.0'
+            assembly_subdir += '/netcoreapp2.1'
             runtime_cmd = ['dotnet', 'exec']
             assembly_extension = '.dll'
         else:
@@ -1010,7 +1019,7 @@ class CSharpLanguage(object):
         return ['grpc_csharp_ext']
 
     def make_options(self):
-        return self._make_options
+        return []
 
     def build_steps(self):
         if self.platform == 'windows':
@@ -1028,7 +1037,9 @@ class CSharpLanguage(object):
         if self.platform == 'windows':
             return 'cmake/build/%s/Makefile' % self._cmake_arch_option
         else:
-            return 'Makefile'
+            # no need to set x86 specific flags as run_tests.py
+            # currently forbids x86 C# builds on both Linux and MacOS.
+            return 'cmake/build/Makefile'
 
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/csharp_%s_%s' % (
@@ -1046,81 +1057,99 @@ class ObjCLanguage(object):
         _check_compiler(self.args.compiler, ['default'])
 
     def test_specs(self):
-        return [
-            self.config.job_spec(
-                ['src/objective-c/tests/run_tests.sh'],
-                timeout_seconds=60 * 60,
-                shortname='objc-tests',
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS),
-            self.config.job_spec(
-                ['src/objective-c/tests/run_plugin_tests.sh'],
-                timeout_seconds=60 * 60,
-                shortname='objc-plugin-tests',
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS),
+        out = []
+        out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
                 timeout_seconds=10 * 60,
-                shortname='objc-build-example-helloworld',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'HelloWorld',
-                    'EXAMPLE_PATH': 'examples/objective-c/helloworld'
-                }),
-            self.config.job_spec(
-                ['src/objective-c/tests/build_one_example.sh'],
-                timeout_seconds=10 * 60,
-                shortname='objc-build-example-routeguide',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'RouteGuideClient',
-                    'EXAMPLE_PATH': 'examples/objective-c/route_guide'
-                }),
-            self.config.job_spec(
-                ['src/objective-c/tests/build_one_example.sh'],
-                timeout_seconds=10 * 60,
-                shortname='objc-build-example-authsample',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'AuthSample',
-                    'EXAMPLE_PATH': 'examples/objective-c/auth_sample'
-                }),
-            self.config.job_spec(
-                ['src/objective-c/tests/build_one_example.sh'],
-                timeout_seconds=10 * 60,
-                shortname='objc-build-example-sample',
+                shortname='ios-buildtest-example-sample',
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'Sample',
-                    'EXAMPLE_PATH': 'src/objective-c/examples/Sample'
-                }),
+                    'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
+                    'FRAMEWORKS': 'NO'
+                }))
+        out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
                 timeout_seconds=10 * 60,
-                shortname='objc-build-example-sample-frameworks',
+                shortname='ios-buildtest-example-sample-frameworks',
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'Sample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
                     'FRAMEWORKS': 'YES'
-                }),
+                }))
+        out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
                 timeout_seconds=10 * 60,
-                shortname='objc-build-example-switftsample',
+                shortname='ios-buildtest-example-switftsample',
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'SwiftSample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/SwiftSample'
-                }),
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_plugin_tests.sh'],
+                timeout_seconds=60 * 60,
+                shortname='ios-test-plugintest',
+                cpu_cost=1e6,
+                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        out.append(
             self.config.job_spec(
                 ['test/core/iomgr/ios/CFStreamTests/run_tests.sh'],
-                timeout_seconds=10 * 60,
-                shortname='cfstream-tests',
+                timeout_seconds=20 * 60,
+                shortname='ios-test-cfstream-tests',
                 cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS),
-        ]
+                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=60 * 60,
+                shortname='ios-test-unittests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'UnitTests'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=60 * 60,
+                shortname='ios-test-interoptests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'InteropTests'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=60 * 60,
+                shortname='ios-test-cronettests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'CronetTests'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['test/cpp/ios/run_tests.sh'],
+                timeout_seconds=20 * 60,
+                shortname='ios-cpp-test-cronet',
+                cpu_cost=1e6,
+                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=60 * 60,
+                shortname='mac-test-basictests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'MacTests',
+                    'PLATFORM': 'macos'
+                }))
+
+        return sorted(out)
 
     def pre_build_steps(self):
         return []
@@ -1135,6 +1164,7 @@ class ObjCLanguage(object):
         return [
             ['src/objective-c/tests/build_tests.sh'],
             ['test/core/iomgr/ios/CFStreamTests/build_tests.sh'],
+            ['test/cpp/ios/build_tests.sh'],
         ]
 
     def post_tests_steps(self):
@@ -1332,9 +1362,9 @@ argp.add_argument(
 argp.add_argument(
     '-l',
     '--language',
-    choices=['all'] + sorted(_LANGUAGES.keys()),
+    choices=sorted(_LANGUAGES.keys()),
     nargs='+',
-    default=['all'])
+    required=True)
 argp.add_argument(
     '-S', '--stop_on_failure', default=False, action='store_const', const=True)
 argp.add_argument(
@@ -1365,9 +1395,10 @@ argp.add_argument(
     choices=[
         'default', 'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3', 'gcc7.2',
         'gcc_musl', 'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7', 'clang7.0',
-        'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3',
-        'python_alpine', 'all_the_cpythons', 'electron1.3', 'electron1.6',
-        'coreclr', 'cmake', 'cmake_vs2015', 'cmake_vs2017'
+        'python2.7', 'python3.4', 'python3.5', 'python3.6', 'python3.7',
+        'python3.8', 'pypy', 'pypy3', 'python_alpine', 'all_the_cpythons',
+        'electron1.3', 'electron1.6', 'coreclr', 'cmake', 'cmake_vs2015',
+        'cmake_vs2017'
     ],
     default='default',
     help=
@@ -1430,7 +1461,7 @@ argp.add_argument(
     default=None,
     type=str,
     help='Only use the specified comma-delimited list of polling engines. '
-    'Example: --force_use_pollers epollsig,poll '
+    'Example: --force_use_pollers epoll1,poll '
     ' (This flag has no effect if --force_default_poller flag is also used)')
 argp.add_argument(
     '--max_time', default=-1, type=int, help='Maximum test runtime in seconds')
@@ -1505,17 +1536,7 @@ build_config = run_config.build_config
 if args.travis:
     _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'api'}
 
-if 'all' in args.language:
-    lang_list = _LANGUAGES.keys()
-else:
-    lang_list = args.language
-# We don't support code coverage on some languages
-if 'gcov' in args.config:
-    for bad in ['grpc-node', 'objc', 'sanity']:
-        if bad in lang_list:
-            lang_list.remove(bad)
-
-languages = set(_LANGUAGES[l] for l in lang_list)
+languages = set(_LANGUAGES[l] for l in args.language)
 for l in languages:
     l.configure(run_config, args)
 
@@ -1527,7 +1548,7 @@ if any(language.make_options() for language in languages):
         )
         sys.exit(1)
     else:
-        # Combining make options is not clean and just happens to work. It allows C/C++ and C# to build
+        # Combining make options is not clean and just happens to work. It allows C & C++ to build
         # together, and is only used under gcov. All other configs should build languages individually.
         language_make_options = list(
             set([
@@ -1550,16 +1571,9 @@ if args.use_docker:
 
     dockerfile_dirs = set([l.dockerfile_dir() for l in languages])
     if len(dockerfile_dirs) > 1:
-        if 'gcov' in args.config:
-            dockerfile_dir = 'tools/dockerfile/test/multilang_jessie_x64'
-            print(
-                'Using multilang_jessie_x64 docker image for code coverage for '
-                'all languages.')
-        else:
-            print(
-                'Languages to be tested require running under different docker '
-                'images.')
-            sys.exit(1)
+        print('Languages to be tested require running under different docker '
+              'images.')
+        sys.exit(1)
     else:
         dockerfile_dir = next(iter(dockerfile_dirs))
 
@@ -1641,7 +1655,10 @@ def build_step_environ(cfg):
 build_steps = list(
     set(
         jobset.JobSpec(
-            cmdline, environ=build_step_environ(build_config), flake_retries=2)
+            cmdline,
+            environ=build_step_environ(build_config),
+            timeout_seconds=_PRE_BUILD_STEP_TIMEOUT_SECONDS,
+            flake_retries=2)
         for l in languages
         for cmdline in l.pre_build_steps()))
 if make_targets:
@@ -1713,9 +1730,9 @@ def _has_epollexclusive():
     try:
         subprocess.check_call(binary)
         return True
-    except subprocess.CalledProcessError, e:
+    except subprocess.CalledProcessError as e:
         return False
-    except OSError, e:
+    except OSError as e:
         # For languages other than C and Windows the binary won't exist
         return False
 

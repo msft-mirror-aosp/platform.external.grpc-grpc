@@ -220,6 +220,7 @@
   CXXFLAGS += -std=c++11
   ifeq ($(SYSTEM),Darwin)
   CXXFLAGS += -stdlib=libc++
+  LDFLAGS += -framework CoreFoundation
   endif
   % for arg in ['CFLAGS', 'CXXFLAGS', 'CPPFLAGS', 'COREFLAGS', 'LDFLAGS', 'DEFINES']:
   %  if defaults.get('global', []).get(arg, None) is not None:
@@ -239,7 +240,7 @@
   LDFLAGS += -fPIC
   endif
 
-  INCLUDES = . include $(GENDIR)
+  INCLUDES = . include $(GENDIR) third_party/upb third_party/upb/generated_for_cmake
   LDFLAGS += -Llibs/$(CONFIG)
 
   ifeq ($(SYSTEM),Darwin)
@@ -272,6 +273,28 @@
   ifeq ($(SYSTEM),MINGW32)
   LIBS = m pthread ws2_32
   LDFLAGS += -pthread
+  endif
+
+  # If we are installing into a non-default prefix, both
+  # the libraries we build, and the apps users build,
+  # need to know how to find the libraries they depend on.
+  # There is much gnashing of teeth about this subject.
+  # It's tricky to do that without editing images during install,
+  # as you don't want tests during build to find previously installed and
+  # now stale libraries, etc.
+  ifeq ($(SYSTEM),Linux)
+  ifneq ($(prefix),/usr)
+  # Linux best practice for rpath on installed files is probably:
+  # 1) .pc file provides -Wl,-rpath,$(prefix)/lib
+  # 2) binaries we install into $(prefix)/bin use -Wl,-rpath,$ORIGIN/../lib
+  # 3) libraries we install into $(prefix)/lib use -Wl,-rpath,$ORIGIN
+  # cf. https://www.akkadia.org/drepper/dsohowto.pdf
+  # Doing all of that right is hard, but using -Wl,-rpath,$ORIGIN is always
+  # safe, and solves problems seen in the wild.  Note that $ORIGIN
+  # is a literal string interpreted much later by ld.so.  Escape it
+  # here with a dollar sign so Make doesn't expand $O.
+  LDFLAGS += '-Wl,-rpath,$$ORIGIN'
+  endif
   endif
 
   #
@@ -323,11 +346,11 @@
   ${arg} += $(EXTRA_${arg})
   % endfor
 
-  HOST_CPPFLAGS = $(CPPFLAGS)
-  HOST_CFLAGS = $(CFLAGS)
-  HOST_CXXFLAGS = $(CXXFLAGS)
-  HOST_LDFLAGS = $(LDFLAGS)
-  HOST_LDLIBS = $(LDLIBS)
+  HOST_CPPFLAGS += $(CPPFLAGS)
+  HOST_CFLAGS += $(CFLAGS)
+  HOST_CXXFLAGS += $(CXXFLAGS)
+  HOST_LDFLAGS += $(LDFLAGS)
+  HOST_LDLIBS += $(LDLIBS)
 
   # These are automatically computed variables.
   # There shouldn't be any need to change anything from now on.
@@ -692,7 +715,7 @@
   PC_CFLAGS =
   PC_REQUIRES_PRIVATE = gpr $(PC_REQUIRES_GRPC)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
-  PC_LIB = -lgrpc
+  PC_LIB = -lgrpc_unsecure
   GRPC_UNSECURE_PC_FILE := $(CORE_PC_TEMPLATE)
 
   PROTOBUF_PKG_CONFIG = false
@@ -715,7 +738,7 @@
   ifeq ($(HAS_PKG_CONFIG),true)
   PROTOBUF_PKG_CONFIG = true
   PC_REQUIRES_GRPCXX = protobuf
-  CPPFLAGS := $(shell $(PKG_CONFIG) --cflags protobuf) $(CPPFLAGS)
+  CPPFLAGS := $(CPPFLAGS) $(shell $(PKG_CONFIG) --cflags protobuf)
   LDFLAGS_PROTOBUF_PKG_CONFIG = $(shell $(PKG_CONFIG) --libs-only-L protobuf)
   ifeq ($(SYSTEM),Linux)
   ifneq ($(LDFLAGS_PROTOBUF_PKG_CONFIG),)
@@ -769,7 +792,7 @@
   PC_CFLAGS =
   PC_REQUIRES_PRIVATE = grpc_unsecure $(PC_REQUIRES_GRPCXX)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
-  PC_LIB = -lgrpc++
+  PC_LIB = -lgrpc++_unsecure
   GRPCXX_UNSECURE_PC_FILE := $(CPP_PC_TEMPLATE)
 
   ifeq ($(MAKECMDGOALS),clean)
@@ -1370,7 +1393,7 @@
   ifeq ($(SYSTEM),MINGW32)
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]})-dll.a $(prefix)/lib/lib${lib.name}.a
   else ifneq ($(SYSTEM),Darwin)
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so.${settings.core_version.major}
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major}
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so
   endif
   % endif

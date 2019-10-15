@@ -41,6 +41,16 @@ def if_mac(a):
         "//conditions:default": [],
     })
 
+def if_android(a):
+    return select({
+        "@//tools/base/bazel:android_cpu_x86": a,
+        "@//tools/base/bazel:android_cpu_x86_64": a,
+        "@//tools/base/bazel:android_cpu_arm": a,
+        "@//tools/base/bazel:android_cpu_arm_64": a,
+        "@//tools/base/bazel:android_cpu_armeabi": a,
+        "//conditions:default": [],
+    })
+
 def _get_external_deps(external_deps):
     ret = []
     for dep in external_deps:
@@ -87,6 +97,8 @@ def grpc_cc_library(
         copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
+    elif language.upper() == "C++":
+        copts = copts + if_android(["-std=c++11"])
     linkopts = if_not_windows(["-pthread"])
     if use_cfstream:
         linkopts = linkopts + if_mac(["-framework CoreFoundation"])

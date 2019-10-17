@@ -104,6 +104,8 @@ file(MAKE_DIRECTORY ${_gRPC_PROTO_GENS_DIR})
 #      Root directory where sources can be found, defaults to CMAKE_CURRENT_SOURCE_DIR
 #   ``OUTPUT_DIR``
 #      Directory where the generated sources will be placed, defaults to CMAKE_CURRENT_BINARY_DIR/gens
+#   ``INCLUDES``
+#       Specify the directores in which to search for imports. Directories will be searched in order.
 #   ``GENERATED``
 #      Variable that should contain the list of generated sources.
 #   ``SOURCES``
@@ -112,14 +114,13 @@ file(MAKE_DIRECTORY ${_gRPC_PROTO_GENS_DIR})
 function(protobuf_generate_grpc_cpp)
   # Parse arguments
   set(options)
-  set(oneValueArgs SOURCE_DIR OUTPUT_DIR GENERATED)
+  set(oneValueArgs SOURCE_DIR OUTPUT_DIR GENERATED INCLUDES)
   set(multiValueArgs SOURCES)
   cmake_parse_arguments(grpc "${options}"
                              "${oneValueArgs}"
                              "${multiValueArgs}"
                              ${ARGN})
 
-  set(_gRPC_PROTOBUF_INCLUDE "-I${ANDROID_QEMU2_TOP_DIR}/../protobuf/src")
   if (NOT grpc_OUTPUT_DIR)
       set(grpc_OUTPUT_DIR ${_gRPC_PROTO_GENS_DIR})
   endif()
@@ -130,13 +131,20 @@ function(protobuf_generate_grpc_cpp)
     message(SEND_ERROR "Error: PROTOBUF_GENERATE_GRPC_CPP() called without any proto files")
     return()
   endif()
+  list(APPEND grpc_INCLUDES ".")
+  list(APPEND grpc_INCLUDES "${ANDROID_QEMU2_TOP_DIR}/../protobuf/src")
+  unset(GRPC_INCLUDES)
+  foreach(INC ${grpc_INCLUDES})
+      set(GRPC_INCLUDES ${GRPC_INCLUDES} -I${INC})
+  endforeach()
+
   set(GRPC_PROTO_GEN "")
   foreach(FIL ${grpc_SOURCES})
     get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
     get_filename_component(FIL_WE ${FIL} NAME_WE)
     file(RELATIVE_PATH REL_FIL ${grpc_SOURCE_DIR} ${ABS_FIL})
     get_filename_component(REL_DIR ${REL_FIL} DIRECTORY)
-    set(RELFIL_WE "${REL_DIR}/${FIL_WE}")
+ set(RELFIL_WE "${REL_DIR}/${FIL_WE}")
 
     add_custom_command(
       OUTPUT "${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.cc"
@@ -148,8 +156,7 @@ function(protobuf_generate_grpc_cpp)
       ARGS --grpc_out=generate_mock_code=true:${grpc_OUTPUT_DIR}
            --cpp_out=${grpc_OUTPUT_DIR}
            --plugin=protoc-gen-grpc=${_gRPC_CPP_PLUGIN_EXECUTABLE}
-           -I .
-           ${_gRPC_PROTOBUF_INCLUDE}
+           ${GRPC_INCLUDES}
            ${REL_FIL}
       DEPENDS ${ABS_FIL} ${_gRPC_PROTOBUF_PROTOC_EXECUTABLE} ${_gRPC_CPP_PLUGIN_EXECUTABLE}
       WORKING_DIRECTORY ${grpc_SOURCE_DIR}

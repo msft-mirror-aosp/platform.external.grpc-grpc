@@ -153,6 +153,8 @@
   #      Root directory where sources can be found, defaults to CMAKE_CURRENT_SOURCE_DIR
   #   ``OUTPUT_DIR``
   #      Directory where the generated sources will be placed, defaults to CMAKE_CURRENT_BINARY_DIR/gens
+  #   ``INCLUDES``
+  #       Specify the directores in which to search for imports. Directories will be searched in order.
   #   ``GENERATED``
   #      Variable that should contain the list of generated sources.
   #   ``SOURCES``
@@ -161,14 +163,13 @@
   function(protobuf_generate_grpc_cpp)
     # Parse arguments
     set(options)
-    set(oneValueArgs SOURCE_DIR OUTPUT_DIR GENERATED)
+    set(oneValueArgs SOURCE_DIR OUTPUT_DIR GENERATED INCLUDES)
     set(multiValueArgs SOURCES)
     cmake_parse_arguments(grpc "<%text>${options}</%text>"
                                "<%text>${oneValueArgs}</%text>"
                                "<%text>${multiValueArgs}</%text>"
                                <%text>${ARGN}</%text>)
 
-    set(_gRPC_PROTOBUF_INCLUDE "-I<%text>${ANDROID_QEMU2_TOP_DIR}/../protobuf/src</%text>")
     if (NOT grpc_OUTPUT_DIR)
         set(grpc_OUTPUT_DIR <%text>${_gRPC_PROTO_GENS_DIR}</%text>)
     endif()
@@ -179,13 +180,20 @@
       message(SEND_ERROR "Error: PROTOBUF_GENERATE_GRPC_CPP() called without any proto files")
       return()
     endif()
+    list(APPEND grpc_INCLUDES ".")
+    list(APPEND grpc_INCLUDES "<%text>${ANDROID_QEMU2_TOP_DIR}/../protobuf/src</%text>")
+    unset(GRPC_INCLUDES)
+    foreach(INC <%text>${grpc_INCLUDES}</%text>)
+        set(GRPC_INCLUDES <%text>${GRPC_INCLUDES} -I${INC}</%text>)
+    endforeach()
+
     set(GRPC_PROTO_GEN "")
     foreach(FIL <%text>${grpc_SOURCES}</%text>)
       get_filename_component(ABS_FIL <%text>${FIL}</%text> ABSOLUTE)
       get_filename_component(FIL_WE <%text>${FIL}</%text> NAME_WE)
       file(RELATIVE_PATH REL_FIL <%text>${grpc_SOURCE_DIR}</%text> <%text>${ABS_FIL}</%text>)
       get_filename_component(REL_DIR <%text>${REL_FIL}</%text> DIRECTORY)
-      set(RELFIL_WE "<%text>${REL_DIR}/${FIL_WE}</%text>")
+   set(RELFIL_WE "<%text>${REL_DIR}/${FIL_WE}</%text>")
 
       add_custom_command(
         OUTPUT <%text>"${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.cc"</%text>
@@ -197,8 +205,7 @@
         ARGS --grpc_out=<%text>generate_mock_code=true:${grpc_OUTPUT_DIR}</%text>
              --cpp_out=<%text>${grpc_OUTPUT_DIR}</%text>
              --plugin=protoc-gen-grpc=<%text>${_gRPC_CPP_PLUGIN_EXECUTABLE}</%text>
-             -I .
-             <%text>${_gRPC_PROTOBUF_INCLUDE}</%text>
+             <%text>${GRPC_INCLUDES}</%text>
              <%text>${REL_FIL}</%text>
         DEPENDS <%text>${ABS_FIL}</%text> <%text>${_gRPC_PROTOBUF_PROTOC_EXECUTABLE} ${_gRPC_CPP_PLUGIN_EXECUTABLE}</%text>
         WORKING_DIRECTORY <%text>${grpc_SOURCE_DIR}</%text>

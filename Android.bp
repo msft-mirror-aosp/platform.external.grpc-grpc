@@ -895,3 +895,18 @@ cc_library_shared {
         ".",
     ],
 }
+
+// gRPC python library target
+python_library_host {
+    name: "py-grpc",
+    srcs: [ "src/python/**/*.py" ],
+    version: {
+        py2: {
+	    enabled: true,
+	},
+	py3: {
+	    enabled: true,
+	},
+    },
+    pkg_path: "grpc"
+}

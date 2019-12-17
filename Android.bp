@@ -6,6 +6,7 @@ cc_defaults {
         "-Wno-unused-result",
     ],
     host_supported: true,
+    vendor_available: true,
 }
 
 cc_library_host_static {
@@ -200,6 +201,8 @@ cc_library_static {
     ],
     static_libs: [
         "gpr_base",
+    ],
+    shared_libs: [
         "liblog",
     ],
 }
@@ -470,7 +473,7 @@ cc_library_static {
         "src/core/lib/profiling/basic_timers.cc",
         "src/core/lib/profiling/stap_timers.cc",
     ],
-    static_libs: [
+    shared_libs: [
         "liblog",
     ],
     export_include_dirs: [
@@ -524,6 +527,8 @@ cc_library_static {
     ],
     static_libs: [
         "gpr_base",
+    ],
+    shared_libs: [
         "liblog",
     ],
 }
@@ -684,8 +689,10 @@ cc_library_static {
     static_libs: [
         "libgrpc_trace",
         "gpr_base",
-        "liblog",
         "libz",
+    ],
+    shared_libs: [
+        "liblog",
     ],
 }
 
@@ -830,8 +837,10 @@ cc_library_static {
         "gpr_base",
         "libgrpc_base_c",
         "libgrpc_trace",
-        "liblog",
         "libz",
+    ],
+    shared_libs: [
+        "liblog",
     ],
 }
 
@@ -872,9 +881,11 @@ cc_library_shared {
         "libgrpc_trace",
         "libgrpc_unsecure",
         "libgrpc_workaround_cronet_compression_filter",
-        "liblog",
         "libz",
         "libprotobuf-c-nano",
+    ],
+    shared_libs: [
+        "liblog",
     ],
     whole_static_libs: [
         "libgrpc++_base",
@@ -883,4 +894,19 @@ cc_library_shared {
         "include",
         ".",
     ],
+}
+
+// gRPC python library target
+python_library_host {
+    name: "py-grpc",
+    srcs: [ "src/python/**/*.py" ],
+    version: {
+        py2: {
+	    enabled: true,
+	},
+	py3: {
+	    enabled: true,
+	},
+    },
+    pkg_path: "grpc"
 }

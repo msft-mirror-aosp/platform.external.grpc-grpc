@@ -19,11 +19,17 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#ifdef GRPC_HAVE_LINUX_VSOCK
+
+#include <sys/socket.h>
+#include <linux/vm_sockets.h>
+
+#endif /* GRPC_HAVE_LINUX_VSOCK */
+
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
 #include "src/core/lib/iomgr/sockaddr.h"
 
-#include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>

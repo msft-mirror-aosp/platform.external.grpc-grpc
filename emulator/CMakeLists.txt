@@ -177,13 +177,17 @@ endfunction()
 
 
 
-set(address_sorting_src
+android_add_library(TARGET address_sorting
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/third_party/address_sorting/address_sorting.c
   ${_gRPC_ROOT}/third_party/address_sorting/address_sorting_posix.c
   ${_gRPC_ROOT}/third_party/address_sorting/address_sorting_windows.c
 )
-android_add_library(address_sorting)
-
 
 target_compile_definitions(address_sorting PRIVATE -DPB_FIELD_16BIT)
 target_compile_definitions(address_sorting PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -208,7 +212,13 @@ target_link_libraries(address_sorting PRIVATE
 
 
 
-set(gpr_src
+android_add_library(TARGET gpr
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/src/core/lib/gpr/alloc.cc
   ${_gRPC_ROOT}/src/core/lib/gpr/atm.cc
   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_iphone.cc
@@ -250,8 +260,6 @@ set(gpr_src
   ${_gRPC_ROOT}/src/core/lib/profiling/basic_timers.cc
   ${_gRPC_ROOT}/src/core/lib/profiling/stap_timers.cc
 )
-android_add_library(gpr)
-
 
 target_compile_definitions(gpr PRIVATE -DPB_FIELD_16BIT)
 target_compile_definitions(gpr PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -275,7 +283,13 @@ target_link_libraries(gpr PRIVATE
 
 
 
-set(grpc_src
+android_add_library(TARGET grpc
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/src/core/lib/surface/init.cc
   ${_gRPC_ROOT}/src/core/lib/avl/avl.cc
   ${_gRPC_ROOT}/src/core/lib/backoff/backoff.cc
@@ -617,8 +631,6 @@ set(grpc_src
   ${_gRPC_ROOT}/src/core/ext/filters/workarounds/workaround_utils.cc
   ${_gRPC_ROOT}/src/core/plugin_registry/grpc_plugin_registry.cc
 )
-android_add_library(grpc)
-
 
 target_compile_definitions(grpc PRIVATE -DPB_FIELD_16BIT)
 target_compile_definitions(grpc PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -649,7 +661,13 @@ target_link_libraries(grpc PRIVATE
 
 
 
-set(grpc_cronet_src
+android_add_library(TARGET grpc_cronet
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/src/core/ext/transport/cronet/plugin_registry/grpc_cronet_plugin_registry.cc
   ${_gRPC_ROOT}/src/core/lib/surface/init.cc
   ${_gRPC_ROOT}/src/core/lib/avl/avl.cc
@@ -953,8 +971,6 @@ set(grpc_cronet_src
   ${_gRPC_ROOT}/src/core/tsi/ssl_transport_security.cc
   ${_gRPC_ROOT}/src/core/tsi/transport_security_grpc.cc
 )
-android_add_library(grpc_cronet)
-
 
 target_compile_definitions(grpc_cronet PRIVATE -DPB_FIELD_16BIT)
 target_compile_definitions(grpc_cronet PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -985,7 +1001,13 @@ target_link_libraries(grpc_cronet PRIVATE
 
 
 
-set(grpc_unsecure_src
+android_add_library(TARGET grpc_unsecure
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/src/core/lib/surface/init.cc
   ${_gRPC_ROOT}/src/core/lib/surface/init_unsecure.cc
   ${_gRPC_ROOT}/src/core/lib/avl/avl.cc
@@ -1251,8 +1273,6 @@ set(grpc_unsecure_src
   ${_gRPC_ROOT}/src/core/ext/filters/workarounds/workaround_utils.cc
   ${_gRPC_ROOT}/src/core/plugin_registry/grpc_unsecure_plugin_registry.cc
 )
-android_add_library(grpc_unsecure)
-
 
 target_compile_definitions(grpc_unsecure PRIVATE -DPB_FIELD_16BIT)
 target_compile_definitions(grpc_unsecure PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -1281,7 +1301,13 @@ target_link_libraries(grpc_unsecure PRIVATE
 
 
 
-set(grpc++_src
+android_add_library(TARGET grpc++
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/src/cpp/client/insecure_credentials.cc
   ${_gRPC_ROOT}/src/cpp/client/secure_credentials.cc
   ${_gRPC_ROOT}/src/cpp/common/auth_property_iterator.cc
@@ -1331,8 +1357,6 @@ set(grpc++_src
   ${_gRPC_ROOT}/third_party/nanopb/pb_encode.c
   ${_gRPC_ROOT}/src/cpp/codegen/codegen_init.cc
 )
-android_add_library(grpc++)
-
 
 target_compile_definitions(grpc++ PRIVATE -DPB_FIELD_16BIT)
 target_compile_definitions(grpc++ PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -1367,7 +1391,13 @@ target_link_libraries(grpc++ PRIVATE
 
 
 
-set(grpc++_unsecure_src
+android_add_library(TARGET grpc++_unsecure
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/src/cpp/client/insecure_credentials.cc
   ${_gRPC_ROOT}/src/cpp/common/insecure_create_auth_context.cc
   ${_gRPC_ROOT}/src/cpp/server/insecure_server_credentials.cc
@@ -1412,8 +1442,6 @@ set(grpc++_unsecure_src
   ${_gRPC_ROOT}/third_party/nanopb/pb_encode.c
   ${_gRPC_ROOT}/src/cpp/codegen/codegen_init.cc
 )
-android_add_library(grpc++_unsecure)
-
 
 target_compile_definitions(grpc++_unsecure PRIVATE -DPB_FIELD_16BIT)
 target_compile_definitions(grpc++_unsecure PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)

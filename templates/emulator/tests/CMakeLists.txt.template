@@ -150,7 +150,13 @@
   % endfor
 
   <%def name="cc_library(lib)">
-  set(${lib.name}_src
+  android_add_library(TARGET ${lib.name}
+  LICENSE Apache-2.0
+  URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+  <%text>REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"</%text>
+  NOTICE "REPO/NOTICE.txt"
+  ${'SHARED' if lib.get('dll', None) == 'only' else ''}
+  SRC
   % for src in lib.src:
   % if not proto_re.match(src):
     <%text>${_gRPC_ROOT}/</%text>${src}
@@ -165,7 +171,6 @@
   % endif
   % endfor
   )
-  ${'android_add_shared_library' if lib.get('dll', None) == 'only' else 'android_add_library'}(${lib.name})
 
   % for src in lib.src:
   % if proto_re.match(src):
@@ -207,7 +212,11 @@
 
   <%def name="cc_binary(tgt)">
   % if len(tgt.src) > 0:
-    set(${tgt.name}_src
+  % if tgt.build == 'test' and tgt.language == 'c++':
+    android_add_test(TARGET ${tgt.name}
+  % else:
+    android_add_executable(TARGET ${tgt.name} NODISTRIBUTE
+  % endif
   % for src in tgt.src:
   % if not proto_re.match(src):
      <%text>${_gRPC_ROOT}/</%text>${src}
@@ -220,11 +229,9 @@
   % endfor
   )
   % if tgt.build == 'test' and tgt.language == 'c++':
-    android_add_test(${tgt.name})
     target_link_libraries(${tgt.name} PRIVATE gmock_main ssl crypto)
     target_include_directories(${tgt.name} PRIVATE <%text>${_gRPC_ROOT}</%text>)
   % else:
-    android_add_executable(${tgt.name})
   % endif
 
     target_compile_definitions(${tgt.name} PRIVATE -DPB_FIELD_16BIT)

@@ -81,11 +81,16 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib64)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/archives)
 
-set(alts_test_util_src
+android_add_library(TARGET alts_test_util
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/test/core/tsi/alts/crypt/gsec_test_util.cc
   ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
 )
-android_add_library(alts_test_util)
 
 
 target_compile_definitions(alts_test_util PRIVATE -DPB_FIELD_16BIT)
@@ -111,7 +116,13 @@ target_link_libraries(alts_test_util PRIVATE
 
 add_dependencies(alts_test_util project_benchmark project_gflags)
 
-set(grpc_test_util_src
+android_add_library(TARGET grpc_test_util
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/test/core/end2end/data/client_certs.cc
   ${_gRPC_ROOT}/test/core/end2end/data/server1_cert.cc
   ${_gRPC_ROOT}/test/core/end2end/data/server1_key.cc
@@ -360,7 +371,6 @@ set(grpc_test_util_src
   ${_gRPC_ROOT}/src/core/ext/filters/http/message_compress/message_compress_filter.cc
   ${_gRPC_ROOT}/src/core/ext/filters/http/server/http_server_filter.cc
 )
-android_add_library(grpc_test_util)
 
 
 target_compile_definitions(grpc_test_util PRIVATE -DPB_FIELD_16BIT)
@@ -385,7 +395,13 @@ target_link_libraries(grpc_test_util PRIVATE
 
 add_dependencies(grpc_test_util project_benchmark project_gflags)
 
-set(grpc_test_util_unsecure_src
+android_add_library(TARGET grpc_test_util_unsecure
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   ${_gRPC_ROOT}/test/core/end2end/cq_verifier.cc
   ${_gRPC_ROOT}/test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -629,7 +645,6 @@ set(grpc_test_util_unsecure_src
   ${_gRPC_ROOT}/src/core/ext/filters/http/message_compress/message_compress_filter.cc
   ${_gRPC_ROOT}/src/core/ext/filters/http/server/http_server_filter.cc
 )
-android_add_library(grpc_test_util_unsecure)
 
 
 target_compile_definitions(grpc_test_util_unsecure PRIVATE -DPB_FIELD_16BIT)
@@ -654,10 +669,15 @@ target_link_libraries(grpc_test_util_unsecure PRIVATE
 
 add_dependencies(grpc_test_util_unsecure project_benchmark project_gflags)
 
-set(reconnect_server_src
+android_add_library(TARGET reconnect_server
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/test/core/util/reconnect_server.cc
 )
-android_add_library(reconnect_server)
 
 
 target_compile_definitions(reconnect_server PRIVATE -DPB_FIELD_16BIT)
@@ -684,10 +704,15 @@ target_link_libraries(reconnect_server PRIVATE
 
 add_dependencies(reconnect_server project_benchmark project_gflags)
 
-set(test_tcp_server_src
+android_add_library(TARGET test_tcp_server
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/test/core/util/test_tcp_server.cc
 )
-android_add_library(test_tcp_server)
 
 
 target_compile_definitions(test_tcp_server PRIVATE -DPB_FIELD_16BIT)
@@ -713,7 +738,13 @@ target_link_libraries(test_tcp_server PRIVATE
 
 add_dependencies(test_tcp_server project_benchmark project_gflags)
 
-set(bm_callback_test_service_impl_src
+android_add_library(TARGET bm_callback_test_service_impl
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -721,7 +752,6 @@ set(bm_callback_test_service_impl_src
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_mock.grpc.pb.h
   ${_gRPC_ROOT}/test/cpp/microbenchmarks/callback_test_service.cc
 )
-android_add_library(bm_callback_test_service_impl)
 
 protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo.proto)
 
@@ -757,10 +787,15 @@ target_link_libraries(bm_callback_test_service_impl PRIVATE
 
 add_dependencies(bm_callback_test_service_impl project_benchmark project_gflags)
 
-set(dns_test_util_src
+android_add_library(TARGET dns_test_util
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/test/cpp/naming/dns_test_util.cc
 )
-android_add_library(dns_test_util)
 
 
 target_compile_definitions(dns_test_util PRIVATE -DPB_FIELD_16BIT)
@@ -786,14 +821,19 @@ target_link_libraries(dns_test_util PRIVATE
 
 add_dependencies(dns_test_util project_benchmark project_gflags)
 
-set(grpc++_core_stats_src
+android_add_library(TARGET grpc++_core_stats
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/core/stats.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/core/stats.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/core/stats.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/core/stats.grpc.pb.h
   ${_gRPC_ROOT}/src/cpp/util/core_stats.cc
 )
-android_add_library(grpc++_core_stats)
 
 protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/core/stats.proto)
 
@@ -821,14 +861,19 @@ target_link_libraries(grpc++_core_stats PRIVATE
 
 add_dependencies(grpc++_core_stats project_benchmark project_gflags)
 
-set(grpc++_proto_reflection_desc_db_src
+android_add_library(TARGET grpc++_proto_reflection_desc_db
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/test/cpp/util/proto_reflection_descriptor_database.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
 )
-android_add_library(grpc++_proto_reflection_desc_db)
 
 protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/reflection/v1alpha/reflection.proto)
 
@@ -857,10 +902,15 @@ target_link_libraries(grpc++_proto_reflection_desc_db PRIVATE
 
 add_dependencies(grpc++_proto_reflection_desc_db project_benchmark project_gflags)
 
-set(grpc++_test_config_src
+android_add_library(TARGET grpc++_test_config
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/test/cpp/util/test_config_cc.cc
 )
-android_add_library(grpc++_test_config)
 
 
 target_compile_definitions(grpc++_test_config PRIVATE -DPB_FIELD_16BIT)
@@ -886,7 +936,13 @@ target_link_libraries(grpc++_test_config PRIVATE
 
 add_dependencies(grpc++_test_config project_benchmark project_gflags)
 
-set(grpc++_test_util_src
+android_add_library(TARGET grpc++_test_util
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
@@ -922,7 +978,6 @@ set(grpc++_test_util_src
   ${_gRPC_ROOT}/test/cpp/util/test_credentials_provider.cc
   ${_gRPC_ROOT}/src/cpp/codegen/codegen_init.cc
 )
-android_add_library(grpc++_test_util)
 
 protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/channelz/channelz.proto)
 protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/health/v1/health.proto)
@@ -957,7 +1012,13 @@ target_link_libraries(grpc++_test_util PRIVATE
 
 add_dependencies(grpc++_test_util project_benchmark project_gflags)
 
-set(grpc++_test_util_unsecure_src
+android_add_library(TARGET grpc++_test_util_unsecure
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.h
@@ -986,7 +1047,6 @@ set(grpc++_test_util_unsecure_src
   ${_gRPC_ROOT}/test/cpp/util/subprocess.cc
   ${_gRPC_ROOT}/src/cpp/codegen/codegen_init.cc
 )
-android_add_library(grpc++_test_util_unsecure)
 
 protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/health/v1/health.proto)
 protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo_messages.proto)
@@ -1020,10 +1080,15 @@ target_link_libraries(grpc++_test_util_unsecure PRIVATE
 
 add_dependencies(grpc++_test_util_unsecure project_benchmark project_gflags)
 
-set(grpc_benchmark_src
+android_add_library(TARGET grpc_benchmark
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/test/cpp/microbenchmarks/helpers.cc
 )
-android_add_library(grpc_benchmark)
 
 
 target_compile_definitions(grpc_benchmark PRIVATE -DPB_FIELD_16BIT)
@@ -1054,7 +1119,13 @@ target_link_libraries(grpc_benchmark PRIVATE
 
 add_dependencies(grpc_benchmark project_benchmark project_gflags)
 
-set(grpc_cli_libs_src
+android_add_library(TARGET grpc_cli_libs
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/test/cpp/util/cli_call.cc
   ${_gRPC_ROOT}/test/cpp/util/cli_credentials.cc
   ${_gRPC_ROOT}/test/cpp/util/grpc_tool.cc
@@ -1065,7 +1136,6 @@ set(grpc_cli_libs_src
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
 )
-android_add_library(grpc_cli_libs)
 
 protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/reflection/v1alpha/reflection.proto)
 
@@ -1095,7 +1165,13 @@ target_link_libraries(grpc_cli_libs PRIVATE
 
 add_dependencies(grpc_cli_libs project_benchmark project_gflags)
 
-set(http2_client_main_src
+android_add_library(TARGET http2_client_main
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
@@ -1110,7 +1186,6 @@ set(http2_client_main_src
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
   ${_gRPC_ROOT}/test/cpp/interop/http2_client.cc
 )
-android_add_library(http2_client_main)
 
 protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/empty.proto)
 protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/messages.proto)
@@ -1144,14 +1219,19 @@ target_link_libraries(http2_client_main PRIVATE
 
 add_dependencies(http2_client_main project_benchmark project_gflags)
 
-set(interop_client_helper_src
+android_add_library(TARGET interop_client_helper
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
   ${_gRPC_ROOT}/test/cpp/interop/client_helper.cc
 )
-android_add_library(interop_client_helper)
 
 protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/messages.proto)
 
@@ -1184,7 +1264,13 @@ target_link_libraries(interop_client_helper PRIVATE
 
 add_dependencies(interop_client_helper project_benchmark project_gflags)
 
-set(interop_client_main_src
+android_add_library(TARGET interop_client_main
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
@@ -1200,7 +1286,6 @@ set(interop_client_main_src
   ${_gRPC_ROOT}/test/cpp/interop/client.cc
   ${_gRPC_ROOT}/test/cpp/interop/interop_client.cc
 )
-android_add_library(interop_client_main)
 
 protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/empty.proto)
 protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/messages.proto)
@@ -1236,10 +1321,15 @@ target_link_libraries(interop_client_main PRIVATE
 
 add_dependencies(interop_client_main project_benchmark project_gflags)
 
-set(interop_server_helper_src
+android_add_library(TARGET interop_server_helper
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/test/cpp/interop/server_helper.cc
 )
-android_add_library(interop_server_helper)
 
 
 target_compile_definitions(interop_server_helper PRIVATE -DPB_FIELD_16BIT)
@@ -1270,7 +1360,13 @@ target_link_libraries(interop_server_helper PRIVATE
 
 add_dependencies(interop_server_helper project_benchmark project_gflags)
 
-set(interop_server_lib_src
+android_add_library(TARGET interop_server_lib
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
@@ -1285,7 +1381,6 @@ set(interop_server_lib_src
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
   ${_gRPC_ROOT}/test/cpp/interop/interop_server.cc
 )
-android_add_library(interop_server_lib)
 
 protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/empty.proto)
 protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/messages.proto)
@@ -1321,10 +1416,15 @@ target_link_libraries(interop_server_lib PRIVATE
 
 add_dependencies(interop_server_lib project_benchmark project_gflags)
 
-set(interop_server_main_src
+android_add_library(TARGET interop_server_main
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/test/cpp/interop/interop_server_bootstrap.cc
 )
-android_add_library(interop_server_main)
 
 
 target_compile_definitions(interop_server_main PRIVATE -DPB_FIELD_16BIT)
@@ -1351,7 +1451,13 @@ target_link_libraries(interop_server_main PRIVATE
 
 add_dependencies(interop_server_main project_benchmark project_gflags)
 
-set(qps_src
+android_add_library(TARGET qps
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
@@ -1394,7 +1500,6 @@ set(qps_src
   ${_gRPC_ROOT}/test/cpp/qps/server_sync.cc
   ${_gRPC_ROOT}/test/cpp/qps/usage_timer.cc
 )
-android_add_library(qps)
 
 protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/messages.proto)
 protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/payloads.proto)
@@ -1432,7 +1537,13 @@ target_link_libraries(qps PRIVATE
 
 add_dependencies(qps project_benchmark project_gflags)
 
-set(upb_src
+android_add_library(TARGET upb
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c
   ${_gRPC_ROOT}/third_party/upb/upb/decode.c
   ${_gRPC_ROOT}/third_party/upb/upb/def.c
@@ -1444,7 +1555,6 @@ set(upb_src
   ${_gRPC_ROOT}/third_party/upb/upb/table.c
   ${_gRPC_ROOT}/third_party/upb/upb/upb.c
 )
-android_add_library(upb)
 
 
 target_compile_definitions(upb PRIVATE -DPB_FIELD_16BIT)
@@ -1469,10 +1579,15 @@ target_link_libraries(upb PRIVATE
 
 add_dependencies(upb project_benchmark project_gflags)
 
-set(bad_client_test_src
+android_add_library(TARGET bad_client_test
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/test/core/bad_client/bad_client.cc
 )
-android_add_library(bad_client_test)
 
 
 target_compile_definitions(bad_client_test PRIVATE -DPB_FIELD_16BIT)
@@ -1501,10 +1616,15 @@ target_link_libraries(bad_client_test PRIVATE
 
 add_dependencies(bad_client_test project_benchmark project_gflags)
 
-set(bad_ssl_test_server_src
+android_add_library(TARGET bad_ssl_test_server
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/test/core/bad_ssl/server_common.cc
 )
-android_add_library(bad_ssl_test_server)
 
 
 target_compile_definitions(bad_ssl_test_server PRIVATE -DPB_FIELD_16BIT)
@@ -1530,7 +1650,13 @@ target_link_libraries(bad_ssl_test_server PRIVATE
 
 add_dependencies(bad_ssl_test_server project_benchmark project_gflags)
 
-set(end2end_tests_src
+android_add_library(TARGET end2end_tests
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/test/core/end2end/end2end_tests.cc
   ${_gRPC_ROOT}/test/core/end2end/end2end_test_utils.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/authority_not_supported.cc
@@ -1612,7 +1738,6 @@ set(end2end_tests_src
   ${_gRPC_ROOT}/test/core/end2end/tests/write_buffering.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/write_buffering_at_end.cc
 )
-android_add_library(end2end_tests)
 
 
 target_compile_definitions(end2end_tests PRIVATE -DPB_FIELD_16BIT)
@@ -1640,7 +1765,13 @@ target_link_libraries(end2end_tests PRIVATE
 
 add_dependencies(end2end_tests project_benchmark project_gflags)
 
-set(end2end_nosec_tests_src
+android_add_library(TARGET end2end_nosec_tests
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/test/core/end2end/end2end_nosec_tests.cc
   ${_gRPC_ROOT}/test/core/end2end/end2end_test_utils.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/authority_not_supported.cc
@@ -1721,7 +1852,6 @@ set(end2end_nosec_tests_src
   ${_gRPC_ROOT}/test/core/end2end/tests/write_buffering.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/write_buffering_at_end.cc
 )
-android_add_library(end2end_nosec_tests)
 
 
 target_compile_definitions(end2end_nosec_tests PRIVATE -DPB_FIELD_16BIT)
@@ -1748,10 +1878,9 @@ target_link_libraries(end2end_nosec_tests PRIVATE
 add_dependencies(end2end_nosec_tests project_benchmark project_gflags)
 
 
-  set(algorithm_test_src
+  android_add_executable(TARGET algorithm_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/compression/algorithm_test.cc
 )
-  android_add_executable(algorithm_test)
 
   target_compile_definitions(algorithm_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(algorithm_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -1776,10 +1905,9 @@ add_dependencies(end2end_nosec_tests project_benchmark project_gflags)
 
     add_dependencies(algorithm_test project_benchmark project_gflags)
 
-  set(alloc_test_src
+  android_add_executable(TARGET alloc_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/gpr/alloc_test.cc
 )
-  android_add_executable(alloc_test)
 
   target_compile_definitions(alloc_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(alloc_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -1804,10 +1932,9 @@ add_dependencies(end2end_nosec_tests project_benchmark project_gflags)
 
     add_dependencies(alloc_test project_benchmark project_gflags)
 
-  set(alpn_test_src
+  android_add_executable(TARGET alpn_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/transport/chttp2/alpn_test.cc
 )
-  android_add_executable(alpn_test)
 
   target_compile_definitions(alpn_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(alpn_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -1832,10 +1959,9 @@ add_dependencies(end2end_nosec_tests project_benchmark project_gflags)
 
     add_dependencies(alpn_test project_benchmark project_gflags)
 
-  set(arena_test_src
+  android_add_executable(TARGET arena_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/gpr/arena_test.cc
 )
-  android_add_executable(arena_test)
 
   target_compile_definitions(arena_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(arena_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -1860,10 +1986,9 @@ add_dependencies(end2end_nosec_tests project_benchmark project_gflags)
 
     add_dependencies(arena_test project_benchmark project_gflags)
 
-  set(avl_test_src
+  android_add_executable(TARGET avl_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/avl/avl_test.cc
 )
-  android_add_executable(avl_test)
 
   target_compile_definitions(avl_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(avl_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -1888,10 +2013,9 @@ add_dependencies(end2end_nosec_tests project_benchmark project_gflags)
 
     add_dependencies(avl_test project_benchmark project_gflags)
 
-  set(bad_server_response_test_src
+  android_add_executable(TARGET bad_server_response_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/bad_server_response_test.cc
 )
-  android_add_executable(bad_server_response_test)
 
   target_compile_definitions(bad_server_response_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(bad_server_response_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -1917,10 +2041,9 @@ add_dependencies(end2end_nosec_tests project_benchmark project_gflags)
 
     add_dependencies(bad_server_response_test project_benchmark project_gflags)
 
-  set(bin_decoder_test_src
+  android_add_executable(TARGET bin_decoder_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/transport/chttp2/bin_decoder_test.cc
 )
-  android_add_executable(bin_decoder_test)
 
   target_compile_definitions(bin_decoder_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(bin_decoder_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -1944,10 +2067,9 @@ add_dependencies(end2end_nosec_tests project_benchmark project_gflags)
 
     add_dependencies(bin_decoder_test project_benchmark project_gflags)
 
-  set(bin_encoder_test_src
+  android_add_executable(TARGET bin_encoder_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/transport/chttp2/bin_encoder_test.cc
 )
-  android_add_executable(bin_encoder_test)
 
   target_compile_definitions(bin_encoder_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(bin_encoder_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -1972,10 +2094,9 @@ add_dependencies(end2end_nosec_tests project_benchmark project_gflags)
     add_dependencies(bin_encoder_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX)
 
-  set(buffer_list_test_src
+  android_add_executable(TARGET buffer_list_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/buffer_list_test.cc
 )
-  android_add_executable(buffer_list_test)
 
   target_compile_definitions(buffer_list_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(buffer_list_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2001,10 +2122,9 @@ if(_gRPC_PLATFORM_LINUX)
     add_dependencies(buffer_list_test project_benchmark project_gflags)
 endif()
 
-  set(channel_create_test_src
+  android_add_executable(TARGET channel_create_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/surface/channel_create_test.cc
 )
-  android_add_executable(channel_create_test)
 
   target_compile_definitions(channel_create_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(channel_create_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2029,10 +2149,9 @@ endif()
 
     add_dependencies(channel_create_test project_benchmark project_gflags)
 
-  set(chttp2_hpack_encoder_test_src
+  android_add_executable(TARGET chttp2_hpack_encoder_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/transport/chttp2/hpack_encoder_test.cc
 )
-  android_add_executable(chttp2_hpack_encoder_test)
 
   target_compile_definitions(chttp2_hpack_encoder_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(chttp2_hpack_encoder_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2057,10 +2176,9 @@ endif()
 
     add_dependencies(chttp2_hpack_encoder_test project_benchmark project_gflags)
 
-  set(chttp2_stream_map_test_src
+  android_add_executable(TARGET chttp2_stream_map_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/transport/chttp2/stream_map_test.cc
 )
-  android_add_executable(chttp2_stream_map_test)
 
   target_compile_definitions(chttp2_stream_map_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(chttp2_stream_map_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2085,10 +2203,9 @@ endif()
 
     add_dependencies(chttp2_stream_map_test project_benchmark project_gflags)
 
-  set(chttp2_varint_test_src
+  android_add_executable(TARGET chttp2_varint_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/transport/chttp2/varint_test.cc
 )
-  android_add_executable(chttp2_varint_test)
 
   target_compile_definitions(chttp2_varint_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(chttp2_varint_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2114,10 +2231,9 @@ endif()
     add_dependencies(chttp2_varint_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(close_fd_test_src
+  android_add_executable(TARGET close_fd_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/bad_connection/close_fd_test.cc
 )
-  android_add_executable(close_fd_test)
 
   target_compile_definitions(close_fd_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(close_fd_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2143,10 +2259,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(close_fd_test project_benchmark project_gflags)
 endif()
 
-  set(cmdline_test_src
+  android_add_executable(TARGET cmdline_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/util/cmdline_test.cc
 )
-  android_add_executable(cmdline_test)
 
   target_compile_definitions(cmdline_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(cmdline_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2171,10 +2286,9 @@ endif()
 
     add_dependencies(cmdline_test project_benchmark project_gflags)
 
-  set(combiner_test_src
+  android_add_executable(TARGET combiner_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/combiner_test.cc
 )
-  android_add_executable(combiner_test)
 
   target_compile_definitions(combiner_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(combiner_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2199,10 +2313,9 @@ endif()
 
     add_dependencies(combiner_test project_benchmark project_gflags)
 
-  set(compression_test_src
+  android_add_executable(TARGET compression_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/compression/compression_test.cc
 )
-  android_add_executable(compression_test)
 
   target_compile_definitions(compression_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(compression_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2227,10 +2340,9 @@ endif()
 
     add_dependencies(compression_test project_benchmark project_gflags)
 
-  set(concurrent_connectivity_test_src
+  android_add_executable(TARGET concurrent_connectivity_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/surface/concurrent_connectivity_test.cc
 )
-  android_add_executable(concurrent_connectivity_test)
 
   target_compile_definitions(concurrent_connectivity_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(concurrent_connectivity_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2255,10 +2367,9 @@ endif()
 
     add_dependencies(concurrent_connectivity_test project_benchmark project_gflags)
 
-  set(connection_refused_test_src
+  android_add_executable(TARGET connection_refused_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/connection_refused_test.cc
 )
-  android_add_executable(connection_refused_test)
 
   target_compile_definitions(connection_refused_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(connection_refused_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2283,10 +2394,9 @@ endif()
 
     add_dependencies(connection_refused_test project_benchmark project_gflags)
 
-  set(dns_resolver_connectivity_test_src
+  android_add_executable(TARGET dns_resolver_connectivity_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/client_channel/resolvers/dns_resolver_connectivity_test.cc
 )
-  android_add_executable(dns_resolver_connectivity_test)
 
   target_compile_definitions(dns_resolver_connectivity_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(dns_resolver_connectivity_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2311,10 +2421,9 @@ endif()
 
     add_dependencies(dns_resolver_connectivity_test project_benchmark project_gflags)
 
-  set(dns_resolver_cooldown_using_ares_resolver_test_src
+  android_add_executable(TARGET dns_resolver_cooldown_using_ares_resolver_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
 )
-  android_add_executable(dns_resolver_cooldown_using_ares_resolver_test)
 
   target_compile_definitions(dns_resolver_cooldown_using_ares_resolver_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(dns_resolver_cooldown_using_ares_resolver_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2339,10 +2448,9 @@ endif()
 
     add_dependencies(dns_resolver_cooldown_using_ares_resolver_test project_benchmark project_gflags)
 
-  set(dns_resolver_cooldown_using_native_resolver_test_src
+  android_add_executable(TARGET dns_resolver_cooldown_using_native_resolver_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
 )
-  android_add_executable(dns_resolver_cooldown_using_native_resolver_test)
 
   target_compile_definitions(dns_resolver_cooldown_using_native_resolver_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(dns_resolver_cooldown_using_native_resolver_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2367,10 +2475,9 @@ endif()
 
     add_dependencies(dns_resolver_cooldown_using_native_resolver_test project_benchmark project_gflags)
 
-  set(dns_resolver_test_src
+  android_add_executable(TARGET dns_resolver_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/client_channel/resolvers/dns_resolver_test.cc
 )
-  android_add_executable(dns_resolver_test)
 
   target_compile_definitions(dns_resolver_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(dns_resolver_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2396,10 +2503,9 @@ endif()
     add_dependencies(dns_resolver_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(dualstack_socket_test_src
+  android_add_executable(TARGET dualstack_socket_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/dualstack_socket_test.cc
 )
-  android_add_executable(dualstack_socket_test)
 
   target_compile_definitions(dualstack_socket_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(dualstack_socket_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2425,10 +2531,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(dualstack_socket_test project_benchmark project_gflags)
 endif()
 
-  set(endpoint_pair_test_src
+  android_add_executable(TARGET endpoint_pair_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/endpoint_pair_test.cc
 )
-  android_add_executable(endpoint_pair_test)
 
   target_compile_definitions(endpoint_pair_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(endpoint_pair_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2453,10 +2558,9 @@ endif()
 
     add_dependencies(endpoint_pair_test project_benchmark project_gflags)
 
-  set(error_test_src
+  android_add_executable(TARGET error_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/error_test.cc
 )
-  android_add_executable(error_test)
 
   target_compile_definitions(error_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(error_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2482,10 +2586,9 @@ endif()
     add_dependencies(error_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX)
 
-  set(ev_epollex_linux_test_src
+  android_add_executable(TARGET ev_epollex_linux_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/ev_epollex_linux_test.cc
 )
-  android_add_executable(ev_epollex_linux_test)
 
   target_compile_definitions(ev_epollex_linux_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(ev_epollex_linux_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2511,10 +2614,9 @@ if(_gRPC_PLATFORM_LINUX)
     add_dependencies(ev_epollex_linux_test project_benchmark project_gflags)
 endif()
 
-  set(fake_resolver_test_src
+  android_add_executable(TARGET fake_resolver_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/client_channel/resolvers/fake_resolver_test.cc
 )
-  android_add_executable(fake_resolver_test)
 
   target_compile_definitions(fake_resolver_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(fake_resolver_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2540,11 +2642,10 @@ endif()
     add_dependencies(fake_resolver_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(fake_transport_security_test_src
+  android_add_executable(TARGET fake_transport_security_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/tsi/fake_transport_security_test.cc
    ${_gRPC_ROOT}/test/core/tsi/transport_security_test_lib.cc
 )
-  android_add_executable(fake_transport_security_test)
 
   target_compile_definitions(fake_transport_security_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(fake_transport_security_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2571,10 +2672,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(fd_conservation_posix_test_src
+  android_add_executable(TARGET fd_conservation_posix_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/fd_conservation_posix_test.cc
 )
-  android_add_executable(fd_conservation_posix_test)
 
   target_compile_definitions(fd_conservation_posix_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(fd_conservation_posix_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2601,10 +2701,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(fd_posix_test_src
+  android_add_executable(TARGET fd_posix_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/fd_posix_test.cc
 )
-  android_add_executable(fd_posix_test)
 
   target_compile_definitions(fd_posix_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(fd_posix_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2630,10 +2729,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(fd_posix_test project_benchmark project_gflags)
 endif()
 
-  set(fling_client_src
+  android_add_executable(TARGET fling_client NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/fling/client.cc
 )
-  android_add_executable(fling_client)
 
   target_compile_definitions(fling_client PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(fling_client PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2658,10 +2756,9 @@ endif()
 
     add_dependencies(fling_client project_benchmark project_gflags)
 
-  set(fling_server_src
+  android_add_executable(TARGET fling_server NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/fling/server.cc
 )
-  android_add_executable(fling_server)
 
   target_compile_definitions(fling_server PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(fling_server PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2687,10 +2784,9 @@ endif()
     add_dependencies(fling_server project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(fling_stream_test_src
+  android_add_executable(TARGET fling_stream_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/fling/fling_stream_test.cc
 )
-  android_add_executable(fling_stream_test)
 
   target_compile_definitions(fling_stream_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(fling_stream_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2717,10 +2813,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(fling_test_src
+  android_add_executable(TARGET fling_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/fling/fling_test.cc
 )
-  android_add_executable(fling_test)
 
   target_compile_definitions(fling_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(fling_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2747,10 +2842,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC)
 
-  set(fork_test_src
+  android_add_executable(TARGET fork_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/gprpp/fork_test.cc
 )
-  android_add_executable(fork_test)
 
   target_compile_definitions(fork_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(fork_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2777,10 +2871,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(goaway_server_test_src
+  android_add_executable(TARGET goaway_server_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/goaway_server_test.cc
 )
-  android_add_executable(goaway_server_test)
 
   target_compile_definitions(goaway_server_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(goaway_server_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2806,10 +2899,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(goaway_server_test project_benchmark project_gflags)
 endif()
 
-  set(gpr_cpu_test_src
+  android_add_executable(TARGET gpr_cpu_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/gpr/cpu_test.cc
 )
-  android_add_executable(gpr_cpu_test)
 
   target_compile_definitions(gpr_cpu_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(gpr_cpu_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2834,10 +2926,9 @@ endif()
 
     add_dependencies(gpr_cpu_test project_benchmark project_gflags)
 
-  set(gpr_env_test_src
+  android_add_executable(TARGET gpr_env_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/gpr/env_test.cc
 )
-  android_add_executable(gpr_env_test)
 
   target_compile_definitions(gpr_env_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(gpr_env_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2862,10 +2953,9 @@ endif()
 
     add_dependencies(gpr_env_test project_benchmark project_gflags)
 
-  set(gpr_host_port_test_src
+  android_add_executable(TARGET gpr_host_port_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/gprpp/host_port_test.cc
 )
-  android_add_executable(gpr_host_port_test)
 
   target_compile_definitions(gpr_host_port_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(gpr_host_port_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2890,10 +2980,9 @@ endif()
 
     add_dependencies(gpr_host_port_test project_benchmark project_gflags)
 
-  set(gpr_log_test_src
+  android_add_executable(TARGET gpr_log_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/gpr/log_test.cc
 )
-  android_add_executable(gpr_log_test)
 
   target_compile_definitions(gpr_log_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(gpr_log_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2918,10 +3007,9 @@ endif()
 
     add_dependencies(gpr_log_test project_benchmark project_gflags)
 
-  set(gpr_manual_constructor_test_src
+  android_add_executable(TARGET gpr_manual_constructor_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/gprpp/manual_constructor_test.cc
 )
-  android_add_executable(gpr_manual_constructor_test)
 
   target_compile_definitions(gpr_manual_constructor_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(gpr_manual_constructor_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2946,10 +3034,9 @@ endif()
 
     add_dependencies(gpr_manual_constructor_test project_benchmark project_gflags)
 
-  set(gpr_mpscq_test_src
+  android_add_executable(TARGET gpr_mpscq_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/gpr/mpscq_test.cc
 )
-  android_add_executable(gpr_mpscq_test)
 
   target_compile_definitions(gpr_mpscq_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(gpr_mpscq_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -2974,10 +3061,9 @@ endif()
 
     add_dependencies(gpr_mpscq_test project_benchmark project_gflags)
 
-  set(gpr_spinlock_test_src
+  android_add_executable(TARGET gpr_spinlock_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/gpr/spinlock_test.cc
 )
-  android_add_executable(gpr_spinlock_test)
 
   target_compile_definitions(gpr_spinlock_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(gpr_spinlock_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3002,10 +3088,9 @@ endif()
 
     add_dependencies(gpr_spinlock_test project_benchmark project_gflags)
 
-  set(gpr_string_test_src
+  android_add_executable(TARGET gpr_string_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/gpr/string_test.cc
 )
-  android_add_executable(gpr_string_test)
 
   target_compile_definitions(gpr_string_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(gpr_string_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3030,10 +3115,9 @@ endif()
 
     add_dependencies(gpr_string_test project_benchmark project_gflags)
 
-  set(gpr_sync_test_src
+  android_add_executable(TARGET gpr_sync_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/gpr/sync_test.cc
 )
-  android_add_executable(gpr_sync_test)
 
   target_compile_definitions(gpr_sync_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(gpr_sync_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3058,10 +3142,9 @@ endif()
 
     add_dependencies(gpr_sync_test project_benchmark project_gflags)
 
-  set(gpr_thd_test_src
+  android_add_executable(TARGET gpr_thd_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/gprpp/thd_test.cc
 )
-  android_add_executable(gpr_thd_test)
 
   target_compile_definitions(gpr_thd_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(gpr_thd_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3086,10 +3169,9 @@ endif()
 
     add_dependencies(gpr_thd_test project_benchmark project_gflags)
 
-  set(gpr_time_test_src
+  android_add_executable(TARGET gpr_time_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/gpr/time_test.cc
 )
-  android_add_executable(gpr_time_test)
 
   target_compile_definitions(gpr_time_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(gpr_time_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3114,10 +3196,9 @@ endif()
 
     add_dependencies(gpr_time_test project_benchmark project_gflags)
 
-  set(gpr_tls_test_src
+  android_add_executable(TARGET gpr_tls_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/gpr/tls_test.cc
 )
-  android_add_executable(gpr_tls_test)
 
   target_compile_definitions(gpr_tls_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(gpr_tls_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3142,10 +3223,9 @@ endif()
 
     add_dependencies(gpr_tls_test project_benchmark project_gflags)
 
-  set(gpr_useful_test_src
+  android_add_executable(TARGET gpr_useful_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/gpr/useful_test.cc
 )
-  android_add_executable(gpr_useful_test)
 
   target_compile_definitions(gpr_useful_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(gpr_useful_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3170,10 +3250,9 @@ endif()
 
     add_dependencies(gpr_useful_test project_benchmark project_gflags)
 
-  set(grpc_auth_context_test_src
+  android_add_executable(TARGET grpc_auth_context_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/security/auth_context_test.cc
 )
-  android_add_executable(grpc_auth_context_test)
 
   target_compile_definitions(grpc_auth_context_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(grpc_auth_context_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3198,10 +3277,9 @@ endif()
 
     add_dependencies(grpc_auth_context_test project_benchmark project_gflags)
 
-  set(grpc_b64_test_src
+  android_add_executable(TARGET grpc_b64_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/slice/b64_test.cc
 )
-  android_add_executable(grpc_b64_test)
 
   target_compile_definitions(grpc_b64_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(grpc_b64_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3226,10 +3304,9 @@ endif()
 
     add_dependencies(grpc_b64_test project_benchmark project_gflags)
 
-  set(grpc_byte_buffer_reader_test_src
+  android_add_executable(TARGET grpc_byte_buffer_reader_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/surface/byte_buffer_reader_test.cc
 )
-  android_add_executable(grpc_byte_buffer_reader_test)
 
   target_compile_definitions(grpc_byte_buffer_reader_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(grpc_byte_buffer_reader_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3254,10 +3331,9 @@ endif()
 
     add_dependencies(grpc_byte_buffer_reader_test project_benchmark project_gflags)
 
-  set(grpc_channel_args_test_src
+  android_add_executable(TARGET grpc_channel_args_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/channel/channel_args_test.cc
 )
-  android_add_executable(grpc_channel_args_test)
 
   target_compile_definitions(grpc_channel_args_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(grpc_channel_args_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3282,10 +3358,9 @@ endif()
 
     add_dependencies(grpc_channel_args_test project_benchmark project_gflags)
 
-  set(grpc_channel_stack_builder_test_src
+  android_add_executable(TARGET grpc_channel_stack_builder_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/channel/channel_stack_builder_test.cc
 )
-  android_add_executable(grpc_channel_stack_builder_test)
 
   target_compile_definitions(grpc_channel_stack_builder_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(grpc_channel_stack_builder_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3310,10 +3385,9 @@ endif()
 
     add_dependencies(grpc_channel_stack_builder_test project_benchmark project_gflags)
 
-  set(grpc_channel_stack_test_src
+  android_add_executable(TARGET grpc_channel_stack_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/channel/channel_stack_test.cc
 )
-  android_add_executable(grpc_channel_stack_test)
 
   target_compile_definitions(grpc_channel_stack_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(grpc_channel_stack_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3338,10 +3412,9 @@ endif()
 
     add_dependencies(grpc_channel_stack_test project_benchmark project_gflags)
 
-  set(grpc_completion_queue_test_src
+  android_add_executable(TARGET grpc_completion_queue_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/surface/completion_queue_test.cc
 )
-  android_add_executable(grpc_completion_queue_test)
 
   target_compile_definitions(grpc_completion_queue_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(grpc_completion_queue_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3366,10 +3439,9 @@ endif()
 
     add_dependencies(grpc_completion_queue_test project_benchmark project_gflags)
 
-  set(grpc_completion_queue_threading_test_src
+  android_add_executable(TARGET grpc_completion_queue_threading_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/surface/completion_queue_threading_test.cc
 )
-  android_add_executable(grpc_completion_queue_threading_test)
 
   target_compile_definitions(grpc_completion_queue_threading_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(grpc_completion_queue_threading_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3394,10 +3466,9 @@ endif()
 
     add_dependencies(grpc_completion_queue_threading_test project_benchmark project_gflags)
 
-  set(grpc_control_plane_credentials_test_src
+  android_add_executable(TARGET grpc_control_plane_credentials_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/security/control_plane_credentials_test.cc
 )
-  android_add_executable(grpc_control_plane_credentials_test)
 
   target_compile_definitions(grpc_control_plane_credentials_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(grpc_control_plane_credentials_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3422,10 +3493,9 @@ endif()
 
     add_dependencies(grpc_control_plane_credentials_test project_benchmark project_gflags)
 
-  set(grpc_credentials_test_src
+  android_add_executable(TARGET grpc_credentials_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/security/credentials_test.cc
 )
-  android_add_executable(grpc_credentials_test)
 
   target_compile_definitions(grpc_credentials_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(grpc_credentials_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3450,10 +3520,9 @@ endif()
 
     add_dependencies(grpc_credentials_test project_benchmark project_gflags)
 
-  set(grpc_ipv6_loopback_available_test_src
+  android_add_executable(TARGET grpc_ipv6_loopback_available_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/grpc_ipv6_loopback_available_test.cc
 )
-  android_add_executable(grpc_ipv6_loopback_available_test)
 
   target_compile_definitions(grpc_ipv6_loopback_available_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(grpc_ipv6_loopback_available_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3479,10 +3548,9 @@ endif()
     add_dependencies(grpc_ipv6_loopback_available_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(grpc_json_token_test_src
+  android_add_executable(TARGET grpc_json_token_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/security/json_token_test.cc
 )
-  android_add_executable(grpc_json_token_test)
 
   target_compile_definitions(grpc_json_token_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(grpc_json_token_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3508,10 +3576,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(grpc_json_token_test project_benchmark project_gflags)
 endif()
 
-  set(grpc_jwt_verifier_test_src
+  android_add_executable(TARGET grpc_jwt_verifier_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/security/jwt_verifier_test.cc
 )
-  android_add_executable(grpc_jwt_verifier_test)
 
   target_compile_definitions(grpc_jwt_verifier_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(grpc_jwt_verifier_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3536,10 +3603,9 @@ endif()
 
     add_dependencies(grpc_jwt_verifier_test project_benchmark project_gflags)
 
-  set(grpc_security_connector_test_src
+  android_add_executable(TARGET grpc_security_connector_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/security/security_connector_test.cc
 )
-  android_add_executable(grpc_security_connector_test)
 
   target_compile_definitions(grpc_security_connector_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(grpc_security_connector_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3564,10 +3630,9 @@ endif()
 
     add_dependencies(grpc_security_connector_test project_benchmark project_gflags)
 
-  set(grpc_ssl_credentials_test_src
+  android_add_executable(TARGET grpc_ssl_credentials_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/security/ssl_credentials_test.cc
 )
-  android_add_executable(grpc_ssl_credentials_test)
 
   target_compile_definitions(grpc_ssl_credentials_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(grpc_ssl_credentials_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3593,10 +3658,9 @@ endif()
     add_dependencies(grpc_ssl_credentials_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX)
 
-  set(handshake_client_ssl_src
+  android_add_executable(TARGET handshake_client_ssl NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/handshake/client_ssl.cc
 )
-  android_add_executable(handshake_client_ssl)
 
   target_compile_definitions(handshake_client_ssl PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(handshake_client_ssl PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3625,11 +3689,10 @@ if(_gRPC_PLATFORM_LINUX)
 endif()
 if(_gRPC_PLATFORM_LINUX)
 
-  set(handshake_server_ssl_src
+  android_add_executable(TARGET handshake_server_ssl NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/handshake/server_ssl.cc
    ${_gRPC_ROOT}/test/core/handshake/server_ssl_common.cc
 )
-  android_add_executable(handshake_server_ssl)
 
   target_compile_definitions(handshake_server_ssl PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(handshake_server_ssl PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3658,11 +3721,10 @@ if(_gRPC_PLATFORM_LINUX)
 endif()
 if(_gRPC_PLATFORM_LINUX)
 
-  set(handshake_server_with_readahead_handshaker_src
+  android_add_executable(TARGET handshake_server_with_readahead_handshaker NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/handshake/readahead_handshaker_server_ssl.cc
    ${_gRPC_ROOT}/test/core/handshake/server_ssl_common.cc
 )
-  android_add_executable(handshake_server_with_readahead_handshaker)
 
   target_compile_definitions(handshake_server_with_readahead_handshaker PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(handshake_server_with_readahead_handshaker PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3691,10 +3753,9 @@ if(_gRPC_PLATFORM_LINUX)
 endif()
 if(_gRPC_PLATFORM_LINUX)
 
-  set(handshake_verify_peer_options_src
+  android_add_executable(TARGET handshake_verify_peer_options NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/handshake/verify_peer_options.cc
 )
-  android_add_executable(handshake_verify_peer_options)
 
   target_compile_definitions(handshake_verify_peer_options PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(handshake_verify_peer_options PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3722,10 +3783,9 @@ if(_gRPC_PLATFORM_LINUX)
     add_dependencies(handshake_verify_peer_options project_benchmark project_gflags)
 endif()
 
-  set(histogram_test_src
+  android_add_executable(TARGET histogram_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/util/histogram_test.cc
 )
-  android_add_executable(histogram_test)
 
   target_compile_definitions(histogram_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(histogram_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3749,10 +3809,9 @@ endif()
 
     add_dependencies(histogram_test project_benchmark project_gflags)
 
-  set(hpack_parser_test_src
+  android_add_executable(TARGET hpack_parser_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/transport/chttp2/hpack_parser_test.cc
 )
-  android_add_executable(hpack_parser_test)
 
   target_compile_definitions(hpack_parser_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(hpack_parser_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3777,10 +3836,9 @@ endif()
 
     add_dependencies(hpack_parser_test project_benchmark project_gflags)
 
-  set(hpack_table_test_src
+  android_add_executable(TARGET hpack_table_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/transport/chttp2/hpack_table_test.cc
 )
-  android_add_executable(hpack_table_test)
 
   target_compile_definitions(hpack_table_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(hpack_table_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3805,10 +3863,9 @@ endif()
 
     add_dependencies(hpack_table_test project_benchmark project_gflags)
 
-  set(http_parser_test_src
+  android_add_executable(TARGET http_parser_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/http/parser_test.cc
 )
-  android_add_executable(http_parser_test)
 
   target_compile_definitions(http_parser_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(http_parser_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3833,10 +3890,9 @@ endif()
 
     add_dependencies(http_parser_test project_benchmark project_gflags)
 
-  set(httpcli_format_request_test_src
+  android_add_executable(TARGET httpcli_format_request_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/http/format_request_test.cc
 )
-  android_add_executable(httpcli_format_request_test)
 
   target_compile_definitions(httpcli_format_request_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(httpcli_format_request_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3862,10 +3918,9 @@ endif()
     add_dependencies(httpcli_format_request_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(httpcli_test_src
+  android_add_executable(TARGET httpcli_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/http/httpcli_test.cc
 )
-  android_add_executable(httpcli_test)
 
   target_compile_definitions(httpcli_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(httpcli_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3892,10 +3947,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX)
 
-  set(httpscli_test_src
+  android_add_executable(TARGET httpscli_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/http/httpscli_test.cc
 )
-  android_add_executable(httpscli_test)
 
   target_compile_definitions(httpscli_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(httpscli_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3921,10 +3975,9 @@ if(_gRPC_PLATFORM_LINUX)
     add_dependencies(httpscli_test project_benchmark project_gflags)
 endif()
 
-  set(init_test_src
+  android_add_executable(TARGET init_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/surface/init_test.cc
 )
-  android_add_executable(init_test)
 
   target_compile_definitions(init_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(init_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3949,10 +4002,9 @@ endif()
 
     add_dependencies(init_test project_benchmark project_gflags)
 
-  set(inproc_callback_test_src
+  android_add_executable(TARGET inproc_callback_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/inproc_callback_test.cc
 )
-  android_add_executable(inproc_callback_test)
 
   target_compile_definitions(inproc_callback_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(inproc_callback_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -3977,10 +4029,9 @@ endif()
 
     add_dependencies(inproc_callback_test project_benchmark project_gflags)
 
-  set(invalid_call_argument_test_src
+  android_add_executable(TARGET invalid_call_argument_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/invalid_call_argument_test.cc
 )
-  android_add_executable(invalid_call_argument_test)
 
   target_compile_definitions(invalid_call_argument_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(invalid_call_argument_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4005,10 +4056,9 @@ endif()
 
     add_dependencies(invalid_call_argument_test project_benchmark project_gflags)
 
-  set(json_rewrite_src
+  android_add_executable(TARGET json_rewrite NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/json/json_rewrite.cc
 )
-  android_add_executable(json_rewrite)
 
   target_compile_definitions(json_rewrite PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(json_rewrite PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4033,10 +4083,9 @@ endif()
 
     add_dependencies(json_rewrite project_benchmark project_gflags)
 
-  set(json_rewrite_test_src
+  android_add_executable(TARGET json_rewrite_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/json/json_rewrite_test.cc
 )
-  android_add_executable(json_rewrite_test)
 
   target_compile_definitions(json_rewrite_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(json_rewrite_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4061,10 +4110,9 @@ endif()
 
     add_dependencies(json_rewrite_test project_benchmark project_gflags)
 
-  set(json_stream_error_test_src
+  android_add_executable(TARGET json_stream_error_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/json/json_stream_error_test.cc
 )
-  android_add_executable(json_stream_error_test)
 
   target_compile_definitions(json_stream_error_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(json_stream_error_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4089,10 +4137,9 @@ endif()
 
     add_dependencies(json_stream_error_test project_benchmark project_gflags)
 
-  set(json_test_src
+  android_add_executable(TARGET json_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/json/json_test.cc
 )
-  android_add_executable(json_test)
 
   target_compile_definitions(json_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(json_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4117,10 +4164,9 @@ endif()
 
     add_dependencies(json_test project_benchmark project_gflags)
 
-  set(lame_client_test_src
+  android_add_executable(TARGET lame_client_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/surface/lame_client_test.cc
 )
-  android_add_executable(lame_client_test)
 
   target_compile_definitions(lame_client_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(lame_client_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4145,10 +4191,9 @@ endif()
 
     add_dependencies(lame_client_test project_benchmark project_gflags)
 
-  set(load_file_test_src
+  android_add_executable(TARGET load_file_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/load_file_test.cc
 )
-  android_add_executable(load_file_test)
 
   target_compile_definitions(load_file_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(load_file_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4173,10 +4218,9 @@ endif()
 
     add_dependencies(load_file_test project_benchmark project_gflags)
 
-  set(memory_usage_client_src
+  android_add_executable(TARGET memory_usage_client NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/memory_usage/client.cc
 )
-  android_add_executable(memory_usage_client)
 
   target_compile_definitions(memory_usage_client PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(memory_usage_client PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4201,10 +4245,9 @@ endif()
 
     add_dependencies(memory_usage_client project_benchmark project_gflags)
 
-  set(memory_usage_server_src
+  android_add_executable(TARGET memory_usage_server NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/memory_usage/server.cc
 )
-  android_add_executable(memory_usage_server)
 
   target_compile_definitions(memory_usage_server PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(memory_usage_server PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4230,10 +4273,9 @@ endif()
     add_dependencies(memory_usage_server project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(memory_usage_test_src
+  android_add_executable(TARGET memory_usage_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/memory_usage/memory_usage_test.cc
 )
-  android_add_executable(memory_usage_test)
 
   target_compile_definitions(memory_usage_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(memory_usage_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4259,10 +4301,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(memory_usage_test project_benchmark project_gflags)
 endif()
 
-  set(message_compress_test_src
+  android_add_executable(TARGET message_compress_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/compression/message_compress_test.cc
 )
-  android_add_executable(message_compress_test)
 
   target_compile_definitions(message_compress_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(message_compress_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4287,10 +4328,9 @@ endif()
 
     add_dependencies(message_compress_test project_benchmark project_gflags)
 
-  set(minimal_stack_is_minimal_test_src
+  android_add_executable(TARGET minimal_stack_is_minimal_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/channel/minimal_stack_is_minimal_test.cc
 )
-  android_add_executable(minimal_stack_is_minimal_test)
 
   target_compile_definitions(minimal_stack_is_minimal_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(minimal_stack_is_minimal_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4315,10 +4355,9 @@ endif()
 
     add_dependencies(minimal_stack_is_minimal_test project_benchmark project_gflags)
 
-  set(mpmcqueue_test_src
+  android_add_executable(TARGET mpmcqueue_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/mpmcqueue_test.cc
 )
-  android_add_executable(mpmcqueue_test)
 
   target_compile_definitions(mpmcqueue_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(mpmcqueue_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4343,10 +4382,9 @@ endif()
 
     add_dependencies(mpmcqueue_test project_benchmark project_gflags)
 
-  set(multiple_server_queues_test_src
+  android_add_executable(TARGET multiple_server_queues_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/multiple_server_queues_test.cc
 )
-  android_add_executable(multiple_server_queues_test)
 
   target_compile_definitions(multiple_server_queues_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(multiple_server_queues_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4371,10 +4409,9 @@ endif()
 
     add_dependencies(multiple_server_queues_test project_benchmark project_gflags)
 
-  set(murmur_hash_test_src
+  android_add_executable(TARGET murmur_hash_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/gpr/murmur_hash_test.cc
 )
-  android_add_executable(murmur_hash_test)
 
   target_compile_definitions(murmur_hash_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(murmur_hash_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4399,10 +4436,9 @@ endif()
 
     add_dependencies(murmur_hash_test project_benchmark project_gflags)
 
-  set(no_server_test_src
+  android_add_executable(TARGET no_server_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/no_server_test.cc
 )
-  android_add_executable(no_server_test)
 
   target_compile_definitions(no_server_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(no_server_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4427,10 +4463,9 @@ endif()
 
     add_dependencies(no_server_test project_benchmark project_gflags)
 
-  set(num_external_connectivity_watchers_test_src
+  android_add_executable(TARGET num_external_connectivity_watchers_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/surface/num_external_connectivity_watchers_test.cc
 )
-  android_add_executable(num_external_connectivity_watchers_test)
 
   target_compile_definitions(num_external_connectivity_watchers_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(num_external_connectivity_watchers_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4455,10 +4490,9 @@ endif()
 
     add_dependencies(num_external_connectivity_watchers_test project_benchmark project_gflags)
 
-  set(parse_address_test_src
+  android_add_executable(TARGET parse_address_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/client_channel/parse_address_test.cc
 )
-  android_add_executable(parse_address_test)
 
   target_compile_definitions(parse_address_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(parse_address_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4484,10 +4518,9 @@ endif()
     add_dependencies(parse_address_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(parse_address_with_named_scope_id_test_src
+  android_add_executable(TARGET parse_address_with_named_scope_id_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/client_channel/parse_address_with_named_scope_id_test.cc
 )
-  android_add_executable(parse_address_with_named_scope_id_test)
 
   target_compile_definitions(parse_address_with_named_scope_id_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(parse_address_with_named_scope_id_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4513,10 +4546,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(parse_address_with_named_scope_id_test project_benchmark project_gflags)
 endif()
 
-  set(percent_encoding_test_src
+  android_add_executable(TARGET percent_encoding_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/slice/percent_encoding_test.cc
 )
-  android_add_executable(percent_encoding_test)
 
   target_compile_definitions(percent_encoding_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(percent_encoding_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4542,10 +4574,9 @@ endif()
     add_dependencies(percent_encoding_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(resolve_address_using_ares_resolver_posix_test_src
+  android_add_executable(TARGET resolve_address_using_ares_resolver_posix_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/resolve_address_posix_test.cc
 )
-  android_add_executable(resolve_address_using_ares_resolver_posix_test)
 
   target_compile_definitions(resolve_address_using_ares_resolver_posix_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(resolve_address_using_ares_resolver_posix_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4571,10 +4602,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(resolve_address_using_ares_resolver_posix_test project_benchmark project_gflags)
 endif()
 
-  set(resolve_address_using_ares_resolver_test_src
+  android_add_executable(TARGET resolve_address_using_ares_resolver_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/resolve_address_test.cc
 )
-  android_add_executable(resolve_address_using_ares_resolver_test)
 
   target_compile_definitions(resolve_address_using_ares_resolver_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(resolve_address_using_ares_resolver_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4600,10 +4630,9 @@ endif()
     add_dependencies(resolve_address_using_ares_resolver_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(resolve_address_using_native_resolver_posix_test_src
+  android_add_executable(TARGET resolve_address_using_native_resolver_posix_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/resolve_address_posix_test.cc
 )
-  android_add_executable(resolve_address_using_native_resolver_posix_test)
 
   target_compile_definitions(resolve_address_using_native_resolver_posix_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(resolve_address_using_native_resolver_posix_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4629,10 +4658,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(resolve_address_using_native_resolver_posix_test project_benchmark project_gflags)
 endif()
 
-  set(resolve_address_using_native_resolver_test_src
+  android_add_executable(TARGET resolve_address_using_native_resolver_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/resolve_address_test.cc
 )
-  android_add_executable(resolve_address_using_native_resolver_test)
 
   target_compile_definitions(resolve_address_using_native_resolver_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(resolve_address_using_native_resolver_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4657,10 +4685,9 @@ endif()
 
     add_dependencies(resolve_address_using_native_resolver_test project_benchmark project_gflags)
 
-  set(resource_quota_test_src
+  android_add_executable(TARGET resource_quota_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/resource_quota_test.cc
 )
-  android_add_executable(resource_quota_test)
 
   target_compile_definitions(resource_quota_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(resource_quota_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4685,10 +4712,9 @@ endif()
 
     add_dependencies(resource_quota_test project_benchmark project_gflags)
 
-  set(secure_channel_create_test_src
+  android_add_executable(TARGET secure_channel_create_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/surface/secure_channel_create_test.cc
 )
-  android_add_executable(secure_channel_create_test)
 
   target_compile_definitions(secure_channel_create_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(secure_channel_create_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4713,10 +4739,9 @@ endif()
 
     add_dependencies(secure_channel_create_test project_benchmark project_gflags)
 
-  set(secure_endpoint_test_src
+  android_add_executable(TARGET secure_endpoint_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/security/secure_endpoint_test.cc
 )
-  android_add_executable(secure_endpoint_test)
 
   target_compile_definitions(secure_endpoint_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(secure_endpoint_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4741,10 +4766,9 @@ endif()
 
     add_dependencies(secure_endpoint_test project_benchmark project_gflags)
 
-  set(sequential_connectivity_test_src
+  android_add_executable(TARGET sequential_connectivity_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/surface/sequential_connectivity_test.cc
 )
-  android_add_executable(sequential_connectivity_test)
 
   target_compile_definitions(sequential_connectivity_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(sequential_connectivity_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4769,10 +4793,9 @@ endif()
 
     add_dependencies(sequential_connectivity_test project_benchmark project_gflags)
 
-  set(server_chttp2_test_src
+  android_add_executable(TARGET server_chttp2_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/surface/server_chttp2_test.cc
 )
-  android_add_executable(server_chttp2_test)
 
   target_compile_definitions(server_chttp2_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(server_chttp2_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4797,10 +4820,9 @@ endif()
 
     add_dependencies(server_chttp2_test project_benchmark project_gflags)
 
-  set(server_test_src
+  android_add_executable(TARGET server_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/surface/server_test.cc
 )
-  android_add_executable(server_test)
 
   target_compile_definitions(server_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(server_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4825,10 +4847,9 @@ endif()
 
     add_dependencies(server_test project_benchmark project_gflags)
 
-  set(slice_buffer_test_src
+  android_add_executable(TARGET slice_buffer_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/slice/slice_buffer_test.cc
 )
-  android_add_executable(slice_buffer_test)
 
   target_compile_definitions(slice_buffer_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(slice_buffer_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4853,10 +4874,9 @@ endif()
 
     add_dependencies(slice_buffer_test project_benchmark project_gflags)
 
-  set(slice_string_helpers_test_src
+  android_add_executable(TARGET slice_string_helpers_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/slice/slice_string_helpers_test.cc
 )
-  android_add_executable(slice_string_helpers_test)
 
   target_compile_definitions(slice_string_helpers_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(slice_string_helpers_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4881,10 +4901,9 @@ endif()
 
     add_dependencies(slice_string_helpers_test project_benchmark project_gflags)
 
-  set(slice_test_src
+  android_add_executable(TARGET slice_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/slice/slice_test.cc
 )
-  android_add_executable(slice_test)
 
   target_compile_definitions(slice_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(slice_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4909,10 +4928,9 @@ endif()
 
     add_dependencies(slice_test project_benchmark project_gflags)
 
-  set(sockaddr_resolver_test_src
+  android_add_executable(TARGET sockaddr_resolver_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/client_channel/resolvers/sockaddr_resolver_test.cc
 )
-  android_add_executable(sockaddr_resolver_test)
 
   target_compile_definitions(sockaddr_resolver_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(sockaddr_resolver_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4937,10 +4955,9 @@ endif()
 
     add_dependencies(sockaddr_resolver_test project_benchmark project_gflags)
 
-  set(sockaddr_utils_test_src
+  android_add_executable(TARGET sockaddr_utils_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/sockaddr_utils_test.cc
 )
-  android_add_executable(sockaddr_utils_test)
 
   target_compile_definitions(sockaddr_utils_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(sockaddr_utils_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4966,10 +4983,9 @@ endif()
     add_dependencies(sockaddr_utils_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(socket_utils_test_src
+  android_add_executable(TARGET socket_utils_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/socket_utils_test.cc
 )
-  android_add_executable(socket_utils_test)
 
   target_compile_definitions(socket_utils_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(socket_utils_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -4996,11 +5012,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(ssl_transport_security_test_src
+  android_add_executable(TARGET ssl_transport_security_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/tsi/ssl_transport_security_test.cc
    ${_gRPC_ROOT}/test/core/tsi/transport_security_test_lib.cc
 )
-  android_add_executable(ssl_transport_security_test)
 
   target_compile_definitions(ssl_transport_security_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(ssl_transport_security_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -5026,10 +5041,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(ssl_transport_security_test project_benchmark project_gflags)
 endif()
 
-  set(status_conversion_test_src
+  android_add_executable(TARGET status_conversion_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/transport/status_conversion_test.cc
 )
-  android_add_executable(status_conversion_test)
 
   target_compile_definitions(status_conversion_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(status_conversion_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -5054,10 +5068,9 @@ endif()
 
     add_dependencies(status_conversion_test project_benchmark project_gflags)
 
-  set(stream_compression_test_src
+  android_add_executable(TARGET stream_compression_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/compression/stream_compression_test.cc
 )
-  android_add_executable(stream_compression_test)
 
   target_compile_definitions(stream_compression_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(stream_compression_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -5082,10 +5095,9 @@ endif()
 
     add_dependencies(stream_compression_test project_benchmark project_gflags)
 
-  set(stream_owned_slice_test_src
+  android_add_executable(TARGET stream_owned_slice_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/transport/stream_owned_slice_test.cc
 )
-  android_add_executable(stream_owned_slice_test)
 
   target_compile_definitions(stream_owned_slice_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(stream_owned_slice_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -5111,10 +5123,9 @@ endif()
     add_dependencies(stream_owned_slice_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(tcp_client_posix_test_src
+  android_add_executable(TARGET tcp_client_posix_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/tcp_client_posix_test.cc
 )
-  android_add_executable(tcp_client_posix_test)
 
   target_compile_definitions(tcp_client_posix_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(tcp_client_posix_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -5140,10 +5151,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(tcp_client_posix_test project_benchmark project_gflags)
 endif()
 
-  set(tcp_client_uv_test_src
+  android_add_executable(TARGET tcp_client_uv_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/tcp_client_uv_test.cc
 )
-  android_add_executable(tcp_client_uv_test)
 
   target_compile_definitions(tcp_client_uv_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(tcp_client_uv_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -5169,10 +5179,9 @@ endif()
     add_dependencies(tcp_client_uv_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(tcp_posix_test_src
+  android_add_executable(TARGET tcp_posix_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/tcp_posix_test.cc
 )
-  android_add_executable(tcp_posix_test)
 
   target_compile_definitions(tcp_posix_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(tcp_posix_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -5199,10 +5208,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(tcp_server_posix_test_src
+  android_add_executable(TARGET tcp_server_posix_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/tcp_server_posix_test.cc
 )
-  android_add_executable(tcp_server_posix_test)
 
   target_compile_definitions(tcp_server_posix_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(tcp_server_posix_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -5228,10 +5236,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(tcp_server_posix_test project_benchmark project_gflags)
 endif()
 
-  set(tcp_server_uv_test_src
+  android_add_executable(TARGET tcp_server_uv_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/tcp_server_uv_test.cc
 )
-  android_add_executable(tcp_server_uv_test)
 
   target_compile_definitions(tcp_server_uv_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(tcp_server_uv_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -5256,10 +5263,9 @@ endif()
 
     add_dependencies(tcp_server_uv_test project_benchmark project_gflags)
 
-  set(threadpool_test_src
+  android_add_executable(TARGET threadpool_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/threadpool_test.cc
 )
-  android_add_executable(threadpool_test)
 
   target_compile_definitions(threadpool_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(threadpool_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -5284,10 +5290,9 @@ endif()
 
     add_dependencies(threadpool_test project_benchmark project_gflags)
 
-  set(time_averaged_stats_test_src
+  android_add_executable(TARGET time_averaged_stats_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/time_averaged_stats_test.cc
 )
-  android_add_executable(time_averaged_stats_test)
 
   target_compile_definitions(time_averaged_stats_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(time_averaged_stats_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -5312,10 +5317,9 @@ endif()
 
     add_dependencies(time_averaged_stats_test project_benchmark project_gflags)
 
-  set(timeout_encoding_test_src
+  android_add_executable(TARGET timeout_encoding_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/transport/timeout_encoding_test.cc
 )
-  android_add_executable(timeout_encoding_test)
 
   target_compile_definitions(timeout_encoding_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(timeout_encoding_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -5340,10 +5344,9 @@ endif()
 
     add_dependencies(timeout_encoding_test project_benchmark project_gflags)
 
-  set(timer_heap_test_src
+  android_add_executable(TARGET timer_heap_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/timer_heap_test.cc
 )
-  android_add_executable(timer_heap_test)
 
   target_compile_definitions(timer_heap_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(timer_heap_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -5368,10 +5371,9 @@ endif()
 
     add_dependencies(timer_heap_test project_benchmark project_gflags)
 
-  set(timer_list_test_src
+  android_add_executable(TARGET timer_list_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/timer_list_test.cc
 )
-  android_add_executable(timer_list_test)
 
   target_compile_definitions(timer_list_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(timer_list_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -5396,10 +5398,9 @@ endif()
 
     add_dependencies(timer_list_test project_benchmark project_gflags)
 
-  set(transport_connectivity_state_test_src
+  android_add_executable(TARGET transport_connectivity_state_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/transport/connectivity_state_test.cc
 )
-  android_add_executable(transport_connectivity_state_test)
 
   target_compile_definitions(transport_connectivity_state_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(transport_connectivity_state_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -5424,10 +5425,9 @@ endif()
 
     add_dependencies(transport_connectivity_state_test project_benchmark project_gflags)
 
-  set(transport_metadata_test_src
+  android_add_executable(TARGET transport_metadata_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/transport/metadata_test.cc
 )
-  android_add_executable(transport_metadata_test)
 
   target_compile_definitions(transport_metadata_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(transport_metadata_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -5453,10 +5453,9 @@ endif()
     add_dependencies(transport_metadata_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(transport_security_test_src
+  android_add_executable(TARGET transport_security_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/tsi/transport_security_test.cc
 )
-  android_add_executable(transport_security_test)
 
   target_compile_definitions(transport_security_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(transport_security_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -5483,10 +5482,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(udp_server_test_src
+  android_add_executable(TARGET udp_server_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/udp_server_test.cc
 )
-  android_add_executable(udp_server_test)
 
   target_compile_definitions(udp_server_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(udp_server_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -5512,10 +5510,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(udp_server_test project_benchmark project_gflags)
 endif()
 
-  set(uri_parser_test_src
+  android_add_executable(TARGET uri_parser_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/client_channel/uri_parser_test.cc
 )
-  android_add_executable(uri_parser_test)
 
   target_compile_definitions(uri_parser_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(uri_parser_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -5540,10 +5537,9 @@ endif()
 
     add_dependencies(uri_parser_test project_benchmark project_gflags)
 
-  set(alarm_test_src
+  android_add_test(TARGET alarm_test
    ${_gRPC_ROOT}/test/cpp/common/alarm_test.cc
 )
-  android_add_test(alarm_test)
   target_link_libraries(alarm_test PRIVATE gmock_main ssl crypto)
   target_include_directories(alarm_test PRIVATE ${_gRPC_ROOT})
 
@@ -5576,10 +5572,9 @@ endif()
 
     add_dependencies(alarm_test project_benchmark project_gflags)
 
-  set(alts_counter_test_src
+  android_add_test(TARGET alts_counter_test
    ${_gRPC_ROOT}/test/core/tsi/alts/frame_protector/alts_counter_test.cc
 )
-  android_add_test(alts_counter_test)
   target_link_libraries(alts_counter_test PRIVATE gmock_main ssl crypto)
   target_include_directories(alts_counter_test PRIVATE ${_gRPC_ROOT})
 
@@ -5610,10 +5605,9 @@ endif()
 
     add_dependencies(alts_counter_test project_benchmark project_gflags)
 
-  set(alts_crypt_test_src
+  android_add_test(TARGET alts_crypt_test
    ${_gRPC_ROOT}/test/core/tsi/alts/crypt/aes_gcm_test.cc
 )
-  android_add_test(alts_crypt_test)
   target_link_libraries(alts_crypt_test PRIVATE gmock_main ssl crypto)
   target_include_directories(alts_crypt_test PRIVATE ${_gRPC_ROOT})
 
@@ -5645,10 +5639,9 @@ endif()
 
     add_dependencies(alts_crypt_test project_benchmark project_gflags)
 
-  set(alts_crypter_test_src
+  android_add_test(TARGET alts_crypter_test
    ${_gRPC_ROOT}/test/core/tsi/alts/frame_protector/alts_crypter_test.cc
 )
-  android_add_test(alts_crypter_test)
   target_link_libraries(alts_crypter_test PRIVATE gmock_main ssl crypto)
   target_include_directories(alts_crypter_test PRIVATE ${_gRPC_ROOT})
 
@@ -5679,10 +5672,9 @@ endif()
 
     add_dependencies(alts_crypter_test project_benchmark project_gflags)
 
-  set(alts_frame_handler_test_src
+  android_add_test(TARGET alts_frame_handler_test
    ${_gRPC_ROOT}/test/core/tsi/alts/frame_protector/frame_handler_test.cc
 )
-  android_add_test(alts_frame_handler_test)
   target_link_libraries(alts_frame_handler_test PRIVATE gmock_main ssl crypto)
   target_include_directories(alts_frame_handler_test PRIVATE ${_gRPC_ROOT})
 
@@ -5713,11 +5705,10 @@ endif()
 
     add_dependencies(alts_frame_handler_test project_benchmark project_gflags)
 
-  set(alts_frame_protector_test_src
+  android_add_test(TARGET alts_frame_protector_test
    ${_gRPC_ROOT}/test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc
    ${_gRPC_ROOT}/test/core/tsi/transport_security_test_lib.cc
 )
-  android_add_test(alts_frame_protector_test)
   target_link_libraries(alts_frame_protector_test PRIVATE gmock_main ssl crypto)
   target_include_directories(alts_frame_protector_test PRIVATE ${_gRPC_ROOT})
 
@@ -5748,10 +5739,9 @@ endif()
 
     add_dependencies(alts_frame_protector_test project_benchmark project_gflags)
 
-  set(alts_grpc_record_protocol_test_src
+  android_add_test(TARGET alts_grpc_record_protocol_test
    ${_gRPC_ROOT}/test/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_test.cc
 )
-  android_add_test(alts_grpc_record_protocol_test)
   target_link_libraries(alts_grpc_record_protocol_test PRIVATE gmock_main ssl crypto)
   target_include_directories(alts_grpc_record_protocol_test PRIVATE ${_gRPC_ROOT})
 
@@ -5782,10 +5772,9 @@ endif()
 
     add_dependencies(alts_grpc_record_protocol_test project_benchmark project_gflags)
 
-  set(alts_handshaker_client_test_src
+  android_add_test(TARGET alts_handshaker_client_test
    ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
 )
-  android_add_test(alts_handshaker_client_test)
   target_link_libraries(alts_handshaker_client_test PRIVATE gmock_main ssl crypto)
   target_include_directories(alts_handshaker_client_test PRIVATE ${_gRPC_ROOT})
 
@@ -5816,10 +5805,9 @@ endif()
 
     add_dependencies(alts_handshaker_client_test project_benchmark project_gflags)
 
-  set(alts_handshaker_service_api_test_src
+  android_add_test(TARGET alts_handshaker_service_api_test
    ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/alts_handshaker_service_api_test.cc
 )
-  android_add_test(alts_handshaker_service_api_test)
   target_link_libraries(alts_handshaker_service_api_test PRIVATE gmock_main ssl crypto)
   target_include_directories(alts_handshaker_service_api_test PRIVATE ${_gRPC_ROOT})
 
@@ -5850,10 +5838,9 @@ endif()
 
     add_dependencies(alts_handshaker_service_api_test project_benchmark project_gflags)
 
-  set(alts_iovec_record_protocol_test_src
+  android_add_test(TARGET alts_iovec_record_protocol_test
    ${_gRPC_ROOT}/test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc
 )
-  android_add_test(alts_iovec_record_protocol_test)
   target_link_libraries(alts_iovec_record_protocol_test PRIVATE gmock_main ssl crypto)
   target_include_directories(alts_iovec_record_protocol_test PRIVATE ${_gRPC_ROOT})
 
@@ -5884,10 +5871,9 @@ endif()
 
     add_dependencies(alts_iovec_record_protocol_test project_benchmark project_gflags)
 
-  set(alts_security_connector_test_src
+  android_add_test(TARGET alts_security_connector_test
    ${_gRPC_ROOT}/test/core/security/alts_security_connector_test.cc
 )
-  android_add_test(alts_security_connector_test)
   target_link_libraries(alts_security_connector_test PRIVATE gmock_main ssl crypto)
   target_include_directories(alts_security_connector_test PRIVATE ${_gRPC_ROOT})
 
@@ -5917,10 +5903,9 @@ endif()
 
     add_dependencies(alts_security_connector_test project_benchmark project_gflags)
 
-  set(alts_tsi_handshaker_test_src
+  android_add_test(TARGET alts_tsi_handshaker_test
    ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/alts_tsi_handshaker_test.cc
 )
-  android_add_test(alts_tsi_handshaker_test)
   target_link_libraries(alts_tsi_handshaker_test PRIVATE gmock_main ssl crypto)
   target_include_directories(alts_tsi_handshaker_test PRIVATE ${_gRPC_ROOT})
 
@@ -5951,10 +5936,9 @@ endif()
 
     add_dependencies(alts_tsi_handshaker_test project_benchmark project_gflags)
 
-  set(alts_tsi_utils_test_src
+  android_add_test(TARGET alts_tsi_utils_test
    ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/alts_tsi_utils_test.cc
 )
-  android_add_test(alts_tsi_utils_test)
   target_link_libraries(alts_tsi_utils_test PRIVATE gmock_main ssl crypto)
   target_include_directories(alts_tsi_utils_test PRIVATE ${_gRPC_ROOT})
 
@@ -5985,10 +5969,9 @@ endif()
 
     add_dependencies(alts_tsi_utils_test project_benchmark project_gflags)
 
-  set(alts_zero_copy_grpc_protector_test_src
+  android_add_test(TARGET alts_zero_copy_grpc_protector_test
    ${_gRPC_ROOT}/test/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector_test.cc
 )
-  android_add_test(alts_zero_copy_grpc_protector_test)
   target_link_libraries(alts_zero_copy_grpc_protector_test PRIVATE gmock_main ssl crypto)
   target_include_directories(alts_zero_copy_grpc_protector_test PRIVATE ${_gRPC_ROOT})
 
@@ -6019,10 +6002,9 @@ endif()
 
     add_dependencies(alts_zero_copy_grpc_protector_test project_benchmark project_gflags)
 
-  set(async_end2end_test_src
+  android_add_test(TARGET async_end2end_test
    ${_gRPC_ROOT}/test/cpp/end2end/async_end2end_test.cc
 )
-  android_add_test(async_end2end_test)
   target_link_libraries(async_end2end_test PRIVATE gmock_main ssl crypto)
   target_include_directories(async_end2end_test PRIVATE ${_gRPC_ROOT})
 
@@ -6055,10 +6037,9 @@ endif()
 
     add_dependencies(async_end2end_test project_benchmark project_gflags)
 
-  set(auth_property_iterator_test_src
+  android_add_test(TARGET auth_property_iterator_test
    ${_gRPC_ROOT}/test/cpp/common/auth_property_iterator_test.cc
 )
-  android_add_test(auth_property_iterator_test)
   target_link_libraries(auth_property_iterator_test PRIVATE gmock_main ssl crypto)
   target_include_directories(auth_property_iterator_test PRIVATE ${_gRPC_ROOT})
 
@@ -6091,10 +6072,9 @@ endif()
 
     add_dependencies(auth_property_iterator_test project_benchmark project_gflags)
 
-  set(backoff_test_src
+  android_add_test(TARGET backoff_test
    ${_gRPC_ROOT}/test/core/backoff/backoff_test.cc
 )
-  android_add_test(backoff_test)
   target_link_libraries(backoff_test PRIVATE gmock_main ssl crypto)
   target_include_directories(backoff_test PRIVATE ${_gRPC_ROOT})
 
@@ -6125,10 +6105,9 @@ endif()
 
     add_dependencies(backoff_test project_benchmark project_gflags)
 
-  set(bdp_estimator_test_src
+  android_add_test(TARGET bdp_estimator_test
    ${_gRPC_ROOT}/test/core/transport/bdp_estimator_test.cc
 )
-  android_add_test(bdp_estimator_test)
   target_link_libraries(bdp_estimator_test PRIVATE gmock_main ssl crypto)
   target_include_directories(bdp_estimator_test PRIVATE ${_gRPC_ROOT})
 
@@ -6162,10 +6141,9 @@ endif()
     add_dependencies(bdp_estimator_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_alarm_src
+  android_add_test(TARGET bm_alarm
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_alarm.cc
 )
-  android_add_test(bm_alarm)
   target_link_libraries(bm_alarm PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_alarm PRIVATE ${_gRPC_ROOT})
 
@@ -6203,10 +6181,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_arena_src
+  android_add_test(TARGET bm_arena
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_arena.cc
 )
-  android_add_test(bm_arena)
   target_link_libraries(bm_arena PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_arena PRIVATE ${_gRPC_ROOT})
 
@@ -6244,10 +6221,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_byte_buffer_src
+  android_add_test(TARGET bm_byte_buffer
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_byte_buffer.cc
 )
-  android_add_test(bm_byte_buffer)
   target_link_libraries(bm_byte_buffer PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_byte_buffer PRIVATE ${_gRPC_ROOT})
 
@@ -6285,10 +6261,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_call_create_src
+  android_add_test(TARGET bm_call_create
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_call_create.cc
 )
-  android_add_test(bm_call_create)
   target_link_libraries(bm_call_create PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_call_create PRIVATE ${_gRPC_ROOT})
 
@@ -6326,10 +6301,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_callback_streaming_ping_pong_src
+  android_add_test(TARGET bm_callback_streaming_ping_pong
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_callback_streaming_ping_pong.cc
 )
-  android_add_test(bm_callback_streaming_ping_pong)
   target_link_libraries(bm_callback_streaming_ping_pong PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_callback_streaming_ping_pong PRIVATE ${_gRPC_ROOT})
 
@@ -6368,10 +6342,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_callback_unary_ping_pong_src
+  android_add_test(TARGET bm_callback_unary_ping_pong
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_callback_unary_ping_pong.cc
 )
-  android_add_test(bm_callback_unary_ping_pong)
   target_link_libraries(bm_callback_unary_ping_pong PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_callback_unary_ping_pong PRIVATE ${_gRPC_ROOT})
 
@@ -6410,10 +6383,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_channel_src
+  android_add_test(TARGET bm_channel
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_channel.cc
 )
-  android_add_test(bm_channel)
   target_link_libraries(bm_channel PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_channel PRIVATE ${_gRPC_ROOT})
 
@@ -6451,10 +6423,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_chttp2_hpack_src
+  android_add_test(TARGET bm_chttp2_hpack
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_chttp2_hpack.cc
 )
-  android_add_test(bm_chttp2_hpack)
   target_link_libraries(bm_chttp2_hpack PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_chttp2_hpack PRIVATE ${_gRPC_ROOT})
 
@@ -6492,10 +6463,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_chttp2_transport_src
+  android_add_test(TARGET bm_chttp2_transport
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_chttp2_transport.cc
 )
-  android_add_test(bm_chttp2_transport)
   target_link_libraries(bm_chttp2_transport PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_chttp2_transport PRIVATE ${_gRPC_ROOT})
 
@@ -6533,10 +6503,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_closure_src
+  android_add_test(TARGET bm_closure
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_closure.cc
 )
-  android_add_test(bm_closure)
   target_link_libraries(bm_closure PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_closure PRIVATE ${_gRPC_ROOT})
 
@@ -6574,10 +6543,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_cq_src
+  android_add_test(TARGET bm_cq
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_cq.cc
 )
-  android_add_test(bm_cq)
   target_link_libraries(bm_cq PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_cq PRIVATE ${_gRPC_ROOT})
 
@@ -6615,10 +6583,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_cq_multiple_threads_src
+  android_add_test(TARGET bm_cq_multiple_threads
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_cq_multiple_threads.cc
 )
-  android_add_test(bm_cq_multiple_threads)
   target_link_libraries(bm_cq_multiple_threads PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_cq_multiple_threads PRIVATE ${_gRPC_ROOT})
 
@@ -6656,10 +6623,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_error_src
+  android_add_test(TARGET bm_error
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_error.cc
 )
-  android_add_test(bm_error)
   target_link_libraries(bm_error PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_error PRIVATE ${_gRPC_ROOT})
 
@@ -6697,10 +6663,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_fullstack_streaming_ping_pong_src
+  android_add_test(TARGET bm_fullstack_streaming_ping_pong
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc
 )
-  android_add_test(bm_fullstack_streaming_ping_pong)
   target_link_libraries(bm_fullstack_streaming_ping_pong PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_fullstack_streaming_ping_pong PRIVATE ${_gRPC_ROOT})
 
@@ -6738,10 +6703,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_fullstack_streaming_pump_src
+  android_add_test(TARGET bm_fullstack_streaming_pump
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc
 )
-  android_add_test(bm_fullstack_streaming_pump)
   target_link_libraries(bm_fullstack_streaming_pump PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_fullstack_streaming_pump PRIVATE ${_gRPC_ROOT})
 
@@ -6779,10 +6743,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_fullstack_trickle_src
+  android_add_test(TARGET bm_fullstack_trickle
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_fullstack_trickle.cc
 )
-  android_add_test(bm_fullstack_trickle)
   target_link_libraries(bm_fullstack_trickle PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_fullstack_trickle PRIVATE ${_gRPC_ROOT})
 
@@ -6820,10 +6783,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_fullstack_unary_ping_pong_src
+  android_add_test(TARGET bm_fullstack_unary_ping_pong
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc
 )
-  android_add_test(bm_fullstack_unary_ping_pong)
   target_link_libraries(bm_fullstack_unary_ping_pong PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_fullstack_unary_ping_pong PRIVATE ${_gRPC_ROOT})
 
@@ -6861,10 +6823,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_metadata_src
+  android_add_test(TARGET bm_metadata
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_metadata.cc
 )
-  android_add_test(bm_metadata)
   target_link_libraries(bm_metadata PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_metadata PRIVATE ${_gRPC_ROOT})
 
@@ -6902,10 +6863,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_pollset_src
+  android_add_test(TARGET bm_pollset
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_pollset.cc
 )
-  android_add_test(bm_pollset)
   target_link_libraries(bm_pollset PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_pollset PRIVATE ${_gRPC_ROOT})
 
@@ -6943,10 +6903,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_threadpool_src
+  android_add_test(TARGET bm_threadpool
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_threadpool.cc
 )
-  android_add_test(bm_threadpool)
   target_link_libraries(bm_threadpool PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_threadpool PRIVATE ${_gRPC_ROOT})
 
@@ -6984,10 +6943,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bm_timer_src
+  android_add_test(TARGET bm_timer
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/bm_timer.cc
 )
-  android_add_test(bm_timer)
   target_link_libraries(bm_timer PRIVATE gmock_main ssl crypto)
   target_include_directories(bm_timer PRIVATE ${_gRPC_ROOT})
 
@@ -7024,10 +6982,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(bm_timer project_benchmark project_gflags)
 endif()
 
-  set(byte_stream_test_src
+  android_add_test(TARGET byte_stream_test
    ${_gRPC_ROOT}/test/core/transport/byte_stream_test.cc
 )
-  android_add_test(byte_stream_test)
   target_link_libraries(byte_stream_test PRIVATE gmock_main ssl crypto)
   target_include_directories(byte_stream_test PRIVATE ${_gRPC_ROOT})
 
@@ -7058,10 +7015,9 @@ endif()
 
     add_dependencies(byte_stream_test project_benchmark project_gflags)
 
-  set(channel_arguments_test_src
+  android_add_test(TARGET channel_arguments_test
    ${_gRPC_ROOT}/test/cpp/common/channel_arguments_test.cc
 )
-  android_add_test(channel_arguments_test)
   target_link_libraries(channel_arguments_test PRIVATE gmock_main ssl crypto)
   target_include_directories(channel_arguments_test PRIVATE ${_gRPC_ROOT})
 
@@ -7092,10 +7048,9 @@ endif()
 
     add_dependencies(channel_arguments_test project_benchmark project_gflags)
 
-  set(channel_filter_test_src
+  android_add_test(TARGET channel_filter_test
    ${_gRPC_ROOT}/test/cpp/common/channel_filter_test.cc
 )
-  android_add_test(channel_filter_test)
   target_link_libraries(channel_filter_test PRIVATE gmock_main ssl crypto)
   target_include_directories(channel_filter_test PRIVATE ${_gRPC_ROOT})
 
@@ -7126,14 +7081,13 @@ endif()
 
     add_dependencies(channel_filter_test project_benchmark project_gflags)
 
-  set(channel_trace_test_src
+  android_add_test(TARGET channel_trace_test
    ${_gRPC_ROOT}/test/core/channel/channel_trace_test.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
 )
-  android_add_test(channel_trace_test)
   target_link_libraries(channel_trace_test PRIVATE gmock_main ssl crypto)
   target_include_directories(channel_trace_test PRIVATE ${_gRPC_ROOT})
 
@@ -7170,10 +7124,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(channel_trace_test project_benchmark project_gflags)
 
-  set(channelz_registry_test_src
+  android_add_test(TARGET channelz_registry_test
    ${_gRPC_ROOT}/test/core/channel/channelz_registry_test.cc
 )
-  android_add_test(channelz_registry_test)
   target_link_libraries(channelz_registry_test PRIVATE gmock_main ssl crypto)
   target_include_directories(channelz_registry_test PRIVATE ${_gRPC_ROOT})
 
@@ -7206,14 +7159,13 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(channelz_registry_test project_benchmark project_gflags)
 
-  set(channelz_test_src
+  android_add_test(TARGET channelz_test
    ${_gRPC_ROOT}/test/core/channel/channelz_test.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
 )
-  android_add_test(channelz_test)
   target_link_libraries(channelz_test PRIVATE gmock_main ssl crypto)
   target_include_directories(channelz_test PRIVATE ${_gRPC_ROOT})
 
@@ -7250,10 +7202,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(channelz_test project_benchmark project_gflags)
 
-  set(check_gcp_environment_linux_test_src
+  android_add_test(TARGET check_gcp_environment_linux_test
    ${_gRPC_ROOT}/test/core/security/check_gcp_environment_linux_test.cc
 )
-  android_add_test(check_gcp_environment_linux_test)
   target_link_libraries(check_gcp_environment_linux_test PRIVATE gmock_main ssl crypto)
   target_include_directories(check_gcp_environment_linux_test PRIVATE ${_gRPC_ROOT})
 
@@ -7283,10 +7234,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(check_gcp_environment_linux_test project_benchmark project_gflags)
 
-  set(check_gcp_environment_windows_test_src
+  android_add_test(TARGET check_gcp_environment_windows_test
    ${_gRPC_ROOT}/test/core/security/check_gcp_environment_windows_test.cc
 )
-  android_add_test(check_gcp_environment_windows_test)
   target_link_libraries(check_gcp_environment_windows_test PRIVATE gmock_main ssl crypto)
   target_include_directories(check_gcp_environment_windows_test PRIVATE ${_gRPC_ROOT})
 
@@ -7316,10 +7266,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(check_gcp_environment_windows_test project_benchmark project_gflags)
 
-  set(chttp2_settings_timeout_test_src
+  android_add_test(TARGET chttp2_settings_timeout_test
    ${_gRPC_ROOT}/test/core/transport/chttp2/settings_timeout_test.cc
 )
-  android_add_test(chttp2_settings_timeout_test)
   target_link_libraries(chttp2_settings_timeout_test PRIVATE gmock_main ssl crypto)
   target_include_directories(chttp2_settings_timeout_test PRIVATE ${_gRPC_ROOT})
 
@@ -7350,10 +7299,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(chttp2_settings_timeout_test project_benchmark project_gflags)
 
-  set(cli_call_test_src
+  android_add_test(TARGET cli_call_test
    ${_gRPC_ROOT}/test/cpp/util/cli_call_test.cc
 )
-  android_add_test(cli_call_test)
   target_link_libraries(cli_call_test PRIVATE gmock_main ssl crypto)
   target_include_directories(cli_call_test PRIVATE ${_gRPC_ROOT})
 
@@ -7387,11 +7335,10 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(cli_call_test project_benchmark project_gflags)
 
-  set(client_callback_end2end_test_src
+  android_add_test(TARGET client_callback_end2end_test
    ${_gRPC_ROOT}/test/cpp/end2end/client_callback_end2end_test.cc
    ${_gRPC_ROOT}/test/cpp/end2end/interceptors_util.cc
 )
-  android_add_test(client_callback_end2end_test)
   target_link_libraries(client_callback_end2end_test PRIVATE gmock_main ssl crypto)
   target_include_directories(client_callback_end2end_test PRIVATE ${_gRPC_ROOT})
 
@@ -7424,14 +7371,13 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(client_callback_end2end_test project_benchmark project_gflags)
 
-  set(client_channel_stress_test_src
+  android_add_test(TARGET client_channel_stress_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/client/client_channel_stress_test.cc
 )
-  android_add_test(client_channel_stress_test)
   target_link_libraries(client_channel_stress_test PRIVATE gmock_main ssl crypto)
   target_include_directories(client_channel_stress_test PRIVATE ${_gRPC_ROOT})
 
@@ -7469,10 +7415,9 @@ protobuf_generate_grpc_cpp(
     add_dependencies(client_channel_stress_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(client_crash_test_src
+  android_add_test(TARGET client_crash_test
    ${_gRPC_ROOT}/test/cpp/end2end/client_crash_test.cc
 )
-  android_add_test(client_crash_test)
   target_link_libraries(client_crash_test PRIVATE gmock_main ssl crypto)
   target_include_directories(client_crash_test PRIVATE ${_gRPC_ROOT})
 
@@ -7506,10 +7451,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(client_crash_test project_benchmark project_gflags)
 endif()
 
-  set(client_crash_test_server_src
+  android_add_test(TARGET client_crash_test_server
    ${_gRPC_ROOT}/test/cpp/end2end/client_crash_test_server.cc
 )
-  android_add_test(client_crash_test_server)
   target_link_libraries(client_crash_test_server PRIVATE gmock_main ssl crypto)
   target_include_directories(client_crash_test_server PRIVATE ${_gRPC_ROOT})
 
@@ -7543,11 +7487,10 @@ endif()
 
     add_dependencies(client_crash_test_server project_benchmark project_gflags)
 
-  set(client_interceptors_end2end_test_src
+  android_add_test(TARGET client_interceptors_end2end_test
    ${_gRPC_ROOT}/test/cpp/end2end/client_interceptors_end2end_test.cc
    ${_gRPC_ROOT}/test/cpp/end2end/interceptors_util.cc
 )
-  android_add_test(client_interceptors_end2end_test)
   target_link_libraries(client_interceptors_end2end_test PRIVATE gmock_main ssl crypto)
   target_include_directories(client_interceptors_end2end_test PRIVATE ${_gRPC_ROOT})
 
@@ -7580,10 +7523,9 @@ endif()
 
     add_dependencies(client_interceptors_end2end_test project_benchmark project_gflags)
 
-  set(client_lb_end2end_test_src
+  android_add_test(TARGET client_lb_end2end_test
    ${_gRPC_ROOT}/test/cpp/end2end/client_lb_end2end_test.cc
 )
-  android_add_test(client_lb_end2end_test)
   target_link_libraries(client_lb_end2end_test PRIVATE gmock_main ssl crypto)
   target_include_directories(client_lb_end2end_test PRIVATE ${_gRPC_ROOT})
 
@@ -7616,7 +7558,7 @@ endif()
 
     add_dependencies(client_lb_end2end_test project_benchmark project_gflags)
 
-  set(codegen_test_full_src
+  android_add_test(TARGET codegen_test_full
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.pb.h
@@ -7647,7 +7589,6 @@ endif()
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/codegen/codegen_test_full.cc
 )
-  android_add_test(codegen_test_full)
   target_link_libraries(codegen_test_full PRIVATE gmock_main ssl crypto)
   target_include_directories(codegen_test_full PRIVATE ${_gRPC_ROOT})
 
@@ -7707,7 +7648,7 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(codegen_test_full project_benchmark project_gflags)
 
-  set(codegen_test_minimal_src
+  android_add_test(TARGET codegen_test_minimal
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.pb.h
@@ -7739,7 +7680,6 @@ protobuf_generate_grpc_cpp(
    ${_gRPC_ROOT}/test/cpp/codegen/codegen_test_minimal.cc
    ${_gRPC_ROOT}/src/cpp/codegen/codegen_init.cc
 )
-  android_add_test(codegen_test_minimal)
   target_link_libraries(codegen_test_minimal PRIVATE gmock_main ssl crypto)
   target_include_directories(codegen_test_minimal PRIVATE ${_gRPC_ROOT})
 
@@ -7798,10 +7738,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(codegen_test_minimal project_benchmark project_gflags)
 
-  set(context_list_test_src
+  android_add_test(TARGET context_list_test
    ${_gRPC_ROOT}/test/core/transport/chttp2/context_list_test.cc
 )
-  android_add_test(context_list_test)
   target_link_libraries(context_list_test PRIVATE gmock_main ssl crypto)
   target_include_directories(context_list_test PRIVATE ${_gRPC_ROOT})
 
@@ -7832,10 +7771,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(context_list_test project_benchmark project_gflags)
 
-  set(credentials_test_src
+  android_add_test(TARGET credentials_test
    ${_gRPC_ROOT}/test/cpp/client/credentials_test.cc
 )
-  android_add_test(credentials_test)
   target_link_libraries(credentials_test PRIVATE gmock_main ssl crypto)
   target_include_directories(credentials_test PRIVATE ${_gRPC_ROOT})
 
@@ -7866,10 +7804,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(credentials_test project_benchmark project_gflags)
 
-  set(cxx_byte_buffer_test_src
+  android_add_test(TARGET cxx_byte_buffer_test
    ${_gRPC_ROOT}/test/cpp/util/byte_buffer_test.cc
 )
-  android_add_test(cxx_byte_buffer_test)
   target_link_libraries(cxx_byte_buffer_test PRIVATE gmock_main ssl crypto)
   target_include_directories(cxx_byte_buffer_test PRIVATE ${_gRPC_ROOT})
 
@@ -7901,10 +7838,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(cxx_byte_buffer_test project_benchmark project_gflags)
 
-  set(cxx_slice_test_src
+  android_add_test(TARGET cxx_slice_test
    ${_gRPC_ROOT}/test/cpp/util/slice_test.cc
 )
-  android_add_test(cxx_slice_test)
   target_link_libraries(cxx_slice_test PRIVATE gmock_main ssl crypto)
   target_include_directories(cxx_slice_test PRIVATE ${_gRPC_ROOT})
 
@@ -7936,10 +7872,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(cxx_slice_test project_benchmark project_gflags)
 
-  set(cxx_string_ref_test_src
+  android_add_test(TARGET cxx_string_ref_test
    ${_gRPC_ROOT}/test/cpp/util/string_ref_test.cc
 )
-  android_add_test(cxx_string_ref_test)
   target_link_libraries(cxx_string_ref_test PRIVATE gmock_main ssl crypto)
   target_include_directories(cxx_string_ref_test PRIVATE ${_gRPC_ROOT})
 
@@ -7969,10 +7904,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(cxx_string_ref_test project_benchmark project_gflags)
 
-  set(cxx_time_test_src
+  android_add_test(TARGET cxx_time_test
    ${_gRPC_ROOT}/test/cpp/util/time_test.cc
 )
-  android_add_test(cxx_time_test)
   target_link_libraries(cxx_time_test PRIVATE gmock_main ssl crypto)
   target_include_directories(cxx_time_test PRIVATE ${_gRPC_ROOT})
 
@@ -8004,11 +7938,10 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(cxx_time_test project_benchmark project_gflags)
 
-  set(end2end_test_src
+  android_add_test(TARGET end2end_test
    ${_gRPC_ROOT}/test/cpp/end2end/end2end_test.cc
    ${_gRPC_ROOT}/test/cpp/end2end/interceptors_util.cc
 )
-  android_add_test(end2end_test)
   target_link_libraries(end2end_test PRIVATE gmock_main ssl crypto)
   target_include_directories(end2end_test PRIVATE ${_gRPC_ROOT})
 
@@ -8041,10 +7974,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(end2end_test project_benchmark project_gflags)
 
-  set(exception_test_src
+  android_add_test(TARGET exception_test
    ${_gRPC_ROOT}/test/cpp/end2end/exception_test.cc
 )
-  android_add_test(exception_test)
   target_link_libraries(exception_test PRIVATE gmock_main ssl crypto)
   target_include_directories(exception_test PRIVATE ${_gRPC_ROOT})
 
@@ -8077,10 +8009,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(exception_test project_benchmark project_gflags)
 
-  set(filter_end2end_test_src
+  android_add_test(TARGET filter_end2end_test
    ${_gRPC_ROOT}/test/cpp/end2end/filter_end2end_test.cc
 )
-  android_add_test(filter_end2end_test)
   target_link_libraries(filter_end2end_test PRIVATE gmock_main ssl crypto)
   target_include_directories(filter_end2end_test PRIVATE ${_gRPC_ROOT})
 
@@ -8113,10 +8044,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(filter_end2end_test project_benchmark project_gflags)
 
-  set(generic_end2end_test_src
+  android_add_test(TARGET generic_end2end_test
    ${_gRPC_ROOT}/test/cpp/end2end/generic_end2end_test.cc
 )
-  android_add_test(generic_end2end_test)
   target_link_libraries(generic_end2end_test PRIVATE gmock_main ssl crypto)
   target_include_directories(generic_end2end_test PRIVATE ${_gRPC_ROOT})
 
@@ -8149,10 +8079,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(generic_end2end_test project_benchmark project_gflags)
 
-  set(global_config_env_test_src
+  android_add_test(TARGET global_config_env_test
    ${_gRPC_ROOT}/test/core/gprpp/global_config_env_test.cc
 )
-  android_add_test(global_config_env_test)
   target_link_libraries(global_config_env_test PRIVATE gmock_main ssl crypto)
   target_include_directories(global_config_env_test PRIVATE ${_gRPC_ROOT})
 
@@ -8182,10 +8111,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(global_config_env_test project_benchmark project_gflags)
 
-  set(global_config_test_src
+  android_add_test(TARGET global_config_test
    ${_gRPC_ROOT}/test/core/gprpp/global_config_test.cc
 )
-  android_add_test(global_config_test)
   target_link_libraries(global_config_test PRIVATE gmock_main ssl crypto)
   target_include_directories(global_config_test PRIVATE ${_gRPC_ROOT})
 
@@ -8215,14 +8143,13 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(global_config_test project_benchmark project_gflags)
 
-  set(golden_file_test_src
+  android_add_test(TARGET golden_file_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/codegen/golden_file_test.cc
 )
-  android_add_test(golden_file_test)
   target_link_libraries(golden_file_test PRIVATE gmock_main ssl crypto)
   target_include_directories(golden_file_test PRIVATE ${_gRPC_ROOT})
 
@@ -8258,10 +8185,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(golden_file_test project_benchmark project_gflags)
 
-  set(grpc_alts_credentials_options_test_src
+  android_add_test(TARGET grpc_alts_credentials_options_test
    ${_gRPC_ROOT}/test/core/security/grpc_alts_credentials_options_test.cc
 )
-  android_add_test(grpc_alts_credentials_options_test)
   target_link_libraries(grpc_alts_credentials_options_test PRIVATE gmock_main ssl crypto)
   target_include_directories(grpc_alts_credentials_options_test PRIVATE ${_gRPC_ROOT})
 
@@ -8291,10 +8217,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(grpc_alts_credentials_options_test project_benchmark project_gflags)
 
-  set(grpc_cli_src
+  android_add_test(TARGET grpc_cli
    ${_gRPC_ROOT}/test/cpp/util/grpc_cli.cc
 )
-  android_add_test(grpc_cli)
   target_link_libraries(grpc_cli PRIVATE gmock_main ssl crypto)
   target_include_directories(grpc_cli PRIVATE ${_gRPC_ROOT})
 
@@ -8328,10 +8253,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(grpc_cli project_benchmark project_gflags)
 
-  set(grpc_core_map_test_src
+  android_add_test(TARGET grpc_core_map_test
    ${_gRPC_ROOT}/test/core/gprpp/map_test.cc
 )
-  android_add_test(grpc_core_map_test)
   target_link_libraries(grpc_core_map_test PRIVATE gmock_main ssl crypto)
   target_include_directories(grpc_core_map_test PRIVATE ${_gRPC_ROOT})
 
@@ -8363,10 +8287,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(grpc_core_map_test project_benchmark project_gflags)
 
-  set(grpc_fetch_oauth2_src
+  android_add_test(TARGET grpc_fetch_oauth2
    ${_gRPC_ROOT}/test/core/security/fetch_oauth2.cc
 )
-  android_add_test(grpc_fetch_oauth2)
   target_link_libraries(grpc_fetch_oauth2 PRIVATE gmock_main ssl crypto)
   target_include_directories(grpc_fetch_oauth2 PRIVATE ${_gRPC_ROOT})
 
@@ -8398,10 +8321,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(grpc_fetch_oauth2 project_benchmark project_gflags)
 
-  set(grpc_linux_system_roots_test_src
+  android_add_test(TARGET grpc_linux_system_roots_test
    ${_gRPC_ROOT}/test/core/security/linux_system_roots_test.cc
 )
-  android_add_test(grpc_linux_system_roots_test)
   target_link_libraries(grpc_linux_system_roots_test PRIVATE gmock_main ssl crypto)
   target_include_directories(grpc_linux_system_roots_test PRIVATE ${_gRPC_ROOT})
 
@@ -8432,14 +8354,13 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(grpc_linux_system_roots_test project_benchmark project_gflags)
 
-  set(grpclb_api_test_src
+  android_add_test(TARGET grpclb_api_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/grpclb/grpclb_api_test.cc
 )
-  android_add_test(grpclb_api_test)
   target_link_libraries(grpclb_api_test PRIVATE gmock_main ssl crypto)
   target_include_directories(grpclb_api_test PRIVATE ${_gRPC_ROOT})
 
@@ -8475,14 +8396,13 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(grpclb_api_test project_benchmark project_gflags)
 
-  set(grpclb_end2end_test_src
+  android_add_test(TARGET grpclb_end2end_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/grpclb_end2end_test.cc
 )
-  android_add_test(grpclb_end2end_test)
   target_link_libraries(grpclb_end2end_test PRIVATE gmock_main ssl crypto)
   target_include_directories(grpclb_end2end_test PRIVATE ${_gRPC_ROOT})
 
@@ -8520,7 +8440,7 @@ protobuf_generate_grpc_cpp(
     add_dependencies(grpclb_end2end_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX)
 
-  set(grpclb_fallback_test_src
+  android_add_test(TARGET grpclb_fallback_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
@@ -8535,7 +8455,6 @@ if(_gRPC_PLATFORM_LINUX)
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/interop/grpclb_fallback_test.cc
 )
-  android_add_test(grpclb_fallback_test)
   target_link_libraries(grpclb_fallback_test PRIVATE gmock_main ssl crypto)
   target_include_directories(grpclb_fallback_test PRIVATE ${_gRPC_ROOT})
 
@@ -8582,10 +8501,9 @@ protobuf_generate_grpc_cpp(
     add_dependencies(grpclb_fallback_test project_benchmark project_gflags)
 endif()
 
-  set(h2_ssl_cert_test_src
+  android_add_test(TARGET h2_ssl_cert_test
    ${_gRPC_ROOT}/test/core/end2end/h2_ssl_cert_test.cc
 )
-  android_add_test(h2_ssl_cert_test)
   target_link_libraries(h2_ssl_cert_test PRIVATE gmock_main ssl crypto)
   target_include_directories(h2_ssl_cert_test PRIVATE ${_gRPC_ROOT})
 
@@ -8617,10 +8535,9 @@ endif()
 
     add_dependencies(h2_ssl_cert_test project_benchmark project_gflags)
 
-  set(h2_ssl_session_reuse_test_src
+  android_add_test(TARGET h2_ssl_session_reuse_test
    ${_gRPC_ROOT}/test/core/end2end/h2_ssl_session_reuse_test.cc
 )
-  android_add_test(h2_ssl_session_reuse_test)
   target_link_libraries(h2_ssl_session_reuse_test PRIVATE gmock_main ssl crypto)
   target_include_directories(h2_ssl_session_reuse_test PRIVATE ${_gRPC_ROOT})
 
@@ -8652,10 +8569,9 @@ endif()
 
     add_dependencies(h2_ssl_session_reuse_test project_benchmark project_gflags)
 
-  set(health_service_end2end_test_src
+  android_add_test(TARGET health_service_end2end_test
    ${_gRPC_ROOT}/test/cpp/end2end/health_service_end2end_test.cc
 )
-  android_add_test(health_service_end2end_test)
   target_link_libraries(health_service_end2end_test PRIVATE gmock_main ssl crypto)
   target_include_directories(health_service_end2end_test PRIVATE ${_gRPC_ROOT})
 
@@ -8692,10 +8608,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 endif()
 
-  set(hybrid_end2end_test_src
+  android_add_test(TARGET hybrid_end2end_test
    ${_gRPC_ROOT}/test/cpp/end2end/hybrid_end2end_test.cc
 )
-  android_add_test(hybrid_end2end_test)
   target_link_libraries(hybrid_end2end_test PRIVATE gmock_main ssl crypto)
   target_include_directories(hybrid_end2end_test PRIVATE ${_gRPC_ROOT})
 
@@ -8728,10 +8643,9 @@ endif()
 
     add_dependencies(hybrid_end2end_test project_benchmark project_gflags)
 
-  set(inlined_vector_test_src
+  android_add_test(TARGET inlined_vector_test
    ${_gRPC_ROOT}/test/core/gprpp/inlined_vector_test.cc
 )
-  android_add_test(inlined_vector_test)
   target_link_libraries(inlined_vector_test PRIVATE gmock_main ssl crypto)
   target_include_directories(inlined_vector_test PRIVATE ${_gRPC_ROOT})
 
@@ -8764,10 +8678,9 @@ endif()
     add_dependencies(inlined_vector_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(inproc_sync_unary_ping_pong_test_src
+  android_add_test(TARGET inproc_sync_unary_ping_pong_test
    ${_gRPC_ROOT}/test/cpp/qps/inproc_sync_unary_ping_pong_test.cc
 )
-  android_add_test(inproc_sync_unary_ping_pong_test)
   target_link_libraries(inproc_sync_unary_ping_pong_test PRIVATE gmock_main ssl crypto)
   target_include_directories(inproc_sync_unary_ping_pong_test PRIVATE ${_gRPC_ROOT})
 
@@ -8813,10 +8726,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(interop_test_src
+  android_add_test(TARGET interop_test
    ${_gRPC_ROOT}/test/cpp/interop/interop_test.cc
 )
-  android_add_test(interop_test)
   target_link_libraries(interop_test PRIVATE gmock_main ssl crypto)
   target_include_directories(interop_test PRIVATE ${_gRPC_ROOT})
 
@@ -8850,10 +8762,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(json_run_localhost_src
+  android_add_test(TARGET json_run_localhost
    ${_gRPC_ROOT}/test/cpp/qps/json_run_localhost.cc
 )
-  android_add_test(json_run_localhost)
   target_link_libraries(json_run_localhost PRIVATE gmock_main ssl crypto)
   target_include_directories(json_run_localhost PRIVATE ${_gRPC_ROOT})
 
@@ -8888,10 +8799,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(json_run_localhost project_benchmark project_gflags)
 endif()
 
-  set(memory_test_src
+  android_add_test(TARGET memory_test
    ${_gRPC_ROOT}/test/core/gprpp/memory_test.cc
 )
-  android_add_test(memory_test)
   target_link_libraries(memory_test PRIVATE gmock_main ssl crypto)
   target_include_directories(memory_test PRIVATE ${_gRPC_ROOT})
 
@@ -8923,10 +8833,9 @@ endif()
 
     add_dependencies(memory_test project_benchmark project_gflags)
 
-  set(message_allocator_end2end_test_src
+  android_add_test(TARGET message_allocator_end2end_test
    ${_gRPC_ROOT}/test/cpp/end2end/message_allocator_end2end_test.cc
 )
-  android_add_test(message_allocator_end2end_test)
   target_link_libraries(message_allocator_end2end_test PRIVATE gmock_main ssl crypto)
   target_include_directories(message_allocator_end2end_test PRIVATE ${_gRPC_ROOT})
 
@@ -8959,14 +8868,13 @@ endif()
 
     add_dependencies(message_allocator_end2end_test project_benchmark project_gflags)
 
-  set(metrics_client_src
+  android_add_test(TARGET metrics_client
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/interop/metrics_client.cc
 )
-  android_add_test(metrics_client)
   target_link_libraries(metrics_client PRIVATE gmock_main ssl crypto)
   target_include_directories(metrics_client PRIVATE ${_gRPC_ROOT})
 
@@ -9002,10 +8910,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(metrics_client project_benchmark project_gflags)
 
-  set(mock_test_src
+  android_add_test(TARGET mock_test
    ${_gRPC_ROOT}/test/cpp/end2end/mock_test.cc
 )
-  android_add_test(mock_test)
   target_link_libraries(mock_test PRIVATE gmock_main ssl crypto)
   target_include_directories(mock_test PRIVATE ${_gRPC_ROOT})
 
@@ -9038,10 +8945,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(mock_test project_benchmark project_gflags)
 
-  set(nonblocking_test_src
+  android_add_test(TARGET nonblocking_test
    ${_gRPC_ROOT}/test/cpp/end2end/nonblocking_test.cc
 )
-  android_add_test(nonblocking_test)
   target_link_libraries(nonblocking_test PRIVATE gmock_main ssl crypto)
   target_include_directories(nonblocking_test PRIVATE ${_gRPC_ROOT})
 
@@ -9074,10 +8980,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(nonblocking_test project_benchmark project_gflags)
 
-  set(noop-benchmark_src
+  android_add_test(TARGET noop-benchmark
    ${_gRPC_ROOT}/test/cpp/microbenchmarks/noop-benchmark.cc
 )
-  android_add_test(noop-benchmark)
   target_link_libraries(noop-benchmark PRIVATE gmock_main ssl crypto)
   target_include_directories(noop-benchmark PRIVATE ${_gRPC_ROOT})
 
@@ -9106,10 +9011,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(noop-benchmark project_benchmark project_gflags)
 
-  set(optional_test_src
+  android_add_test(TARGET optional_test
    ${_gRPC_ROOT}/test/core/gprpp/optional_test.cc
 )
-  android_add_test(optional_test)
   target_link_libraries(optional_test PRIVATE gmock_main ssl crypto)
   target_include_directories(optional_test PRIVATE ${_gRPC_ROOT})
 
@@ -9141,10 +9045,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(optional_test project_benchmark project_gflags)
 
-  set(orphanable_test_src
+  android_add_test(TARGET orphanable_test
    ${_gRPC_ROOT}/test/core/gprpp/orphanable_test.cc
 )
-  android_add_test(orphanable_test)
   target_link_libraries(orphanable_test PRIVATE gmock_main ssl crypto)
   target_include_directories(orphanable_test PRIVATE ${_gRPC_ROOT})
 
@@ -9176,10 +9079,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(orphanable_test project_benchmark project_gflags)
 
-  set(port_sharing_end2end_test_src
+  android_add_test(TARGET port_sharing_end2end_test
    ${_gRPC_ROOT}/test/cpp/end2end/port_sharing_end2end_test.cc
 )
-  android_add_test(port_sharing_end2end_test)
   target_link_libraries(port_sharing_end2end_test PRIVATE gmock_main ssl crypto)
   target_include_directories(port_sharing_end2end_test PRIVATE ${_gRPC_ROOT})
 
@@ -9213,10 +9115,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(port_sharing_end2end_test project_benchmark project_gflags)
 
-  set(proto_utils_test_src
+  android_add_test(TARGET proto_utils_test
    ${_gRPC_ROOT}/test/cpp/codegen/proto_utils_test.cc
 )
-  android_add_test(proto_utils_test)
   target_link_libraries(proto_utils_test PRIVATE gmock_main ssl crypto)
   target_include_directories(proto_utils_test PRIVATE ${_gRPC_ROOT})
 
@@ -9247,10 +9148,9 @@ protobuf_generate_grpc_cpp(
     add_dependencies(proto_utils_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(qps_interarrival_test_src
+  android_add_test(TARGET qps_interarrival_test
    ${_gRPC_ROOT}/test/cpp/qps/qps_interarrival_test.cc
 )
-  android_add_test(qps_interarrival_test)
   target_link_libraries(qps_interarrival_test PRIVATE gmock_main ssl crypto)
   target_include_directories(qps_interarrival_test PRIVATE ${_gRPC_ROOT})
 
@@ -9286,10 +9186,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(qps_interarrival_test project_benchmark project_gflags)
 endif()
 
-  set(qps_json_driver_src
+  android_add_test(TARGET qps_json_driver
    ${_gRPC_ROOT}/test/cpp/qps/qps_json_driver.cc
 )
-  android_add_test(qps_json_driver)
   target_link_libraries(qps_json_driver PRIVATE gmock_main ssl crypto)
   target_include_directories(qps_json_driver PRIVATE ${_gRPC_ROOT})
 
@@ -9326,10 +9225,9 @@ endif()
     add_dependencies(qps_json_driver project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(qps_openloop_test_src
+  android_add_test(TARGET qps_openloop_test
    ${_gRPC_ROOT}/test/cpp/qps/qps_openloop_test.cc
 )
-  android_add_test(qps_openloop_test)
   target_link_libraries(qps_openloop_test PRIVATE gmock_main ssl crypto)
   target_include_directories(qps_openloop_test PRIVATE ${_gRPC_ROOT})
 
@@ -9366,10 +9264,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(qps_openloop_test project_benchmark project_gflags)
 endif()
 
-  set(qps_worker_src
+  android_add_test(TARGET qps_worker
    ${_gRPC_ROOT}/test/cpp/qps/worker.cc
 )
-  android_add_test(qps_worker)
   target_link_libraries(qps_worker PRIVATE gmock_main ssl crypto)
   target_include_directories(qps_worker PRIVATE ${_gRPC_ROOT})
 
@@ -9405,10 +9302,9 @@ endif()
 
     add_dependencies(qps_worker project_benchmark project_gflags)
 
-  set(raw_end2end_test_src
+  android_add_test(TARGET raw_end2end_test
    ${_gRPC_ROOT}/test/cpp/end2end/raw_end2end_test.cc
 )
-  android_add_test(raw_end2end_test)
   target_link_libraries(raw_end2end_test PRIVATE gmock_main ssl crypto)
   target_include_directories(raw_end2end_test PRIVATE ${_gRPC_ROOT})
 
@@ -9441,7 +9337,7 @@ endif()
 
     add_dependencies(raw_end2end_test project_benchmark project_gflags)
 
-  set(reconnect_interop_client_src
+  android_add_test(TARGET reconnect_interop_client
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
@@ -9456,7 +9352,6 @@ endif()
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/interop/reconnect_interop_client.cc
 )
-  android_add_test(reconnect_interop_client)
   target_link_libraries(reconnect_interop_client PRIVATE gmock_main ssl crypto)
   target_include_directories(reconnect_interop_client PRIVATE ${_gRPC_ROOT})
 
@@ -9502,7 +9397,7 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(reconnect_interop_client project_benchmark project_gflags)
 
-  set(reconnect_interop_server_src
+  android_add_test(TARGET reconnect_interop_server
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
@@ -9517,7 +9412,6 @@ protobuf_generate_grpc_cpp(
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/interop/reconnect_interop_server.cc
 )
-  android_add_test(reconnect_interop_server)
   target_link_libraries(reconnect_interop_server PRIVATE gmock_main ssl crypto)
   target_include_directories(reconnect_interop_server PRIVATE ${_gRPC_ROOT})
 
@@ -9565,10 +9459,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(reconnect_interop_server project_benchmark project_gflags)
 
-  set(ref_counted_ptr_test_src
+  android_add_test(TARGET ref_counted_ptr_test
    ${_gRPC_ROOT}/test/core/gprpp/ref_counted_ptr_test.cc
 )
-  android_add_test(ref_counted_ptr_test)
   target_link_libraries(ref_counted_ptr_test PRIVATE gmock_main ssl crypto)
   target_include_directories(ref_counted_ptr_test PRIVATE ${_gRPC_ROOT})
 
@@ -9600,10 +9493,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(ref_counted_ptr_test project_benchmark project_gflags)
 
-  set(ref_counted_test_src
+  android_add_test(TARGET ref_counted_test
    ${_gRPC_ROOT}/test/core/gprpp/ref_counted_test.cc
 )
-  android_add_test(ref_counted_test)
   target_link_libraries(ref_counted_test PRIVATE gmock_main ssl crypto)
   target_include_directories(ref_counted_test PRIVATE ${_gRPC_ROOT})
 
@@ -9635,10 +9527,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(ref_counted_test project_benchmark project_gflags)
 
-  set(retry_throttle_test_src
+  android_add_test(TARGET retry_throttle_test
    ${_gRPC_ROOT}/test/core/client_channel/retry_throttle_test.cc
 )
-  android_add_test(retry_throttle_test)
   target_link_libraries(retry_throttle_test PRIVATE gmock_main ssl crypto)
   target_include_directories(retry_throttle_test PRIVATE ${_gRPC_ROOT})
 
@@ -9669,10 +9560,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(retry_throttle_test project_benchmark project_gflags)
 
-  set(secure_auth_context_test_src
+  android_add_test(TARGET secure_auth_context_test
    ${_gRPC_ROOT}/test/cpp/common/secure_auth_context_test.cc
 )
-  android_add_test(secure_auth_context_test)
   target_link_libraries(secure_auth_context_test PRIVATE gmock_main ssl crypto)
   target_include_directories(secure_auth_context_test PRIVATE ${_gRPC_ROOT})
 
@@ -9706,10 +9596,9 @@ protobuf_generate_grpc_cpp(
     add_dependencies(secure_auth_context_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(secure_sync_unary_ping_pong_test_src
+  android_add_test(TARGET secure_sync_unary_ping_pong_test
    ${_gRPC_ROOT}/test/cpp/qps/secure_sync_unary_ping_pong_test.cc
 )
-  android_add_test(secure_sync_unary_ping_pong_test)
   target_link_libraries(secure_sync_unary_ping_pong_test PRIVATE gmock_main ssl crypto)
   target_include_directories(secure_sync_unary_ping_pong_test PRIVATE ${_gRPC_ROOT})
 
@@ -9746,10 +9635,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(secure_sync_unary_ping_pong_test project_benchmark project_gflags)
 endif()
 
-  set(server_builder_plugin_test_src
+  android_add_test(TARGET server_builder_plugin_test
    ${_gRPC_ROOT}/test/cpp/end2end/server_builder_plugin_test.cc
 )
-  android_add_test(server_builder_plugin_test)
   target_link_libraries(server_builder_plugin_test PRIVATE gmock_main ssl crypto)
   target_include_directories(server_builder_plugin_test PRIVATE ${_gRPC_ROOT})
 
@@ -9782,7 +9670,7 @@ endif()
 
     add_dependencies(server_builder_plugin_test project_benchmark project_gflags)
 
-  set(server_builder_test_src
+  android_add_test(TARGET server_builder_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
@@ -9793,7 +9681,6 @@ endif()
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/server/server_builder_test.cc
 )
-  android_add_test(server_builder_test)
   target_link_libraries(server_builder_test PRIVATE gmock_main ssl crypto)
   target_include_directories(server_builder_test PRIVATE ${_gRPC_ROOT})
 
@@ -9835,7 +9722,7 @@ protobuf_generate_grpc_cpp(
     add_dependencies(server_builder_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_POSIX)
 
-  set(server_builder_with_socket_mutator_test_src
+  android_add_test(TARGET server_builder_with_socket_mutator_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
@@ -9846,7 +9733,6 @@ if(_gRPC_PLATFORM_POSIX)
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/server/server_builder_with_socket_mutator_test.cc
 )
-  android_add_test(server_builder_with_socket_mutator_test)
   target_link_libraries(server_builder_with_socket_mutator_test PRIVATE gmock_main ssl crypto)
   target_include_directories(server_builder_with_socket_mutator_test PRIVATE ${_gRPC_ROOT})
 
@@ -9888,10 +9774,9 @@ protobuf_generate_grpc_cpp(
     add_dependencies(server_builder_with_socket_mutator_test project_benchmark project_gflags)
 endif()
 
-  set(server_context_test_spouse_test_src
+  android_add_test(TARGET server_context_test_spouse_test
    ${_gRPC_ROOT}/test/cpp/test/server_context_test_spouse_test.cc
 )
-  android_add_test(server_context_test_spouse_test)
   target_link_libraries(server_context_test_spouse_test PRIVATE gmock_main ssl crypto)
   target_include_directories(server_context_test_spouse_test PRIVATE ${_gRPC_ROOT})
 
@@ -9924,10 +9809,9 @@ endif()
     add_dependencies(server_context_test_spouse_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(server_crash_test_src
+  android_add_test(TARGET server_crash_test
    ${_gRPC_ROOT}/test/cpp/end2end/server_crash_test.cc
 )
-  android_add_test(server_crash_test)
   target_link_libraries(server_crash_test PRIVATE gmock_main ssl crypto)
   target_include_directories(server_crash_test PRIVATE ${_gRPC_ROOT})
 
@@ -9961,10 +9845,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(server_crash_test project_benchmark project_gflags)
 endif()
 
-  set(server_crash_test_client_src
+  android_add_test(TARGET server_crash_test_client
    ${_gRPC_ROOT}/test/cpp/end2end/server_crash_test_client.cc
 )
-  android_add_test(server_crash_test_client)
   target_link_libraries(server_crash_test_client PRIVATE gmock_main ssl crypto)
   target_include_directories(server_crash_test_client PRIVATE ${_gRPC_ROOT})
 
@@ -9998,10 +9881,9 @@ endif()
 
     add_dependencies(server_crash_test_client project_benchmark project_gflags)
 
-  set(server_early_return_test_src
+  android_add_test(TARGET server_early_return_test
    ${_gRPC_ROOT}/test/cpp/end2end/server_early_return_test.cc
 )
-  android_add_test(server_early_return_test)
   target_link_libraries(server_early_return_test PRIVATE gmock_main ssl crypto)
   target_include_directories(server_early_return_test PRIVATE ${_gRPC_ROOT})
 
@@ -10034,11 +9916,10 @@ endif()
 
     add_dependencies(server_early_return_test project_benchmark project_gflags)
 
-  set(server_interceptors_end2end_test_src
+  android_add_test(TARGET server_interceptors_end2end_test
    ${_gRPC_ROOT}/test/cpp/end2end/interceptors_util.cc
    ${_gRPC_ROOT}/test/cpp/end2end/server_interceptors_end2end_test.cc
 )
-  android_add_test(server_interceptors_end2end_test)
   target_link_libraries(server_interceptors_end2end_test PRIVATE gmock_main ssl crypto)
   target_include_directories(server_interceptors_end2end_test PRIVATE ${_gRPC_ROOT})
 
@@ -10071,7 +9952,7 @@ endif()
 
     add_dependencies(server_interceptors_end2end_test project_benchmark project_gflags)
 
-  set(server_request_call_test_src
+  android_add_test(TARGET server_request_call_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
@@ -10082,7 +9963,6 @@ endif()
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/server/server_request_call_test.cc
 )
-  android_add_test(server_request_call_test)
   target_link_libraries(server_request_call_test PRIVATE gmock_main ssl crypto)
   target_include_directories(server_request_call_test PRIVATE ${_gRPC_ROOT})
 
@@ -10123,10 +10003,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(server_request_call_test project_benchmark project_gflags)
 
-  set(service_config_end2end_test_src
+  android_add_test(TARGET service_config_end2end_test
    ${_gRPC_ROOT}/test/cpp/end2end/service_config_end2end_test.cc
 )
-  android_add_test(service_config_end2end_test)
   target_link_libraries(service_config_end2end_test PRIVATE gmock_main ssl crypto)
   target_include_directories(service_config_end2end_test PRIVATE ${_gRPC_ROOT})
 
@@ -10159,10 +10038,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(service_config_end2end_test project_benchmark project_gflags)
 
-  set(service_config_test_src
+  android_add_test(TARGET service_config_test
    ${_gRPC_ROOT}/test/core/client_channel/service_config_test.cc
 )
-  android_add_test(service_config_test)
   target_link_libraries(service_config_test PRIVATE gmock_main ssl crypto)
   target_include_directories(service_config_test PRIVATE ${_gRPC_ROOT})
 
@@ -10194,10 +10072,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(service_config_test project_benchmark project_gflags)
 
-  set(shutdown_test_src
+  android_add_test(TARGET shutdown_test
    ${_gRPC_ROOT}/test/cpp/end2end/shutdown_test.cc
 )
-  android_add_test(shutdown_test)
   target_link_libraries(shutdown_test PRIVATE gmock_main ssl crypto)
   target_include_directories(shutdown_test PRIVATE ${_gRPC_ROOT})
 
@@ -10230,10 +10107,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(shutdown_test project_benchmark project_gflags)
 
-  set(slice_hash_table_test_src
+  android_add_test(TARGET slice_hash_table_test
    ${_gRPC_ROOT}/test/core/slice/slice_hash_table_test.cc
 )
-  android_add_test(slice_hash_table_test)
   target_link_libraries(slice_hash_table_test PRIVATE gmock_main ssl crypto)
   target_include_directories(slice_hash_table_test PRIVATE ${_gRPC_ROOT})
 
@@ -10264,10 +10140,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(slice_hash_table_test project_benchmark project_gflags)
 
-  set(slice_weak_hash_table_test_src
+  android_add_test(TARGET slice_weak_hash_table_test
    ${_gRPC_ROOT}/test/core/slice/slice_weak_hash_table_test.cc
 )
-  android_add_test(slice_weak_hash_table_test)
   target_link_libraries(slice_weak_hash_table_test PRIVATE gmock_main ssl crypto)
   target_include_directories(slice_weak_hash_table_test PRIVATE ${_gRPC_ROOT})
 
@@ -10298,10 +10173,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(slice_weak_hash_table_test project_benchmark project_gflags)
 
-  set(stats_test_src
+  android_add_test(TARGET stats_test
    ${_gRPC_ROOT}/test/core/debug/stats_test.cc
 )
-  android_add_test(stats_test)
   target_link_libraries(stats_test PRIVATE gmock_main ssl crypto)
   target_include_directories(stats_test PRIVATE ${_gRPC_ROOT})
 
@@ -10333,10 +10207,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(stats_test project_benchmark project_gflags)
 
-  set(status_metadata_test_src
+  android_add_test(TARGET status_metadata_test
    ${_gRPC_ROOT}/test/core/transport/status_metadata_test.cc
 )
-  android_add_test(status_metadata_test)
   target_link_libraries(status_metadata_test PRIVATE gmock_main ssl crypto)
   target_include_directories(status_metadata_test PRIVATE ${_gRPC_ROOT})
 
@@ -10365,10 +10238,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(status_metadata_test project_benchmark project_gflags)
 
-  set(status_util_test_src
+  android_add_test(TARGET status_util_test
    ${_gRPC_ROOT}/test/core/channel/status_util_test.cc
 )
-  android_add_test(status_util_test)
   target_link_libraries(status_util_test PRIVATE gmock_main ssl crypto)
   target_include_directories(status_util_test PRIVATE ${_gRPC_ROOT})
 
@@ -10398,10 +10270,9 @@ protobuf_generate_grpc_cpp(
     add_dependencies(status_util_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(streaming_throughput_test_src
+  android_add_test(TARGET streaming_throughput_test
    ${_gRPC_ROOT}/test/cpp/end2end/streaming_throughput_test.cc
 )
-  android_add_test(streaming_throughput_test)
   target_link_libraries(streaming_throughput_test PRIVATE gmock_main ssl crypto)
   target_include_directories(streaming_throughput_test PRIVATE ${_gRPC_ROOT})
 
@@ -10435,7 +10306,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(streaming_throughput_test project_benchmark project_gflags)
 endif()
 
-  set(stress_test_src
+  android_add_test(TARGET stress_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
@@ -10457,7 +10328,6 @@ endif()
    ${_gRPC_ROOT}/test/cpp/interop/stress_test.cc
    ${_gRPC_ROOT}/test/cpp/util/metrics_server.cc
 )
-  android_add_test(stress_test)
   target_link_libraries(stress_test PRIVATE gmock_main ssl crypto)
   target_include_directories(stress_test PRIVATE ${_gRPC_ROOT})
 
@@ -10507,10 +10377,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(stress_test project_benchmark project_gflags)
 
-  set(string_view_test_src
+  android_add_test(TARGET string_view_test
    ${_gRPC_ROOT}/test/core/gprpp/string_view_test.cc
 )
-  android_add_test(string_view_test)
   target_link_libraries(string_view_test PRIVATE gmock_main ssl crypto)
   target_include_directories(string_view_test PRIVATE ${_gRPC_ROOT})
 
@@ -10542,10 +10411,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(string_view_test project_benchmark project_gflags)
 
-  set(thread_manager_test_src
+  android_add_test(TARGET thread_manager_test
    ${_gRPC_ROOT}/test/cpp/thread_manager/thread_manager_test.cc
 )
-  android_add_test(thread_manager_test)
   target_link_libraries(thread_manager_test PRIVATE gmock_main ssl crypto)
   target_include_directories(thread_manager_test PRIVATE ${_gRPC_ROOT})
 
@@ -10577,10 +10445,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(thread_manager_test project_benchmark project_gflags)
 
-  set(thread_stress_test_src
+  android_add_test(TARGET thread_stress_test
    ${_gRPC_ROOT}/test/cpp/end2end/thread_stress_test.cc
 )
-  android_add_test(thread_stress_test)
   target_link_libraries(thread_stress_test PRIVATE gmock_main ssl crypto)
   target_include_directories(thread_stress_test PRIVATE ${_gRPC_ROOT})
 
@@ -10614,10 +10481,9 @@ protobuf_generate_grpc_cpp(
     add_dependencies(thread_stress_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(time_change_test_src
+  android_add_test(TARGET time_change_test
    ${_gRPC_ROOT}/test/cpp/end2end/time_change_test.cc
 )
-  android_add_test(time_change_test)
   target_link_libraries(time_change_test PRIVATE gmock_main ssl crypto)
   target_include_directories(time_change_test PRIVATE ${_gRPC_ROOT})
 
@@ -10651,10 +10517,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(time_change_test project_benchmark project_gflags)
 endif()
 
-  set(transport_pid_controller_test_src
+  android_add_test(TARGET transport_pid_controller_test
    ${_gRPC_ROOT}/test/core/transport/pid_controller_test.cc
 )
-  android_add_test(transport_pid_controller_test)
   target_link_libraries(transport_pid_controller_test PRIVATE gmock_main ssl crypto)
   target_include_directories(transport_pid_controller_test PRIVATE ${_gRPC_ROOT})
 
@@ -10687,10 +10552,9 @@ endif()
 
     add_dependencies(transport_pid_controller_test project_benchmark project_gflags)
 
-  set(transport_security_common_api_test_src
+  android_add_test(TARGET transport_security_common_api_test
    ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/transport_security_common_api_test.cc
 )
-  android_add_test(transport_security_common_api_test)
   target_link_libraries(transport_security_common_api_test PRIVATE gmock_main ssl crypto)
   target_include_directories(transport_security_common_api_test PRIVATE ${_gRPC_ROOT})
 
@@ -10722,10 +10586,9 @@ endif()
     add_dependencies(transport_security_common_api_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(writes_per_rpc_test_src
+  android_add_test(TARGET writes_per_rpc_test
    ${_gRPC_ROOT}/test/cpp/performance/writes_per_rpc_test.cc
 )
-  android_add_test(writes_per_rpc_test)
   target_link_libraries(writes_per_rpc_test PRIVATE gmock_main ssl crypto)
   target_include_directories(writes_per_rpc_test PRIVATE ${_gRPC_ROOT})
 
@@ -10759,14 +10622,13 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(writes_per_rpc_test project_benchmark project_gflags)
 endif()
 
-  set(xds_end2end_test_src
+  android_add_test(TARGET xds_end2end_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/xds_end2end_test.cc
 )
-  android_add_test(xds_end2end_test)
   target_link_libraries(xds_end2end_test PRIVATE gmock_main ssl crypto)
   target_include_directories(xds_end2end_test PRIVATE ${_gRPC_ROOT})
 
@@ -10803,10 +10665,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(xds_end2end_test project_benchmark project_gflags)
 
-  set(public_headers_must_be_c89_src
+  android_add_executable(TARGET public_headers_must_be_c89 NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/surface/public_headers_must_be_c89.c
 )
-  android_add_executable(public_headers_must_be_c89)
 
   target_compile_definitions(public_headers_must_be_c89 PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(public_headers_must_be_c89 PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -10830,10 +10691,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(public_headers_must_be_c89 project_benchmark project_gflags)
 
-  set(bad_streaming_id_bad_client_test_src
+  android_add_test(TARGET bad_streaming_id_bad_client_test
    ${_gRPC_ROOT}/test/core/bad_client/tests/bad_streaming_id.cc
 )
-  android_add_test(bad_streaming_id_bad_client_test)
   target_link_libraries(bad_streaming_id_bad_client_test PRIVATE gmock_main ssl crypto)
   target_include_directories(bad_streaming_id_bad_client_test PRIVATE ${_gRPC_ROOT})
 
@@ -10867,10 +10727,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(bad_streaming_id_bad_client_test project_benchmark project_gflags)
 
-  set(badreq_bad_client_test_src
+  android_add_test(TARGET badreq_bad_client_test
    ${_gRPC_ROOT}/test/core/bad_client/tests/badreq.cc
 )
-  android_add_test(badreq_bad_client_test)
   target_link_libraries(badreq_bad_client_test PRIVATE gmock_main ssl crypto)
   target_include_directories(badreq_bad_client_test PRIVATE ${_gRPC_ROOT})
 
@@ -10904,10 +10763,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(badreq_bad_client_test project_benchmark project_gflags)
 
-  set(connection_prefix_bad_client_test_src
+  android_add_test(TARGET connection_prefix_bad_client_test
    ${_gRPC_ROOT}/test/core/bad_client/tests/connection_prefix.cc
 )
-  android_add_test(connection_prefix_bad_client_test)
   target_link_libraries(connection_prefix_bad_client_test PRIVATE gmock_main ssl crypto)
   target_include_directories(connection_prefix_bad_client_test PRIVATE ${_gRPC_ROOT})
 
@@ -10941,10 +10799,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(connection_prefix_bad_client_test project_benchmark project_gflags)
 
-  set(duplicate_header_bad_client_test_src
+  android_add_test(TARGET duplicate_header_bad_client_test
    ${_gRPC_ROOT}/test/core/bad_client/tests/duplicate_header.cc
 )
-  android_add_test(duplicate_header_bad_client_test)
   target_link_libraries(duplicate_header_bad_client_test PRIVATE gmock_main ssl crypto)
   target_include_directories(duplicate_header_bad_client_test PRIVATE ${_gRPC_ROOT})
 
@@ -10978,10 +10835,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(duplicate_header_bad_client_test project_benchmark project_gflags)
 
-  set(head_of_line_blocking_bad_client_test_src
+  android_add_test(TARGET head_of_line_blocking_bad_client_test
    ${_gRPC_ROOT}/test/core/bad_client/tests/head_of_line_blocking.cc
 )
-  android_add_test(head_of_line_blocking_bad_client_test)
   target_link_libraries(head_of_line_blocking_bad_client_test PRIVATE gmock_main ssl crypto)
   target_include_directories(head_of_line_blocking_bad_client_test PRIVATE ${_gRPC_ROOT})
 
@@ -11015,10 +10871,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(head_of_line_blocking_bad_client_test project_benchmark project_gflags)
 
-  set(headers_bad_client_test_src
+  android_add_test(TARGET headers_bad_client_test
    ${_gRPC_ROOT}/test/core/bad_client/tests/headers.cc
 )
-  android_add_test(headers_bad_client_test)
   target_link_libraries(headers_bad_client_test PRIVATE gmock_main ssl crypto)
   target_include_directories(headers_bad_client_test PRIVATE ${_gRPC_ROOT})
 
@@ -11052,10 +10907,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(headers_bad_client_test project_benchmark project_gflags)
 
-  set(initial_settings_frame_bad_client_test_src
+  android_add_test(TARGET initial_settings_frame_bad_client_test
    ${_gRPC_ROOT}/test/core/bad_client/tests/initial_settings_frame.cc
 )
-  android_add_test(initial_settings_frame_bad_client_test)
   target_link_libraries(initial_settings_frame_bad_client_test PRIVATE gmock_main ssl crypto)
   target_include_directories(initial_settings_frame_bad_client_test PRIVATE ${_gRPC_ROOT})
 
@@ -11089,10 +10943,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(initial_settings_frame_bad_client_test project_benchmark project_gflags)
 
-  set(large_metadata_bad_client_test_src
+  android_add_test(TARGET large_metadata_bad_client_test
    ${_gRPC_ROOT}/test/core/bad_client/tests/large_metadata.cc
 )
-  android_add_test(large_metadata_bad_client_test)
   target_link_libraries(large_metadata_bad_client_test PRIVATE gmock_main ssl crypto)
   target_include_directories(large_metadata_bad_client_test PRIVATE ${_gRPC_ROOT})
 
@@ -11126,10 +10979,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(large_metadata_bad_client_test project_benchmark project_gflags)
 
-  set(out_of_bounds_bad_client_test_src
+  android_add_test(TARGET out_of_bounds_bad_client_test
    ${_gRPC_ROOT}/test/core/bad_client/tests/out_of_bounds.cc
 )
-  android_add_test(out_of_bounds_bad_client_test)
   target_link_libraries(out_of_bounds_bad_client_test PRIVATE gmock_main ssl crypto)
   target_include_directories(out_of_bounds_bad_client_test PRIVATE ${_gRPC_ROOT})
 
@@ -11163,10 +11015,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(out_of_bounds_bad_client_test project_benchmark project_gflags)
 
-  set(server_registered_method_bad_client_test_src
+  android_add_test(TARGET server_registered_method_bad_client_test
    ${_gRPC_ROOT}/test/core/bad_client/tests/server_registered_method.cc
 )
-  android_add_test(server_registered_method_bad_client_test)
   target_link_libraries(server_registered_method_bad_client_test PRIVATE gmock_main ssl crypto)
   target_include_directories(server_registered_method_bad_client_test PRIVATE ${_gRPC_ROOT})
 
@@ -11200,10 +11051,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(server_registered_method_bad_client_test project_benchmark project_gflags)
 
-  set(simple_request_bad_client_test_src
+  android_add_test(TARGET simple_request_bad_client_test
    ${_gRPC_ROOT}/test/core/bad_client/tests/simple_request.cc
 )
-  android_add_test(simple_request_bad_client_test)
   target_link_libraries(simple_request_bad_client_test PRIVATE gmock_main ssl crypto)
   target_include_directories(simple_request_bad_client_test PRIVATE ${_gRPC_ROOT})
 
@@ -11237,10 +11087,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(simple_request_bad_client_test project_benchmark project_gflags)
 
-  set(unknown_frame_bad_client_test_src
+  android_add_test(TARGET unknown_frame_bad_client_test
    ${_gRPC_ROOT}/test/core/bad_client/tests/unknown_frame.cc
 )
-  android_add_test(unknown_frame_bad_client_test)
   target_link_libraries(unknown_frame_bad_client_test PRIVATE gmock_main ssl crypto)
   target_include_directories(unknown_frame_bad_client_test PRIVATE ${_gRPC_ROOT})
 
@@ -11274,10 +11123,9 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(unknown_frame_bad_client_test project_benchmark project_gflags)
 
-  set(window_overflow_bad_client_test_src
+  android_add_test(TARGET window_overflow_bad_client_test
    ${_gRPC_ROOT}/test/core/bad_client/tests/window_overflow.cc
 )
-  android_add_test(window_overflow_bad_client_test)
   target_link_libraries(window_overflow_bad_client_test PRIVATE gmock_main ssl crypto)
   target_include_directories(window_overflow_bad_client_test PRIVATE ${_gRPC_ROOT})
 
@@ -11312,10 +11160,9 @@ protobuf_generate_grpc_cpp(
     add_dependencies(window_overflow_bad_client_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bad_ssl_cert_server_src
+  android_add_executable(TARGET bad_ssl_cert_server NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/bad_ssl/servers/cert.cc
 )
-  android_add_executable(bad_ssl_cert_server)
 
   target_compile_definitions(bad_ssl_cert_server PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(bad_ssl_cert_server PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11343,10 +11190,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(bad_ssl_cert_test_src
+  android_add_executable(TARGET bad_ssl_cert_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/bad_ssl/bad_ssl_test.cc
 )
-  android_add_executable(bad_ssl_cert_test)
 
   target_compile_definitions(bad_ssl_cert_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(bad_ssl_cert_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11372,10 +11218,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(bad_ssl_cert_test project_benchmark project_gflags)
 endif()
 
-  set(h2_census_test_src
+  android_add_executable(TARGET h2_census_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_census.cc
 )
-  android_add_executable(h2_census_test)
 
   target_compile_definitions(h2_census_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_census_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11401,10 +11246,9 @@ endif()
 
     add_dependencies(h2_census_test project_benchmark project_gflags)
 
-  set(h2_compress_test_src
+  android_add_executable(TARGET h2_compress_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_compress.cc
 )
-  android_add_executable(h2_compress_test)
 
   target_compile_definitions(h2_compress_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_compress_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11430,10 +11274,9 @@ endif()
 
     add_dependencies(h2_compress_test project_benchmark project_gflags)
 
-  set(h2_fakesec_test_src
+  android_add_executable(TARGET h2_fakesec_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_fakesec.cc
 )
-  android_add_executable(h2_fakesec_test)
 
   target_compile_definitions(h2_fakesec_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_fakesec_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11460,10 +11303,9 @@ endif()
     add_dependencies(h2_fakesec_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(h2_fd_test_src
+  android_add_executable(TARGET h2_fd_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_fd.cc
 )
-  android_add_executable(h2_fd_test)
 
   target_compile_definitions(h2_fd_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_fd_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11490,10 +11332,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(h2_fd_test project_benchmark project_gflags)
 endif()
 
-  set(h2_full_test_src
+  android_add_executable(TARGET h2_full_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_full.cc
 )
-  android_add_executable(h2_full_test)
 
   target_compile_definitions(h2_full_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_full_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11520,10 +11361,9 @@ endif()
     add_dependencies(h2_full_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX)
 
-  set(h2_full+pipe_test_src
+  android_add_executable(TARGET h2_full+pipe_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_full+pipe.cc
 )
-  android_add_executable(h2_full+pipe_test)
 
   target_compile_definitions(h2_full+pipe_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_full+pipe_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11550,10 +11390,9 @@ if(_gRPC_PLATFORM_LINUX)
     add_dependencies(h2_full+pipe_test project_benchmark project_gflags)
 endif()
 
-  set(h2_full+trace_test_src
+  android_add_executable(TARGET h2_full+trace_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_full+trace.cc
 )
-  android_add_executable(h2_full+trace_test)
 
   target_compile_definitions(h2_full+trace_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_full+trace_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11579,10 +11418,9 @@ endif()
 
     add_dependencies(h2_full+trace_test project_benchmark project_gflags)
 
-  set(h2_full+workarounds_test_src
+  android_add_executable(TARGET h2_full+workarounds_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_full+workarounds.cc
 )
-  android_add_executable(h2_full+workarounds_test)
 
   target_compile_definitions(h2_full+workarounds_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_full+workarounds_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11608,10 +11446,9 @@ endif()
 
     add_dependencies(h2_full+workarounds_test project_benchmark project_gflags)
 
-  set(h2_http_proxy_test_src
+  android_add_executable(TARGET h2_http_proxy_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_http_proxy.cc
 )
-  android_add_executable(h2_http_proxy_test)
 
   target_compile_definitions(h2_http_proxy_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_http_proxy_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11638,10 +11475,9 @@ endif()
     add_dependencies(h2_http_proxy_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(h2_local_ipv4_test_src
+  android_add_executable(TARGET h2_local_ipv4_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_local_ipv4.cc
 )
-  android_add_executable(h2_local_ipv4_test)
 
   target_compile_definitions(h2_local_ipv4_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_local_ipv4_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11669,10 +11505,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(h2_local_ipv6_test_src
+  android_add_executable(TARGET h2_local_ipv6_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_local_ipv6.cc
 )
-  android_add_executable(h2_local_ipv6_test)
 
   target_compile_definitions(h2_local_ipv6_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_local_ipv6_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11700,10 +11535,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(h2_local_uds_test_src
+  android_add_executable(TARGET h2_local_uds_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_local_uds.cc
 )
-  android_add_executable(h2_local_uds_test)
 
   target_compile_definitions(h2_local_uds_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_local_uds_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11730,10 +11564,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(h2_local_uds_test project_benchmark project_gflags)
 endif()
 
-  set(h2_oauth2_test_src
+  android_add_executable(TARGET h2_oauth2_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_oauth2.cc
 )
-  android_add_executable(h2_oauth2_test)
 
   target_compile_definitions(h2_oauth2_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_oauth2_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11759,10 +11592,9 @@ endif()
 
     add_dependencies(h2_oauth2_test project_benchmark project_gflags)
 
-  set(h2_proxy_test_src
+  android_add_executable(TARGET h2_proxy_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_proxy.cc
 )
-  android_add_executable(h2_proxy_test)
 
   target_compile_definitions(h2_proxy_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_proxy_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11788,10 +11620,9 @@ endif()
 
     add_dependencies(h2_proxy_test project_benchmark project_gflags)
 
-  set(h2_sockpair_test_src
+  android_add_executable(TARGET h2_sockpair_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_sockpair.cc
 )
-  android_add_executable(h2_sockpair_test)
 
   target_compile_definitions(h2_sockpair_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_sockpair_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11817,10 +11648,9 @@ endif()
 
     add_dependencies(h2_sockpair_test project_benchmark project_gflags)
 
-  set(h2_sockpair+trace_test_src
+  android_add_executable(TARGET h2_sockpair+trace_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_sockpair+trace.cc
 )
-  android_add_executable(h2_sockpair+trace_test)
 
   target_compile_definitions(h2_sockpair+trace_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_sockpair+trace_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11846,10 +11676,9 @@ endif()
 
     add_dependencies(h2_sockpair+trace_test project_benchmark project_gflags)
 
-  set(h2_sockpair_1byte_test_src
+  android_add_executable(TARGET h2_sockpair_1byte_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_sockpair_1byte.cc
 )
-  android_add_executable(h2_sockpair_1byte_test)
 
   target_compile_definitions(h2_sockpair_1byte_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_sockpair_1byte_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11875,10 +11704,9 @@ endif()
 
     add_dependencies(h2_sockpair_1byte_test project_benchmark project_gflags)
 
-  set(h2_spiffe_test_src
+  android_add_executable(TARGET h2_spiffe_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_spiffe.cc
 )
-  android_add_executable(h2_spiffe_test)
 
   target_compile_definitions(h2_spiffe_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_spiffe_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11904,10 +11732,9 @@ endif()
 
     add_dependencies(h2_spiffe_test project_benchmark project_gflags)
 
-  set(h2_ssl_test_src
+  android_add_executable(TARGET h2_ssl_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_ssl.cc
 )
-  android_add_executable(h2_ssl_test)
 
   target_compile_definitions(h2_ssl_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_ssl_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11933,10 +11760,9 @@ endif()
 
     add_dependencies(h2_ssl_test project_benchmark project_gflags)
 
-  set(h2_ssl_cred_reload_test_src
+  android_add_executable(TARGET h2_ssl_cred_reload_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_ssl_cred_reload.cc
 )
-  android_add_executable(h2_ssl_cred_reload_test)
 
   target_compile_definitions(h2_ssl_cred_reload_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_ssl_cred_reload_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11962,10 +11788,9 @@ endif()
 
     add_dependencies(h2_ssl_cred_reload_test project_benchmark project_gflags)
 
-  set(h2_ssl_proxy_test_src
+  android_add_executable(TARGET h2_ssl_proxy_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_ssl_proxy.cc
 )
-  android_add_executable(h2_ssl_proxy_test)
 
   target_compile_definitions(h2_ssl_proxy_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_ssl_proxy_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -11992,10 +11817,9 @@ endif()
     add_dependencies(h2_ssl_proxy_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(h2_uds_test_src
+  android_add_executable(TARGET h2_uds_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_uds.cc
 )
-  android_add_executable(h2_uds_test)
 
   target_compile_definitions(h2_uds_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_uds_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12022,10 +11846,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(h2_uds_test project_benchmark project_gflags)
 endif()
 
-  set(inproc_test_src
+  android_add_executable(TARGET inproc_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/inproc.cc
 )
-  android_add_executable(inproc_test)
 
   target_compile_definitions(inproc_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(inproc_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12051,10 +11874,9 @@ endif()
 
     add_dependencies(inproc_test project_benchmark project_gflags)
 
-  set(h2_census_nosec_test_src
+  android_add_executable(TARGET h2_census_nosec_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_census.cc
 )
-  android_add_executable(h2_census_nosec_test)
 
   target_compile_definitions(h2_census_nosec_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_census_nosec_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12080,10 +11902,9 @@ endif()
 
     add_dependencies(h2_census_nosec_test project_benchmark project_gflags)
 
-  set(h2_compress_nosec_test_src
+  android_add_executable(TARGET h2_compress_nosec_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_compress.cc
 )
-  android_add_executable(h2_compress_nosec_test)
 
   target_compile_definitions(h2_compress_nosec_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_compress_nosec_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12110,10 +11931,9 @@ endif()
     add_dependencies(h2_compress_nosec_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(h2_fd_nosec_test_src
+  android_add_executable(TARGET h2_fd_nosec_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_fd.cc
 )
-  android_add_executable(h2_fd_nosec_test)
 
   target_compile_definitions(h2_fd_nosec_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_fd_nosec_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12140,10 +11960,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(h2_fd_nosec_test project_benchmark project_gflags)
 endif()
 
-  set(h2_full_nosec_test_src
+  android_add_executable(TARGET h2_full_nosec_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_full.cc
 )
-  android_add_executable(h2_full_nosec_test)
 
   target_compile_definitions(h2_full_nosec_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_full_nosec_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12170,10 +11989,9 @@ endif()
     add_dependencies(h2_full_nosec_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX)
 
-  set(h2_full+pipe_nosec_test_src
+  android_add_executable(TARGET h2_full+pipe_nosec_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_full+pipe.cc
 )
-  android_add_executable(h2_full+pipe_nosec_test)
 
   target_compile_definitions(h2_full+pipe_nosec_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_full+pipe_nosec_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12200,10 +12018,9 @@ if(_gRPC_PLATFORM_LINUX)
     add_dependencies(h2_full+pipe_nosec_test project_benchmark project_gflags)
 endif()
 
-  set(h2_full+trace_nosec_test_src
+  android_add_executable(TARGET h2_full+trace_nosec_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_full+trace.cc
 )
-  android_add_executable(h2_full+trace_nosec_test)
 
   target_compile_definitions(h2_full+trace_nosec_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_full+trace_nosec_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12229,10 +12046,9 @@ endif()
 
     add_dependencies(h2_full+trace_nosec_test project_benchmark project_gflags)
 
-  set(h2_full+workarounds_nosec_test_src
+  android_add_executable(TARGET h2_full+workarounds_nosec_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_full+workarounds.cc
 )
-  android_add_executable(h2_full+workarounds_nosec_test)
 
   target_compile_definitions(h2_full+workarounds_nosec_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_full+workarounds_nosec_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12258,10 +12074,9 @@ endif()
 
     add_dependencies(h2_full+workarounds_nosec_test project_benchmark project_gflags)
 
-  set(h2_http_proxy_nosec_test_src
+  android_add_executable(TARGET h2_http_proxy_nosec_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_http_proxy.cc
 )
-  android_add_executable(h2_http_proxy_nosec_test)
 
   target_compile_definitions(h2_http_proxy_nosec_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_http_proxy_nosec_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12287,10 +12102,9 @@ endif()
 
     add_dependencies(h2_http_proxy_nosec_test project_benchmark project_gflags)
 
-  set(h2_proxy_nosec_test_src
+  android_add_executable(TARGET h2_proxy_nosec_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_proxy.cc
 )
-  android_add_executable(h2_proxy_nosec_test)
 
   target_compile_definitions(h2_proxy_nosec_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_proxy_nosec_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12316,10 +12130,9 @@ endif()
 
     add_dependencies(h2_proxy_nosec_test project_benchmark project_gflags)
 
-  set(h2_sockpair_nosec_test_src
+  android_add_executable(TARGET h2_sockpair_nosec_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_sockpair.cc
 )
-  android_add_executable(h2_sockpair_nosec_test)
 
   target_compile_definitions(h2_sockpair_nosec_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_sockpair_nosec_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12345,10 +12158,9 @@ endif()
 
     add_dependencies(h2_sockpair_nosec_test project_benchmark project_gflags)
 
-  set(h2_sockpair+trace_nosec_test_src
+  android_add_executable(TARGET h2_sockpair+trace_nosec_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_sockpair+trace.cc
 )
-  android_add_executable(h2_sockpair+trace_nosec_test)
 
   target_compile_definitions(h2_sockpair+trace_nosec_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_sockpair+trace_nosec_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12374,10 +12186,9 @@ endif()
 
     add_dependencies(h2_sockpair+trace_nosec_test project_benchmark project_gflags)
 
-  set(h2_sockpair_1byte_nosec_test_src
+  android_add_executable(TARGET h2_sockpair_1byte_nosec_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_sockpair_1byte.cc
 )
-  android_add_executable(h2_sockpair_1byte_nosec_test)
 
   target_compile_definitions(h2_sockpair_1byte_nosec_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_sockpair_1byte_nosec_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12404,10 +12215,9 @@ endif()
     add_dependencies(h2_sockpair_1byte_nosec_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  set(h2_uds_nosec_test_src
+  android_add_executable(TARGET h2_uds_nosec_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fixtures/h2_uds.cc
 )
-  android_add_executable(h2_uds_nosec_test)
 
   target_compile_definitions(h2_uds_nosec_test PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(h2_uds_nosec_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12434,10 +12244,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(h2_uds_nosec_test project_benchmark project_gflags)
 endif()
 
-  set(address_sorting_test_unsecure_src
+  android_add_test(TARGET address_sorting_test_unsecure
    ${_gRPC_ROOT}/test/cpp/naming/address_sorting_test.cc
 )
-  android_add_test(address_sorting_test_unsecure)
   target_link_libraries(address_sorting_test_unsecure PRIVATE gmock_main ssl crypto)
   target_include_directories(address_sorting_test_unsecure PRIVATE ${_gRPC_ROOT})
 
@@ -12471,10 +12280,9 @@ endif()
 
     add_dependencies(address_sorting_test_unsecure project_benchmark project_gflags)
 
-  set(address_sorting_test_src
+  android_add_test(TARGET address_sorting_test
    ${_gRPC_ROOT}/test/cpp/naming/address_sorting_test.cc
 )
-  android_add_test(address_sorting_test)
   target_link_libraries(address_sorting_test PRIVATE gmock_main ssl crypto)
   target_include_directories(address_sorting_test PRIVATE ${_gRPC_ROOT})
 
@@ -12508,10 +12316,9 @@ endif()
 
     add_dependencies(address_sorting_test project_benchmark project_gflags)
 
-  set(cancel_ares_query_test_src
+  android_add_test(TARGET cancel_ares_query_test
    ${_gRPC_ROOT}/test/cpp/naming/cancel_ares_query_test.cc
 )
-  android_add_test(cancel_ares_query_test)
   target_link_libraries(cancel_ares_query_test PRIVATE gmock_main ssl crypto)
   target_include_directories(cancel_ares_query_test PRIVATE ${_gRPC_ROOT})
 
@@ -12546,11 +12353,10 @@ endif()
 
     add_dependencies(cancel_ares_query_test project_benchmark project_gflags)
 
-  set(alts_credentials_fuzzer_one_entry_src
+  android_add_executable(TARGET alts_credentials_fuzzer_one_entry NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/security/alts_credentials_fuzzer.cc
    ${_gRPC_ROOT}/test/core/util/one_corpus_entry_fuzzer.cc
 )
-  android_add_executable(alts_credentials_fuzzer_one_entry)
 
   target_compile_definitions(alts_credentials_fuzzer_one_entry PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(alts_credentials_fuzzer_one_entry PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12575,11 +12381,10 @@ endif()
 
     add_dependencies(alts_credentials_fuzzer_one_entry project_benchmark project_gflags)
 
-  set(api_fuzzer_one_entry_src
+  android_add_executable(TARGET api_fuzzer_one_entry NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fuzzers/api_fuzzer.cc
    ${_gRPC_ROOT}/test/core/util/one_corpus_entry_fuzzer.cc
 )
-  android_add_executable(api_fuzzer_one_entry)
 
   target_compile_definitions(api_fuzzer_one_entry PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(api_fuzzer_one_entry PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12604,11 +12409,10 @@ endif()
 
     add_dependencies(api_fuzzer_one_entry project_benchmark project_gflags)
 
-  set(client_fuzzer_one_entry_src
+  android_add_executable(TARGET client_fuzzer_one_entry NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fuzzers/client_fuzzer.cc
    ${_gRPC_ROOT}/test/core/util/one_corpus_entry_fuzzer.cc
 )
-  android_add_executable(client_fuzzer_one_entry)
 
   target_compile_definitions(client_fuzzer_one_entry PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(client_fuzzer_one_entry PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12633,11 +12437,10 @@ endif()
 
     add_dependencies(client_fuzzer_one_entry project_benchmark project_gflags)
 
-  set(hpack_parser_fuzzer_test_one_entry_src
+  android_add_executable(TARGET hpack_parser_fuzzer_test_one_entry NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/transport/chttp2/hpack_parser_fuzzer_test.cc
    ${_gRPC_ROOT}/test/core/util/one_corpus_entry_fuzzer.cc
 )
-  android_add_executable(hpack_parser_fuzzer_test_one_entry)
 
   target_compile_definitions(hpack_parser_fuzzer_test_one_entry PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(hpack_parser_fuzzer_test_one_entry PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12662,11 +12465,10 @@ endif()
 
     add_dependencies(hpack_parser_fuzzer_test_one_entry project_benchmark project_gflags)
 
-  set(http_request_fuzzer_test_one_entry_src
+  android_add_executable(TARGET http_request_fuzzer_test_one_entry NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/http/request_fuzzer.cc
    ${_gRPC_ROOT}/test/core/util/one_corpus_entry_fuzzer.cc
 )
-  android_add_executable(http_request_fuzzer_test_one_entry)
 
   target_compile_definitions(http_request_fuzzer_test_one_entry PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(http_request_fuzzer_test_one_entry PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12691,11 +12493,10 @@ endif()
 
     add_dependencies(http_request_fuzzer_test_one_entry project_benchmark project_gflags)
 
-  set(http_response_fuzzer_test_one_entry_src
+  android_add_executable(TARGET http_response_fuzzer_test_one_entry NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/http/response_fuzzer.cc
    ${_gRPC_ROOT}/test/core/util/one_corpus_entry_fuzzer.cc
 )
-  android_add_executable(http_response_fuzzer_test_one_entry)
 
   target_compile_definitions(http_response_fuzzer_test_one_entry PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(http_response_fuzzer_test_one_entry PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12720,11 +12521,10 @@ endif()
 
     add_dependencies(http_response_fuzzer_test_one_entry project_benchmark project_gflags)
 
-  set(json_fuzzer_test_one_entry_src
+  android_add_executable(TARGET json_fuzzer_test_one_entry NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/json/fuzzer.cc
    ${_gRPC_ROOT}/test/core/util/one_corpus_entry_fuzzer.cc
 )
-  android_add_executable(json_fuzzer_test_one_entry)
 
   target_compile_definitions(json_fuzzer_test_one_entry PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(json_fuzzer_test_one_entry PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12749,11 +12549,10 @@ endif()
 
     add_dependencies(json_fuzzer_test_one_entry project_benchmark project_gflags)
 
-  set(nanopb_fuzzer_response_test_one_entry_src
+  android_add_executable(TARGET nanopb_fuzzer_response_test_one_entry NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/nanopb/fuzzer_response.cc
    ${_gRPC_ROOT}/test/core/util/one_corpus_entry_fuzzer.cc
 )
-  android_add_executable(nanopb_fuzzer_response_test_one_entry)
 
   target_compile_definitions(nanopb_fuzzer_response_test_one_entry PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(nanopb_fuzzer_response_test_one_entry PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12778,11 +12577,10 @@ endif()
 
     add_dependencies(nanopb_fuzzer_response_test_one_entry project_benchmark project_gflags)
 
-  set(nanopb_fuzzer_serverlist_test_one_entry_src
+  android_add_executable(TARGET nanopb_fuzzer_serverlist_test_one_entry NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/nanopb/fuzzer_serverlist.cc
    ${_gRPC_ROOT}/test/core/util/one_corpus_entry_fuzzer.cc
 )
-  android_add_executable(nanopb_fuzzer_serverlist_test_one_entry)
 
   target_compile_definitions(nanopb_fuzzer_serverlist_test_one_entry PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(nanopb_fuzzer_serverlist_test_one_entry PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12807,11 +12605,10 @@ endif()
 
     add_dependencies(nanopb_fuzzer_serverlist_test_one_entry project_benchmark project_gflags)
 
-  set(percent_decode_fuzzer_one_entry_src
+  android_add_executable(TARGET percent_decode_fuzzer_one_entry NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/slice/percent_decode_fuzzer.cc
    ${_gRPC_ROOT}/test/core/util/one_corpus_entry_fuzzer.cc
 )
-  android_add_executable(percent_decode_fuzzer_one_entry)
 
   target_compile_definitions(percent_decode_fuzzer_one_entry PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(percent_decode_fuzzer_one_entry PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12836,11 +12633,10 @@ endif()
 
     add_dependencies(percent_decode_fuzzer_one_entry project_benchmark project_gflags)
 
-  set(percent_encode_fuzzer_one_entry_src
+  android_add_executable(TARGET percent_encode_fuzzer_one_entry NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/slice/percent_encode_fuzzer.cc
    ${_gRPC_ROOT}/test/core/util/one_corpus_entry_fuzzer.cc
 )
-  android_add_executable(percent_encode_fuzzer_one_entry)
 
   target_compile_definitions(percent_encode_fuzzer_one_entry PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(percent_encode_fuzzer_one_entry PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12865,11 +12661,10 @@ endif()
 
     add_dependencies(percent_encode_fuzzer_one_entry project_benchmark project_gflags)
 
-  set(server_fuzzer_one_entry_src
+  android_add_executable(TARGET server_fuzzer_one_entry NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/fuzzers/server_fuzzer.cc
    ${_gRPC_ROOT}/test/core/util/one_corpus_entry_fuzzer.cc
 )
-  android_add_executable(server_fuzzer_one_entry)
 
   target_compile_definitions(server_fuzzer_one_entry PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(server_fuzzer_one_entry PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12894,11 +12689,10 @@ endif()
 
     add_dependencies(server_fuzzer_one_entry project_benchmark project_gflags)
 
-  set(ssl_server_fuzzer_one_entry_src
+  android_add_executable(TARGET ssl_server_fuzzer_one_entry NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/security/ssl_server_fuzzer.cc
    ${_gRPC_ROOT}/test/core/util/one_corpus_entry_fuzzer.cc
 )
-  android_add_executable(ssl_server_fuzzer_one_entry)
 
   target_compile_definitions(ssl_server_fuzzer_one_entry PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(ssl_server_fuzzer_one_entry PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -12923,11 +12717,10 @@ endif()
 
     add_dependencies(ssl_server_fuzzer_one_entry project_benchmark project_gflags)
 
-  set(uri_fuzzer_test_one_entry_src
+  android_add_executable(TARGET uri_fuzzer_test_one_entry NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/client_channel/uri_fuzzer_test.cc
    ${_gRPC_ROOT}/test/core/util/one_corpus_entry_fuzzer.cc
 )
-  android_add_executable(uri_fuzzer_test_one_entry)
 
   target_compile_definitions(uri_fuzzer_test_one_entry PRIVATE -DPB_FIELD_16BIT)
   target_compile_definitions(uri_fuzzer_test_one_entry PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)

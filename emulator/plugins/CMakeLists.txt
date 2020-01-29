@@ -39,10 +39,10 @@ if (NOT TARGET protoc)
 endif()
 
 
-set(grpc_cpp_plugin_src
+  android_add_executable(TARGET grpc_cpp_plugin NODISTRIBUTE
+SRC
    ${_gRPC_ROOT}/src/compiler/cpp_plugin.cc
 )
-  android_add_executable(grpc_cpp_plugin)
 
   target_compile_definitions(grpc_cpp_plugin PRIVATE -DPB_FIELD_16BIT)
 
@@ -61,7 +61,13 @@ set(grpc_cpp_plugin_src
 
 
 
-set(grpc_plugin_support_src
+android_add_library(TARGET grpc_plugin_support
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
   ${_gRPC_ROOT}/src/compiler/cpp_generator.cc
   ${_gRPC_ROOT}/src/compiler/csharp_generator.cc
   ${_gRPC_ROOT}/src/compiler/node_generator.cc
@@ -70,7 +76,6 @@ set(grpc_plugin_support_src
   ${_gRPC_ROOT}/src/compiler/python_generator.cc
   ${_gRPC_ROOT}/src/compiler/ruby_generator.cc
 )
-android_add_library(grpc_plugin_support)
 
 
 target_compile_definitions(grpc_plugin_support PRIVATE -DPB_FIELD_16BIT)

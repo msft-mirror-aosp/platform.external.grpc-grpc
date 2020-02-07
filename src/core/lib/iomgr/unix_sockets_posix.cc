@@ -30,6 +30,7 @@
 
 #include "src/core/lib/iomgr/sockaddr.h"
 
+#include <cstdio>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>

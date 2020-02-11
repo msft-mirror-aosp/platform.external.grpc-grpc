@@ -6,6 +6,7 @@ cc_defaults {
         "-Wno-unused-result",
     ],
     host_supported: true,
+    vendor_available: true,
 }
 
 cc_library_host_static {
@@ -200,6 +201,8 @@ cc_library_static {
     ],
     static_libs: [
         "gpr_base",
+    ],
+    shared_libs: [
         "liblog",
     ],
 }
@@ -242,11 +245,47 @@ cc_library_static {
 }
 
 cc_library_static {
+    name: "libgrpc_transport_chttp2_server_secure",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "src/core/ext/transport/chttp2/server/chttp2_server.cc",
+        "src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc",
+    ],
+    local_include_dirs: [
+        "include",
+    ],
+    static_libs: [
+        "libgrpc_base",
+        "libgrpc_transport_chttp2",
+        "libprotobuf-c-nano",
+    ],
+}
+
+cc_library_static {
     name: "libgrpc_transport_chttp2_client_insecure",
     defaults: ["grpc_defaults"],
     srcs: [
         "src/core/ext/transport/chttp2/client/insecure/channel_create.cc",
         "src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc",
+    ],
+    local_include_dirs: [
+        "include",
+    ],
+    static_libs: [
+        "libgrpc_base",
+        "libgrpc_client_channel",
+        "libgrpc_deadline_filter",
+        "libgrpc_transport_chttp2",
+        "libgrpc_transport_chttp2_client_connector",
+        "libprotobuf-c-nano",
+    ],
+}
+
+cc_library_static {
+    name: "libgrpc_transport_chttp2_client_secure",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc",
     ],
     local_include_dirs: [
         "include",
@@ -352,6 +391,170 @@ cc_library_static {
 }
 
 cc_library_static {
+    name: "libgrpc_secure",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "src/core/lib/http/httpcli_security_connector.cc",
+        "src/core/lib/security/context/security_context.cc",
+        "src/core/lib/security/credentials/alts/alts_credentials.cc",
+        "src/core/lib/security/credentials/composite/composite_credentials.cc",
+        "src/core/lib/security/credentials/credentials.cc",
+        "src/core/lib/security/credentials/credentials_metadata.cc",
+        "src/core/lib/security/credentials/fake/fake_credentials.cc",
+        "src/core/lib/security/credentials/google_default/credentials_generic.cc",
+        "src/core/lib/security/credentials/google_default/google_default_credentials.cc",
+        "src/core/lib/security/credentials/iam/iam_credentials.cc",
+        "src/core/lib/security/credentials/jwt/json_token.cc",
+        "src/core/lib/security/credentials/jwt/jwt_credentials.cc",
+        "src/core/lib/security/credentials/jwt/jwt_verifier.cc",
+        "src/core/lib/security/credentials/local/local_credentials.cc",
+        "src/core/lib/security/credentials/oauth2/oauth2_credentials.cc",
+        "src/core/lib/security/credentials/plugin/plugin_credentials.cc",
+        "src/core/lib/security/credentials/ssl/ssl_credentials.cc",
+        "src/core/lib/security/security_connector/alts_security_connector.cc",
+        "src/core/lib/security/security_connector/load_system_roots_fallback.cc",
+        "src/core/lib/security/security_connector/load_system_roots_linux.cc",
+        "src/core/lib/security/security_connector/local_security_connector.cc",
+        "src/core/lib/security/security_connector/security_connector.cc",
+        "src/core/lib/security/transport/client_auth_filter.cc",
+        "src/core/lib/security/transport/secure_endpoint.cc",
+        "src/core/lib/security/transport/security_handshaker.cc",
+        "src/core/lib/security/transport/server_auth_filter.cc",
+        "src/core/lib/security/transport/target_authority_table.cc",
+        "src/core/lib/security/transport/tsi_error.cc",
+        "src/core/lib/security/util/json_util.cc",
+        "src/core/lib/surface/init_secure.cc",
+    ],
+    local_include_dirs: [
+        "include",
+        "third_party/nanopb",
+    ],
+    static_libs: [
+        "libgrpc_base",
+        "libgrpc_transport_chttp2_alpn",
+    ],
+    whole_static_libs: [
+        "libalts_frame_protector",
+        "libtsi",
+    ],
+    shared_libs: [
+        "libcrypto",
+        "libssl",
+    ],
+}
+
+cc_library_static {
+    name: "libalts_util",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "src/core/lib/security/credentials/alts/check_gcp_environment.cc",
+        "src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc",
+        "src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc",
+        "src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc",
+        "src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc",
+        "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc",
+        "src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc",
+        "src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc",
+        "src/core/tsi/alts/handshaker/altscontext.pb.c",
+        "src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc",
+        "src/core/tsi/alts/handshaker/handshaker.pb.c",
+        "src/core/tsi/alts/handshaker/transport_security_common_api.cc",
+        "src/core/tsi/alts/handshaker/transport_security_common.pb.c",
+    ],
+    local_include_dirs: [
+        "include",
+    ],
+    static_libs: [
+        "libprotobuf-c-nano",
+    ],
+    cflags: [
+        "-DPB_FIELD_16BIT",
+    ],
+}
+
+cc_library_static {
+    name: "libtsi",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "src/core/tsi/alts/handshaker/alts_handshaker_client.cc",
+        "src/core/tsi/alts/handshaker/alts_tsi_event.cc",
+        "src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc",
+        "src/core/tsi/alts/handshaker/alts_tsi_utils.cc",
+        "src/core/tsi/alts_transport_security.cc",
+        "src/core/tsi/fake_transport_security.cc",
+        "src/core/tsi/local_transport_security.cc",
+        "src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc",
+        "src/core/tsi/ssl/session_cache/ssl_session_cache.cc",
+        "src/core/tsi/ssl/session_cache/ssl_session_openssl.cc",
+        "src/core/tsi/ssl_transport_security.cc",
+        "src/core/tsi/transport_security_grpc.cc",
+    ],
+    local_include_dirs: [
+        "include",
+        "third_party/nanopb",
+    ],
+    static_libs: [
+        "libalts_frame_protector",
+        "gpr_base",
+        "libgrpc_base",
+        "libgrpc_transport_chttp2_client_insecure",
+    ],
+    whole_static_libs: [
+        "libalts_util",
+    ],
+    shared_libs: [
+        "libcrypto",
+        "libssl",
+    ],
+}
+
+cc_library_static {
+    name: "libalts_frame_protector",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "src/core/tsi/alts/crypt/aes_gcm.cc",
+        "src/core/tsi/alts/crypt/gsec.cc",
+        "src/core/tsi/alts/frame_protector/alts_counter.cc",
+        "src/core/tsi/alts/frame_protector/alts_crypter.cc",
+        "src/core/tsi/alts/frame_protector/alts_frame_protector.cc",
+        "src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc",
+        "src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc",
+        "src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc",
+        "src/core/tsi/alts/frame_protector/frame_handler.cc",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc",
+    ],
+    local_include_dirs: [
+        "include",
+    ],
+    static_libs: [
+        "gpr_base",
+        "libgrpc_base",
+    ],
+    whole_static_libs: [
+        "libtsi_interface",
+    ],
+    shared_libs: [
+        "libcrypto",
+        "libssl",
+    ],
+}
+
+cc_library_static {
+    name: "libtsi_interface",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "src/core/tsi/transport_security.cc",
+    ],
+    static_libs: [
+        "libgrpc_trace",
+    ],
+}
+
+cc_library_static {
     name: "libgrpc_transport_chttp2",
     defaults: ["grpc_defaults"],
     srcs: [
@@ -385,6 +588,8 @@ cc_library_static {
     static_libs: [
         "libgrpc_base",
         "libgrpc_http_filters",
+    ],
+    whole_static_libs: [
         "libgrpc_transport_chttp2_alpn",
     ],
 }
@@ -396,6 +601,32 @@ cc_library_static {
         "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
+    ],
+    local_include_dirs: [
+        "include",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb",
+    ],
+    static_libs: [
+        "libgrpc_base",
+        "libgrpc_client_channel",
+        "libgrpc_deadline_filter",
+        "libgrpc_resolver_fake",
+        "libprotobuf-c-nano",
+    ],
+}
+
+cc_library_static {
+    name: "libgrpc_lb_policy_grpclb_secure",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c",
@@ -470,7 +701,7 @@ cc_library_static {
         "src/core/lib/profiling/basic_timers.cc",
         "src/core/lib/profiling/stap_timers.cc",
     ],
-    static_libs: [
+    shared_libs: [
         "liblog",
     ],
     export_include_dirs: [
@@ -522,8 +753,10 @@ cc_library_static {
     srcs: [
         "src/core/lib/debug/trace.cc",
     ],
-    static_libs: [
+    whole_static_libs: [
         "gpr_base",
+    ],
+    shared_libs: [
         "liblog",
     ],
 }
@@ -681,11 +914,12 @@ cc_library_static {
         "src/core/lib/transport/transport.cc",
         "src/core/lib/transport/transport_op_string.cc",
     ],
-    static_libs: [
+    whole_static_libs: [
         "libgrpc_trace",
-        "gpr_base",
-        "liblog",
         "libz",
+    ],
+    shared_libs: [
+        "liblog",
     ],
 }
 
@@ -703,6 +937,32 @@ cc_library_static {
     ],
 }
 
+grpc_common_libs = [
+    "libgrpc_base",
+    "census",
+    "libgrpc_base_c",
+    "libgrpc_deadline_filter",
+    "libgrpc_client_authority_filter",
+    "libgrpc_client_channel",
+    "libgrpc_lb_policy_pick_first",
+    "libgrpc_lb_policy_round_robin",
+    "libgrpc_max_age_filter",
+    "libgrpc_message_size_filter",
+    "libgrpc_resolver_dns_ares",
+    "libgrpc_resolver_fake",
+    "libgrpc_resolver_dns_native",
+    "libgrpc_resolver_sockaddr",
+    "libgrpc_transport_chttp2_server_insecure",
+    "libgrpc_transport_chttp2_client_insecure",
+    "libgrpc_http_filters",
+    "libgrpc_transport_chttp2",
+    "libgrpc_transport_chttp2_client_connector",
+    "libgrpc_transport_inproc",
+    "libgrpc_workaround_cronet_compression_filter",
+    "libgrpc_server_backward_compatibility",
+    "libprotobuf-c-nano",
+]
+
 cc_library_static {
     name: "libgrpc_unsecure",
     defaults: ["grpc_defaults"],
@@ -711,30 +971,8 @@ cc_library_static {
         "src/core/lib/surface/init_unsecure.cc",
         "src/core/plugin_registry/grpc_unsecure_plugin_registry.cc",
     ],
-    static_libs: [
-        "libgrpc_base",
-        "libgrpc_client_channel",
-        "libgrpc_client_authority_filter",
-        "libgrpc_deadline_filter",
-        "libgrpc_resolver_dns_native",
-        "libgrpc_http_filters",
+    whole_static_libs: grpc_common_libs + [
         "libgrpc_lb_policy_grpclb",
-        "libgrpc_lb_policy_pick_first",
-        "libgrpc_lb_policy_round_robin",
-        "libgrpc_max_age_filter",
-        "libgrpc_message_size_filter",
-        "libgrpc_resolver_dns_ares",
-        "libgrpc_resolver_dns_native",
-        "libgrpc_resolver_fake",
-        "libgrpc_resolver_sockaddr",
-        "libgrpc_server_backward_compatibility",
-        "libgrpc_transport_chttp2",
-        "libgrpc_transport_chttp2_server_insecure",
-        "libgrpc_transport_chttp2_client_insecure",
-        "libgrpc_transport_inproc",
-        "libgrpc_trace",
-        "libgrpc_workaround_cronet_compression_filter",
-        "libprotobuf-c-nano",
     ],
     export_include_dirs: [
         "include",
@@ -747,73 +985,94 @@ cc_library_static {
 }
 
 cc_library_static {
-    name: "libgrpc++_base",
+    name: "libgrpc",
     defaults: ["grpc_defaults"],
     srcs: [
-        "src/cpp/client/channel_cc.cc",
-        "src/cpp/client/client_context.cc",
-        "src/cpp/client/create_channel.cc",
-        "src/cpp/client/create_channel_internal.cc",
-        "src/cpp/client/create_channel_posix.cc",
-        "src/cpp/client/credentials_cc.cc",
-        "src/cpp/client/generic_stub.cc",
-        "src/cpp/common/alarm.cc",
-        "src/cpp/common/channel_arguments.cc",
-        "src/cpp/common/channel_filter.cc",
-        "src/cpp/common/completion_queue_cc.cc",
-        "src/cpp/common/core_codegen.cc",
-        "src/cpp/common/resource_quota_cc.cc",
-        "src/cpp/common/rpc_method.cc",
-        "src/cpp/common/version_cc.cc",
-        "src/cpp/server/async_generic_service.cc",
-        "src/cpp/server/channel_argument_option.cc",
-        "src/cpp/server/create_default_thread_pool.cc",
-        "src/cpp/server/dynamic_thread_pool.cc",
-        "src/cpp/server/health/default_health_check_service.cc",
-        "src/cpp/server/health/health.pb.c",
-        "src/cpp/server/health/health_check_service.cc",
-        "src/cpp/server/health/health_check_service_server_builder_option.cc",
-        "src/cpp/server/server_builder.cc",
-        "src/cpp/server/server_cc.cc",
-        "src/cpp/server/server_context.cc",
-        "src/cpp/server/server_credentials.cc",
-        "src/cpp/server/server_posix.cc",
-        "src/cpp/thread_manager/thread_manager.cc",
-        "src/cpp/util/byte_buffer_cc.cc",
-        "src/cpp/util/status.cc",
-        "src/cpp/util/string_ref.cc",
-        "src/cpp/util/time_cc.cc",
+        "src/core/lib/surface/init.cc",
+        "src/core/plugin_registry/grpc_plugin_registry.cc",
     ],
+    whole_static_libs: grpc_common_libs + [
+        "libgrpc_lb_policy_grpclb_secure",
+        "libgrpc_secure",
+        "libgrpc_transport_chttp2_client_secure",
+        "libgrpc_transport_chttp2_server_secure",
+    ],
+    export_include_dirs: [
+        "include",
+        ".",
+    ],
+    local_include_dirs: [
+        "third_party/cares",
+        "third_party/cares/config_android",
+    ],
+}
+
+GRPCXX_SRCS = [
+    "src/cpp/client/channel_cc.cc",
+    "src/cpp/client/client_context.cc",
+    "src/cpp/client/create_channel.cc",
+    "src/cpp/client/create_channel_internal.cc",
+    "src/cpp/client/create_channel_posix.cc",
+    "src/cpp/client/credentials_cc.cc",
+    "src/cpp/client/generic_stub.cc",
+    "src/cpp/common/alarm.cc",
+    "src/cpp/common/channel_arguments.cc",
+    "src/cpp/common/channel_filter.cc",
+    "src/cpp/common/completion_queue_cc.cc",
+    "src/cpp/common/core_codegen.cc",
+    "src/cpp/common/resource_quota_cc.cc",
+    "src/cpp/common/rpc_method.cc",
+    "src/cpp/common/version_cc.cc",
+    "src/cpp/server/async_generic_service.cc",
+    "src/cpp/server/channel_argument_option.cc",
+    "src/cpp/server/create_default_thread_pool.cc",
+    "src/cpp/server/dynamic_thread_pool.cc",
+    "src/cpp/server/health/default_health_check_service.cc",
+    "src/cpp/server/health/health.pb.c",
+    "src/cpp/server/health/health_check_service.cc",
+    "src/cpp/server/health/health_check_service_server_builder_option.cc",
+    "src/cpp/server/server_builder.cc",
+    "src/cpp/server/server_cc.cc",
+    "src/cpp/server/server_context.cc",
+    "src/cpp/server/server_credentials.cc",
+    "src/cpp/server/server_posix.cc",
+    "src/cpp/thread_manager/thread_manager.cc",
+    "src/cpp/util/byte_buffer_cc.cc",
+    "src/cpp/util/status.cc",
+    "src/cpp/util/string_ref.cc",
+    "src/cpp/util/time_cc.cc",
+]
+
+cc_library_static {
+    name: "libgrpc++_base",
+    defaults: ["grpc_defaults"],
+    srcs: GRPCXX_SRCS,
     local_include_dirs: [
         "include",
     ],
     static_libs: [
-        "census",
-        "libgrpc_base",
+        "libgrpc",
+    ],
+    whole_static_libs: [
         "libgrpc++_codegen_base_src",
-        "libgrpc_client_channel",
-        "libgrpc_client_authority_filter",
-        "libgrpc_deadline_filter",
-        "libgrpc_resolver_dns_native",
-        "libgrpc_http_filters",
-        "libgrpc_lb_policy_grpclb",
-        "libgrpc_lb_policy_pick_first",
-        "libgrpc_lb_policy_round_robin",
-        "libgrpc_max_age_filter",
-        "libgrpc_message_size_filter",
-        "libgrpc_resolver_dns_ares",
-        "libgrpc_resolver_dns_native",
-        "libgrpc_resolver_fake",
-        "libgrpc_resolver_sockaddr",
-        "libgrpc_server_backward_compatibility",
-        "libgrpc_transport_chttp2",
-        "libgrpc_transport_chttp2_client_connector",
-        "libgrpc_transport_chttp2_client_insecure",
-        "libgrpc_transport_chttp2_server_insecure",
-        "libgrpc_transport_inproc",
+    ],
+    cflags: [
+        "-Wno-unused-parameter",
+    ],
+}
+
+cc_library_static {
+    name: "libgrpc++_base_unsecure",
+    defaults: ["grpc_defaults"],
+    srcs: GRPCXX_SRCS,
+    local_include_dirs: [
+        "include",
+    ],
+    static_libs: [
         "libgrpc_unsecure",
-        "libgrpc_workaround_cronet_compression_filter",
-        "libprotobuf-c-nano",
+    ],
+    whole_static_libs: [
+        "libgrpc++_codegen_base_src",
     ],
     cflags: [
         "-Wno-unused-parameter",
@@ -827,11 +1086,10 @@ cc_library_static {
         "src/core/lib/surface/lame_client.cc",
     ],
     whole_static_libs: [
-        "gpr_base",
         "libgrpc_base_c",
-        "libgrpc_trace",
+    ],
+    shared_libs: [
         "liblog",
-        "libz",
     ],
 }
 
@@ -845,42 +1103,62 @@ cc_library_shared {
         "src/cpp/server/insecure_server_credentials.cc",
     ],
     static_libs: [
-        "census",
-        "libgrpc_base",
-        "libgrpc++_codegen_base_src",
-        "libgrpc_base_c",
-        "libgrpc_client_channel",
-        "libgrpc_client_authority_filter",
-        "libgrpc_deadline_filter",
-        "libgrpc_resolver_dns_native",
-        "libgrpc_http_filters",
-        "libgrpc_lb_policy_grpclb",
-        "libgrpc_lb_policy_pick_first",
-        "libgrpc_lb_policy_round_robin",
-        "libgrpc_max_age_filter",
-        "libgrpc_message_size_filter",
-        "libgrpc_resolver_dns_ares",
-        "libgrpc_resolver_dns_native",
-        "libgrpc_resolver_fake",
-        "libgrpc_resolver_sockaddr",
-        "libgrpc_server_backward_compatibility",
-        "libgrpc_transport_chttp2",
-        "libgrpc_transport_chttp2_client_connector",
-        "libgrpc_transport_chttp2_client_insecure",
-        "libgrpc_transport_chttp2_server_insecure",
-        "libgrpc_transport_inproc",
-        "libgrpc_trace",
         "libgrpc_unsecure",
-        "libgrpc_workaround_cronet_compression_filter",
-        "liblog",
-        "libz",
-        "libprotobuf-c-nano",
     ],
     whole_static_libs: [
-        "libgrpc++_base",
+        "libgrpc++_base_unsecure",
+    ],
+    shared_libs: [
+        "liblog",
     ],
     export_include_dirs: [
         "include",
         ".",
     ],
+}
+
+// Secured gRPC C++ library target
+cc_library_shared {
+    name: "libgrpc++",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "src/cpp/client/insecure_credentials.cc",
+        "src/cpp/client/secure_credentials.cc",
+        "src/cpp/common/auth_property_iterator.cc",
+        "src/cpp/common/secure_auth_context.cc",
+        "src/cpp/common/secure_channel_arguments.cc",
+        "src/cpp/common/secure_create_auth_context.cc",
+        "src/cpp/server/insecure_server_credentials.cc",
+        "src/cpp/server/secure_server_credentials.cc",
+    ],
+    static_libs: [
+        "libgrpc",
+    ],
+    whole_static_libs: [
+        "libgrpc++_base",
+    ],
+    shared_libs: [
+        "liblog",
+        "libcrypto",
+        "libssl",
+    ],
+    export_include_dirs: [
+        "include",
+        ".",
+    ],
+}
+
+// gRPC python library target
+python_library_host {
+    name: "py-grpc",
+    srcs: ["src/python/**/*.py"],
+    version: {
+        py2: {
+            enabled: true,
+        },
+        py3: {
+            enabled: true,
+        },
+    },
+    pkg_path: "grpc",
 }

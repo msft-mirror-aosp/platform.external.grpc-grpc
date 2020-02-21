@@ -35,6 +35,13 @@ def if_not_windows(a):
         "//conditions:default": a,
     })
 
+def if_windows(a):
+    return select({
+        "//:windows": a,
+        "//:windows_msvc": a,
+        "//conditions:default": [],
+    })
+
 def if_mac(a):
     return select({
         "//:mac_x86_64": a,
@@ -100,6 +107,7 @@ def grpc_cc_library(
     elif language.upper() == "C++":
         copts = copts + if_android(["-std=c++11"])
     linkopts = if_not_windows(["-pthread"])
+    linkopts = linkopts + if_windows(["ws2_32.lib"])
     if use_cfstream:
         linkopts = linkopts + if_mac(["-framework CoreFoundation"])
     native.cc_library(

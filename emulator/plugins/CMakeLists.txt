@@ -25,7 +25,7 @@
 cmake_minimum_required(VERSION 3.5)
 include(android)
 set(PACKAGE_NAME      "grpc-protoc-plugin")
-set(PACKAGE_VERSION   "1.23.0-dev")
+set(PACKAGE_VERSION   "1.27.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")

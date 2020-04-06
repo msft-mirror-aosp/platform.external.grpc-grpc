@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 exports_files(["LICENSE"])
 
@@ -31,6 +31,7 @@ load(
     "grpc_cc_library",
     "grpc_generate_one_off_targets",
     "grpc_upb_proto_library",
+    "python_config_settings",
 )
 
 config_setting(
@@ -64,21 +65,23 @@ config_setting(
 )
 
 config_setting(
-    name = "python3",
-    values = {"python_path": "python3"},
-)
-
-config_setting(
     name = "mac_x86_64",
     values = {"cpu": "darwin"},
 )
 
+config_setting(
+    name = "grpc_use_absl",
+    values = {"define": "GRPC_USE_ABSL=1"},
+)
+
+python_config_settings()
+
 # This should be updated along with build.yaml
-g_stands_for = "gangnam"
+g_stands_for = "guantao"
 
-core_version = "7.0.0"
+core_version = "9.0.0"
 
-version = "1.23.0-dev"
+version = "1.27.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -147,6 +150,7 @@ GRPCXX_SRCS = [
     "src/cpp/server/health/health_check_service.cc",
     "src/cpp/server/health/health_check_service_server_builder_option.cc",
     "src/cpp/server/server_builder.cc",
+    "src/cpp/server/server_callback.cc",
     "src/cpp/server/server_cc.cc",
     "src/cpp/server/server_context.cc",
     "src/cpp/server/server_credentials.cc",
@@ -260,6 +264,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/security/credentials_impl.h",
     "include/grpcpp/security/server_credentials.h",
     "include/grpcpp/security/server_credentials_impl.h",
+    "include/grpcpp/security/tls_credentials_options.h",
     "include/grpcpp/server.h",
     "include/grpcpp/server_impl.h",
     "include/grpcpp/server_builder.h",
@@ -280,6 +285,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/config.h",
     "include/grpcpp/support/interceptor.h",
     "include/grpcpp/support/message_allocator.h",
+    "include/grpcpp/support/method_handler.h",
     "include/grpcpp/support/proto_buffer_reader.h",
     "include/grpcpp/support/proto_buffer_writer.h",
     "include/grpcpp/support/server_callback.h",
@@ -318,8 +324,10 @@ grpc_cc_library(
     standalone = True,
     deps = [
         "grpc_common",
+        "grpc_lb_policy_cds",
         "grpc_lb_policy_grpclb",
         "grpc_lb_policy_xds",
+        "grpc_resolver_xds",
     ],
 )
 
@@ -334,14 +342,15 @@ grpc_cc_library(
     standalone = True,
     deps = [
         "grpc_common",
+        "grpc_lb_policy_cds_secure",
         "grpc_lb_policy_grpclb_secure",
         "grpc_lb_policy_xds_secure",
+        "grpc_resolver_xds_secure",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_secure",
     ],
 )
-
 
 grpc_cc_library(
     name = "grpc++_public_hdrs",
@@ -357,12 +366,15 @@ grpc_cc_library(
         "src/cpp/common/secure_auth_context.cc",
         "src/cpp/common/secure_channel_arguments.cc",
         "src/cpp/common/secure_create_auth_context.cc",
+        "src/cpp/common/tls_credentials_options.cc",
+        "src/cpp/common/tls_credentials_options_util.cc",
         "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/secure_server_credentials.cc",
     ],
     hdrs = [
         "src/cpp/client/secure_credentials.h",
         "src/cpp/common/secure_auth_context.h",
+        "src/cpp/common/tls_credentials_options_util.h",
         "src/cpp/server/secure_server_credentials.h",
     ],
     language = "c++",
@@ -375,6 +387,7 @@ grpc_cc_library(
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
         "grpc++_codegen_proto",
+        "grpc_secure",
     ],
 )
 
@@ -412,6 +425,23 @@ grpc_cc_library(
     deps = [
         "grpc++",
         "//src/proto/grpc/status:status_proto",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_alts",
+    srcs = [
+        "src/cpp/common/alts_context.cc",
+    ],
+    hdrs = [
+        "include/grpcpp/alts_context.h",
+    ],
+    language = "c++",
+    standalone = True,
+    deps = [
+        "alts_upb",
+        "alts_util",
+        "grpc++",
     ],
 )
 
@@ -469,7 +499,6 @@ grpc_cc_library(
         "src/core/lib/gpr/log_linux.cc",
         "src/core/lib/gpr/log_posix.cc",
         "src/core/lib/gpr/log_windows.cc",
-        "src/core/lib/gpr/mpscq.cc",
         "src/core/lib/gpr/murmur_hash.cc",
         "src/core/lib/gpr/string.cc",
         "src/core/lib/gpr/string_posix.cc",
@@ -491,6 +520,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/fork.cc",
         "src/core/lib/gprpp/global_config_env.cc",
         "src/core/lib/gprpp/host_port.cc",
+        "src/core/lib/gprpp/mpscq.cc",
         "src/core/lib/gprpp/thd_posix.cc",
         "src/core/lib/gprpp/thd_windows.cc",
         "src/core/lib/profiling/basic_timers.cc",
@@ -500,7 +530,6 @@ grpc_cc_library(
         "src/core/lib/gpr/alloc.h",
         "src/core/lib/gpr/arena.h",
         "src/core/lib/gpr/env.h",
-        "src/core/lib/gpr/mpscq.h",
         "src/core/lib/gpr/murmur_hash.h",
         "src/core/lib/gpr/spinlock.h",
         "src/core/lib/gpr/string.h",
@@ -512,7 +541,6 @@ grpc_cc_library(
         "src/core/lib/gpr/tls_pthread.h",
         "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gpr/useful.h",
-        "src/core/lib/gprpp/abstract.h",
         "src/core/lib/gprpp/arena.h",
         "src/core/lib/gprpp/atomic.h",
         "src/core/lib/gprpp/fork.h",
@@ -524,7 +552,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/manual_constructor.h",
         "src/core/lib/gprpp/map.h",
         "src/core/lib/gprpp/memory.h",
-        "src/core/lib/gprpp/pair.h",
+        "src/core/lib/gprpp/mpscq.h",
         "src/core/lib/gprpp/string_view.h",
         "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
@@ -710,6 +738,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/is_epollexclusive_available.cc",
         "src/core/lib/iomgr/load_file.cc",
         "src/core/lib/iomgr/lockfree_event.cc",
+        "src/core/lib/iomgr/logical_thread.cc",
         "src/core/lib/iomgr/polling_entity.cc",
         "src/core/lib/iomgr/pollset.cc",
         "src/core/lib/iomgr/pollset_custom.cc",
@@ -763,7 +792,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
         "src/core/lib/json/json.cc",
         "src/core/lib/json/json_reader.cc",
-        "src/core/lib/json/json_string.cc",
         "src/core/lib/json/json_writer.cc",
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/percent_encoding.cc",
@@ -852,7 +880,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/executor/mpmcqueue.h",
         "src/core/lib/iomgr/executor/threadpool.h",
         "src/core/lib/iomgr/gethostname.h",
-        "src/core/lib/iomgr/gevent_util.h",
         "src/core/lib/iomgr/grpc_if_nametoindex.h",
         "src/core/lib/iomgr/internal_errqueue.h",
         "src/core/lib/iomgr/iocp_windows.h",
@@ -863,6 +890,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/is_epollexclusive_available.h",
         "src/core/lib/iomgr/load_file.h",
         "src/core/lib/iomgr/lockfree_event.h",
+        "src/core/lib/iomgr/logical_thread.h",  
         "src/core/lib/iomgr/nameser.h",
         "src/core/lib/iomgr/polling_entity.h",
         "src/core/lib/iomgr/pollset.h",
@@ -873,6 +901,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/pollset_uv.h",
         "src/core/lib/iomgr/pollset_windows.h",
         "src/core/lib/iomgr/port.h",
+        "src/core/lib/iomgr/python_util.h",
         "src/core/lib/iomgr/resolve_address.h",
         "src/core/lib/iomgr/resolve_address_custom.h",
         "src/core/lib/iomgr/resource_quota.h",
@@ -905,9 +934,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_pipe.h",
         "src/core/lib/iomgr/wakeup_fd_posix.h",
         "src/core/lib/json/json.h",
-        "src/core/lib/json/json_common.h",
-        "src/core/lib/json/json_reader.h",
-        "src/core/lib/json/json_writer.h",
         "src/core/lib/slice/b64.h",
         "src/core/lib/slice/percent_encoding.h",
         "src/core/lib/slice/slice_hash_table.h",
@@ -1003,13 +1029,13 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
+        "src/core/ext/filters/client_channel/backend_metric.cc",
         "src/core/ext/filters/client_channel/backup_poller.cc",
         "src/core/ext/filters/client_channel/channel_connectivity.cc",
         "src/core/ext/filters/client_channel/client_channel.cc",
         "src/core/ext/filters/client_channel/client_channel_channelz.cc",
         "src/core/ext/filters/client_channel/client_channel_factory.cc",
         "src/core/ext/filters/client_channel/client_channel_plugin.cc",
-        "src/core/ext/filters/client_channel/connector.cc",
         "src/core/ext/filters/client_channel/global_subchannel_pool.cc",
         "src/core/ext/filters/client_channel/health/health_check_client.cc",
         "src/core/ext/filters/client_channel/http_connect_handshaker.cc",
@@ -1018,7 +1044,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy_registry.cc",
         "src/core/ext/filters/client_channel/local_subchannel_pool.cc",
         "src/core/ext/filters/client_channel/parse_address.cc",
-        "src/core/ext/filters/client_channel/proxy_mapper.cc",
         "src/core/ext/filters/client_channel/proxy_mapper_registry.cc",
         "src/core/ext/filters/client_channel/resolver.cc",
         "src/core/ext/filters/client_channel/resolver_registry.cc",
@@ -1031,6 +1056,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/subchannel_pool_interface.cc",
     ],
     hdrs = [
+        "src/core/ext/filters/client_channel/backend_metric.h",
         "src/core/ext/filters/client_channel/backup_poller.h",
         "src/core/ext/filters/client_channel/client_channel.h",
         "src/core/ext/filters/client_channel/client_channel_channelz.h",
@@ -1061,11 +1087,12 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "envoy_orca_upb",
         "gpr_base",
         "grpc_base",
         "grpc_client_authority_filter",
         "grpc_deadline_filter",
-        "health_proto",
+        "grpc_health_upb",
         "inlined_vector",
         "orphanable",
         "ref_counted",
@@ -1194,38 +1221,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "health_proto",
-    srcs = [
-        "src/core/ext/filters/client_channel/health/health.pb.c",
-    ],
-    hdrs = [
-        "src/core/ext/filters/client_channel/health/health.pb.h",
-    ],
-    external_deps = [
-        "nanopb",
-    ],
-    language = "c++",
-)
-
-grpc_cc_library(
-    name = "grpclb_proto",
-    srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
-    ],
-    hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
-    ],
-    external_deps = [
-        "nanopb",
-    ],
-    language = "c++",
-)
-
-grpc_cc_library(
     name = "grpc_lb_policy_grpclb",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc",
@@ -1241,15 +1236,13 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
     ],
-    external_deps = [
-        "nanopb",
-    ],
     language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_lb_upb",
         "grpc_resolver_fake",
-        "grpclb_proto",
+        "grpc_transport_chttp2_client_insecure",
     ],
 )
 
@@ -1269,16 +1262,65 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
     ],
-    external_deps = [
-        "nanopb",
-    ],
     language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_lb_upb",
         "grpc_resolver_fake",
         "grpc_secure",
-        "grpclb_proto",
+        "grpc_transport_chttp2_client_secure",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_xds_client",
+    srcs = [
+        "src/core/ext/filters/client_channel/xds/xds_api.cc",
+        "src/core/ext/filters/client_channel/xds/xds_bootstrap.cc",
+        "src/core/ext/filters/client_channel/xds/xds_channel.cc",
+        "src/core/ext/filters/client_channel/xds/xds_client.cc",
+        "src/core/ext/filters/client_channel/xds/xds_client_stats.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/xds/xds_api.h",
+        "src/core/ext/filters/client_channel/xds/xds_bootstrap.h",
+        "src/core/ext/filters/client_channel/xds/xds_channel.h",
+        "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
+        "src/core/ext/filters/client_channel/xds/xds_client.h",
+        "src/core/ext/filters/client_channel/xds/xds_client_stats.h",
+    ],
+    language = "c++",
+    deps = [
+        "envoy_ads_upb",
+        "grpc_base",
+        "grpc_client_channel",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_xds_client_secure",
+    srcs = [
+        "src/core/ext/filters/client_channel/xds/xds_api.cc",
+        "src/core/ext/filters/client_channel/xds/xds_bootstrap.cc",
+        "src/core/ext/filters/client_channel/xds/xds_channel_secure.cc",
+        "src/core/ext/filters/client_channel/xds/xds_client.cc",
+        "src/core/ext/filters/client_channel/xds/xds_client_stats.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/xds/xds_api.h",
+        "src/core/ext/filters/client_channel/xds/xds_bootstrap.h",
+        "src/core/ext/filters/client_channel/xds/xds_channel.h",
+        "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
+        "src/core/ext/filters/client_channel/xds/xds_client.h",
+        "src/core/ext/filters/client_channel/xds/xds_client_stats.h",
+    ],
+    language = "c++",
+    deps = [
+        "envoy_ads_upb",
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_secure",
     ],
 )
 
@@ -1286,25 +1328,15 @@ grpc_cc_library(
     name = "grpc_lb_policy_xds",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h",
-    ],
-    external_deps = [
-        "nanopb",
     ],
     language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",
-        "grpc_resolver_fake",
-        "grpclb_proto",
+        "grpc_xds_client",
     ],
 )
 
@@ -1312,26 +1344,41 @@ grpc_cc_library(
     name = "grpc_lb_policy_xds_secure",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h",
-    ],
-    external_deps = [
-        "nanopb",
     ],
     language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",
-        "grpc_resolver_fake",
-        "grpc_secure",
-        "grpclb_proto",
+        "grpc_xds_client_secure",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_cds",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/cds.cc",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_xds_client",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_cds_secure",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/cds.cc",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_xds_client_secure",
     ],
 )
 
@@ -1391,6 +1438,7 @@ grpc_cc_library(
         "grpc++_base",
         "grpc_secure",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_library(
@@ -1437,7 +1485,6 @@ grpc_cc_library(
         "lb_server_load_reporting_filter",
         "lb_server_load_reporting_service_server_builder_plugin",
     ],
-    alwayslink = 1,
 )
 
 grpc_cc_library(
@@ -1573,6 +1620,32 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_resolver_xds",
+    srcs = [
+        "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_xds_client",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_resolver_xds_secure",
+    srcs = [
+        "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_xds_client_secure",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_secure",
     srcs = [
         "src/core/lib/http/httpcli_security_connector.cc",
@@ -1593,7 +1666,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/plugin/plugin_credentials.cc",
         "src/core/lib/security/credentials/ssl/ssl_credentials.cc",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc",
-        "src/core/lib/security/credentials/tls/spiffe_credentials.cc",
+        "src/core/lib/security/credentials/tls/tls_credentials.cc",
         "src/core/lib/security/security_connector/alts/alts_security_connector.cc",
         "src/core/lib/security/security_connector/fake/fake_security_connector.cc",
         "src/core/lib/security/security_connector/load_system_roots_fallback.cc",
@@ -1602,7 +1675,8 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/security_connector.cc",
         "src/core/lib/security/security_connector/ssl/ssl_security_connector.cc",
         "src/core/lib/security/security_connector/ssl_utils.cc",
-        "src/core/lib/security/security_connector/tls/spiffe_security_connector.cc",
+        "src/core/lib/security/security_connector/ssl_utils_config.cc",
+        "src/core/lib/security/security_connector/tls/tls_security_connector.cc",
         "src/core/lib/security/transport/client_auth_filter.cc",
         "src/core/lib/security/transport/secure_endpoint.cc",
         "src/core/lib/security/transport/security_handshaker.cc",
@@ -1614,7 +1688,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
+        "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
         "src/core/lib/security/context/security_context.h",
         "src/core/lib/security/credentials/alts/alts_credentials.h",
         "src/core/lib/security/credentials/composite/composite_credentials.h",
@@ -1630,7 +1704,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/plugin/plugin_credentials.h",
         "src/core/lib/security/credentials/ssl/ssl_credentials.h",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h",
-        "src/core/lib/security/credentials/tls/spiffe_credentials.h",
+        "src/core/lib/security/credentials/tls/tls_credentials.h",
         "src/core/lib/security/security_connector/alts/alts_security_connector.h",
         "src/core/lib/security/security_connector/fake/fake_security_connector.h",
         "src/core/lib/security/security_connector/load_system_roots.h",
@@ -1639,7 +1713,8 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/security_connector.h",
         "src/core/lib/security/security_connector/ssl/ssl_security_connector.h",
         "src/core/lib/security/security_connector/ssl_utils.h",
-        "src/core/lib/security/security_connector/tls/spiffe_security_connector.h",
+        "src/core/lib/security/security_connector/ssl_utils_config.h",
+        "src/core/lib/security/security_connector/tls/tls_security_connector.h",
         "src/core/lib/security/transport/auth_filters.h",
         "src/core/lib/security/transport/secure_endpoint.h",
         "src/core/lib/security/transport/security_handshaker.h",
@@ -1899,24 +1974,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "alts_proto",
-    srcs = [
-        "src/core/tsi/alts/handshaker/altscontext.pb.c",
-        "src/core/tsi/alts/handshaker/handshaker.pb.c",
-        "src/core/tsi/alts/handshaker/transport_security_common.pb.c",
-    ],
-    hdrs = [
-        "src/core/tsi/alts/handshaker/altscontext.pb.h",
-        "src/core/tsi/alts/handshaker/handshaker.pb.h",
-        "src/core/tsi/alts/handshaker/transport_security_common.pb.h",
-    ],
-    external_deps = [
-        "nanopb",
-    ],
-    language = "c++",
-)
-
-grpc_cc_library(
     name = "alts_util",
     srcs = [
         "src/core/lib/security/credentials/alts/check_gcp_environment.cc",
@@ -1926,24 +1983,17 @@ grpc_cc_library(
         "src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc",
         "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc",
         "src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc",
-        "src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc",
-        "src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc",
         "src/core/tsi/alts/handshaker/transport_security_common_api.cc",
     ],
     hdrs = [
         "src/core/lib/security/credentials/alts/check_gcp_environment.h",
         "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h",
-        "src/core/tsi/alts/handshaker/alts_handshaker_service_api.h",
-        "src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h",
         "src/core/tsi/alts/handshaker/transport_security_common_api.h",
-    ],
-    external_deps = [
-        "nanopb",
     ],
     language = "c++",
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
-        "alts_proto",
+        "alts_upb",
         "gpr",
         "grpc_base",
     ],
@@ -2002,7 +2052,8 @@ grpc_cc_library(
     deps = [
         "grpc",
         "grpc++_codegen_base",
-        "health_proto",
+        "grpc++_codegen_base_src",
+        "grpc_health_upb",
     ],
 )
 
@@ -2014,8 +2065,9 @@ grpc_cc_library(
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
         "grpc++_codegen_base",
+        "grpc++_codegen_base_src",
+        "grpc_health_upb",
         "grpc_unsecure",
-        "health_proto",
     ],
 )
 
@@ -2077,18 +2129,21 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/config.h",
         "include/grpcpp/impl/codegen/core_codegen_interface.h",
         "include/grpcpp/impl/codegen/create_auth_context.h",
+        "include/grpcpp/impl/codegen/delegating_channel.h",
         "include/grpcpp/impl/codegen/grpc_library.h",
         "include/grpcpp/impl/codegen/intercepted_channel.h",
         "include/grpcpp/impl/codegen/interceptor.h",
         "include/grpcpp/impl/codegen/interceptor_common.h",
         "include/grpcpp/impl/codegen/message_allocator.h",
         "include/grpcpp/impl/codegen/metadata_map.h",
+        "include/grpcpp/impl/codegen/method_handler.h",
         "include/grpcpp/impl/codegen/method_handler_impl.h",
         "include/grpcpp/impl/codegen/rpc_method.h",
         "include/grpcpp/impl/codegen/rpc_service_method.h",
         "include/grpcpp/impl/codegen/security/auth_context.h",
         "include/grpcpp/impl/codegen/serialization_traits.h",
         "include/grpcpp/impl/codegen/server_callback.h",
+        "include/grpcpp/impl/codegen/server_callback_handlers.h",
         "include/grpcpp/impl/codegen/server_callback_impl.h",
         "include/grpcpp/impl/codegen/server_context.h",
         "include/grpcpp/impl/codegen/server_context_impl.h",
@@ -2198,6 +2253,7 @@ grpc_cc_library(
         "include/grpc++/test/server_context_test_spouse.h",
         "include/grpcpp/test/mock_stream.h",
         "include/grpcpp/test/server_context_test_spouse.h",
+        "include/grpcpp/test/default_reactor_test_peer.h",
     ],
     deps = [
         ":grpc++",
@@ -2260,7 +2316,9 @@ grpc_cc_library(
         "absl-base",
         "absl-time",
         "opencensus-trace",
+        "opencensus-trace-context_util",
         "opencensus-stats",
+        "opencensus-context",
     ],
     language = "c++",
     deps = [
@@ -2276,60 +2334,282 @@ grpc_cc_library(
     ],
 )
 
-grpc_upb_proto_library(
-    name = "upb_load_report",
-    deps = ["@envoy_api//envoy/api/v2/endpoint:load_report_export"]
-)
+# Once upb code-gen issue is resolved, use the targets commented below to replace the ones using
+# upb-generated files.
 
-grpc_upb_proto_library(
-    name = "upb_lrs",
-    deps = ["@envoy_api//envoy/service/load_stats/v2:lrs_export"]
-)
+# grpc_upb_proto_library(
+#     name = "upb_load_report",
+#     deps = ["@envoy_api//envoy/api/v2/endpoint:load_report_export"],
+# )
+#
+# grpc_upb_proto_library(
+#     name = "upb_lrs",
+#     deps = ["@envoy_api//envoy/service/load_stats/v2:lrs_export"],
+# )
+#
+# grpc_upb_proto_library(
+#     name = "upb_cds",
+#     deps = ["@envoy_api//envoy/api/v2:cds_export"],
+# )
 
-grpc_upb_proto_library(
-    name = "upb_cds",
-    deps = ["@envoy_api//envoy/api/v2:cds_export"]
-)
+# grpc_cc_library(
+#    name = "envoy_lrs_upb",
+#    external_deps = [
+#        "upb_lib",
+#    ],
+#    language = "c++",
+#    tags = ["no_windows"],
+#    deps = [
+#        ":upb_load_report",
+#        ":upb_lrs",
+#    ],
+# )
 
-#TODO: Get this into build.yaml once we start using it.
-grpc_cc_library(
-    name = "envoy_lrs_upb",
-    language = "c++",
-    external_deps = [
-        "upb_lib",
-    ],
-    deps = [
-        ":upb_load_report",
-        ":upb_lrs"
-    ],
-    tags = ["no_windows"],
-)
+# grpc_cc_library(
+#    name = "envoy_ads_upb",
+#    external_deps = [
+#        "upb_lib",
+#    ],
+#    language = "c++",
+#    tags = ["no_windows"],
+#    deps = [
+#        ":upb_cds",
+#    ],
+# )
 
 grpc_cc_library(
     name = "envoy_ads_upb",
+    srcs = [
+        "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/cds.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/eds.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c",
+        "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c",
+        "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/cds.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h",
+        "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h",
+        "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h",
+    ],
     external_deps = [
         "upb_lib",
     ],
     language = "c++",
     deps = [
-        ":upb_cds",
+        ":envoy_core_upb",
+        ":envoy_type_upb",
+        ":google_api_upb",
+        ":proto_gen_validate_upb",
     ],
-    tags = ["no_windows"],
 )
 
-grpc_upb_proto_library(
+grpc_cc_library(
+    name = "envoy_core_upb",
+    srcs = [
+        "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h",
+    ],
+    external_deps = [
+        "upb_lib",
+    ],
+    language = "c++",
+    deps = [
+        ":envoy_type_upb",
+        ":google_api_upb",
+        ":proto_gen_validate_upb",
+    ],
+)
+
+grpc_cc_library(
+    name = "envoy_type_upb",
+    srcs = [
+        "src/core/ext/upb-generated/envoy/type/http.upb.c",
+        "src/core/ext/upb-generated/envoy/type/percent.upb.c",
+        "src/core/ext/upb-generated/envoy/type/range.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/envoy/type/http.upb.h",
+        "src/core/ext/upb-generated/envoy/type/percent.upb.h",
+        "src/core/ext/upb-generated/envoy/type/range.upb.h",
+    ],
+    external_deps = [
+        "upb_lib",
+    ],
+    language = "c++",
+    deps = [
+        ":google_api_upb",
+        ":proto_gen_validate_upb",
+    ],
+)
+
+grpc_cc_library(
+    name = "proto_gen_validate_upb",
+    srcs = [
+        "src/core/ext/upb-generated/gogoproto/gogo.upb.c",
+        "src/core/ext/upb-generated/validate/validate.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/gogoproto/gogo.upb.h",
+        "src/core/ext/upb-generated/validate/validate.upb.h",
+    ],
+    external_deps = [
+        "upb_lib",
+    ],
+    language = "c++",
+    deps = [
+        ":google_api_upb",
+    ],
+)
+
+# Once upb code-gen issue is resolved, replace envoy_orca_upb with this.
+# grpc_upb_proto_library(
+#     name = "envoy_orca_upb",
+#     deps = ["@envoy_api//udpa/data/orca/v1:orca_load_report"]
+# )
+
+grpc_cc_library(
+    name = "envoy_orca_upb",
+    srcs = [
+        "src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h",
+    ],
+    external_deps = [
+        "upb_lib",
+    ],
+    language = "c++",
+    deps = [
+        ":proto_gen_validate_upb",
+    ],
+)
+
+# Once upb code-gen issue is resolved, replace grpc_health_upb with this.
+# grpc_upb_proto_library(
+#     name = "grpc_health_upb",
+#     deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
+# )
+
+grpc_cc_library(
     name = "grpc_health_upb",
-    deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"]
+    srcs = [
+        "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h",
+    ],
+    external_deps = [
+        "upb_lib",
+    ],
+    language = "c++",
 )
 
-grpc_upb_proto_library(
+# Once upb code-gen issue is resolved, remove this.
+grpc_cc_library(
+    name = "google_api_upb",
+    srcs = [
+        "src/core/ext/upb-generated/google/api/annotations.upb.c",
+        "src/core/ext/upb-generated/google/api/http.upb.c",
+        "src/core/ext/upb-generated/google/protobuf/any.upb.c",
+        "src/core/ext/upb-generated/google/protobuf/descriptor.upb.c",
+        "src/core/ext/upb-generated/google/protobuf/duration.upb.c",
+        "src/core/ext/upb-generated/google/protobuf/empty.upb.c",
+        "src/core/ext/upb-generated/google/protobuf/struct.upb.c",
+        "src/core/ext/upb-generated/google/protobuf/timestamp.upb.c",
+        "src/core/ext/upb-generated/google/protobuf/wrappers.upb.c",
+        "src/core/ext/upb-generated/google/rpc/status.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/google/api/annotations.upb.h",
+        "src/core/ext/upb-generated/google/api/http.upb.h",
+        "src/core/ext/upb-generated/google/protobuf/any.upb.h",
+        "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h",
+        "src/core/ext/upb-generated/google/protobuf/duration.upb.h",
+        "src/core/ext/upb-generated/google/protobuf/empty.upb.h",
+        "src/core/ext/upb-generated/google/protobuf/struct.upb.h",
+        "src/core/ext/upb-generated/google/protobuf/timestamp.upb.h",
+        "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h",
+        "src/core/ext/upb-generated/google/rpc/status.upb.h",
+    ],
+    external_deps = [
+        "upb_lib",
+    ],
+    language = "c++",
+)
+
+# Once upb code-gen issue is resolved, replace grpc_lb_upb with this.
+# grpc_upb_proto_library(
+#     name = "grpc_lb_upb",
+#     deps = ["//src/proto/grpc/lb/v1:load_balancer_proto_descriptor"],
+# )
+
+grpc_cc_library(
     name = "grpc_lb_upb",
-    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto_descriptor"]
+    srcs = [
+        "src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h",
+    ],
+    external_deps = [
+        "upb_lib",
+    ],
+    language = "c++",
+    deps = [
+        "google_api_upb",
+    ],
 )
 
-grpc_upb_proto_library(
+# Once upb code-gen issue is resolved, replace alts_upb with this.
+# grpc_upb_proto_library(
+#     name = "alts_upb",
+#     deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"],
+# )
+
+grpc_cc_library(
     name = "alts_upb",
-    deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"]
+    srcs = [
+        "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c",
+        "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c",
+        "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h",
+        "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h",
+        "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h",
+    ],
+    external_deps = [
+        "upb_lib",
+    ],
+    language = "c++",
 )
 
 grpc_generate_one_off_targets()
@@ -2340,4 +2620,26 @@ filegroup(
         "etc/roots.pem",
     ],
     visibility = ["//visibility:public"],
+)
+
+# Base classes of EventManagerInterface
+grpc_cc_library(
+    name = "eventmanager_interface",
+    hdrs = [
+        "src/core/lib/iomgr/poller/eventmanager_interface.h",
+    ],
+)
+
+# Libuv-based EventManager implementation
+grpc_cc_library(
+    name = "eventmanager_libuv",
+    srcs = [
+        "src/core/lib/iomgr/poller/eventmanager_libuv.cc",
+    ],
+    hdrs = [
+        "src/core/lib/iomgr/poller/eventmanager_libuv.h",
+    ],
+    deps = [
+        "gpr_base",
+    ],
 )

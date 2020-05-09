@@ -35,7 +35,7 @@ set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
 option(gRPC_BUILD_TESTS "Build tests" OFF)
 set(gRPC_BUILD_CODEGEN ${gRPC_BUILD_TESTS})
 
-if(LINUX_X86_64)
+if(LINUX)
    set(_gRPC_PLATFORM_LINUX ON)
    set(_gRPC_PLATFORM_POSIX ON)
 elseif(DARWIN_X86_64)

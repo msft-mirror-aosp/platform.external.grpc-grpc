@@ -51,7 +51,13 @@ typedef struct in6_addr grpc_in6_addr;
 #ifdef GRPC_HAVE_LINUX_VSOCK
 #include <linux/vm_sockets.h>  // Needs to come after sys/socket.h
 #define GRPC_AF_VSOCK AF_VSOCK
-#endif /* GRPC_HAVE_LINUX_VSOCK */
+#elif GPR_ANDROID
+// HACK(chenhaosjtuacm): when building host services for run_cvd, the glibc version of Android
+// toolchain is too low, using the header copied from bionic libc instead
+#include "vm_sockets.h"
+#define GRPC_HAVE_LINUX_VSOCK
+#define GRPC_AF_VSOCK AF_VSOCK
+#endif
 
 #define GRPC_AI_PASSIVE AI_PASSIVE
 

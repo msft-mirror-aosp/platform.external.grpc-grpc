@@ -26,10 +26,6 @@
 #include <string.h>
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #include <sys/un.h>
-#ifdef GRPC_HAVE_LINUX_VSOCK
-#include <sys/socket.h>
-#include <linux/vm_sockets.h>
-#endif /* GRPC_HAVE_LINUX_VSOCK */
 #endif
 
 #include <grpc/support/alloc.h>

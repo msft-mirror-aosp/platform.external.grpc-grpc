@@ -160,6 +160,8 @@ elseif(UNIX)
 endif()
 
 if(WIN32 AND MSVC)
+    message(SEND_ERROR "Error: using win32 and msvc!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    return()
   set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32)
 endif()
 

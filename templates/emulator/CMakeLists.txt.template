@@ -114,6 +114,8 @@
   if (NOT TARGET ssl)
     add_subdirectory(<%text>${ANDROID_QEMU2_TOP_DIR}/android/third_party/boringssl</%text> boringssl)
   endif()
+  <%text>include(${CMAKE_CURRENT_LIST_DIR}/../cmake/upb.cmake)</%text>
+
   # Extract the include directories we need for gtest
   set(_gRPC_GTEST_INCLUDE_DIR <%text>${ANDROID_QEMU2_TOP_DIR}/../googletest/googletest/include</%text>)
 
@@ -275,6 +277,8 @@
     PRIVATE <%text>${_gRPC_CARES_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_GFLAGS_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_PROTOBUF_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_UPB_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>
     PRIVATE <%text>${_gRPC_NANOPB_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
   % if lib.language == 'c++':

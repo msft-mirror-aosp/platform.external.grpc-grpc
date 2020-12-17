@@ -12,11 +12,15 @@ build:opt --copt=-Wframe-larger-than=16384
 
 build:dbg --compilation_mode=dbg
 
+build:windows_opt --compilation_mode=opt
+build:windows_dbg --compilation_mode=dbg
+
 build:asan --strip=never
 build:asan --copt=-fsanitize=address
 build:asan --copt=-O0
 build:asan --copt=-fno-omit-frame-pointer
 build:asan --copt=-DGPR_NO_DIRECT_SYSCALLS
+build:asan --copt=-DGRPC_ASAN
 build:asan --copt=-DADDRESS_SANITIZER  # used by absl
 build:asan --linkopt=-fsanitize=address
 build:asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
@@ -75,7 +79,6 @@ build:ubsan --linkopt=-fsanitize=undefined
 build:ubsan --action_env=UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1:suppressions=test/core/util/ubsan_suppressions.txt
 # For some reasons, these two stopped being propagated, so, redeclaring them here.
 # That's a hack that needs to be removed once we understand what's going on.
-build:ubsan --copt=-DPB_FIELD_32BIT=1
 build:ubsan --copt=-DGRPC_PORT_ISOLATED_RUNTIME=1
 
 build:basicprof --strip=never
@@ -84,6 +87,4 @@ build:basicprof --copt=-O2
 build:basicprof --copt=-DGRPC_BASIC_PROFILER
 build:basicprof --copt=-DGRPC_TIMERS_RDTSC
 
-build:python3 --python_path=python3
-build:python3 --python_version=PY3
-build:python3 --action_env=PYTHON_BIN_PATH=python3
+build:python_single_threaded_unary_stream --test_env="GRPC_SINGLE_THREADED_UNARY_STREAM=true"

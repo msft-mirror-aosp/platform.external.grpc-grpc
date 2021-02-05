@@ -164,6 +164,8 @@ grpc_tls_credentials_options_set_credential_reload_config_type grpc_tls_credenti
 grpc_tls_credentials_options_set_server_authorization_check_config_type grpc_tls_credentials_options_set_server_authorization_check_config_import;
 grpc_tls_key_materials_config_create_type grpc_tls_key_materials_config_create_import;
 grpc_tls_key_materials_config_set_key_materials_type grpc_tls_key_materials_config_set_key_materials_import;
+grpc_tls_key_materials_config_set_version_type grpc_tls_key_materials_config_set_version_import;
+grpc_tls_key_materials_config_get_version_type grpc_tls_key_materials_config_get_version_import;
 grpc_tls_credential_reload_config_create_type grpc_tls_credential_reload_config_create_import;
 grpc_tls_server_authorization_check_config_create_type grpc_tls_server_authorization_check_config_create_import;
 grpc_raw_byte_buffer_create_type grpc_raw_byte_buffer_create_import;
@@ -238,8 +240,6 @@ gpr_free_type gpr_free_import;
 gpr_realloc_type gpr_realloc_import;
 gpr_malloc_aligned_type gpr_malloc_aligned_import;
 gpr_free_aligned_type gpr_free_aligned_import;
-gpr_set_allocation_functions_type gpr_set_allocation_functions_import;
-gpr_get_allocation_functions_type gpr_get_allocation_functions_import;
 gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 gpr_cpu_current_cpu_type gpr_cpu_current_cpu_import;
 gpr_format_message_type gpr_format_message_import;
@@ -435,6 +435,8 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_tls_credentials_options_set_server_authorization_check_config_import = (grpc_tls_credentials_options_set_server_authorization_check_config_type) GetProcAddress(library, "grpc_tls_credentials_options_set_server_authorization_check_config");
   grpc_tls_key_materials_config_create_import = (grpc_tls_key_materials_config_create_type) GetProcAddress(library, "grpc_tls_key_materials_config_create");
   grpc_tls_key_materials_config_set_key_materials_import = (grpc_tls_key_materials_config_set_key_materials_type) GetProcAddress(library, "grpc_tls_key_materials_config_set_key_materials");
+  grpc_tls_key_materials_config_set_version_import = (grpc_tls_key_materials_config_set_version_type) GetProcAddress(library, "grpc_tls_key_materials_config_set_version");
+  grpc_tls_key_materials_config_get_version_import = (grpc_tls_key_materials_config_get_version_type) GetProcAddress(library, "grpc_tls_key_materials_config_get_version");
   grpc_tls_credential_reload_config_create_import = (grpc_tls_credential_reload_config_create_type) GetProcAddress(library, "grpc_tls_credential_reload_config_create");
   grpc_tls_server_authorization_check_config_create_import = (grpc_tls_server_authorization_check_config_create_type) GetProcAddress(library, "grpc_tls_server_authorization_check_config_create");
   grpc_raw_byte_buffer_create_import = (grpc_raw_byte_buffer_create_type) GetProcAddress(library, "grpc_raw_byte_buffer_create");
@@ -509,8 +511,6 @@ void grpc_rb_load_imports(HMODULE library) {
   gpr_realloc_import = (gpr_realloc_type) GetProcAddress(library, "gpr_realloc");
   gpr_malloc_aligned_import = (gpr_malloc_aligned_type) GetProcAddress(library, "gpr_malloc_aligned");
   gpr_free_aligned_import = (gpr_free_aligned_type) GetProcAddress(library, "gpr_free_aligned");
-  gpr_set_allocation_functions_import = (gpr_set_allocation_functions_type) GetProcAddress(library, "gpr_set_allocation_functions");
-  gpr_get_allocation_functions_import = (gpr_get_allocation_functions_type) GetProcAddress(library, "gpr_get_allocation_functions");
   gpr_cpu_num_cores_import = (gpr_cpu_num_cores_type) GetProcAddress(library, "gpr_cpu_num_cores");
   gpr_cpu_current_cpu_import = (gpr_cpu_current_cpu_type) GetProcAddress(library, "gpr_cpu_current_cpu");
   gpr_format_message_import = (gpr_format_message_type) GetProcAddress(library, "gpr_format_message");

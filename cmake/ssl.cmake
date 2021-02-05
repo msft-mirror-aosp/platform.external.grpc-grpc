@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if("${gRPC_SSL_PROVIDER}" STREQUAL "module")
+# The CMakeLists.txt for BoringSSL doesn't propagate include directories
+# transitively so `_gRPC_SSL_INCLUDE_DIR` should be set for gRPC
+# to find header files.
+
+if(gRPC_SSL_PROVIDER STREQUAL "module")
   if(NOT BORINGSSL_ROOT_DIR)
     set(BORINGSSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl)
   endif()
@@ -29,15 +33,21 @@ if("${gRPC_SSL_PROVIDER}" STREQUAL "module")
     if(TARGET ssl)
       set(_gRPC_SSL_LIBRARIES ssl)
       set(_gRPC_SSL_INCLUDE_DIR ${BORINGSSL_ROOT_DIR}/include)
+      if(gRPC_INSTALL AND _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
+        install(TARGETS ssl crypto EXPORT gRPCTargets
+          RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+          LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+          ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR})
+      endif()
     endif()
   else()
-      message(WARNING "gRPC_SSL_PROVIDER is \"module\" but BORINGSSL_ROOT_DIR is wrong")
+    message(WARNING "gRPC_SSL_PROVIDER is \"module\" but BORINGSSL_ROOT_DIR is wrong")
   endif()
-  if(gRPC_INSTALL)
-    message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_SSL_PROVIDER is \"module\"")
+  if(gRPC_INSTALL AND NOT _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
+    message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_SSL_PROVIDER is \"module\" and CMake version (${CMAKE_VERSION}) is less than 3.13.")
     set(gRPC_INSTALL FALSE)
   endif()
-elseif("${gRPC_SSL_PROVIDER}" STREQUAL "package")
+elseif(gRPC_SSL_PROVIDER STREQUAL "package")
   # OpenSSL installation directory can be configured by setting OPENSSL_ROOT_DIR
   # We expect to locate OpenSSL using the built-in cmake module as the openssl
   # project itself does not provide installation support in its CMakeLists.txt

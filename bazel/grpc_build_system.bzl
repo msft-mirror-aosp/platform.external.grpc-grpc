@@ -54,7 +54,6 @@ def if_android(a):
         "@//tools/base/bazel:android_cpu_x86_64": a,
         "@//tools/base/bazel:android_cpu_arm": a,
         "@//tools/base/bazel:android_cpu_arm_64": a,
-        "@//tools/base/bazel:android_cpu_armeabi": a,
         "//conditions:default": [],
     })
 

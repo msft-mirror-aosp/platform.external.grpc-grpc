@@ -431,12 +431,20 @@ grpc_error* grpc_create_dualstack_socket_using_factory(
     family = AF_INET;
   }
   *dsmode = family == AF_INET ? GRPC_DSMODE_IPV4 : GRPC_DSMODE_NONE;
-  // Special handling for Android Studio Profilers.
+  // Special handling for Android Studio Profilers (checking for '&').
   // Check whether a connected fd is already provided by the caller of gRPC.
   if (family == AF_UNIX && addr->sa_data[0] == '&') {
-    // Use the provided connected fd directly.
-    *newfd = atoi(&addr->sa_data[1]);
-  } else {
+    // Make a copy of the provided connected fd. The ownership of the input fd
+    // is not transferred. gRPC library always assumes the ownership of the
+    // socket's fd, and will call close() over them when needed. Therefore,
+    // a copy is needed so gRPC can gracefully control the lifetime of the fd.
+    int input_fd = atoi(&addr->sa_data[1]);
+    int duped_fd = dup(input_fd);
+    *newfd = duped_fd;
+    gpr_log(GPR_DEBUG, "fd-based target: input_fd=%d, duped_fd=%d", input_fd,
+            duped_fd);
+  }  // End of special handling for Android Studio Profilers
+  else {
     *newfd = create_socket(factory, family, type, protocol);
   }
   return error_for_fd(*newfd, resolved_addr);

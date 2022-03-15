@@ -232,7 +232,6 @@ set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf")
 
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/upb.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/xxhash.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/../cmake/re2.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/address_sorting.cmake)
 
 # Make sure we have the protoc plugin available.

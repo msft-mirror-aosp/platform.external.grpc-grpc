@@ -312,15 +312,9 @@ elseif(UNIX)
   set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} rt m pthread)
 endif()
 
-<<<<<<< HEAD
 if(WIN32 AND MSVC)
     message(SEND_ERROR "Error: using win32 and msvc!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     return()
-  set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32)
-=======
-if(WIN32)
-  set(_gRPC_BASELIB_LIBRARIES ws2_32 crypt32)
->>>>>>> ba06eeb07c665bebe9a931b2e0855517bff0e8f9
 endif()
 
 # Create directory for generated .proto files

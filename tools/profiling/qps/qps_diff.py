@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 #
 # Copyright 2017 gRPC authors.
 #
@@ -19,30 +19,30 @@ import argparse
 import json
 import multiprocessing
 import os
-import qps_scenarios
 import shutil
 import subprocess
 import sys
+
+import qps_scenarios
 import tabulate
 
 sys.path.append(
-    os.path.join(
-        os.path.dirname(sys.argv[0]), '..', 'microbenchmarks', 'bm_diff'))
+    os.path.join(os.path.dirname(sys.argv[0]), '..', 'microbenchmarks',
+                 'bm_diff'))
 import bm_speedup
 
 sys.path.append(
-    os.path.join(
-        os.path.dirname(sys.argv[0]), '..', '..', 'run_tests', 'python_utils'))
+    os.path.join(os.path.dirname(sys.argv[0]), '..', '..', 'run_tests',
+                 'python_utils'))
 import check_on_pr
 
 
 def _args():
     argp = argparse.ArgumentParser(description='Perform diff on QPS Driver')
-    argp.add_argument(
-        '-d',
-        '--diff_base',
-        type=str,
-        help='Commit or branch to compare the current one to')
+    argp.add_argument('-d',
+                      '--diff_base',
+                      type=str,
+                      help='Commit or branch to compare the current one to')
     argp.add_argument(
         '-l',
         '--loops',
@@ -50,12 +50,11 @@ def _args():
         default=4,
         help='Number of loops for each benchmark. More loops cuts down on noise'
     )
-    argp.add_argument(
-        '-j',
-        '--jobs',
-        type=int,
-        default=multiprocessing.cpu_count(),
-        help='Number of CPUs to use')
+    argp.add_argument('-j',
+                      '--jobs',
+                      type=int,
+                      default=multiprocessing.cpu_count(),
+                      help='Number of CPUs to use')
     args = argp.parse_args()
     assert args.diff_base, "diff_base must be set"
     return args
@@ -70,7 +69,7 @@ def build(name, jobs):
     subprocess.check_call(['git', 'submodule', 'update'])
     try:
         subprocess.check_call(_make_cmd(jobs))
-    except subprocess.CalledProcessError, e:
+    except subprocess.CalledProcessError as e:
         subprocess.check_call(['make', 'clean'])
         subprocess.check_call(_make_cmd(jobs))
     os.rename('bins', 'qps_diff_%s' % name)
@@ -94,11 +93,11 @@ def _load_qps(fname):
     try:
         with open(fname) as f:
             return json.loads(f.read())['qps']
-    except IOError, e:
-        print("IOError occurred reading file: %s" % fname)
+    except IOError as e:
+        print(("IOError occurred reading file: %s" % fname))
         return None
-    except ValueError, e:
-        print("ValueError occurred reading file: %s" % fname)
+    except ValueError as e:
+        print(("ValueError occurred reading file: %s" % fname))
         return None
 
 
@@ -129,8 +128,8 @@ def diff(scenarios, loops, old, new):
     rows = []
     for sn in scenarios:
         mdn_diff = abs(_median(new_data[sn]) - _median(old_data[sn]))
-        print('%s: %s=%r %s=%r mdn_diff=%r' % (sn, new, new_data[sn], old,
-                                               old_data[sn], mdn_diff))
+        print(('%s: %s=%r %s=%r mdn_diff=%r' %
+               (sn, new, new_data[sn], old, old_data[sn], mdn_diff)))
         s = bm_speedup.speedup(new_data[sn], old_data[sn], 10e-5)
         if abs(s) > 3 and mdn_diff > 0.5:
             rows.append([sn, '%+d%%' % s])
@@ -146,7 +145,7 @@ def main(args):
 
     if args.diff_base:
         where_am_i = subprocess.check_output(
-            ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
+            ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode().strip()
         subprocess.check_call(['git', 'checkout', args.diff_base])
         try:
             build('old', args.jobs)
@@ -163,7 +162,7 @@ def main(args):
         text = '[qps] Performance differences noted:\n%s' % diff_output
     else:
         text = '[qps] No significant performance differences'
-    print('%s' % text)
+    print(('%s' % text))
     check_on_pr.check_on_pr('QPS', '```\n%s\n```' % text)
 
 

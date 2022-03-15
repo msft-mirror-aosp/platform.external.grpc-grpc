@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 #
 # Copyright 2017 gRPC authors.
 #
@@ -15,64 +15,59 @@
 # limitations under the License.
 """ Runs the entire bm_*.py pipeline, and possible comments on the PR """
 
-import bm_constants
-import bm_build
-import bm_run
-import bm_diff
-
-import sys
-import os
-import random
 import argparse
 import multiprocessing
+import os
+import random
 import subprocess
+import sys
 
 sys.path.append(
-    os.path.join(
-        os.path.dirname(sys.argv[0]), '..', '..', 'run_tests', 'python_utils'))
+    os.path.join(os.path.dirname(sys.argv[0]), '..', '..', 'run_tests',
+                 'python_utils'))
+
+sys.path.append(
+    os.path.join(os.path.dirname(sys.argv[0]), '..', '..', '..', 'run_tests',
+                 'python_utils'))
+
+import bm_build
+import bm_constants
+import bm_diff
+import bm_run
 import check_on_pr
-
-sys.path.append(
-    os.path.join(
-        os.path.dirname(sys.argv[0]), '..', '..', '..', 'run_tests',
-        'python_utils'))
 import jobset
 
 
 def _args():
     argp = argparse.ArgumentParser(
         description='Perform diff on microbenchmarks')
-    argp.add_argument(
-        '-t',
-        '--track',
-        choices=sorted(bm_constants._INTERESTING),
-        nargs='+',
-        default=sorted(bm_constants._INTERESTING),
-        help='Which metrics to track')
-    argp.add_argument(
-        '-b',
-        '--benchmarks',
-        nargs='+',
-        choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
-        default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
-        help='Which benchmarks to run')
-    argp.add_argument(
-        '-d',
-        '--diff_base',
-        type=str,
-        help='Commit or branch to compare the current one to')
+    argp.add_argument('-t',
+                      '--track',
+                      choices=sorted(bm_constants._INTERESTING),
+                      nargs='+',
+                      default=sorted(bm_constants._INTERESTING),
+                      help='Which metrics to track')
+    argp.add_argument('-b',
+                      '--benchmarks',
+                      nargs='+',
+                      choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+                      default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+                      help='Which benchmarks to run')
+    argp.add_argument('-d',
+                      '--diff_base',
+                      type=str,
+                      help='Commit or branch to compare the current one to')
     argp.add_argument(
         '-o',
         '--old',
         default='old',
         type=str,
         help='Name of baseline run to compare to. Usually just called "old"')
-    argp.add_argument(
-        '-r',
-        '--regex',
-        type=str,
-        default="",
-        help='Regex to filter benchmarks run')
+    argp.add_argument('-r',
+                      '--regex',
+                      type=str,
+                      default="",
+                      help='Regex to filter benchmarks run')
     argp.add_argument(
         '-l',
         '--loops',
@@ -81,17 +76,15 @@ def _args():
         help=
         'Number of times to loops the benchmarks. More loops cuts down on noise'
     )
-    argp.add_argument(
-        '-j',
-        '--jobs',
-        type=int,
-        default=multiprocessing.cpu_count(),
-        help='Number of CPUs to use')
-    argp.add_argument(
-        '--pr_comment_name',
-        type=str,
-        default="microbenchmarks",
-        help='Name that Jenkins will use to comment on the PR')
+    argp.add_argument('-j',
+                      '--jobs',
+                      type=int,
+                      default=multiprocessing.cpu_count(),
+                      help='Number of CPUs to use')
+    argp.add_argument('--pr_comment_name',
+                      type=str,
+                      default="microbenchmarks",
+                      help='Name that Jenkins will use to comment on the PR')
     argp.add_argument('--counters', dest='counters', action='store_true')
     argp.add_argument('--no-counters', dest='counters', action='store_false')
     argp.set_defaults(counters=True)
@@ -142,8 +135,9 @@ def main(args):
     random.shuffle(jobs_list, random.SystemRandom().random)
     jobset.run(jobs_list, maxjobs=args.jobs)
 
-    diff, note = bm_diff.diff(args.benchmarks, args.loops, args.regex,
-                              args.track, old, 'new', args.counters)
+    diff, note, significance = bm_diff.diff(args.benchmarks, args.loops,
+                                            args.regex, args.track, old, 'new',
+                                            args.counters)
     if diff:
         text = '[%s] Performance differences noted:\n%s' % (
             args.pr_comment_name, diff)
@@ -153,6 +147,7 @@ def main(args):
         text = note + '\n\n' + text
     print('%s' % text)
     check_on_pr.check_on_pr('Benchmark', '```\n%s\n```' % text)
+    check_on_pr.label_significance_on_pr('perf-change', significance)
 
 
 if __name__ == '__main__':

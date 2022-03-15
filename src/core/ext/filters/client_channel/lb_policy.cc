@@ -32,19 +32,22 @@ DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(false, "lb_policy_refcount");
 //
 
 LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
-    : InternallyRefCounted(&grpc_trace_lb_policy_refcount, initial_refcount),
-      combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),
+    : InternallyRefCounted(
+          GRPC_TRACE_FLAG_ENABLED(grpc_trace_lb_policy_refcount)
+              ? "LoadBalancingPolicy"
+              : nullptr,
+          initial_refcount),
+      work_serializer_(std::move(args.work_serializer)),
       interested_parties_(grpc_pollset_set_create()),
       channel_control_helper_(std::move(args.channel_control_helper)) {}
 
 LoadBalancingPolicy::~LoadBalancingPolicy() {
   grpc_pollset_set_destroy(interested_parties_);
-  GRPC_COMBINER_UNREF(combiner_, "lb_policy");
 }
 
 void LoadBalancingPolicy::Orphan() {
   ShutdownLocked();
-  Unref();
+  Unref(DEBUG_LOCATION, "Orphan");
 }
 
 //
@@ -57,7 +60,7 @@ LoadBalancingPolicy::UpdateArgs::UpdateArgs(const UpdateArgs& other) {
   args = grpc_channel_args_copy(other.args);
 }
 
-LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) {
+LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) noexcept {
   addresses = std::move(other.addresses);
   config = std::move(other.config);
   // TODO(roth): Use std::move() once channel args is converted to C++.
@@ -67,6 +70,9 @@ LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) {
 
 LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
     const UpdateArgs& other) {
+  if (&other == this) {
+    return *this;
+  }
   addresses = other.addresses;
   config = other.config;
   grpc_channel_args_destroy(args);
@@ -75,7 +81,7 @@ LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
 }
 
 LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
-    UpdateArgs&& other) {
+    UpdateArgs&& other) noexcept {
   addresses = std::move(other.addresses);
   config = std::move(other.config);
   // TODO(roth): Use std::move() once channel args is converted to C++.
@@ -99,38 +105,27 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
   //    the time this function returns, the pick will already have
   //    been processed, and we'll be trying to re-process the same
   //    pick again, leading to a crash.
-  // 2. We are currently running in the data plane combiner, but we
-  //    need to bounce into the control plane combiner to call
+  // 2. We are currently running in the data plane mutex, but we
+  //    need to bounce into the control plane work_serializer to call
   //    ExitIdleLocked().
-  if (!exit_idle_called_) {
+  if (!exit_idle_called_ && parent_ != nullptr) {
     exit_idle_called_ = true;
-    parent_->Ref().release();  // ref held by closure.
-    parent_->combiner()->Run(
-        GRPC_CLOSURE_CREATE(&CallExitIdle, parent_.get(), nullptr),
-        GRPC_ERROR_NONE);
+    auto* parent = parent_->Ref().release();  // ref held by lambda.
+    ExecCtx::Run(DEBUG_LOCATION,
+                 GRPC_CLOSURE_CREATE(
+                     [](void* arg, grpc_error_handle /*error*/) {
+                       auto* parent = static_cast<LoadBalancingPolicy*>(arg);
+                       parent->work_serializer()->Run(
+                           [parent]() {
+                             parent->ExitIdleLocked();
+                             parent->Unref();
+                           },
+                           DEBUG_LOCATION);
+                     },
+                     parent, nullptr),
+                 GRPC_ERROR_NONE);
   }
-  PickResult result;
-  result.type = PickResult::PICK_QUEUE;
-  return result;
-}
-
-void LoadBalancingPolicy::QueuePicker::CallExitIdle(void* arg,
-                                                    grpc_error* /*error*/) {
-  LoadBalancingPolicy* parent = static_cast<LoadBalancingPolicy*>(arg);
-  parent->ExitIdleLocked();
-  parent->Unref();
-}
-
-//
-// LoadBalancingPolicy::TransientFailurePicker
-//
-
-LoadBalancingPolicy::PickResult
-LoadBalancingPolicy::TransientFailurePicker::Pick(PickArgs /*args*/) {
-  PickResult result;
-  result.type = PickResult::PICK_FAILED;
-  result.error = GRPC_ERROR_REF(error_);
-  return result;
+  return PickResult::Queue();
 }
 
 }  // namespace grpc_core

@@ -13,19 +13,16 @@
 # limitations under the License.
 """Server of the Python example of customizing authentication mechanism."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import argparse
+from concurrent import futures
 import contextlib
 import logging
-from concurrent import futures
 
+import _credentials
 import grpc
-from examples import helloworld_pb2
-from examples import helloworld_pb2_grpc
-from examples.python.auth import _credentials
+
+helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
+    "helloworld.proto")
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
@@ -65,9 +62,8 @@ class SimpleGreeter(helloworld_pb2_grpc.GreeterServicer):
 @contextlib.contextmanager
 def run_server(port):
     # Bind interceptor to server
-    server = grpc.server(
-        futures.ThreadPoolExecutor(),
-        interceptors=(SignatureValidationInterceptor(),))
+    server = grpc.server(futures.ThreadPoolExecutor(),
+                         interceptors=(SignatureValidationInterceptor(),))
     helloworld_pb2_grpc.add_GreeterServicer_to_server(SimpleGreeter(), server)
 
     # Loading credentials
@@ -89,8 +85,11 @@ def run_server(port):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--port', nargs='?', type=int, default=50051, help='the listening port')
+    parser.add_argument('--port',
+                        nargs='?',
+                        type=int,
+                        default=50051,
+                        help='the listening port')
     args = parser.parse_args()
 
     with run_server(args.port) as (server, port):

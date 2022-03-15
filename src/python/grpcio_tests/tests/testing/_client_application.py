@@ -19,13 +19,12 @@ import threading
 import time
 
 import grpc
-from tests.unit.framework.common import test_constants
 
+from tests.testing import _application_common
 from tests.testing.proto import requests_pb2
 from tests.testing.proto import services_pb2
 from tests.testing.proto import services_pb2_grpc
-
-from tests.testing import _application_common
+from tests.unit.framework.common import test_constants
 
 
 @enum.unique
@@ -150,8 +149,8 @@ def _run_stream_stream(stub):
 
 def _run_concurrent_stream_unary(stub):
     future_calls = tuple(
-        stub.StreUn.future(
-            iter((_application_common.STREAM_UNARY_REQUEST,) * 3))
+        stub.StreUn.future(iter((_application_common.STREAM_UNARY_REQUEST,) *
+                                3))
         for _ in range(test_constants.THREAD_CONCURRENCY))
     for future_call in future_calls:
         if future_call.code() is grpc.StatusCode.OK:

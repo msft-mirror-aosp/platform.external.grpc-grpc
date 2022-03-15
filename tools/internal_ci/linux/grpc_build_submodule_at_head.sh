@@ -25,8 +25,12 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 # Submodule name is passed as the RUN_TESTS_FLAGS variable
 SUBMODULE_NAME="${RUN_TESTS_FLAGS}"
 
+# Name of branch to checkout is passed as BAZEL_FLAGS variable
+# If unset, "master" is used by default.
+SUBMODULE_BRANCH_NAME="${BAZEL_FLAGS:-master}"
+
 # Update submodule to be tested at HEAD
-(cd "third_party/${SUBMODULE_NAME}" && git fetch origin && git checkout origin/master)
+(cd "third_party/${SUBMODULE_NAME}" && git fetch origin && git checkout "origin/${SUBMODULE_BRANCH_NAME}")
 
 echo "This suite tests whether gRPC HEAD builds with HEAD of submodule '${SUBMODULE_NAME}'"
 echo "If a test breaks, either"
@@ -36,6 +40,11 @@ echo "2) some change that was just merged in the submodule head has caused the f
 echo ""
 echo "submodule '${SUBMODULE_NAME}' is at commit: $(cd third_party/${SUBMODULE_NAME}; git rev-parse --verify HEAD)"
 
+if [ "${SUBMODULE_NAME}" == "abseil-cpp" ]
+then
+  src/abseil-cpp/preprocessed_builds.yaml.gen.py
+fi
+
 tools/buildgen/generate_projects.sh
 
 if [ "${SUBMODULE_NAME}" == "protobuf" ]
@@ -44,6 +53,6 @@ then
 fi
 
 # commit so that changes are passed to Docker
-git -c user.name='foo' -c user.email='foo@google.com' commit -a -m 'Update submodule'
+git -c user.name='foo' -c user.email='foo@google.com' commit -a -m 'Update submodule' --allow-empty
 
-tools/run_tests/run_tests_matrix.py -f linux --inner_jobs 4 -j 4 --internal_ci --build_only
+tools/run_tests/run_tests_matrix.py -f linux --inner_jobs 8 -j 4 --internal_ci --build_only

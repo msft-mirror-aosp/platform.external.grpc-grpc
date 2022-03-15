@@ -17,10 +17,10 @@ from concurrent import futures
 import logging
 
 import grpc
-
 import helloworld_pb2
 import helloworld_pb2_grpc
-from request_header_validator_interceptor import RequestHeaderValidatorInterceptor
+from request_header_validator_interceptor import \
+    RequestHeaderValidatorInterceptor
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
@@ -33,9 +33,8 @@ def serve():
     header_validator = RequestHeaderValidatorInterceptor(
         'one-time-password', '42', grpc.StatusCode.UNAUTHENTICATED,
         'Access denied!')
-    server = grpc.server(
-        futures.ThreadPoolExecutor(max_workers=10),
-        interceptors=(header_validator,))
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10),
+                         interceptors=(header_validator,))
     helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
     server.add_insecure_port('[::]:50051')
     server.start()

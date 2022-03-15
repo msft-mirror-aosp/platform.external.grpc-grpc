@@ -16,24 +16,23 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdio.h>
 #include <string.h>
-
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/server.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
@@ -214,54 +213,45 @@ static void test_channelz(grpc_end2end_test_config config) {
   GPR_ASSERT(channelz_channel != nullptr);
 
   grpc_core::channelz::ServerNode* channelz_server =
-      grpc_server_get_channelz_node(f.server);
+      grpc_core::Server::FromC(f.server)->channelz_node();
   GPR_ASSERT(channelz_server != nullptr);
 
-  char* json = channelz_channel->RenderJsonString();
-  GPR_ASSERT(json != nullptr);
+  std::string json = channelz_channel->RenderJsonString();
   // nothing is present yet
-  GPR_ASSERT(nullptr == strstr(json, "\"callsStarted\""));
-  GPR_ASSERT(nullptr == strstr(json, "\"callsFailed\""));
-  GPR_ASSERT(nullptr == strstr(json, "\"callsSucceeded\""));
-  gpr_free(json);
+  GPR_ASSERT(json.find("\"callsStarted\"") == json.npos);
+  GPR_ASSERT(json.find("\"callsFailed\"") == json.npos);
+  GPR_ASSERT(json.find("\"callsSucceeded\"") == json.npos);
 
   // one successful request
   run_one_request(config, f, true);
 
   json = channelz_channel->RenderJsonString();
-  GPR_ASSERT(json != nullptr);
-  GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"1\""));
-  GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"1\""));
-  gpr_free(json);
+  GPR_ASSERT(json.find("\"callsStarted\":\"1\"") != json.npos);
+  GPR_ASSERT(json.find("\"callsSucceeded\":\"1\"") != json.npos);
 
   // one failed request
   run_one_request(config, f, false);
 
   json = channelz_channel->RenderJsonString();
-  GPR_ASSERT(json != nullptr);
-  GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"2\""));
-  GPR_ASSERT(nullptr != strstr(json, "\"callsFailed\":\"1\""));
-  GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"1\""));
+  GPR_ASSERT(json.find("\"callsStarted\":\"2\"") != json.npos);
+  GPR_ASSERT(json.find("\"callsFailed\":\"1\"") != json.npos);
+  GPR_ASSERT(json.find("\"callsSucceeded\":\"1\"") != json.npos);
   // channel tracing is not enabled, so these should not be preset.
-  GPR_ASSERT(nullptr == strstr(json, "\"trace\""));
-  GPR_ASSERT(nullptr == strstr(json, "\"description\":\"Channel created\""));
-  GPR_ASSERT(nullptr == strstr(json, "\"severity\":\"CT_INFO\""));
-  gpr_free(json);
+  GPR_ASSERT(json.find("\"trace\"") == json.npos);
+  GPR_ASSERT(json.find("\"description\":\"Channel created\"") == json.npos);
+  GPR_ASSERT(json.find("\"severity\":\"CT_INFO\"") == json.npos);
 
   json = channelz_server->RenderJsonString();
-  GPR_ASSERT(json != nullptr);
-  GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"2\""));
-  GPR_ASSERT(nullptr != strstr(json, "\"callsFailed\":\"1\""));
-  GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"1\""));
+  GPR_ASSERT(json.find("\"callsStarted\":\"2\"") != json.npos);
+  GPR_ASSERT(json.find("\"callsFailed\":\"1\"") != json.npos);
+  GPR_ASSERT(json.find("\"callsSucceeded\":\"1\"") != json.npos);
   // channel tracing is not enabled, so these should not be preset.
-  GPR_ASSERT(nullptr == strstr(json, "\"trace\""));
-  GPR_ASSERT(nullptr == strstr(json, "\"description\":\"Channel created\""));
-  GPR_ASSERT(nullptr == strstr(json, "\"severity\":\"CT_INFO\""));
-  gpr_free(json);
+  GPR_ASSERT(json.find("\"trace\"") == json.npos);
+  GPR_ASSERT(json.find("\"description\":\"Channel created\"") == json.npos);
+  GPR_ASSERT(json.find("\"severity\":\"CT_INFO\"") == json.npos);
 
   json = channelz_server->RenderServerSockets(0, 100);
-  GPR_ASSERT(nullptr != strstr(json, "\"end\":true"));
-  gpr_free(json);
+  GPR_ASSERT(json.find("\"end\":true") != json.npos);
 
   end_test(&f);
   config.tear_down_data(&f);
@@ -284,24 +274,20 @@ static void test_channelz_with_channel_trace(grpc_end2end_test_config config) {
   GPR_ASSERT(channelz_channel != nullptr);
 
   grpc_core::channelz::ServerNode* channelz_server =
-      grpc_server_get_channelz_node(f.server);
+      grpc_core::Server::FromC(f.server)->channelz_node();
   GPR_ASSERT(channelz_server != nullptr);
 
   run_one_request(config, f, true);
 
-  char* json = channelz_channel->RenderJsonString();
-  GPR_ASSERT(json != nullptr);
-  GPR_ASSERT(nullptr != strstr(json, "\"trace\""));
-  GPR_ASSERT(nullptr != strstr(json, "\"description\":\"Channel created\""));
-  GPR_ASSERT(nullptr != strstr(json, "\"severity\":\"CT_INFO\""));
-  gpr_free(json);
+  std::string json = channelz_channel->RenderJsonString();
+  GPR_ASSERT(json.find("\"trace\"") != json.npos);
+  GPR_ASSERT(json.find("\"description\":\"Channel created\"") != json.npos);
+  GPR_ASSERT(json.find("\"severity\":\"CT_INFO\"") != json.npos);
 
   json = channelz_server->RenderJsonString();
-  GPR_ASSERT(json != nullptr);
-  GPR_ASSERT(nullptr != strstr(json, "\"trace\""));
-  GPR_ASSERT(nullptr != strstr(json, "\"description\":\"Server created\""));
-  GPR_ASSERT(nullptr != strstr(json, "\"severity\":\"CT_INFO\""));
-  gpr_free(json);
+  GPR_ASSERT(json.find("\"trace\"") != json.npos);
+  GPR_ASSERT(json.find("\"description\":\"Server created\"") != json.npos);
+  GPR_ASSERT(json.find("\"severity\":\"CT_INFO\"") != json.npos);
 
   end_test(&f);
   config.tear_down_data(&f);

@@ -55,8 +55,8 @@ def main_unary(server_target):
     with grpc.insecure_channel(server_target) as channel:
         multicallable = channel.unary_unary(UNARY_UNARY)
         signal.signal(signal.SIGINT, handle_sigint)
-        per_process_rpc_future = multicallable.future(
-            _MESSAGE, wait_for_ready=True)
+        per_process_rpc_future = multicallable.future(_MESSAGE,
+                                                      wait_for_ready=True)
         result = per_process_rpc_future.result()
         assert False, _ASSERTION_MESSAGE
 
@@ -82,7 +82,7 @@ def main_unary_with_exception(server_target):
         sys.stderr.write("Running signal handler.\n")
         sys.stderr.flush()
 
-    # This call should not hang.
+    # This call should not freeze.
     channel.close()
 
 
@@ -90,14 +90,14 @@ def main_streaming_with_exception(server_target):
     """Initiate a streaming RPC with a signal handler that will raise."""
     channel = grpc.insecure_channel(server_target)
     try:
-        for _ in channel.unary_stream(UNARY_STREAM)(
-                _MESSAGE, wait_for_ready=True):
+        for _ in channel.unary_stream(UNARY_STREAM)(_MESSAGE,
+                                                    wait_for_ready=True):
             pass
     except KeyboardInterrupt:
         sys.stderr.write("Running signal handler.\n")
         sys.stderr.flush()
 
-    # This call should not hang.
+    # This call should not freeze.
     channel.close()
 
 
@@ -105,10 +105,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Signal test client.')
     parser.add_argument('server', help='Server target')
     parser.add_argument('arity', help='Arity', choices=('unary', 'streaming'))
-    parser.add_argument(
-        '--exception',
-        help='Whether the signal throws an exception',
-        action='store_true')
+    parser.add_argument('--exception',
+                        help='Whether the signal throws an exception',
+                        action='store_true')
     args = parser.parse_args()
     if args.arity == 'unary' and not args.exception:
         main_unary(args.server)

@@ -13,11 +13,12 @@
 # limitations under the License.
 """Test of gRPC Python's interaction with the python logging module"""
 
-import unittest
 import logging
-import grpc
 import subprocess
 import sys
+import unittest
+
+import grpc
 
 INTERPRETER = sys.executable
 
@@ -84,10 +85,9 @@ class LoggingTest(unittest.TestCase):
         self._verifyScriptSucceeds(script)
 
     def _verifyScriptSucceeds(self, script):
-        process = subprocess.Popen(
-            [INTERPRETER, '-c', script],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+        process = subprocess.Popen([INTERPRETER, '-c', script],
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
         out, err = process.communicate()
         self.assertEqual(
             0, process.returncode,

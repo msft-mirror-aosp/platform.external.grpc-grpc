@@ -13,10 +13,10 @@
 # limitations under the License.
 """Tests server context abort mechanism"""
 
-import unittest
 import collections
 import gc
 import logging
+import unittest
 import weakref
 
 import grpc
@@ -36,8 +36,9 @@ _ABORT_METADATA = (('a-trailing-metadata', '42'),)
 
 
 class _Status(
-        collections.namedtuple(
-            '_Status', ('code', 'details', 'trailing_metadata')), grpc.Status):
+        collections.namedtuple('_Status',
+                               ('code', 'details', 'trailing_metadata')),
+        grpc.Status):
     pass
 
 

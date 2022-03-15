@@ -21,12 +21,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
 #include <limits>
 #include <memory>
 #include <utility>
+
+#include "absl/memory/memory.h"
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 namespace grpc_core {
 
@@ -44,10 +46,10 @@ class DefaultDeleteChar {
 template <typename T>
 using UniquePtr = std::unique_ptr<T, DefaultDeleteChar>;
 
-// TODO(veblush): Replace this with absl::make_unique once abseil is added.
-template <typename T, typename... Args>
-inline std::unique_ptr<T> MakeUnique(Args&&... args) {
-  return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+template <class T>
+T* Zalloc() {
+  static_assert(std::is_trivial<T>::value, "Type should be trivial");
+  return static_cast<T*>(gpr_zalloc(sizeof(T)));
 }
 
 }  // namespace grpc_core

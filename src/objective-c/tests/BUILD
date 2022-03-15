@@ -14,10 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
-
-package(default_visibility = ["//visibility:public"])
-
 load(
     "//src/objective-c:grpc_objc_internal_library.bzl",
     "grpc_objc_testing_library",
@@ -28,6 +24,10 @@ load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application", "ios_unit_test")
 load("@build_bazel_rules_apple//apple:macos.bzl", "macos_unit_test")
 load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_application", "tvos_unit_test")
+
+licenses(["notice"])
+
+package(default_visibility = ["//visibility:public"])
 
 exports_files(["LICENSE"])
 
@@ -174,7 +174,7 @@ grpc_objc_testing_library(
 
 ios_unit_test(
     name = "UnitTests",
-    minimum_os_version = "8.0",
+    minimum_os_version = "9.0",
     test_host = ":ios-host",
     deps = [
         ":APIv2Tests-lib",
@@ -188,7 +188,7 @@ ios_unit_test(
 
 ios_unit_test(
     name = "InteropTests",
-    minimum_os_version = "8.0",
+    minimum_os_version = "9.0",
     test_host = ":ios-host",
     deps = [
         ":InteropTestsLocalCleartext-lib",
@@ -199,7 +199,7 @@ ios_unit_test(
 
 macos_unit_test(
     name = "MacTests",
-    minimum_os_version = "10.9",
+    minimum_os_version = "10.10",
     deps = [
         ":APIv2Tests-lib",
         ":InteropTestsLocalCleartext-lib",

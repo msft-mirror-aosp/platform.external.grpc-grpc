@@ -16,27 +16,34 @@
  *
  */
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channelz.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <atomic>
+
+#include "absl/strings/escaping.h"
+#include "absl/strings/strip.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
@@ -47,40 +54,6 @@
 
 namespace grpc_core {
 namespace channelz {
-
-//
-// channel arg code
-//
-
-namespace {
-
-void* parent_uuid_copy(void* p) { return p; }
-void parent_uuid_destroy(void* /*p*/) {}
-int parent_uuid_cmp(void* p1, void* p2) { return GPR_ICMP(p1, p2); }
-const grpc_arg_pointer_vtable parent_uuid_vtable = {
-    parent_uuid_copy, parent_uuid_destroy, parent_uuid_cmp};
-
-}  // namespace
-
-grpc_arg MakeParentUuidArg(intptr_t parent_uuid) {
-  // We would ideally like to store the uuid in an integer argument.
-  // Unfortunately, that won't work, because intptr_t (the type used for
-  // uuids) doesn't fit in an int (the type used for integer args).
-  // So instead, we use a hack to store it as a pointer, because
-  // intptr_t should be the same size as void*.
-  static_assert(sizeof(intptr_t) <= sizeof(void*),
-                "can't fit intptr_t inside of void*");
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_CHANNELZ_PARENT_UUID),
-      reinterpret_cast<void*>(parent_uuid), &parent_uuid_vtable);
-}
-
-intptr_t GetParentUuidFromArgs(const grpc_channel_args& args) {
-  const grpc_arg* arg =
-      grpc_channel_args_find(&args, GRPC_ARG_CHANNELZ_PARENT_UUID);
-  if (arg == nullptr || arg->type != GRPC_ARG_POINTER) return 0;
-  return reinterpret_cast<intptr_t>(arg->value.pointer.p);
-}
 
 //
 // BaseNode
@@ -94,12 +67,9 @@ BaseNode::BaseNode(EntityType type, std::string name)
 
 BaseNode::~BaseNode() { ChannelzRegistry::Unregister(uuid_); }
 
-char* BaseNode::RenderJsonString() {
-  grpc_json* json = RenderJson();
-  GPR_ASSERT(json != nullptr);
-  char* json_str = grpc_json_dump_to_string(json, 0);
-  grpc_json_destroy(json);
-  return json_str;
+std::string BaseNode::RenderJsonString() {
+  Json json = RenderJson();
+  return json.Dump();
 }
 
 //
@@ -107,7 +77,7 @@ char* BaseNode::RenderJsonString() {
 //
 
 CallCountingHelper::CallCountingHelper() {
-  num_cores_ = GPR_MAX(1, gpr_cpu_num_cores());
+  num_cores_ = std::max(1u, gpr_cpu_num_cores());
   per_cpu_counter_data_storage_.reserve(num_cores_);
   for (size_t i = 0; i < num_cores_; ++i) {
     per_cpu_counter_data_storage_.emplace_back();
@@ -117,63 +87,55 @@ CallCountingHelper::CallCountingHelper() {
 void CallCountingHelper::RecordCallStarted() {
   AtomicCounterData& data =
       per_cpu_counter_data_storage_[ExecCtx::Get()->starting_cpu()];
-  data.calls_started.FetchAdd(1, MemoryOrder::RELAXED);
-  data.last_call_started_cycle.Store(gpr_get_cycle_counter(),
-                                     MemoryOrder::RELAXED);
+  data.calls_started.fetch_add(1, std::memory_order_relaxed);
+  data.last_call_started_cycle.store(gpr_get_cycle_counter(),
+                                     std::memory_order_relaxed);
 }
 
 void CallCountingHelper::RecordCallFailed() {
   per_cpu_counter_data_storage_[ExecCtx::Get()->starting_cpu()]
-      .calls_failed.FetchAdd(1, MemoryOrder::RELAXED);
+      .calls_failed.fetch_add(1, std::memory_order_relaxed);
 }
 
 void CallCountingHelper::RecordCallSucceeded() {
   per_cpu_counter_data_storage_[ExecCtx::Get()->starting_cpu()]
-      .calls_succeeded.FetchAdd(1, MemoryOrder::RELAXED);
+      .calls_succeeded.fetch_add(1, std::memory_order_relaxed);
 }
 
 void CallCountingHelper::CollectData(CounterData* out) {
   for (size_t core = 0; core < num_cores_; ++core) {
     AtomicCounterData& data = per_cpu_counter_data_storage_[core];
 
-    out->calls_started += data.calls_started.Load(MemoryOrder::RELAXED);
+    out->calls_started += data.calls_started.load(std::memory_order_relaxed);
     out->calls_succeeded +=
-        per_cpu_counter_data_storage_[core].calls_succeeded.Load(
-            MemoryOrder::RELAXED);
-    out->calls_failed += per_cpu_counter_data_storage_[core].calls_failed.Load(
-        MemoryOrder::RELAXED);
+        per_cpu_counter_data_storage_[core].calls_succeeded.load(
+            std::memory_order_relaxed);
+    out->calls_failed += per_cpu_counter_data_storage_[core].calls_failed.load(
+        std::memory_order_relaxed);
     const gpr_cycle_counter last_call =
-        per_cpu_counter_data_storage_[core].last_call_started_cycle.Load(
-            MemoryOrder::RELAXED);
+        per_cpu_counter_data_storage_[core].last_call_started_cycle.load(
+            std::memory_order_relaxed);
     if (last_call > out->last_call_started_cycle) {
       out->last_call_started_cycle = last_call;
     }
   }
 }
 
-void CallCountingHelper::PopulateCallCounts(grpc_json* json) {
-  grpc_json* json_iterator = nullptr;
+void CallCountingHelper::PopulateCallCounts(Json::Object* json) {
   CounterData data;
   CollectData(&data);
   if (data.calls_started != 0) {
-    json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "callsStarted", data.calls_started);
-  }
-  if (data.calls_succeeded != 0) {
-    json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "callsSucceeded", data.calls_succeeded);
-  }
-  if (data.calls_failed) {
-    json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "callsFailed", data.calls_failed);
-  }
-  if (data.calls_started != 0) {
+    (*json)["callsStarted"] = std::to_string(data.calls_started);
     gpr_timespec ts = gpr_convert_clock_type(
         gpr_cycle_counter_to_time(data.last_call_started_cycle),
         GPR_CLOCK_REALTIME);
-    json_iterator =
-        grpc_json_create_child(json_iterator, json, "lastCallStartedTimestamp",
-                               gpr_format_timespec(ts), GRPC_JSON_STRING, true);
+    (*json)["lastCallStartedTimestamp"] = gpr_format_timespec(ts);
+  }
+  if (data.calls_succeeded != 0) {
+    (*json)["callsSucceeded"] = std::to_string(data.calls_succeeded);
+  }
+  if (data.calls_failed) {
+    (*json)["callsFailed"] = std::to_string(data.calls_failed);
   }
 }
 
@@ -182,13 +144,12 @@ void CallCountingHelper::PopulateCallCounts(grpc_json* json) {
 //
 
 ChannelNode::ChannelNode(std::string target, size_t channel_tracer_max_nodes,
-                         intptr_t parent_uuid)
-    : BaseNode(parent_uuid == 0 ? EntityType::kTopLevelChannel
-                                : EntityType::kInternalChannel,
+                         bool is_internal_channel)
+    : BaseNode(is_internal_channel ? EntityType::kInternalChannel
+                                   : EntityType::kTopLevelChannel,
                target),
       target_(std::move(target)),
-      trace_(channel_tracer_max_nodes),
-      parent_uuid_(parent_uuid) {}
+      trace_(channel_tracer_max_nodes) {}
 
 const char* ChannelNode::GetChannelConnectivityStateChangeString(
     grpc_connectivity_state state) {
@@ -207,94 +168,72 @@ const char* ChannelNode::GetChannelConnectivityStateChangeString(
   GPR_UNREACHABLE_CODE(return "UNKNOWN");
 }
 
-grpc_json* ChannelNode::RenderJson() {
-  // We need to track these three json objects to build our object
-  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
-  grpc_json* json = top_level_json;
-  grpc_json* json_iterator = nullptr;
-  // create and fill the ref child
-  json_iterator = grpc_json_create_child(json_iterator, json, "ref", nullptr,
-                                         GRPC_JSON_OBJECT, false);
-  json = json_iterator;
-  json_iterator = nullptr;
-  json_iterator = grpc_json_add_number_string_child(json, json_iterator,
-                                                    "channelId", uuid());
-  // reset json iterators to top level object
-  json = top_level_json;
-  json_iterator = nullptr;
-  // create and fill the data child.
-  grpc_json* data = grpc_json_create_child(json_iterator, json, "data", nullptr,
-                                           GRPC_JSON_OBJECT, false);
-  json = data;
-  json_iterator = nullptr;
-  // connectivity state
+Json ChannelNode::RenderJson() {
+  Json::Object data = {
+      {"target", target_},
+  };
+  // Connectivity state.
   // If low-order bit is on, then the field is set.
-  int state_field = connectivity_state_.Load(MemoryOrder::RELAXED);
+  int state_field = connectivity_state_.load(std::memory_order_relaxed);
   if ((state_field & 1) != 0) {
     grpc_connectivity_state state =
         static_cast<grpc_connectivity_state>(state_field >> 1);
-    json = grpc_json_create_child(nullptr, json, "state", nullptr,
-                                  GRPC_JSON_OBJECT, false);
-    grpc_json_create_child(nullptr, json, "state", ConnectivityStateName(state),
-                           GRPC_JSON_STRING, false);
-    json = data;
+    data["state"] = Json::Object{
+        {"state", ConnectivityStateName(state)},
+    };
   }
-  // populate the target.
-  GPR_ASSERT(!target_.empty());
-  grpc_json_create_child(nullptr, json, "target", target_.c_str(),
-                         GRPC_JSON_STRING, false);
-  // fill in the channel trace if applicable
-  grpc_json* trace_json = trace_.RenderJson();
-  if (trace_json != nullptr) {
-    trace_json->key = "trace";  // this object is named trace in channelz.proto
-    grpc_json_link_child(json, trace_json, nullptr);
+  // Fill in the channel trace if applicable.
+  Json trace_json = trace_.RenderJson();
+  if (trace_json.type() != Json::Type::JSON_NULL) {
+    data["trace"] = std::move(trace_json);
   }
-  // ask CallCountingHelper to populate trace and call count data.
-  call_counter_.PopulateCallCounts(json);
-  json = top_level_json;
-  // template method. Child classes may override this to add their specific
+  // Ask CallCountingHelper to populate call count data.
+  call_counter_.PopulateCallCounts(&data);
+  // Construct outer object.
+  Json::Object json = {
+      {"ref",
+       Json::Object{
+           {"channelId", std::to_string(uuid())},
+       }},
+      {"data", std::move(data)},
+  };
+  // Template method. Child classes may override this to add their specific
   // functionality.
-  PopulateChildRefs(json);
-  return top_level_json;
+  PopulateChildRefs(&json);
+  return json;
 }
 
-void ChannelNode::PopulateChildRefs(grpc_json* json) {
+void ChannelNode::PopulateChildRefs(Json::Object* json) {
   MutexLock lock(&child_mu_);
-  grpc_json* json_iterator = nullptr;
   if (!child_subchannels_.empty()) {
-    grpc_json* array_parent = grpc_json_create_child(
-        nullptr, json, "subchannelRef", nullptr, GRPC_JSON_ARRAY, false);
-    for (const auto& p : child_subchannels_) {
-      json_iterator =
-          grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
-                                 GRPC_JSON_OBJECT, false);
-      grpc_json_add_number_string_child(json_iterator, nullptr, "subchannelId",
-                                        p.first);
+    Json::Array array;
+    for (intptr_t subchannel_uuid : child_subchannels_) {
+      array.emplace_back(Json::Object{
+          {"subchannelId", std::to_string(subchannel_uuid)},
+      });
     }
+    (*json)["subchannelRef"] = std::move(array);
   }
   if (!child_channels_.empty()) {
-    grpc_json* array_parent = grpc_json_create_child(
-        nullptr, json, "channelRef", nullptr, GRPC_JSON_ARRAY, false);
-    json_iterator = nullptr;
-    for (const auto& p : child_channels_) {
-      json_iterator =
-          grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
-                                 GRPC_JSON_OBJECT, false);
-      grpc_json_add_number_string_child(json_iterator, nullptr, "channelId",
-                                        p.first);
+    Json::Array array;
+    for (intptr_t channel_uuid : child_channels_) {
+      array.emplace_back(Json::Object{
+          {"channelId", std::to_string(channel_uuid)},
+      });
     }
+    (*json)["channelRef"] = std::move(array);
   }
 }
 
 void ChannelNode::SetConnectivityState(grpc_connectivity_state state) {
   // Store with low-order bit set to indicate that the field is set.
   int state_field = (state << 1) + 1;
-  connectivity_state_.Store(state_field, MemoryOrder::RELAXED);
+  connectivity_state_.store(state_field, std::memory_order_relaxed);
 }
 
 void ChannelNode::AddChildChannel(intptr_t child_uuid) {
   MutexLock lock(&child_mu_);
-  child_channels_.insert(std::make_pair(child_uuid, true));
+  child_channels_.insert(child_uuid);
 }
 
 void ChannelNode::RemoveChildChannel(intptr_t child_uuid) {
@@ -304,7 +243,7 @@ void ChannelNode::RemoveChildChannel(intptr_t child_uuid) {
 
 void ChannelNode::AddChildSubchannel(intptr_t child_uuid) {
   MutexLock lock(&child_mu_);
-  child_subchannels_.insert(std::make_pair(child_uuid, true));
+  child_subchannels_.insert(child_uuid);
 }
 
 void ChannelNode::RemoveChildSubchannel(intptr_t child_uuid) {
@@ -316,7 +255,7 @@ void ChannelNode::RemoveChildSubchannel(intptr_t child_uuid) {
 // ServerNode
 //
 
-ServerNode::ServerNode(grpc_server* /*server*/, size_t channel_tracer_max_nodes)
+ServerNode::ServerNode(size_t channel_tracer_max_nodes)
     : BaseNode(EntityType::kServer, ""), trace_(channel_tracer_max_nodes) {}
 
 ServerNode::~ServerNode() {}
@@ -341,87 +280,142 @@ void ServerNode::RemoveChildListenSocket(intptr_t child_uuid) {
   child_listen_sockets_.erase(child_uuid);
 }
 
-char* ServerNode::RenderServerSockets(intptr_t start_socket_id,
-                                      intptr_t max_results) {
+std::string ServerNode::RenderServerSockets(intptr_t start_socket_id,
+                                            intptr_t max_results) {
+  GPR_ASSERT(start_socket_id >= 0);
+  GPR_ASSERT(max_results >= 0);
   // If user does not set max_results, we choose 500.
   size_t pagination_limit = max_results == 0 ? 500 : max_results;
-  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
-  grpc_json* json = top_level_json;
-  grpc_json* json_iterator = nullptr;
-  MutexLock lock(&child_mu_);
-  size_t sockets_rendered = 0;
-  if (!child_sockets_.empty()) {
-    // Create list of socket refs
-    grpc_json* array_parent = grpc_json_create_child(
-        nullptr, json, "socketRef", nullptr, GRPC_JSON_ARRAY, false);
-    const size_t limit = GPR_MIN(child_sockets_.size(), pagination_limit);
-    for (auto it = child_sockets_.lower_bound(start_socket_id);
-         it != child_sockets_.end() && sockets_rendered < limit;
+  Json::Object object;
+  {
+    MutexLock lock(&child_mu_);
+    size_t sockets_rendered = 0;
+    // Create list of socket refs.
+    Json::Array array;
+    auto it = child_sockets_.lower_bound(start_socket_id);
+    for (; it != child_sockets_.end() && sockets_rendered < pagination_limit;
          ++it, ++sockets_rendered) {
-      grpc_json* socket_ref_json = grpc_json_create_child(
-          nullptr, array_parent, nullptr, nullptr, GRPC_JSON_OBJECT, false);
-      json_iterator = grpc_json_add_number_string_child(
-          socket_ref_json, nullptr, "socketId", it->first);
-      grpc_json_create_child(json_iterator, socket_ref_json, "name",
-                             it->second->name().c_str(), GRPC_JSON_STRING,
-                             false);
+      array.emplace_back(Json::Object{
+          {"socketId", std::to_string(it->first)},
+          {"name", it->second->name()},
+      });
     }
+    object["socketRef"] = std::move(array);
+    if (it == child_sockets_.end()) object["end"] = true;
   }
-  if (sockets_rendered == child_sockets_.size()) {
-    json_iterator = grpc_json_create_child(nullptr, json, "end", nullptr,
-                                           GRPC_JSON_TRUE, false);
-  }
-  char* json_str = grpc_json_dump_to_string(top_level_json, 0);
-  grpc_json_destroy(top_level_json);
-  return json_str;
+  Json json = std::move(object);
+  return json.Dump();
 }
 
-grpc_json* ServerNode::RenderJson() {
-  // We need to track these three json objects to build our object
-  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
-  grpc_json* json = top_level_json;
-  grpc_json* json_iterator = nullptr;
-  // create and fill the ref child
-  json_iterator = grpc_json_create_child(json_iterator, json, "ref", nullptr,
-                                         GRPC_JSON_OBJECT, false);
-  json = json_iterator;
-  json_iterator = nullptr;
-  json_iterator = grpc_json_add_number_string_child(json, json_iterator,
-                                                    "serverId", uuid());
-  // reset json iterators to top level object
-  json = top_level_json;
-  json_iterator = nullptr;
-  // create and fill the data child.
-  grpc_json* data = grpc_json_create_child(json_iterator, json, "data", nullptr,
-                                           GRPC_JSON_OBJECT, false);
-  json = data;
-  json_iterator = nullptr;
-  // fill in the channel trace if applicable
-  grpc_json* trace_json = trace_.RenderJson();
-  if (trace_json != nullptr) {
-    trace_json->key = "trace";  // this object is named trace in channelz.proto
-    grpc_json_link_child(json, trace_json, nullptr);
+Json ServerNode::RenderJson() {
+  Json::Object data;
+  // Fill in the channel trace if applicable.
+  Json trace_json = trace_.RenderJson();
+  if (trace_json.type() != Json::Type::JSON_NULL) {
+    data["trace"] = std::move(trace_json);
   }
-  // ask CallCountingHelper to populate trace and call count data.
-  call_counter_.PopulateCallCounts(json);
-  json = top_level_json;
-  // Render listen sockets
-  MutexLock lock(&child_mu_);
-  if (!child_listen_sockets_.empty()) {
-    grpc_json* array_parent = grpc_json_create_child(
-        nullptr, json, "listenSocket", nullptr, GRPC_JSON_ARRAY, false);
-    for (const auto& it : child_listen_sockets_) {
-      json_iterator =
-          grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
-                                 GRPC_JSON_OBJECT, false);
-      grpc_json* sibling_iterator = grpc_json_add_number_string_child(
-          json_iterator, nullptr, "socketId", it.first);
-      grpc_json_create_child(sibling_iterator, json_iterator, "name",
-                             it.second->name().c_str(), GRPC_JSON_STRING,
-                             false);
+  // Ask CallCountingHelper to populate call count data.
+  call_counter_.PopulateCallCounts(&data);
+  // Construct top-level object.
+  Json::Object object = {
+      {"ref",
+       Json::Object{
+           {"serverId", std::to_string(uuid())},
+       }},
+      {"data", std::move(data)},
+  };
+  // Render listen sockets.
+  {
+    MutexLock lock(&child_mu_);
+    if (!child_listen_sockets_.empty()) {
+      Json::Array array;
+      for (const auto& it : child_listen_sockets_) {
+        array.emplace_back(Json::Object{
+            {"socketId", std::to_string(it.first)},
+            {"name", it.second->name()},
+        });
+      }
+      object["listenSocket"] = std::move(array);
     }
   }
-  return top_level_json;
+  return object;
+}
+
+//
+// SocketNode::Security::Tls
+//
+
+Json SocketNode::Security::Tls::RenderJson() {
+  Json::Object data;
+  if (type == NameType::kStandardName) {
+    data["standard_name"] = name;
+  } else if (type == NameType::kOtherName) {
+    data["other_name"] = name;
+  }
+  if (!local_certificate.empty()) {
+    data["local_certificate"] = absl::Base64Escape(local_certificate);
+  }
+  if (!remote_certificate.empty()) {
+    data["remote_certificate"] = absl::Base64Escape(remote_certificate);
+  }
+  return data;
+}
+
+//
+// SocketNode::Security
+//
+
+Json SocketNode::Security::RenderJson() {
+  Json::Object data;
+  switch (type) {
+    case ModelType::kUnset:
+      break;
+    case ModelType::kTls:
+      if (tls) {
+        data["tls"] = tls->RenderJson();
+      }
+      break;
+    case ModelType::kOther:
+      if (other) {
+        data["other"] = *other;
+      }
+      break;
+  }
+  return data;
+}
+
+namespace {
+
+void* SecurityArgCopy(void* p) {
+  SocketNode::Security* xds_certificate_provider =
+      static_cast<SocketNode::Security*>(p);
+  return xds_certificate_provider->Ref().release();
+}
+
+void SecurityArgDestroy(void* p) {
+  SocketNode::Security* xds_certificate_provider =
+      static_cast<SocketNode::Security*>(p);
+  xds_certificate_provider->Unref();
+}
+
+int SecurityArgCmp(void* p, void* q) { return QsortCompare(p, q); }
+
+const grpc_arg_pointer_vtable kChannelArgVtable = {
+    SecurityArgCopy, SecurityArgDestroy, SecurityArgCmp};
+
+}  // namespace
+
+grpc_arg SocketNode::Security::MakeChannelArg() const {
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_ARG_CHANNELZ_SECURITY),
+      const_cast<SocketNode::Security*>(this), &kChannelArgVtable);
+}
+
+RefCountedPtr<SocketNode::Security> SocketNode::Security::GetFromChannelArgs(
+    const grpc_channel_args* args) {
+  Security* security = grpc_channel_args_find_pointer<Security>(
+      args, GRPC_ARG_CHANNELZ_SECURITY);
+  return security != nullptr ? security->Ref() : nullptr;
 }
 
 //
@@ -430,176 +424,152 @@ grpc_json* ServerNode::RenderJson() {
 
 namespace {
 
-void PopulateSocketAddressJson(grpc_json* json, const char* name,
+void PopulateSocketAddressJson(Json::Object* json, const char* name,
                                const char* addr_str) {
   if (addr_str == nullptr) return;
-  grpc_json* json_iterator = nullptr;
-  json_iterator = grpc_json_create_child(json_iterator, json, name, nullptr,
-                                         GRPC_JSON_OBJECT, false);
-  json = json_iterator;
-  json_iterator = nullptr;
-  grpc_uri* uri = grpc_uri_parse(addr_str, true);
-  if ((uri != nullptr) && ((strcmp(uri->scheme, "ipv4") == 0) ||
-                           (strcmp(uri->scheme, "ipv6") == 0))) {
-    const char* host_port = uri->path;
-    if (*host_port == '/') ++host_port;
-    grpc_core::UniquePtr<char> host;
-    grpc_core::UniquePtr<char> port;
-    GPR_ASSERT(SplitHostPort(host_port, &host, &port));
+  Json::Object data;
+  absl::StatusOr<URI> uri = URI::Parse(addr_str);
+  if (uri.ok() && (uri->scheme() == "ipv4" || uri->scheme() == "ipv6")) {
+    std::string host;
+    std::string port;
+    GPR_ASSERT(
+        SplitHostPort(absl::StripPrefix(uri->path(), "/"), &host, &port));
     int port_num = -1;
-    if (port != nullptr) {
-      port_num = atoi(port.get());
+    if (!port.empty()) {
+      port_num = atoi(port.data());
     }
-    char* b64_host =
-        grpc_base64_encode(host.get(), strlen(host.get()), false, false);
-    json_iterator = grpc_json_create_child(json_iterator, json, "tcpip_address",
-                                           nullptr, GRPC_JSON_OBJECT, false);
-    json = json_iterator;
-    json_iterator = nullptr;
-    json_iterator = grpc_json_add_number_string_child(json, json_iterator,
-                                                      "port", port_num);
-    json_iterator = grpc_json_create_child(json_iterator, json, "ip_address",
-                                           b64_host, GRPC_JSON_STRING, true);
-  } else if (uri != nullptr && strcmp(uri->scheme, "unix") == 0) {
-    json_iterator = grpc_json_create_child(json_iterator, json, "uds_address",
-                                           nullptr, GRPC_JSON_OBJECT, false);
-    json = json_iterator;
-    json_iterator = nullptr;
-    json_iterator =
-        grpc_json_create_child(json_iterator, json, "filename",
-                               gpr_strdup(uri->path), GRPC_JSON_STRING, true);
-  } else {
-    json_iterator = grpc_json_create_child(json_iterator, json, "other_address",
-                                           nullptr, GRPC_JSON_OBJECT, false);
-    json = json_iterator;
-    json_iterator = nullptr;
-    json_iterator = grpc_json_create_child(json_iterator, json, "name",
-                                           addr_str, GRPC_JSON_STRING, false);
+    grpc_resolved_address resolved_host;
+    grpc_error_handle error =
+        grpc_string_to_sockaddr(&resolved_host, host.c_str(), port_num);
+    if (error == GRPC_ERROR_NONE) {
+      std::string packed_host = grpc_sockaddr_get_packed_host(&resolved_host);
+      std::string b64_host = absl::Base64Escape(packed_host);
+      data["tcpip_address"] = Json::Object{
+          {"port", port_num},
+          {"ip_address", b64_host},
+      };
+      (*json)[name] = std::move(data);
+      return;
+    }
+    GRPC_ERROR_UNREF(error);
   }
-  grpc_uri_destroy(uri);
+  if (uri.ok() && uri->scheme() == "unix") {
+    data["uds_address"] = Json::Object{
+        {"filename", uri->path()},
+    };
+  } else {
+    data["other_address"] = Json::Object{
+        {"name", addr_str},
+    };
+  }
+  (*json)[name] = std::move(data);
 }
 
 }  // namespace
 
-SocketNode::SocketNode(std::string local, std::string remote, std::string name)
+SocketNode::SocketNode(std::string local, std::string remote, std::string name,
+                       RefCountedPtr<Security> security)
     : BaseNode(EntityType::kSocket, std::move(name)),
       local_(std::move(local)),
-      remote_(std::move(remote)) {}
+      remote_(std::move(remote)),
+      security_(std::move(security)) {}
 
 void SocketNode::RecordStreamStartedFromLocal() {
-  streams_started_.FetchAdd(1, MemoryOrder::RELAXED);
-  last_local_stream_created_cycle_.Store(gpr_get_cycle_counter(),
-                                         MemoryOrder::RELAXED);
+  streams_started_.fetch_add(1, std::memory_order_relaxed);
+  last_local_stream_created_cycle_.store(gpr_get_cycle_counter(),
+                                         std::memory_order_relaxed);
 }
 
 void SocketNode::RecordStreamStartedFromRemote() {
-  streams_started_.FetchAdd(1, MemoryOrder::RELAXED);
-  last_remote_stream_created_cycle_.Store(gpr_get_cycle_counter(),
-                                          MemoryOrder::RELAXED);
+  streams_started_.fetch_add(1, std::memory_order_relaxed);
+  last_remote_stream_created_cycle_.store(gpr_get_cycle_counter(),
+                                          std::memory_order_relaxed);
 }
 
 void SocketNode::RecordMessagesSent(uint32_t num_sent) {
-  messages_sent_.FetchAdd(num_sent, MemoryOrder::RELAXED);
-  last_message_sent_cycle_.Store(gpr_get_cycle_counter(), MemoryOrder::RELAXED);
+  messages_sent_.fetch_add(num_sent, std::memory_order_relaxed);
+  last_message_sent_cycle_.store(gpr_get_cycle_counter(),
+                                 std::memory_order_relaxed);
 }
 
 void SocketNode::RecordMessageReceived() {
-  messages_received_.FetchAdd(1, MemoryOrder::RELAXED);
-  last_message_received_cycle_.Store(gpr_get_cycle_counter(),
-                                     MemoryOrder::RELAXED);
+  messages_received_.fetch_add(1, std::memory_order_relaxed);
+  last_message_received_cycle_.store(gpr_get_cycle_counter(),
+                                     std::memory_order_relaxed);
 }
 
-grpc_json* SocketNode::RenderJson() {
-  // We need to track these three json objects to build our object
-  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
-  grpc_json* json = top_level_json;
-  grpc_json* json_iterator = nullptr;
-  // create and fill the ref child
-  json_iterator = grpc_json_create_child(json_iterator, json, "ref", nullptr,
-                                         GRPC_JSON_OBJECT, false);
-  json = json_iterator;
-  json_iterator = nullptr;
-  json_iterator = grpc_json_add_number_string_child(json, json_iterator,
-                                                    "socketId", uuid());
-  json_iterator = grpc_json_create_child(
-      json_iterator, json, "name", name().c_str(), GRPC_JSON_STRING, false);
-  json = top_level_json;
-  PopulateSocketAddressJson(json, "remote", remote_.c_str());
-  PopulateSocketAddressJson(json, "local", local_.c_str());
-  // reset json iterators to top level object
-  json = top_level_json;
-  json_iterator = nullptr;
-  // create and fill the data child.
-  grpc_json* data = grpc_json_create_child(json_iterator, json, "data", nullptr,
-                                           GRPC_JSON_OBJECT, false);
-  json = data;
-  json_iterator = nullptr;
+Json SocketNode::RenderJson() {
+  // Create and fill the data child.
+  Json::Object data;
   gpr_timespec ts;
-  int64_t streams_started = streams_started_.Load(MemoryOrder::RELAXED);
+  int64_t streams_started = streams_started_.load(std::memory_order_relaxed);
   if (streams_started != 0) {
-    json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "streamsStarted", streams_started);
+    data["streamsStarted"] = std::to_string(streams_started);
     gpr_cycle_counter last_local_stream_created_cycle =
-        last_local_stream_created_cycle_.Load(MemoryOrder::RELAXED);
+        last_local_stream_created_cycle_.load(std::memory_order_relaxed);
     if (last_local_stream_created_cycle != 0) {
       ts = gpr_convert_clock_type(
           gpr_cycle_counter_to_time(last_local_stream_created_cycle),
           GPR_CLOCK_REALTIME);
-      json_iterator = grpc_json_create_child(
-          json_iterator, json, "lastLocalStreamCreatedTimestamp",
-          gpr_format_timespec(ts), GRPC_JSON_STRING, true);
+      data["lastLocalStreamCreatedTimestamp"] = gpr_format_timespec(ts);
     }
     gpr_cycle_counter last_remote_stream_created_cycle =
-        last_remote_stream_created_cycle_.Load(MemoryOrder::RELAXED);
+        last_remote_stream_created_cycle_.load(std::memory_order_relaxed);
     if (last_remote_stream_created_cycle != 0) {
       ts = gpr_convert_clock_type(
           gpr_cycle_counter_to_time(last_remote_stream_created_cycle),
           GPR_CLOCK_REALTIME);
-      json_iterator = grpc_json_create_child(
-          json_iterator, json, "lastRemoteStreamCreatedTimestamp",
-          gpr_format_timespec(ts), GRPC_JSON_STRING, true);
+      data["lastRemoteStreamCreatedTimestamp"] = gpr_format_timespec(ts);
     }
   }
-  int64_t streams_succeeded = streams_succeeded_.Load(MemoryOrder::RELAXED);
+  int64_t streams_succeeded =
+      streams_succeeded_.load(std::memory_order_relaxed);
   if (streams_succeeded != 0) {
-    json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "streamsSucceeded", streams_succeeded);
+    data["streamsSucceeded"] = std::to_string(streams_succeeded);
   }
-  int64_t streams_failed = streams_failed_.Load(MemoryOrder::RELAXED);
-  if (streams_failed) {
-    json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "streamsFailed", streams_failed);
+  int64_t streams_failed = streams_failed_.load(std::memory_order_relaxed);
+  if (streams_failed != 0) {
+    data["streamsFailed"] = std::to_string(streams_failed);
   }
-  int64_t messages_sent = messages_sent_.Load(MemoryOrder::RELAXED);
+  int64_t messages_sent = messages_sent_.load(std::memory_order_relaxed);
   if (messages_sent != 0) {
-    json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "messagesSent", messages_sent);
+    data["messagesSent"] = std::to_string(messages_sent);
     ts = gpr_convert_clock_type(
         gpr_cycle_counter_to_time(
-            last_message_sent_cycle_.Load(MemoryOrder::RELAXED)),
+            last_message_sent_cycle_.load(std::memory_order_relaxed)),
         GPR_CLOCK_REALTIME);
-    json_iterator =
-        grpc_json_create_child(json_iterator, json, "lastMessageSentTimestamp",
-                               gpr_format_timespec(ts), GRPC_JSON_STRING, true);
+    data["lastMessageSentTimestamp"] = gpr_format_timespec(ts);
   }
-  int64_t messages_received = messages_received_.Load(MemoryOrder::RELAXED);
+  int64_t messages_received =
+      messages_received_.load(std::memory_order_relaxed);
   if (messages_received != 0) {
-    json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "messagesReceived", messages_received);
+    data["messagesReceived"] = std::to_string(messages_received);
     ts = gpr_convert_clock_type(
         gpr_cycle_counter_to_time(
-            last_message_received_cycle_.Load(MemoryOrder::RELAXED)),
+            last_message_received_cycle_.load(std::memory_order_relaxed)),
         GPR_CLOCK_REALTIME);
-    json_iterator = grpc_json_create_child(
-        json_iterator, json, "lastMessageReceivedTimestamp",
-        gpr_format_timespec(ts), GRPC_JSON_STRING, true);
+    data["lastMessageReceivedTimestamp"] = gpr_format_timespec(ts);
   }
-  int64_t keepalives_sent = keepalives_sent_.Load(MemoryOrder::RELAXED);
+  int64_t keepalives_sent = keepalives_sent_.load(std::memory_order_relaxed);
   if (keepalives_sent != 0) {
-    json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "keepAlivesSent", keepalives_sent);
+    data["keepAlivesSent"] = std::to_string(keepalives_sent);
   }
-  return top_level_json;
+  // Create and fill the parent object.
+  Json::Object object = {
+      {"ref",
+       Json::Object{
+           {"socketId", std::to_string(uuid())},
+           {"name", name()},
+       }},
+      {"data", std::move(data)},
+  };
+  if (security_ != nullptr &&
+      security_->type != SocketNode::Security::ModelType::kUnset) {
+    object["security"] = security_->RenderJson();
+  }
+  PopulateSocketAddressJson(&object, "remote", remote_.c_str());
+  PopulateSocketAddressJson(&object, "local", local_.c_str());
+  return object;
 }
 
 //
@@ -610,24 +580,16 @@ ListenSocketNode::ListenSocketNode(std::string local_addr, std::string name)
     : BaseNode(EntityType::kSocket, std::move(name)),
       local_addr_(std::move(local_addr)) {}
 
-grpc_json* ListenSocketNode::RenderJson() {
-  // We need to track these three json objects to build our object
-  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
-  grpc_json* json = top_level_json;
-  grpc_json* json_iterator = nullptr;
-  // create and fill the ref child
-  json_iterator = grpc_json_create_child(json_iterator, json, "ref", nullptr,
-                                         GRPC_JSON_OBJECT, false);
-  json = json_iterator;
-  json_iterator = nullptr;
-  json_iterator = grpc_json_add_number_string_child(json, json_iterator,
-                                                    "socketId", uuid());
-  json_iterator = grpc_json_create_child(
-      json_iterator, json, "name", name().c_str(), GRPC_JSON_STRING, false);
-  json = top_level_json;
-  PopulateSocketAddressJson(json, "local", local_addr_.c_str());
-
-  return top_level_json;
+Json ListenSocketNode::RenderJson() {
+  Json::Object object = {
+      {"ref",
+       Json::Object{
+           {"socketId", std::to_string(uuid())},
+           {"name", name()},
+       }},
+  };
+  PopulateSocketAddressJson(&object, "local", local_addr_.c_str());
+  return object;
 }
 
 }  // namespace channelz

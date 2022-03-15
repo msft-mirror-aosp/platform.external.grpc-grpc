@@ -19,8 +19,9 @@ import time
 import unittest
 
 import grpc
-from tests.unit.framework.common import test_constants
+
 from tests.unit import thread_pool
+from tests.unit.framework.common import test_constants
 
 
 def _ready_in_connectivities(connectivities):
@@ -87,8 +88,8 @@ class ChannelConnectivityTest(unittest.TestCase):
     def test_immediately_connectable_channel_connectivity(self):
         recording_thread_pool = thread_pool.RecordingThreadPool(
             max_workers=None)
-        server = grpc.server(
-            recording_thread_pool, options=(('grpc.so_reuseport', 0),))
+        server = grpc.server(recording_thread_pool,
+                             options=(('grpc.so_reuseport', 0),))
         port = server.add_insecure_port('[::]:0')
         server.start()
         first_callback = _Callback()
@@ -132,8 +133,8 @@ class ChannelConnectivityTest(unittest.TestCase):
     def test_reachable_then_unreachable_channel_connectivity(self):
         recording_thread_pool = thread_pool.RecordingThreadPool(
             max_workers=None)
-        server = grpc.server(
-            recording_thread_pool, options=(('grpc.so_reuseport', 0),))
+        server = grpc.server(recording_thread_pool,
+                             options=(('grpc.so_reuseport', 0),))
         port = server.add_insecure_port('[::]:0')
         server.start()
         callback = _Callback()

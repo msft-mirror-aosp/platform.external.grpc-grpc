@@ -87,10 +87,10 @@ static bool read_frame_size(const grpc_slice_buffer* sb,
   }
   GPR_ASSERT(remaining == 0);
   /* Gets little-endian frame size.  */
-  uint32_t frame_size = (((uint32_t)frame_size_buffer[3]) << 24) |
-                        (((uint32_t)frame_size_buffer[2]) << 16) |
-                        (((uint32_t)frame_size_buffer[1]) << 8) |
-                        ((uint32_t)frame_size_buffer[0]);
+  uint32_t frame_size = (static_cast<uint32_t>(frame_size_buffer[3]) << 24) |
+                        (static_cast<uint32_t>(frame_size_buffer[2]) << 16) |
+                        (static_cast<uint32_t>(frame_size_buffer[1]) << 8) |
+                        static_cast<uint32_t>(frame_size_buffer[0]);
   if (frame_size > kMaxFrameLength) {
     gpr_log(GPR_ERROR, "Frame size is larger than maximum frame size");
     return false;
@@ -234,11 +234,11 @@ static void alts_zero_copy_grpc_protector_destroy(
 }
 
 static tsi_result alts_zero_copy_grpc_protector_max_frame_size(
-    tsi_zero_copy_grpc_protector* self, size_t& max_frame_size) {
-  if (self == nullptr) return TSI_INVALID_ARGUMENT;
+    tsi_zero_copy_grpc_protector* self, size_t* max_frame_size) {
+  if (self == nullptr || max_frame_size == nullptr) return TSI_INVALID_ARGUMENT;
   alts_zero_copy_grpc_protector* protector =
       reinterpret_cast<alts_zero_copy_grpc_protector*>(self);
-  max_frame_size = protector->max_protected_frame_size;
+  *max_frame_size = protector->max_protected_frame_size;
   return TSI_OK;
 }
 
@@ -278,9 +278,9 @@ tsi_result alts_zero_copy_grpc_protector_create(
       size_t max_protected_frame_size_to_set = kDefaultFrameLength;
       if (max_protected_frame_size != nullptr) {
         *max_protected_frame_size =
-            GPR_MIN(*max_protected_frame_size, kMaxFrameLength);
+            std::min(*max_protected_frame_size, kMaxFrameLength);
         *max_protected_frame_size =
-            GPR_MAX(*max_protected_frame_size, kMinFrameLength);
+            std::max(*max_protected_frame_size, kMinFrameLength);
         max_protected_frame_size_to_set = *max_protected_frame_size;
       }
       impl->max_protected_frame_size = max_protected_frame_size_to_set;

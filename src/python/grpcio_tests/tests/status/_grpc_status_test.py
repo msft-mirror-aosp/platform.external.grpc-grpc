@@ -11,7 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Tests of grpc_status."""
+"""Tests of grpc_status.
+
+isort:skip_file
+"""
 
 # NOTE(lidiz) This module only exists in Bazel BUILD file, for more details
 # please refer to comments in the "bazel_namespace_package_hack" module.
@@ -25,6 +28,7 @@ import unittest
 
 import logging
 import traceback
+import sys
 
 import grpc
 from grpc_status import rpc_status
@@ -60,9 +64,8 @@ def _not_ok_unary_unary(request, servicer_context):
 def _error_details_unary_unary(request, servicer_context):
     details = any_pb2.Any()
     details.Pack(
-        error_details_pb2.DebugInfo(
-            stack_entries=traceback.format_stack(),
-            detail='Intentionally invoked'))
+        error_details_pb2.DebugInfo(stack_entries=traceback.format_stack(),
+                                    detail='Intentionally invoked'))
     rich_status = status_pb2.Status(
         code=code_pb2.INTERNAL,
         message=_STATUS_DETAILS,
@@ -79,8 +82,8 @@ def _inconsistent_unary_unary(request, servicer_context):
     servicer_context.set_code(grpc.StatusCode.NOT_FOUND)
     servicer_context.set_details(_STATUS_DETAILS_ANOTHER)
     # User put inconsistent status information in trailing metadata
-    servicer_context.set_trailing_metadata(((_GRPC_DETAILS_METADATA_KEY,
-                                             rich_status.SerializeToString()),))
+    servicer_context.set_trailing_metadata(
+        ((_GRPC_DETAILS_METADATA_KEY, rich_status.SerializeToString()),))
 
 
 def _invalid_code_unary_unary(request, servicer_context):
@@ -111,6 +114,8 @@ class _GenericHandler(grpc.GenericRpcHandler):
             return None
 
 
+@unittest.skipIf(sys.version_info[0] < 3,
+                 'ProtoBuf descriptor has moved on from Python2')
 class StatusTest(unittest.TestCase):
 
     def setUp(self):
@@ -152,8 +157,8 @@ class StatusTest(unittest.TestCase):
         self.assertEqual(status.code, code_pb2.Code.Value('INTERNAL'))
 
         # Check if the underlying proto message is intact
-        self.assertEqual(status.details[0].Is(
-            error_details_pb2.DebugInfo.DESCRIPTOR), True)
+        self.assertEqual(
+            status.details[0].Is(error_details_pb2.DebugInfo.DESCRIPTOR), True)
         info = error_details_pb2.DebugInfo()
         status.details[0].Unpack(info)
         self.assertIn('_error_details_unary_unary', info.stack_entries[-1])

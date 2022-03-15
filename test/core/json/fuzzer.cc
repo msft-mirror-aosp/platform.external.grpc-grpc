@@ -29,13 +29,15 @@ bool squelch = true;
 bool leak_check = true;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  char* s;
-  s = static_cast<char*>(gpr_malloc(size));
-  memcpy(s, data, size);
-  grpc_json* x;
-  if ((x = grpc_json_parse_string_with_len(s, size))) {
-    grpc_json_destroy(x);
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  auto json = grpc_core::Json::Parse(
+      absl::string_view(reinterpret_cast<const char*>(data), size), &error);
+  if (error == GRPC_ERROR_NONE) {
+    auto text2 = json.Dump();
+    auto json2 = grpc_core::Json::Parse(text2, &error);
+    GPR_ASSERT(error == GRPC_ERROR_NONE);
+    GPR_ASSERT(json == json2);
   }
-  gpr_free(s);
+  GRPC_ERROR_UNREF(error);
   return 0;
 }

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2015 gRPC authors.
 #
@@ -25,8 +25,8 @@ submodule_commit_hash = _make.protobuf_submodule_commit_hash()
 with open(_make.GRPC_PYTHON_PROTOC_LIB_DEPS, 'r') as _protoc_lib_deps_file:
     content = _protoc_lib_deps_file.read().splitlines()
 
-testString = (
-    _make.COMMIT_HASH_PREFIX + submodule_commit_hash + _make.COMMIT_HASH_SUFFIX)
+testString = (_make.COMMIT_HASH_PREFIX + submodule_commit_hash +
+              _make.COMMIT_HASH_SUFFIX)
 
 if testString not in content:
     print(OUT_OF_DATE_MESSAGE.format(_make.GRPC_PYTHON_PROTOC_LIB_DEPS))

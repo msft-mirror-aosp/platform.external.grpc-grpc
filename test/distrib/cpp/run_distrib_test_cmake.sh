@@ -17,11 +17,15 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
-echo "deb http://archive.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
-echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf
-sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
-apt-get update
-apt-get install -t jessie-backports -y libssl-dev
+# Install openssl (to use instead of boringssl)
+apt-get update && apt-get install -y libssl-dev
+
+# Install absl
+mkdir -p "third_party/abseil-cpp/cmake/build"
+pushd "third_party/abseil-cpp/cmake/build"
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ../..
+make -j4 install
+popd
 
 # Install c-ares
 # If the distribution provides a new-enough version of c-ares,
@@ -37,6 +41,13 @@ popd
 mkdir -p "third_party/protobuf/cmake/build"
 pushd "third_party/protobuf/cmake/build"
 cmake -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ..
+make -j4 install
+popd
+
+# Install re2
+mkdir -p "third_party/re2/cmake/build"
+pushd "third_party/re2/cmake/build"
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ../..
 make -j4 install
 popd
 
@@ -60,7 +71,9 @@ cmake \
   -DgRPC_INSTALL=ON \
   -DgRPC_BUILD_TESTS=OFF \
   -DgRPC_CARES_PROVIDER=package \
+  -DgRPC_ABSL_PROVIDER=package \
   -DgRPC_PROTOBUF_PROVIDER=package \
+  -DgRPC_RE2_PROVIDER=package \
   -DgRPC_SSL_PROVIDER=package \
   -DgRPC_ZLIB_PROVIDER=package \
   ../..

@@ -13,13 +13,14 @@
 # limitations under the License.
 """Tests of grpc.channel_ready_future."""
 
+import logging
 import threading
 import unittest
-import logging
 
 import grpc
-from tests.unit.framework.common import test_constants
+
 from tests.unit import thread_pool
+from tests.unit.framework.common import test_constants
 
 
 class _Callback(object):
@@ -65,8 +66,8 @@ class ChannelReadyFutureTest(unittest.TestCase):
     def test_immediately_connectable_channel_connectivity(self):
         recording_thread_pool = thread_pool.RecordingThreadPool(
             max_workers=None)
-        server = grpc.server(
-            recording_thread_pool, options=(('grpc.so_reuseport', 0),))
+        server = grpc.server(recording_thread_pool,
+                             options=(('grpc.so_reuseport', 0),))
         port = server.add_insecure_port('[::]:0')
         server.start()
         channel = grpc.insecure_channel('localhost:{}'.format(port))

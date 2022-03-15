@@ -17,11 +17,15 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
-echo "deb http://archive.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
-echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf
-sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
-apt-get update
-apt-get install -t jessie-backports -y libssl-dev pkg-config
+# Install openssl (to use instead of boringssl)
+apt-get update && apt-get install -y libssl-dev
+
+# Install absl
+mkdir -p "third_party/abseil-cpp/cmake/build"
+pushd "third_party/abseil-cpp/cmake/build"
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ../..
+make -j4 install
+popd
 
 # Install c-ares
 mkdir -p "third_party/cares/cares/cmake/build"
@@ -34,6 +38,13 @@ popd
 mkdir -p "third_party/protobuf/cmake/build"
 pushd "third_party/protobuf/cmake/build"
 cmake -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ..
+make -j4 install
+popd
+
+# Install re2
+mkdir -p "third_party/re2/cmake/build"
+pushd "third_party/re2/cmake/build"
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ../..
 make -j4 install
 popd
 
@@ -57,16 +68,26 @@ cmake \
   -DCMAKE_INSTALL_PREFIX=/usr/local/grpc \
   -DgRPC_INSTALL=ON \
   -DgRPC_BUILD_TESTS=OFF \
+  -DgRPC_ABSL_PROVIDER=package \
   -DgRPC_CARES_PROVIDER=package \
   -DgRPC_PROTOBUF_PROVIDER=package \
+  -DgRPC_RE2_PROVIDER=package \
   -DgRPC_SSL_PROVIDER=package \
   -DgRPC_ZLIB_PROVIDER=package \
   ../..
 make -j4 install
 popd
 
-# Build helloworld example using Makefiles and pkg-config
-cd examples/cpp/helloworld
+# Build helloworld example using Makefile and pkg-config
+pushd examples/cpp/helloworld
 export PKG_CONFIG_PATH=/usr/local/grpc/lib/pkgconfig
 export PATH=$PATH:/usr/local/grpc/bin
 make
+popd
+
+# Build route_guide example using Makefile and pkg-config
+pushd examples/cpp/route_guide
+export PKG_CONFIG_PATH=/usr/local/grpc/lib/pkgconfig
+export PATH=$PATH:/usr/local/grpc/bin
+make
+popd

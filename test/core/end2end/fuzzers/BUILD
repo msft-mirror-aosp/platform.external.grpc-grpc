@@ -12,20 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_package")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer")
 
 grpc_package(name = "test/core/end2end/fuzzers")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
-
-grpc_fuzzer(
+grpc_proto_fuzzer(
     name = "api_fuzzer",
     size = "enormous",
     srcs = ["api_fuzzer.cc"],
     corpus = "api_fuzzer_corpus",
     language = "C++",
+    proto = "api_fuzzer.proto",
     tags = ["no_windows"],
     deps = [
         "//:gpr",

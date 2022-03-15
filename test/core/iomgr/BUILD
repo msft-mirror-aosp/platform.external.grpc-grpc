@@ -12,12 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 
-licenses(["notice"])  # Apache v2
-
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
+licenses(["notice"])
 
 grpc_package(
     name = "test/core/iomgr",
@@ -29,7 +27,10 @@ grpc_cc_library(
     srcs = ["endpoint_tests.cc"],
     hdrs = ["endpoint_tests.h"],
     language = "C++",
-    visibility = ["//test:__subpackages__"],
+    visibility = [
+        "//test:__subpackages__",
+        "@grpc:endpoint_tests",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -65,6 +66,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "error_test",
     srcs = ["error_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     uses_polling = False,
     deps = [
@@ -135,18 +139,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "logical_thread_test",
-    srcs = ["logical_thread_test.cc"],
+    name = "work_serializer_test",
+    srcs = ["work_serializer_test.cc"],
     exec_properties = LARGE_MACHINE,
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
-    tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
+    tags = [
+        "no_windows",  # LARGE_MACHINE is not configured for windows RBE
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
-    ],
-    external_deps = [
-      "gtest",
     ],
 )
 
@@ -221,28 +227,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "resource_quota_test",
-    srcs = ["resource_quota_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "sockaddr_utils_test",
-    srcs = ["sockaddr_utils_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "socket_utils_test",
     srcs = ["socket_utils_test.cc"],
     language = "C++",
@@ -271,8 +255,8 @@ grpc_cc_test(
     srcs = ["tcp_posix_test.cc"],
     language = "C++",
     tags = [
-        "no_windows",
         "no_mac",  # TODO(jtattermusch): Reenable once https://github.com/grpc/grpc/issues/21282 is fixed.
+        "no_windows",
     ],
     deps = [
         ":endpoint_tests",
@@ -354,13 +338,21 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "udp_server_test",
-    srcs = ["udp_server_test.cc"],
+    name = "stranded_event_test",
+    srcs = ["stranded_event_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
-    tags = ["no_windows"],
+    tags = [
+        # TODO(apolcyn): This test is failing on Windows at entry, enable once passing.
+        # See e.g. https://source.cloud.google.com/results/invocations/6716596a-c9e1-4780-85ed-890d8758d582/targets
+        "no_windows",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/end2end:cq_verifier",
         "//test/core/util:grpc_test_util",
     ],
 )

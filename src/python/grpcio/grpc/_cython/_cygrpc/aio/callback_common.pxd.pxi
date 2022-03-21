@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cimport cpython
-
 
 cdef class CallbackFailureHandler:
     cdef str _core_function_name
@@ -27,15 +25,19 @@ cdef struct CallbackContext:
     # C struct to store callback context in the form of pointers.
     #    
     #   Attributes:
-    #     functor: A grpc_experimental_completion_queue_functor represents the
+    #     functor: A grpc_completion_queue_functor represents the
     #       callback function in the only way Core understands.
     #     waiter: An asyncio.Future object that fulfills when the callback is
     #       invoked by Core.
     #     failure_handler: A CallbackFailureHandler object that called when Core
     #       returns 'success == 0' state.
-    grpc_experimental_completion_queue_functor functor
+    #     wrapper: A self-reference to the CallbackWrapper to help life cycle
+    #       management.
+    grpc_completion_queue_functor functor
     cpython.PyObject *waiter
+    cpython.PyObject *loop
     cpython.PyObject *failure_handler
+    cpython.PyObject *callback_wrapper
 
 
 cdef class CallbackWrapper:
@@ -45,18 +47,10 @@ cdef class CallbackWrapper:
 
     @staticmethod
     cdef void functor_run(
-            grpc_experimental_completion_queue_functor* functor,
+            grpc_completion_queue_functor* functor,
             int succeed)
 
-    cdef grpc_experimental_completion_queue_functor *c_functor(self)
-
-
-cdef class CallbackCompletionQueue:
-    cdef grpc_completion_queue *_cq
-    cdef object _shutdown_completed  # asyncio.Future
-    cdef CallbackWrapper _wrapper
-
-    cdef grpc_completion_queue* c_ptr(self)
+    cdef grpc_completion_queue_functor *c_functor(self)
 
 
 cdef class GrpcCallWrapper:

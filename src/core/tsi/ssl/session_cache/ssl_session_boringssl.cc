@@ -32,7 +32,7 @@ namespace {
 
 class BoringSslCachedSession : public SslCachedSession {
  public:
-  BoringSslCachedSession(SslSessionPtr session)
+  explicit BoringSslCachedSession(SslSessionPtr session)
       : session_(std::move(session)) {}
 
   SslSessionPtr CopySession() const override {
@@ -49,7 +49,7 @@ class BoringSslCachedSession : public SslCachedSession {
 
 std::unique_ptr<SslCachedSession> SslCachedSession::Create(
     SslSessionPtr session) {
-  return grpc_core::MakeUnique<BoringSslCachedSession>(std::move(session));
+  return absl::make_unique<BoringSslCachedSession>(std::move(session));
 }
 
 }  // namespace tsi

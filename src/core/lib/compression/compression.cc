@@ -116,12 +116,12 @@ void grpc_compression_options_init(grpc_compression_options* opts) {
 
 void grpc_compression_options_enable_algorithm(
     grpc_compression_options* opts, grpc_compression_algorithm algorithm) {
-  GPR_BITSET(&opts->enabled_algorithms_bitset, algorithm);
+  grpc_core::SetBit(&opts->enabled_algorithms_bitset, algorithm);
 }
 
 void grpc_compression_options_disable_algorithm(
     grpc_compression_options* opts, grpc_compression_algorithm algorithm) {
-  GPR_BITCLEAR(&opts->enabled_algorithms_bitset, algorithm);
+  grpc_core::ClearBit(&opts->enabled_algorithms_bitset, algorithm);
 }
 
 int grpc_compression_options_is_algorithm_enabled(
@@ -150,14 +150,18 @@ grpc_slice grpc_compression_algorithm_slice(
 
 grpc_compression_algorithm grpc_compression_algorithm_from_slice(
     const grpc_slice& str) {
-  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_IDENTITY))
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_IDENTITY)) {
     return GRPC_COMPRESS_NONE;
-  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_DEFLATE))
+  }
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_DEFLATE)) {
     return GRPC_COMPRESS_DEFLATE;
-  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_GZIP))
+  }
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_GZIP)) {
     return GRPC_COMPRESS_GZIP;
-  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_STREAM_SLASH_GZIP))
+  }
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_STREAM_SLASH_GZIP)) {
     return GRPC_COMPRESS_STREAM_GZIP;
+  }
   return GRPC_COMPRESS_ALGORITHMS_COUNT;
 }
 

@@ -55,6 +55,7 @@ INSTALL_REQUIRES = (
 
 try:
     import testing_commands as _testing_commands
+
     # we are in the build environment, otherwise the above import fails
     COMMAND_CLASS = {
         # Run preprocess from the repository *before* doing any packaging!
@@ -66,16 +67,15 @@ except ImportError:
         'preprocess': _NoOpCommand,
     }
 
-setuptools.setup(
-    name='grpcio-testing',
-    version=grpc_version.VERSION,
-    license='Apache License 2.0',
-    description='Testing utilities for gRPC Python',
-    long_description=open(_README_PATH, 'r').read(),
-    author='The gRPC Authors',
-    author_email='grpc-io@googlegroups.com',
-    url='https://grpc.io',
-    package_dir=PACKAGE_DIRECTORIES,
-    packages=setuptools.find_packages('.'),
-    install_requires=INSTALL_REQUIRES,
-    cmdclass=COMMAND_CLASS)
+setuptools.setup(name='grpcio-testing',
+                 version=grpc_version.VERSION,
+                 license='Apache License 2.0',
+                 description='Testing utilities for gRPC Python',
+                 long_description=open(_README_PATH, 'r').read(),
+                 author='The gRPC Authors',
+                 author_email='grpc-io@googlegroups.com',
+                 url='https://grpc.io',
+                 package_dir=PACKAGE_DIRECTORIES,
+                 packages=setuptools.find_packages('.'),
+                 install_requires=INSTALL_REQUIRES,
+                 cmdclass=COMMAND_CLASS)

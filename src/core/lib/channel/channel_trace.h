@@ -19,9 +19,10 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_TRACE_H
 #define GRPC_CORE_LIB_CHANNEL_CHANNEL_TRACE_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <grpc/grpc.h>
+
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
@@ -41,7 +42,7 @@ class BaseNode;
 // https://github.com/grpc/proposal/blob/master/A14-channelz.md
 class ChannelTrace {
  public:
-  ChannelTrace(size_t max_event_memory);
+  explicit ChannelTrace(size_t max_event_memory);
   ~ChannelTrace();
 
   enum Severity {
@@ -75,9 +76,9 @@ class ChannelTrace {
   void AddTraceEventWithReference(Severity severity, const grpc_slice& data,
                                   RefCountedPtr<BaseNode> referenced_entity);
 
-  // Creates and returns the raw grpc_json object, so a parent channelz
+  // Creates and returns the raw Json object, so a parent channelz
   // object may incorporate the json before rendering.
-  grpc_json* RenderJson() const;
+  Json RenderJson() const;
 
  private:
   friend size_t testing::GetSizeofTraceEvent(void);
@@ -98,7 +99,7 @@ class ChannelTrace {
 
     // Renders the data inside of this TraceEvent into a json object. This is
     // used by the ChannelTrace, when it is rendering itself.
-    void RenderTraceEvent(grpc_json* json) const;
+    Json RenderTraceEvent() const;
 
     // set and get for the next_ pointer.
     TraceEvent* next() const { return next_; }

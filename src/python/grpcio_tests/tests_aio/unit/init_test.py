@@ -14,20 +14,20 @@
 import logging
 import unittest
 
-from grpc.experimental import aio
-from tests_aio.unit._test_server import start_test_server
-from tests_aio.unit._test_base import AioTestBase
 
+class TestInit(unittest.TestCase):
 
-class TestInsecureChannel(AioTestBase):
+    def test_grpc(self):
+        import grpc  # pylint: disable=wrong-import-position
+        channel = grpc.aio.insecure_channel('phony')
+        self.assertIsInstance(channel, grpc.aio.Channel)
 
-    async def test_insecure_channel(self):
-        server_target, _ = await start_test_server()  # pylint: disable=unused-variable
-
-        channel = aio.insecure_channel(server_target)
-        self.assertIsInstance(channel, aio.Channel)
+    def test_grpc_dot_aio(self):
+        import grpc.aio  # pylint: disable=wrong-import-position
+        channel = grpc.aio.insecure_channel('phony')
+        self.assertIsInstance(channel, grpc.aio.Channel)
 
 
 if __name__ == '__main__':
-    logging.basicConfig()
+    logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

@@ -16,19 +16,20 @@
  *
  */
 
+#include "src/core/tsi/fake_transport_security.h"
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/lib/security/security_connector/security_connector.h"
-#include "src/core/tsi/fake_transport_security.h"
-#include "src/core/tsi/transport_security.h"
-#include "test/core/tsi/transport_security_test_lib.h"
-#include "test/core/util/test_config.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
+#include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/tsi/transport_security.h"
+#include "test/core/tsi/transport_security_test_lib.h"
+#include "test/core/util/test_config.h"
 
 typedef struct fake_tsi_test_fixture {
   tsi_test_fixture base;
@@ -49,6 +50,11 @@ static void validate_handshaker_peers(tsi_handshaker_result* result) {
       tsi_peer_get_property_by_name(&peer, TSI_CERTIFICATE_TYPE_PEER_PROPERTY);
   GPR_ASSERT(property != nullptr);
   GPR_ASSERT(memcmp(property->value.data, TSI_FAKE_CERTIFICATE_TYPE,
+                    property->value.length) == 0);
+  property =
+      tsi_peer_get_property_by_name(&peer, TSI_SECURITY_LEVEL_PEER_PROPERTY);
+  GPR_ASSERT(property != nullptr);
+  GPR_ASSERT(memcmp(property->value.data, TSI_FAKE_SECURITY_LEVEL,
                     property->value.length) == 0);
   tsi_peer_destruct(&peer);
 }

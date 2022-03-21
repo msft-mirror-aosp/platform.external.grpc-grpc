@@ -20,10 +20,11 @@
 
 #include <algorithm>
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-#include <gtest/gtest.h>
 #include "test/core/util/test_config.h"
 
 namespace grpc {
@@ -138,8 +139,6 @@ TEST(BackOffTest, JitterBackOff) {
       .set_max_backoff(max_backoff);
   BackOff backoff(options);
 
-  backoff.SetRandomSeed(0);  // force consistent PRNG
-
   grpc_core::ExecCtx exec_ctx;
   grpc_millis next = backoff.NextAttemptTime();
   EXPECT_EQ(next - grpc_core::ExecCtx::Get()->Now(), initial_backoff);
@@ -172,9 +171,10 @@ TEST(BackOffTest, JitterBackOff) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_init();
-  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc::testing::TestEnvironment env(argc, argv);
+  grpc_init();
+  int ret = RUN_ALL_TESTS();
   grpc_shutdown();
+  return ret;
 }

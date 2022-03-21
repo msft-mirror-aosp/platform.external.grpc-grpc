@@ -13,21 +13,20 @@
 # limitations under the License.
 """Tests server and client side compression."""
 
-import unittest
-
-import contextlib
 from concurrent import futures
+import contextlib
 import functools
 import itertools
 import logging
 import os
+import unittest
 
 import grpc
 from grpc import _grpcio_metadata
 
+from tests.unit import _tcp_proxy
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
-from tests.unit import _tcp_proxy
 
 _UNARY_UNARY = '/test/UnaryUnary'
 _UNARY_STREAM = '/test/UnaryStream'
@@ -214,8 +213,8 @@ def _get_compression_ratios(client_function, first_channel_kwargs,
         second_bytes_sent, second_bytes_received = _get_byte_counts(
             second_channel_kwargs, second_multicallable_kwargs, client_function,
             second_server_kwargs, second_server_handler, message)
-        return ((
-            second_bytes_sent - first_bytes_sent) / float(first_bytes_sent),
+        return ((second_bytes_sent - first_bytes_sent) /
+                float(first_bytes_sent),
                 (second_bytes_received - first_bytes_received) /
                 float(first_bytes_received))
     finally:
@@ -260,6 +259,8 @@ def _stream_stream_client(channel, multicallable_kwargs, message):
                 i, response))
 
 
+@unittest.skipIf(test_common.running_under_gevent(),
+                 "This test is nondeterministic under gevent.")
 class CompressionTest(unittest.TestCase):
 
     def assertCompressed(self, compression_ratio):
@@ -274,10 +275,11 @@ class CompressionTest(unittest.TestCase):
             -1.0 * _COMPRESSION_RATIO_THRESHOLD,
             msg='Actual compession ratio: {}'.format(compression_ratio))
 
-    def assertConfigurationCompressed(
-            self, client_streaming, server_streaming, channel_compression,
-            multicallable_compression, server_compression,
-            server_call_compression):
+    def assertConfigurationCompressed(self, client_streaming, server_streaming,
+                                      channel_compression,
+                                      multicallable_compression,
+                                      server_compression,
+                                      server_call_compression):
         client_side_compressed = channel_compression or multicallable_compression
         server_side_compressed = server_compression or server_call_compression
         channel_kwargs = {
@@ -353,9 +355,10 @@ def _get_compression_test_name(client_streaming, server_streaming,
     server_compression_str = _get_compression_str('Server', server_compression)
     server_call_compression_str = _get_compression_str('ServerCall',
                                                        server_call_compression)
-    return 'test{}{}{}{}{}'.format(
-        arity, channel_compression_str, multicallable_compression_str,
-        server_compression_str, server_call_compression_str)
+    return 'test{}{}{}{}{}'.format(arity, channel_compression_str,
+                                   multicallable_compression_str,
+                                   server_compression_str,
+                                   server_call_compression_str)
 
 
 def _test_options():

@@ -16,11 +16,13 @@
 # This script is invoked by run_tests.py to accommodate "test under docker"
 # scenario. You should never need to call this script on your own.
 
+# shellcheck disable=SC2103
+
 set -ex
 
 cd "$(dirname "$0")/../../.."
 git_root=$(pwd)
-cd - # shellcheck disable=SC2103
+cd -
 
 # Inputs
 # DOCKERFILE_DIR - Directory in which Dockerfile file is located.
@@ -28,7 +30,7 @@ cd - # shellcheck disable=SC2103
 # DOCKERHUB_ORGANIZATION - If set, pull a prebuilt image from given dockerhub org.
 
 # Use image name based on Dockerfile location checksum
-DOCKER_IMAGE_NAME=$(basename "$DOCKERFILE_DIR")_$(sha1sum "$DOCKERFILE_DIR/Dockerfile" | cut -f1 -d\ )
+DOCKER_IMAGE_NAME=$(basename "$DOCKERFILE_DIR"):$(sha1sum "$DOCKERFILE_DIR/Dockerfile" | cut -f1 -d\ )
 
 if [ "$DOCKERHUB_ORGANIZATION" != "" ]
 then
@@ -79,7 +81,13 @@ docker run \
 # run_tests.py runs 
 TEMP_REPORTS_ZIP=$(mktemp)
 docker cp "$CONTAINER_NAME:/var/local/git/grpc/reports.zip" "${TEMP_REPORTS_ZIP}" || true
-unzip -o "${TEMP_REPORTS_ZIP}" -d "$git_root" || true
+if [ "${GRPC_TEST_REPORT_BASE_DIR}" != "" ]
+then
+  REPORTS_DEST_DIR="${GRPC_TEST_REPORT_BASE_DIR}"
+else
+  REPORTS_DEST_DIR="${git_root}"
+fi
+unzip -o "${TEMP_REPORTS_ZIP}" -d "${REPORTS_DEST_DIR}" || true
 rm -f "${TEMP_REPORTS_ZIP}"
 
 # remove the container, possibly killing it first

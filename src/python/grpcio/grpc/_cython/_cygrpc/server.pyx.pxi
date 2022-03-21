@@ -12,18 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cimport cpython
-
-import logging
-import time
-import grpc
-
-_LOGGER = logging.getLogger(__name__)
-
 
 cdef class Server:
 
-  def __cinit__(self, object arguments):
+  def __cinit__(self, object arguments, bint xds):
     fork_handlers_and_grpc_init()
     self.references = []
     self.registered_completion_queues = []
@@ -33,6 +25,12 @@ cdef class Server:
     self.c_server = NULL
     cdef _ChannelArgs channel_args = _ChannelArgs(arguments)
     self.c_server = grpc_server_create(channel_args.c_args(), NULL)
+    cdef grpc_server_xds_status_notifier notifier
+    notifier.on_serving_status_update = NULL
+    notifier.user_data = NULL
+    if xds:
+      grpc_server_set_config_fetcher(self.c_server,
+        grpc_server_config_fetcher_xds_create(notifier, channel_args.c_args()))
     self.references.append(arguments)
 
   def request_call(
@@ -126,7 +124,7 @@ cdef class Server:
 
   def cancel_all_calls(self):
     if not self.is_shutting_down:
-      raise RuntimeError("the server must be shutting down to cancel all calls")
+      raise UsageError("the server must be shutting down to cancel all calls")
     elif self.is_shutdown:
       return
     else:
@@ -144,7 +142,7 @@ cdef class Server:
         pass
       elif not self.is_shutting_down:
         if self.backup_shutdown_queue is None:
-          raise RuntimeError('Server shutdown failed: no completion queue.')
+          raise InternalError('Server shutdown failed: no completion queue.')
         else:
           # the user didn't call shutdown - use our backup queue
           self._c_shutdown(self.backup_shutdown_queue, None)
@@ -156,9 +154,10 @@ cdef class Server:
         # much but repeatedly release the GIL and wait
         while not self.is_shutdown:
           time.sleep(0)
-      grpc_server_destroy(self.c_server)
-      self.c_server = NULL
+      with nogil:
+        grpc_server_destroy(self.c_server)
+        self.c_server = NULL
 
   def __dealloc__(self):
     if self.c_server == NULL:
-      grpc_shutdown_blocking()
+      grpc_shutdown()

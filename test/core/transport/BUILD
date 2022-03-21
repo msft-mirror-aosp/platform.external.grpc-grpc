@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 grpc_package(name = "test/core/transport")
 
@@ -52,6 +52,48 @@ grpc_cc_test(
 grpc_cc_test(
     name = "connectivity_state_test",
     srcs = ["connectivity_state_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "error_utils_test",
+    srcs = ["error_utils_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "metadata_map_test",
+    srcs = ["metadata_map_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "parsed_metadata_test",
+    srcs = ["parsed_metadata_test.cc"],
     external_deps = [
         "gtest",
     ],
@@ -115,38 +157,12 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "stream_owned_slice_test",
-    srcs = ["stream_owned_slice_test.cc"],
-    language = "C++",
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "timeout_encoding_test",
     srcs = ["timeout_encoding_test.cc"],
     language = "C++",
     uses_polling = False,
     deps = [
         "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "status_metadata_test",
-    srcs = ["status_metadata_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_polling = False,
-    deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],

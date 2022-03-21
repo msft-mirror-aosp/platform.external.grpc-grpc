@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 set -e
 
 export TEST=true
@@ -24,22 +23,24 @@ cd "$(dirname "$0")/../../.."
 submodules=$(mktemp /tmp/submXXXXXX)
 want_submodules=$(mktemp /tmp/submXXXXXX)
 
-git submodule | awk '{ print $1 }' | sort > "$submodules"
-cat << EOF | awk '{ print $1 }' | sort > "$want_submodules"
- 0514227d2547793b23e209809276375e41c76617 third_party/abseil-cpp (heads/master)
- 090faecb454fbd6e6e17a75ef8146acb037118d4 third_party/benchmark (v1.5.0)
- 73594cde8c9a52a102c4341c244c833aa61b9c06 third_party/bloaty (remotes/origin/wide-14-g73594cd)
- 7f02881e96e51f1873afcf384d02f782b48967ca third_party/boringssl (remotes/origin/HEAD)
- 83da28a68f32023fd3b95a8ae94991a07b1f6c62 third_party/boringssl-with-bazel (remotes/origin/master-with-bazel)
- e982924acee7f7313b4baa4ee5ec000c5e373c30 third_party/cares/cares (cares-1_15_0)
- c83ed7ea9eb5fb3b93d1ad52b59750f1958b8bde third_party/envoy-api (heads/master)
- 28f50e0fed19872e0fd50dd23ce2ee8cd759338e third_party/gflags (v2.2.0-5-g30dbc81)
- 80ed4d0bbf65d57cc267dfc63bd2584557f11f9b third_party/googleapis (common-protos-1_3_1-915-g80ed4d0bb)
- c9ccac7cb7345901884aabf5d1a786cfa6e2f397 third_party/googletest (6e2f397)
- 09745575a923640154bcf307fba8aedff47f240a third_party/protobuf (v3.7.0-rc.2-247-g09745575)
- e143189bf6f37b3957fb31743df6a1bcf4a8c685 third_party/protoc-gen-validate (v0.0.10)
- 94324803a497c8f76dbc78df393ef629d3a9f3c3 third_party/udpa (heads/master)
- cacf7f1d4e3d44d871b605da3b647f07d718623f third_party/zlib (v1.2.11)
+git submodule | awk '{ print $2 " " $1 }' | sort >"$submodules"
+cat <<EOF | sort >"$want_submodules"
+third_party/abseil-cpp 215105818dfde3174fe799600bb0f3cae233d0bf
+third_party/benchmark 0baacde3618ca617da95375e0af13ce1baadea47
+third_party/bloaty 60209eb1ccc34d5deefb002d1b7f37545204f7f2
+third_party/boringssl-with-bazel 4fb158925f7753d80fb858cb0239dff893ef9f15
+third_party/cares/cares e982924acee7f7313b4baa4ee5ec000c5e373c30
+third_party/envoy-api 20b1b5fcee88a20a08b71051a961181839ec7268
+third_party/googleapis 2f9af297c84c55c8b871ba4495e01ade42476c92
+third_party/googletest c9ccac7cb7345901884aabf5d1a786cfa6e2f397
+third_party/libuv 02a9e1be252b623ee032a3137c0b0c94afbe6809
+third_party/opencensus-proto 4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89
+third_party/opentelemetry 60fa8754d890b5c55949a8c68dcfd7ab5c2395df
+third_party/protobuf 0dab03ba7bc438d7ba3eac2b2c1eb39ed520f928
+third_party/protoc-gen-validate 59da36e59fef2267fc2b1849a05159e3ecdf24f3
+third_party/re2 8e08f47b11b413302749c0d8b17a1c94777495d5
+third_party/xds cb28da3451f158a947dfc45090fe92b07b243bc1
+third_party/zlib cacf7f1d4e3d44d871b605da3b647f07d718623f
 EOF
 
 diff -u "$submodules" "$want_submodules"

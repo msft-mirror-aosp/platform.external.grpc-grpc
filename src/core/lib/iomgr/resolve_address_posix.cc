@@ -21,10 +21,6 @@
 #include "src/core/lib/iomgr/port.h"
 #ifdef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
 
-#include "src/core/lib/iomgr/sockaddr.h"
-
-#include "src/core/lib/iomgr/resolve_address.h"
-
 #include <string.h>
 #include <sys/types.h>
 
@@ -40,9 +36,11 @@
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
-static grpc_error* posix_blocking_resolve_address(
+static grpc_error_handle posix_blocking_resolve_address(
     const char* name, const char* default_port,
     grpc_resolved_addresses** addresses) {
   grpc_core::ExecCtx exec_ctx;
@@ -50,31 +48,27 @@ static grpc_error* posix_blocking_resolve_address(
   struct addrinfo *result = nullptr, *resp;
   int s;
   size_t i;
-  grpc_error* err;
+  grpc_error_handle err;
 
-  if (name[0] == 'u' && name[1] == 'n' && name[2] == 'i' && name[3] == 'x' &&
-      name[4] == ':' && name[5] != 0) {
-    return grpc_resolve_unix_domain_address(name + 5, addresses);
-  }
-
-  grpc_core::UniquePtr<char> host;
-  grpc_core::UniquePtr<char> port;
+  std::string host;
+  std::string port;
   /* parse name, splitting it into host and port parts */
   grpc_core::SplitHostPort(name, &host, &port);
-  if (host == nullptr) {
+  if (host.empty()) {
     err = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+        GRPC_ERROR_STR_TARGET_ADDRESS, name);
     goto done;
   }
-  if (port == nullptr) {
+
+  if (port.empty()) {
     if (default_port == nullptr) {
       err = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
-          GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+          GRPC_ERROR_STR_TARGET_ADDRESS, name);
       goto done;
     }
-    port.reset(gpr_strdup(default_port));
+    port = default_port;
   }
 
   /* Call getaddrinfo */
@@ -84,16 +78,16 @@ static grpc_error* posix_blocking_resolve_address(
   hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
-  s = getaddrinfo(host.get(), port.get(), &hints, &result);
+  s = getaddrinfo(host.c_str(), port.c_str(), &hints, &result);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
 
   if (s != 0) {
     /* Retry if well-known service name is recognized */
     const char* svc[][2] = {{"http", "80"}, {"https", "443"}};
     for (i = 0; i < GPR_ARRAY_SIZE(svc); i++) {
-      if (strcmp(port.get(), svc[i][0]) == 0) {
+      if (port == svc[i][0]) {
         GRPC_SCHEDULING_START_BLOCKING_REGION;
-        s = getaddrinfo(host.get(), svc[i][1], &hints, &result);
+        s = getaddrinfo(host.c_str(), svc[i][1], &hints, &result);
         GRPC_SCHEDULING_END_BLOCKING_REGION;
         break;
       }
@@ -107,11 +101,9 @@ static grpc_error* posix_blocking_resolve_address(
                 grpc_error_set_int(
                     GRPC_ERROR_CREATE_FROM_STATIC_STRING(gai_strerror(s)),
                     GRPC_ERROR_INT_ERRNO, s),
-                GRPC_ERROR_STR_OS_ERROR,
-                grpc_slice_from_static_string(gai_strerror(s))),
-            GRPC_ERROR_STR_SYSCALL,
-            grpc_slice_from_static_string("getaddrinfo")),
-        GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+                GRPC_ERROR_STR_OS_ERROR, gai_strerror(s)),
+            GRPC_ERROR_STR_SYSCALL, "getaddrinfo"),
+        GRPC_ERROR_STR_TARGET_ADDRESS, name);
     goto done;
   }
 
@@ -139,18 +131,17 @@ done:
   return err;
 }
 
-typedef struct {
+struct request {
   char* name;
   char* default_port;
   grpc_closure* on_done;
   grpc_resolved_addresses** addrs_out;
   grpc_closure request_closure;
   void* arg;
-} request;
-
+};
 /* Callback to be passed to grpc Executor to asynch-ify
  * grpc_blocking_resolve_address */
-static void do_request_thread(void* rp, grpc_error* /*error*/) {
+static void do_request_thread(void* rp, grpc_error_handle /*error*/) {
   request* r = static_cast<request*>(rp);
   grpc_core::ExecCtx::Run(
       DEBUG_LOCATION, r->on_done,

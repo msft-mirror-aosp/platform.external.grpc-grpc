@@ -14,9 +14,9 @@
 """Common code used throughout tests of gRPC."""
 
 import collections
+from concurrent import futures
 import threading
 
-from concurrent import futures
 import grpc
 import six
 
@@ -105,9 +105,8 @@ def test_server(max_workers=10, reuse_port=False):
 
      These servers have SO_REUSEPORT disabled to prevent cross-talk.
      """
-    return grpc.server(
-        futures.ThreadPoolExecutor(max_workers=max_workers),
-        options=(('grpc.so_reuseport', int(reuse_port)),))
+    return grpc.server(futures.ThreadPoolExecutor(max_workers=max_workers),
+                       options=(('grpc.so_reuseport', int(reuse_port)),))
 
 
 class WaitGroup(object):
@@ -133,3 +132,14 @@ class WaitGroup(object):
         while self.count > 0:
             self.cv.wait()
         self.cv.release()
+
+
+def running_under_gevent():
+    try:
+        from gevent import monkey
+        import gevent.socket
+    except ImportError:
+        return False
+    else:
+        import socket
+        return socket.socket is gevent.socket.socket

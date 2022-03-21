@@ -17,26 +17,26 @@ from concurrent import futures
 import logging
 import threading
 
+from google.protobuf import any_pb2
+from google.rpc import code_pb2
+from google.rpc import error_details_pb2
+from google.rpc import status_pb2
 import grpc
 from grpc_status import rpc_status
 
-from google.protobuf import any_pb2
-from google.rpc import code_pb2, status_pb2, error_details_pb2
-
-from examples import helloworld_pb2
-from examples import helloworld_pb2_grpc
+from examples.protos import helloworld_pb2
+from examples.protos import helloworld_pb2_grpc
 
 
 def create_greet_limit_exceed_error_status(name):
     detail = any_pb2.Any()
     detail.Pack(
-        error_details_pb2.QuotaFailure(
-            violations=[
-                error_details_pb2.QuotaFailure.Violation(
-                    subject="name: %s" % name,
-                    description="Limit one greeting per person",
-                )
-            ],))
+        error_details_pb2.QuotaFailure(violations=[
+            error_details_pb2.QuotaFailure.Violation(
+                subject="name: %s" % name,
+                description="Limit one greeting per person",
+            )
+        ],))
     return status_pb2.Status(
         code=code_pb2.RESOURCE_EXHAUSTED,
         message='Request limit exceeded.',

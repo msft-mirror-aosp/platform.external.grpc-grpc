@@ -16,6 +16,8 @@
  *
  */
 
+#include "src/core/lib/compression/stream_compression.h"
+
 #include <string.h>
 
 #include <grpc/grpc.h>
@@ -23,7 +25,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/compression/stream_compression.h"
+#include "test/core/util/test_config.h"
 
 static void generate_random_payload(char* payload, size_t size) {
   size_t i;
@@ -287,7 +289,8 @@ static void test_stream_compression_sync_flush() {
   grpc_slice_buffer_destroy(&sink);
 }
 
-int main(int /*argc*/, char** /*argv*/) {
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_stream_compression_simple_compress_decompress();
   test_stream_compression_simple_compress_decompress_with_output_size_constraint();
@@ -295,6 +298,5 @@ int main(int /*argc*/, char** /*argv*/) {
   test_stream_compression_sync_flush();
   test_stream_compression_drop_context();
   grpc_shutdown();
-
   return 0;
 }

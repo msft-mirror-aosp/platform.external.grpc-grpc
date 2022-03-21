@@ -5,17 +5,12 @@ Package for gRPC Python tools.
 
 Supported Python Versions
 -------------------------
-Python >= 3.5
-
-Deprecated Python Versions
---------------------------
-Python == 2.7. Python 2.7 support will be removed on January 1, 2020.
+Python >= 3.6
 
 Installation
 ------------
 
-The gRPC Python tools package is available for Linux, Mac OS X, and Windows
-running Python 2.7.
+The gRPC Python tools package is available for Linux, Mac OS X, and Windows.
 
 Installing From PyPI
 ~~~~~~~~~~~~~~~~~~~~
@@ -61,7 +56,7 @@ GCC-like stuff, but you may end up having a bad time.
 ::
 
   $ export REPO_ROOT=grpc  # REPO_ROOT can be any directory of your choice
-  $ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc $REPO_ROOT
+  $ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc $REPO_ROOT
   $ cd $REPO_ROOT
   $ git submodule update --init
 

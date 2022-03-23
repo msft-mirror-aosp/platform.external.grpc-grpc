@@ -52,6 +52,9 @@ cc_defaults {
         "//apex_available:platform",
         "com.android.bluetooth",
     ],
+    shared_libs: [
+        "libz",
+    ],
     stl: "libc++",
     min_sdk_version: "30"
 }
@@ -963,7 +966,6 @@ cc_library_static {
     ],
     whole_static_libs: [
         "libgrpc_trace",
-        "libz",
     ],
     shared_libs: [
         "liblog",

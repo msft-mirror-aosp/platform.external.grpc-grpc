@@ -50,7 +50,7 @@ cc_defaults {
     vendor_available: true,
     apex_available: [
         "//apex_available:platform",
-        "com.android.bluetooth",
+        "com.android.btservices",
     ],
     shared_libs: [
         "libz",

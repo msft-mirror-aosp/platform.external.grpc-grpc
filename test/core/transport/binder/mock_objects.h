@@ -19,6 +19,7 @@
 
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
+#include "src/core/ext/transport/binder/wire_format/binder_constants.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
 
@@ -76,7 +77,13 @@ class MockTransactionReceiver : public TransactionReceiver {
  public:
   explicit MockTransactionReceiver(OnTransactCb transact_cb,
                                    BinderTransportTxCode code,
-                                   ReadableParcel* output) {
+                                   MockReadableParcel* output) {
+    if (code == BinderTransportTxCode::SETUP_TRANSPORT) {
+      EXPECT_CALL(*output, ReadInt32).WillOnce([](int32_t* version) {
+        *version = 1;
+        return absl::OkStatus();
+      });
+    }
     transact_cb(static_cast<transaction_code_t>(code), output, /*uid=*/0)
         .IgnoreError();
   }
@@ -86,7 +93,8 @@ class MockTransactionReceiver : public TransactionReceiver {
 
 class MockWireWriter : public WireWriter {
  public:
-  MOCK_METHOD(absl::Status, RpcCall, (const Transaction&), (override));
+  MOCK_METHOD(absl::Status, RpcCall, (std::unique_ptr<Transaction>),
+              (override));
   MOCK_METHOD(absl::Status, SendAck, (int64_t), (override));
   MOCK_METHOD(void, OnAckReceived, (int64_t), (override));
 };

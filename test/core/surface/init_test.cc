@@ -20,10 +20,13 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/synchronization/notification.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
@@ -137,8 +140,19 @@ TEST(Init, repeatedly_blocking) {
   EXPECT_FALSE(grpc_is_initialized());
 }
 
+TEST(Init, TimerManagerHoldsLastInit) {
+  grpc_init();
+  absl::Notification n;
+  grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
+      std::chrono::seconds(1), [&n] {
+        grpc_shutdown();
+        n.Notify();
+      });
+  n.WaitForNotification();
+}
+
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_register_plugin(plugin_init, plugin_destroy);
   return RUN_ALL_TESTS();

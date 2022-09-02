@@ -16,11 +16,14 @@
 
 #include "src/core/lib/matchers/matchers.h"
 
+#include <utility>
+
 #include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
+#include "absl/status/status.h"
+#include "absl/strings/ascii.h"
+#include "absl/strings/match.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
 
 namespace grpc_core {
 
@@ -291,7 +294,7 @@ bool HeaderMatcher::Match(
     match = value.has_value() == present_match_;
   } else if (!value.has_value()) {
     // All other types fail to match if field is not present.
-    match = false;
+    return false;
   } else if (type_ == Type::kRange) {
     int64_t int_value;
     match = absl::SimpleAtoi(value.value(), &int_value) &&

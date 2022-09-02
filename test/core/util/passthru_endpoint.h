@@ -19,7 +19,12 @@
 #ifndef PASSTHRU_ENDPOINT_H
 #define PASSTHRU_ENDPOINT_H
 
+#include <stdint.h>
+
+#include <vector>
+
 #include <grpc/support/atm.h>
+#include <grpc/support/sync.h>
 
 #include "src/core/lib/iomgr/endpoint.h"
 
@@ -48,7 +53,6 @@ void grpc_passthru_endpoint_stats_destroy(grpc_passthru_endpoint_stats* stats);
 
 void start_scheduling_grpc_passthru_endpoint_channel_effects(
     grpc_endpoint* ep,
-    const std::vector<grpc_passthru_endpoint_channel_action>& actions,
-    std::function<void()> on_complete);
+    const std::vector<grpc_passthru_endpoint_channel_action>& actions);
 
 #endif  // PASSTHRU_ENDPOINT_H

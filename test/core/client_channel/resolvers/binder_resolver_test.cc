@@ -14,6 +14,7 @@
 
 #include <gtest/gtest.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/util/test_config.h"
 
@@ -28,33 +29,50 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resolver/resolver_registry.h"
 
 // Registers the factory with `grpc_core::ResolverRegistry`. Defined in
 // binder_resolver.cc
-void grpc_resolver_binder_init(void);
+namespace grpc_core {
+void RegisterBinderResolver(CoreConfiguration::Builder* builder);
+}
 
 namespace {
 
 class BinderResolverTest : public ::testing::Test {
  public:
   BinderResolverTest() {
-    factory_ = grpc_core::ResolverRegistry::LookupResolverFactory("binder");
+    factory_ = grpc_core::CoreConfiguration::Get()
+                   .resolver_registry()
+                   .LookupResolverFactory("binder");
   }
   ~BinderResolverTest() override {}
   static void SetUpTestSuite() {
+    builder_ =
+        std::make_unique<grpc_core::CoreConfiguration::WithSubstituteBuilder>(
+            [](grpc_core::CoreConfiguration::Builder* builder) {
+              BuildCoreConfiguration(builder);
+              if (!builder->resolver_registry()->HasResolverFactory("binder")) {
+                // Binder resolver will only be registered on platforms that
+                // support binder transport. If it is not registered on current
+                // platform, we manually register it here for testing purpose.
+                RegisterBinderResolver(builder);
+                ASSERT_TRUE(
+                    builder->resolver_registry()->HasResolverFactory("binder"));
+              }
+            });
     grpc_init();
-    if (grpc_core::ResolverRegistry::LookupResolverFactory("binder") ==
-        nullptr) {
-      // Binder resolver will only be registered on platforms that support
-      // binder transport. If it is not registered on current platform, we
-      // manually register it here for testing purpose.
-      grpc_resolver_binder_init();
-      ASSERT_TRUE(grpc_core::ResolverRegistry::LookupResolverFactory("binder"));
+    if (grpc_core::CoreConfiguration::Get()
+            .resolver_registry()
+            .LookupResolverFactory("binder") == nullptr) {
     }
   }
-  static void TearDownTestSuite() { grpc_shutdown(); }
+  static void TearDownTestSuite() {
+    grpc_shutdown();
+    builder_.reset();
+  }
 
   void SetUp() override { ASSERT_TRUE(factory_); }
 
@@ -65,10 +83,11 @@ class BinderResolverTest : public ::testing::Test {
     explicit ResultHandler(const std::string& expected_binder_id)
         : expect_result_(true), expected_binder_id_(expected_binder_id) {}
 
-    void ReturnResult(grpc_core::Resolver::Result result) override {
+    void ReportResult(grpc_core::Resolver::Result result) override {
       EXPECT_TRUE(expect_result_);
-      ASSERT_TRUE(result.addresses.size() == 1);
-      grpc_core::ServerAddress addr = result.addresses[0];
+      ASSERT_TRUE(result.addresses.ok());
+      ASSERT_EQ(result.addresses->size(), 1);
+      grpc_core::ServerAddress addr = (*result.addresses)[0];
       const struct sockaddr_un* un =
           reinterpret_cast<const struct sockaddr_un*>(addr.address().addr);
       EXPECT_EQ(addr.address().len,
@@ -77,12 +96,8 @@ class BinderResolverTest : public ::testing::Test {
       EXPECT_EQ(un->sun_path, expected_binder_id_);
     }
 
-    void ReturnError(grpc_error_handle error) override {
-      GRPC_ERROR_UNREF(error);
-    }
-
    private:
-    // Whether we expect ReturnResult function to be invoked
+    // Whether we expect ReportResult function to be invoked
     bool expect_result_ = false;
 
     std::string expected_binder_id_;
@@ -90,7 +105,7 @@ class BinderResolverTest : public ::testing::Test {
 
   void TestSucceeds(const char* string, const std::string& expected_path) {
     gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
-            factory_->scheme());
+            std::string(factory_->scheme()).c_str());
     grpc_core::ExecCtx exec_ctx;
     absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
     ASSERT_TRUE(uri.ok()) << uri.status().ToString();
@@ -106,7 +121,7 @@ class BinderResolverTest : public ::testing::Test {
 
   void TestFails(const char* string) {
     gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
-            factory_->scheme());
+            std::string(factory_->scheme()).c_str());
     grpc_core::ExecCtx exec_ctx;
     absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
     ASSERT_TRUE(uri.ok()) << uri.status().ToString();
@@ -121,7 +136,12 @@ class BinderResolverTest : public ::testing::Test {
 
  private:
   grpc_core::ResolverFactory* factory_;
+  static std::unique_ptr<grpc_core::CoreConfiguration::WithSubstituteBuilder>
+      builder_;
 };
+
+std::unique_ptr<grpc_core::CoreConfiguration::WithSubstituteBuilder>
+    BinderResolverTest::builder_;
 
 }  // namespace
 
@@ -177,6 +197,6 @@ TEST_F(BinderResolverTest, ValidCases) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -17,7 +17,7 @@
  */
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 #if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 
 #include <string.h>
@@ -41,7 +41,6 @@
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 /* TODO(apolcyn): remove this hack after fixing upstream.
@@ -100,10 +99,9 @@ class GrpcPolledFdWindows {
     WRITE_WAITING_FOR_VERIFICATION_UPON_RETRY,
   };
 
-  GrpcPolledFdWindows(ares_socket_t as,
-                      std::shared_ptr<WorkSerializer> work_serializer,
-                      int address_family, int socket_type)
-      : work_serializer_(std::move(work_serializer)),
+  GrpcPolledFdWindows(ares_socket_t as, Mutex* mu, int address_family,
+                      int socket_type)
+      : mu_(mu),
         read_buf_(grpc_empty_slice()),
         write_buf_(grpc_empty_slice()),
         tcp_write_state_(WRITE_IDLE),
@@ -260,7 +258,7 @@ class GrpcPolledFdWindows {
     return grpc_winsocket_wrapped_socket(winsocket_);
   }
 
-  const char* GetName() { return name_.c_str(); }
+  const char* GetName() const { return name_.c_str(); }
 
   ares_ssize_t RecvFrom(WSAErrorContext* wsa_error_ctx, void* data,
                         ares_socket_t data_len, int flags,
@@ -422,12 +420,8 @@ class GrpcPolledFdWindows {
   static void OnTcpConnect(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* grpc_polled_fd =
         static_cast<GrpcPolledFdWindows*>(arg);
-    (void)GRPC_ERROR_REF(error);  // ref owned by lambda
-    grpc_polled_fd->work_serializer_->Run(
-        [grpc_polled_fd, error]() {
-          grpc_polled_fd->OnTcpConnectLocked(error);
-        },
-        DEBUG_LOCATION);
+    MutexLock lock(grpc_polled_fd->mu_);
+    grpc_polled_fd->OnTcpConnectLocked(error);
   }
 
   void OnTcpConnectLocked(grpc_error_handle error) {
@@ -441,7 +435,7 @@ class GrpcPolledFdWindows {
     GPR_ASSERT(!connect_done_);
     connect_done_ = true;
     GPR_ASSERT(wsa_connect_error_ == 0);
-    if (error == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(error)) {
       DWORD transferred_bytes = 0;
       DWORD flags;
       BOOL wsa_success =
@@ -469,7 +463,6 @@ class GrpcPolledFdWindows {
     if (pending_continue_register_for_on_writeable_locked_) {
       ContinueRegisterForOnWriteableLocked();
     }
-    GRPC_ERROR_UNREF(error);
   }
 
   int Connect(WSAErrorContext* wsa_error_ctx, const struct sockaddr* target,
@@ -575,10 +568,9 @@ class GrpcPolledFdWindows {
 
   static void OnIocpReadable(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
-    (void)GRPC_ERROR_REF(error);  // ref owned by lambda
-    polled_fd->work_serializer_->Run(
-        [polled_fd, error]() { polled_fd->OnIocpReadableLocked(error); },
-        DEBUG_LOCATION);
+    (void)GRPC_ERROR_REF(error);
+    MutexLock lock(polled_fd->mu_);
+    polled_fd->OnIocpReadableLocked(error);
   }
 
   // TODO(apolcyn): improve this error handling to be less conversative.
@@ -587,7 +579,7 @@ class GrpcPolledFdWindows {
   // the entire resolution attempt. Doing so will allow the "inject broken
   // nameserver list" test to pass on Windows.
   void OnIocpReadableLocked(grpc_error_handle error) {
-    if (error == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(error)) {
       if (winsocket_->read_info.wsa_error != 0) {
         /* WSAEMSGSIZE would be due to receiving more data
          * than our read buffer's fixed capacity. Assume that
@@ -604,7 +596,7 @@ class GrpcPolledFdWindows {
         }
       }
     }
-    if (error == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(error)) {
       read_buf_ = grpc_slice_sub_no_ref(
           read_buf_, 0, winsocket_->read_info.bytes_transferred);
       read_buf_has_data_ = true;
@@ -620,16 +612,15 @@ class GrpcPolledFdWindows {
 
   static void OnIocpWriteable(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
-    (void)GRPC_ERROR_REF(error);  // error owned by lambda
-    polled_fd->work_serializer_->Run(
-        [polled_fd, error]() { polled_fd->OnIocpWriteableLocked(error); },
-        DEBUG_LOCATION);
+    (void)GRPC_ERROR_REF(error);
+    MutexLock lock(polled_fd->mu_);
+    polled_fd->OnIocpWriteableLocked(error);
   }
 
   void OnIocpWriteableLocked(grpc_error_handle error) {
     GRPC_CARES_TRACE_LOG("OnIocpWriteableInner. fd:|%s|", GetName());
     GPR_ASSERT(socket_type_ == SOCK_STREAM);
-    if (error == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(error)) {
       if (winsocket_->write_info.wsa_error != 0) {
         error = GRPC_WSA_ERROR(winsocket_->write_info.wsa_error,
                                "OnIocpWriteableInner");
@@ -641,7 +632,7 @@ class GrpcPolledFdWindows {
       }
     }
     GPR_ASSERT(tcp_write_state_ == WRITE_PENDING);
-    if (error == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(error)) {
       tcp_write_state_ = WRITE_WAITING_FOR_VERIFICATION_UPON_RETRY;
       write_buf_ = grpc_slice_sub_no_ref(
           write_buf_, 0, winsocket_->write_info.bytes_transferred);
@@ -658,7 +649,7 @@ class GrpcPolledFdWindows {
   void set_gotten_into_driver_list() { gotten_into_driver_list_ = true; }
 
  private:
-  std::shared_ptr<WorkSerializer> work_serializer_;
+  Mutex* mu_;
   char recv_from_source_addr_[200];
   ares_socklen_t recv_from_source_addr_len_;
   grpc_slice read_buf_;
@@ -671,7 +662,7 @@ class GrpcPolledFdWindows {
   grpc_winsocket* winsocket_;
   // tcp_write_state_ is only used on TCP GrpcPolledFds
   WriteState tcp_write_state_;
-  std::string name_;
+  const std::string name_;
   bool gotten_into_driver_list_;
   int address_family_;
   int socket_type_;
@@ -700,8 +691,7 @@ struct SockToPolledFdEntry {
  * with a GrpcPolledFdWindows factory and event driver */
 class SockToPolledFdMap {
  public:
-  explicit SockToPolledFdMap(std::shared_ptr<WorkSerializer> work_serializer)
-      : work_serializer_(std::move(work_serializer)) {}
+  explicit SockToPolledFdMap(Mutex* mu) : mu_(mu) {}
 
   ~SockToPolledFdMap() { GPR_ASSERT(head_ == nullptr); }
 
@@ -759,7 +749,7 @@ class SockToPolledFdMap {
     }
     grpc_tcp_set_non_block(s);
     GrpcPolledFdWindows* polled_fd =
-        new GrpcPolledFdWindows(s, map->work_serializer_, af, type);
+        new GrpcPolledFdWindows(s, map->mu_, af, type);
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| created with params af:%d type:%d protocol:%d",
         polled_fd->GetName(), af, type, protocol);
@@ -814,8 +804,8 @@ class SockToPolledFdMap {
   }
 
  private:
+  Mutex* mu_;
   SockToPolledFdEntry* head_ = nullptr;
-  std::shared_ptr<WorkSerializer> work_serializer_;
 };
 
 const struct ares_socket_functions custom_ares_sock_funcs = {
@@ -856,21 +846,18 @@ class GrpcPolledFdWindowsWrapper : public GrpcPolledFd {
     return wrapped_->GetWrappedAresSocketLocked();
   }
 
-  const char* GetName() override { return wrapped_->GetName(); }
+  const char* GetName() const override { return wrapped_->GetName(); }
 
  private:
-  GrpcPolledFdWindows* wrapped_;
+  GrpcPolledFdWindows* const wrapped_;
 };
 
 class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
  public:
-  explicit GrpcPolledFdFactoryWindows(
-      std::shared_ptr<WorkSerializer> work_serializer)
-      : sock_to_polled_fd_map_(std::move(work_serializer)) {}
+  explicit GrpcPolledFdFactoryWindows(Mutex* mu) : sock_to_polled_fd_map_(mu) {}
 
   GrpcPolledFd* NewGrpcPolledFdLocked(
-      ares_socket_t as, grpc_pollset_set* driver_pollset_set,
-      std::shared_ptr<WorkSerializer> work_serializer) override {
+      ares_socket_t as, grpc_pollset_set* driver_pollset_set) override {
     GrpcPolledFdWindows* polled_fd = sock_to_polled_fd_map_.LookupPolledFd(as);
     // Set a flag so that the virtual socket "close" method knows it
     // doesn't need to call ShutdownLocked, since now the driver will.
@@ -887,10 +874,8 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   SockToPolledFdMap sock_to_polled_fd_map_;
 };
 
-std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-    std::shared_ptr<WorkSerializer> work_serializer) {
-  return absl::make_unique<GrpcPolledFdFactoryWindows>(
-      std::move(work_serializer));
+std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Mutex* mu) {
+  return absl::make_unique<GrpcPolledFdFactoryWindows>(mu);
 }
 
 }  // namespace grpc_core

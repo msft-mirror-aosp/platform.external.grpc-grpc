@@ -21,25 +21,23 @@
 #include "src/core/lib/address_utils/parse_address.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #include <sys/un.h>
 #endif
-#ifdef GRPC_POSIX_SOCKET
-#include <errno.h>
-#include <net/if.h>
-#endif
+#include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 
@@ -54,7 +52,7 @@ bool grpc_parse_unix(const grpc_core::URI& uri,
   }
   grpc_error_handle error =
       grpc_core::UnixSockaddrPopulate(uri.path(), resolved_addr);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "%s", grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
     return false;
@@ -71,7 +69,7 @@ bool grpc_parse_unix_abstract(const grpc_core::URI& uri,
   }
   grpc_error_handle error =
       grpc_core::UnixAbstractSockaddrPopulate(uri.path(), resolved_addr);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "%s", grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
     return false;
@@ -318,3 +316,24 @@ uint16_t grpc_strhtons(const char* port) {
   }
   return htons(static_cast<unsigned short>(atoi(port)));
 }
+
+namespace grpc_core {
+
+absl::StatusOr<grpc_resolved_address> StringToSockaddr(
+    absl::string_view address_and_port) {
+  grpc_resolved_address out;
+  memset(&out, 0, sizeof(grpc_resolved_address));
+  if (!grpc_parse_ipv4_hostport(address_and_port, &out, /*log_errors=*/false) &&
+      !grpc_parse_ipv6_hostport(address_and_port, &out, /*log_errors=*/false)) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Failed to parse address:", address_and_port));
+  }
+  return out;
+}
+
+absl::StatusOr<grpc_resolved_address> StringToSockaddr(
+    absl::string_view address, int port) {
+  return StringToSockaddr(JoinHostPort(address, port));
+}
+
+}  // namespace grpc_core

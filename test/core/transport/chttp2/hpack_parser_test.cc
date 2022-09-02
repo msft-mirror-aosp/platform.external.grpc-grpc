@@ -18,15 +18,28 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 
-#include <gtest/gtest.h>
+#include <stdlib.h>
 
+#include <memory>
+#include <string>
+
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
+
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/slice/slice.h"
 #include "test/core/util/parse_hexstring.h"
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
@@ -93,7 +106,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     for (i = 0; i < nslices; i++) {
       grpc_core::ExecCtx exec_ctx;
       auto err = parser_->Parse(slices[i], i == nslices - 1);
-      if (err != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(err)) {
         gpr_log(GPR_ERROR, "Unexpected parse error: %s",
                 grpc_error_std_string(err).c_str());
         abort();
@@ -115,15 +128,15 @@ class ParseTest : public ::testing::TestWithParam<Test> {
    public:
     std::string result() { return out_; }
 
-    void Encode(grpc_mdelem elem) {
-      out_.append(absl::StrCat(
-          grpc_core::StringViewFromSlice(GRPC_MDKEY(elem)), ": ",
-          grpc_core::StringViewFromSlice(GRPC_MDVALUE(elem)), "\n"));
+    void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
+      out_.append(absl::StrCat(key.as_string_view(), ": ",
+                               value.as_string_view(), "\n"));
     }
 
     template <typename T, typename V>
-    void Encode(T, const V&) {
-      abort();  // not implemented
+    void Encode(T, const V& v) {
+      out_.append(
+          absl::StrCat(T::key(), ": ", T::Encode(v).as_string_view(), "\n"));
     }
 
    private:
@@ -169,24 +182,24 @@ INSTANTIATE_TEST_SUITE_P(
                  /* D.3.1 */
                  {"8286 8441 0f77 7777 2e65 7861 6d70 6c65"
                   "2e63 6f6d",
-                  ":method: GET\n"
-                  ":scheme: http\n"
-                  ":path: /\n"
-                  ":authority: www.example.com\n"},
-                 /* D.3.2 */
-                 {"8286 84be 5808 6e6f 2d63 6163 6865",
-                  ":method: GET\n"
-                  ":scheme: http\n"
                   ":path: /\n"
                   ":authority: www.example.com\n"
+                  ":method: GET\n"
+                  ":scheme: http\n"},
+                 /* D.3.2 */
+                 {"8286 84be 5808 6e6f 2d63 6163 6865",
+                  ":path: /\n"
+                  ":authority: www.example.com\n"
+                  ":method: GET\n"
+                  ":scheme: http\n"
                   "cache-control: no-cache\n"},
                  /* D.3.3 */
                  {"8287 85bf 400a 6375 7374 6f6d 2d6b 6579"
                   "0c63 7573 746f 6d2d 7661 6c75 65",
-                  ":method: GET\n"
-                  ":scheme: https\n"
                   ":path: /index.html\n"
                   ":authority: www.example.com\n"
+                  ":method: GET\n"
+                  ":scheme: https\n"
                   "custom-key: custom-value\n"},
              }},
         Test{{},
@@ -194,24 +207,24 @@ INSTANTIATE_TEST_SUITE_P(
                  /* D.4.1 */
                  {"8286 8441 8cf1 e3c2 e5f2 3a6b a0ab 90f4"
                   "ff",
-                  ":method: GET\n"
-                  ":scheme: http\n"
-                  ":path: /\n"
-                  ":authority: www.example.com\n"},
-                 /* D.4.2 */
-                 {"8286 84be 5886 a8eb 1064 9cbf",
-                  ":method: GET\n"
-                  ":scheme: http\n"
                   ":path: /\n"
                   ":authority: www.example.com\n"
+                  ":method: GET\n"
+                  ":scheme: http\n"},
+                 /* D.4.2 */
+                 {"8286 84be 5886 a8eb 1064 9cbf",
+                  ":path: /\n"
+                  ":authority: www.example.com\n"
+                  ":method: GET\n"
+                  ":scheme: http\n"
                   "cache-control: no-cache\n"},
                  /* D.4.3 */
                  {"8287 85bf 4088 25a8 49e9 5ba9 7d7f 8925"
                   "a849 e95b b8e8 b4bf",
-                  ":method: GET\n"
-                  ":scheme: https\n"
                   ":path: /index.html\n"
                   ":authority: www.example.com\n"
+                  ":method: GET\n"
+                  ":scheme: https\n"
                   "custom-key: custom-value\n"},
              }},
         Test{{256},
@@ -291,7 +304,7 @@ INSTANTIATE_TEST_SUITE_P(
              }}));
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

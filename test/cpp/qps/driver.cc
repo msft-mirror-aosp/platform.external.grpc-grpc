@@ -25,6 +25,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "google/protobuf/timestamp.pb.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -34,7 +36,6 @@
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/worker_service.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -400,7 +401,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
       char args_buf[100];
       strcpy(args_buf, "some-benchmark");
       char* args[] = {args_buf};
-      grpc_test_init(1, args);
+      int argc = 1;
+      grpc_test_init(&argc, args);
       called_init = true;
     }
 
@@ -483,6 +485,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     // overriding the qps server target only makes since if there is <= 1
     // servers
     GPR_ASSERT(num_servers <= 1);
+    client_config.clear_server_targets();
     client_config.add_server_targets(qps_server_target_override);
   }
   client_config.set_median_latency_collection_interval_millis(
@@ -572,6 +575,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
   // Start a run
   gpr_log(GPR_INFO, "Starting");
+
+  auto start_time = time(nullptr);
+
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     if (!server->stream->Write(server_mark)) {
@@ -609,8 +615,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
       start,
       gpr_time_from_seconds(warmup_seconds + benchmark_seconds, GPR_TIMESPAN)));
 
-  gpr_timer_set_enabled(0);
-
   // Finish a run
   std::unique_ptr<ScenarioResult> result(new ScenarioResult);
   Histogram merged_latencies;
@@ -622,6 +626,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // the result.
   bool client_finish_first =
       (client_config.rpc_type() != STREAMING_FROM_SERVER);
+
+  auto end_time = time(nullptr);
 
   FinishClients(clients, client_mark);
 
@@ -649,6 +655,11 @@ std::unique_ptr<ScenarioResult> RunScenario(
     rrc->set_status_code(it->first);
     rrc->set_count(it->second);
   }
+
+  // Fill in start and end time for the test scenario
+  result->mutable_summary()->mutable_start_time()->set_seconds(start_time);
+  result->mutable_summary()->mutable_end_time()->set_seconds(end_time);
+
   postprocess_scenario_result(result.get());
   return result;
 }

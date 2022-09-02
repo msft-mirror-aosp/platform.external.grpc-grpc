@@ -22,16 +22,19 @@
 
 #include <string.h>
 
+#include <algorithm>
+
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 
@@ -235,7 +238,9 @@ void grpc_auth_context::add_property(const char* name, const char* value,
   grpc_auth_property* prop = &properties_.array[properties_.count++];
   prop->name = gpr_strdup(name);
   prop->value = static_cast<char*>(gpr_malloc(value_length + 1));
-  memcpy(prop->value, value, value_length);
+  if (value != nullptr) {
+    memcpy(prop->value, value, value_length);
+  }
   prop->value[value_length] = '\0';
   prop->value_length = value_length;
 }

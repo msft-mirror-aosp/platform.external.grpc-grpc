@@ -147,6 +147,8 @@
   %>
 
   cmake_minimum_required(VERSION 3.5.1)
+  cmake_policy(SET CMP0079 NEW)
+
 
   set(PACKAGE_NAME          "grpc")
   set(PACKAGE_VERSION       "${settings.cpp_version}")
@@ -170,7 +172,7 @@
 
   # Options
   option(gRPC_BUILD_TESTS "Build tests" OFF)
-  option(gRPC_BUILD_CODEGEN "Build codegen" OFF)
+  option(gRPC_BUILD_CODEGEN "Build codegen" ON)
   option(gRPC_BUILD_CSHARP_EXT "Build C# extensions" OFF)
   option(gRPC_BACKWARDS_COMPATIBILITY_MODE "Build libraries that are binary compatible across a larger number of OS and libc versions" OFF)
 
@@ -273,7 +275,7 @@
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> m pthread)
   elseif(_gRPC_PLATFORM_ANDROID)
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> m)
-  elseif(_GRPC_PLATFORM_LINUX)
+  elseif(_gRPC_PLATFORM_LINUX)
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> rt m pthread)
   endif()
 
@@ -333,6 +335,9 @@
     set(GRPC_PROTO_GEN "")
     foreach(FIL <%text>${grpc_SOURCES}</%text>)
       get_filename_component(ABS_FIL <%text>${FIL}</%text> ABSOLUTE)
+      <%text>if(NOT EXISTS "${ABS_FIL}")</%text>
+      <%text>  get_filename_component(ABS_FIL "${grpc_SOURCE_DIR}/${FIL}" ABSOLUTE)</%text>
+      endif()
       get_filename_component(FIL_WE <%text>${FIL}</%text> NAME_WE)
       file(RELATIVE_PATH REL_FIL <%text>${grpc_SOURCE_DIR}</%text> <%text>${ABS_FIL}</%text>)
       get_filename_component(REL_DIR <%text>${REL_FIL}</%text> DIRECTORY)
@@ -367,6 +372,13 @@
     endif()
   endfunction()
 
+  protobuf_generate_grpc_cpp(
+    <%text>SOURCE_DIR ${_gRPC_ROOT}</%text>
+    <%text>INCLUDES ${_gRPC_ROOT}/src//proto/grpc/reflection/v1alpha</%text>
+    SOURCES src/proto/grpc/reflection/v1alpha/reflection.proto
+    <%text>OUTPUT_DIR ${_gRPC_PROTO_GENS_DIR}</%text>
+    GENERATED REFLECTION_GRPC_SRC)
+
   <%
     cmake_libs = []
     for lib in libs:
@@ -379,7 +391,7 @@
   % for lib in cmake_libs:
   %   if lib.build in ["test", "private"]:
   # Not building test ${lib.name}, ${lib.build}
-  %   elif lib.name in ['grpc_csharp_ext', 'grpc_plugin_support', 'grpc++_reflection', 'grpcpp_channelz']:
+  %   elif lib.name in ['grpc_csharp_ext', 'grpc_plugin_support', 'grpcpp_channelz']:
   # Not building ${lib.name}
   %   else:
   ${cc_library(lib)}

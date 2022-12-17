@@ -24,6 +24,8 @@
 
 
 cmake_minimum_required(VERSION 3.5.1)
+cmake_policy(SET CMP0079 NEW)
+
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.50.0-dev")
@@ -47,7 +49,7 @@ set(gRPC_BUILD_MSVC_MP_COUNT 0 CACHE STRING "The maximum number of processes for
 
 # Options
 option(gRPC_BUILD_TESTS "Build tests" OFF)
-option(gRPC_BUILD_CODEGEN "Build codegen" OFF)
+option(gRPC_BUILD_CODEGEN "Build codegen" ON)
 option(gRPC_BUILD_CSHARP_EXT "Build C# extensions" OFF)
 option(gRPC_BACKWARDS_COMPATIBILITY_MODE "Build libraries that are binary compatible across a larger number of OS and libc versions" OFF)
 
@@ -300,6 +302,9 @@ function(protobuf_generate_grpc_cpp)
   set(GRPC_PROTO_GEN "")
   foreach(FIL ${grpc_SOURCES})
     get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
+    if(NOT EXISTS "${ABS_FIL}")
+      get_filename_component(ABS_FIL "${grpc_SOURCE_DIR}/${FIL}" ABSOLUTE)
+    endif()
     get_filename_component(FIL_WE ${FIL} NAME_WE)
     file(RELATIVE_PATH REL_FIL ${grpc_SOURCE_DIR} ${ABS_FIL})
     get_filename_component(REL_DIR ${REL_FIL} DIRECTORY)
@@ -333,6 +338,13 @@ function(protobuf_generate_grpc_cpp)
     set(${grpc_GENERATED} "${GRPC_PROTO_GEN}" PARENT_SCOPE)
   endif()
 endfunction()
+
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  INCLUDES ${_gRPC_ROOT}/src//proto/grpc/reflection/v1alpha
+  SOURCES src/proto/grpc/reflection/v1alpha/reflection.proto
+  OUTPUT_DIR ${_gRPC_PROTO_GENS_DIR}
+  GENERATED REFLECTION_GRPC_SRC)
 
 
 
@@ -1736,7 +1748,47 @@ target_link_libraries(grpc++_error_details PUBLIC
 )
 
 
-# Not building grpc++_reflection
+
+if(gRPC_BUILD_CODEGEN)
+android_add_library(TARGET grpc++_reflection
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC # cmake-format: sortable
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  ${_gRPC_ROOT}/src/cpp/ext/proto_server_reflection.cc
+  ${_gRPC_ROOT}/src/cpp/ext/proto_server_reflection_plugin.cc
+)
+
+
+
+target_include_directories(grpc++_reflection
+  PUBLIC  ${_gRPC_ROOT}/include
+  PRIVATE
+    ${_gRPC_ROOT}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    ${_gRPC_PROTO_GENS_DIR}
+)
+target_link_libraries(grpc++_reflection PUBLIC
+  libprotobuf
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++
+)
+
+endif()
+
 # Not building test grpc++_test, private
 # Not building test grpc++_test_config, private
 # Not building test grpc++_test_util, private

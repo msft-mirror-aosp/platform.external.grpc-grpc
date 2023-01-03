@@ -17,16 +17,15 @@
 #include <grpc/support/port_platform.h>
 
 #include <inttypes.h>
-#include <stddef.h>
 
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -34,6 +33,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
@@ -45,16 +45,17 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
+#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -85,11 +86,19 @@ class PriorityLbConfig : public LoadBalancingPolicy::Config {
   struct PriorityLbChild {
     RefCountedPtr<LoadBalancingPolicy::Config> config;
     bool ignore_reresolution_requests = false;
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json& json, const JsonArgs&,
+                      ValidationErrors* errors);
   };
 
-  PriorityLbConfig(std::map<std::string, PriorityLbChild> children,
-                   std::vector<std::string> priorities)
-      : children_(std::move(children)), priorities_(std::move(priorities)) {}
+  PriorityLbConfig() = default;
+
+  PriorityLbConfig(const PriorityLbConfig&) = delete;
+  PriorityLbConfig& operator=(const PriorityLbConfig&) = delete;
+
+  PriorityLbConfig(PriorityLbConfig&& other) = delete;
+  PriorityLbConfig& operator=(PriorityLbConfig&& other) = delete;
 
   absl::string_view name() const override { return kPriority; }
 
@@ -98,9 +107,13 @@ class PriorityLbConfig : public LoadBalancingPolicy::Config {
   }
   const std::vector<std::string>& priorities() const { return priorities_; }
 
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs&,
+                    ValidationErrors* errors);
+
  private:
-  const std::map<std::string, PriorityLbChild> children_;
-  const std::vector<std::string> priorities_;
+  std::map<std::string, PriorityLbChild> children_;
+  std::vector<std::string> priorities_;
 };
 
 // priority LB policy.
@@ -110,7 +123,7 @@ class PriorityLb : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kPriority; }
 
-  void UpdateLocked(UpdateArgs args) override;
+  absl::Status UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
@@ -126,8 +139,8 @@ class PriorityLb : public LoadBalancingPolicy {
 
     const std::string& name() const { return name_; }
 
-    void UpdateLocked(RefCountedPtr<LoadBalancingPolicy::Config> config,
-                      bool ignore_reresolution_requests);
+    absl::Status UpdateLocked(RefCountedPtr<LoadBalancingPolicy::Config> config,
+                              bool ignore_reresolution_requests);
     void ExitIdleLocked();
     void ResetBackoffLocked();
     void MaybeDeactivateLocked();
@@ -135,7 +148,7 @@ class PriorityLb : public LoadBalancingPolicy {
 
     void Orphan() override;
 
-    std::unique_ptr<SubchannelPicker> GetPicker();
+    RefCountedPtr<SubchannelPicker> GetPicker();
 
     grpc_connectivity_state connectivity_state() const {
       return connectivity_state_;
@@ -148,28 +161,6 @@ class PriorityLb : public LoadBalancingPolicy {
     bool FailoverTimerPending() const { return failover_timer_ != nullptr; }
 
    private:
-    // A simple wrapper for ref-counting a picker from the child policy.
-    class RefCountedPicker : public RefCounted<RefCountedPicker> {
-     public:
-      explicit RefCountedPicker(std::unique_ptr<SubchannelPicker> picker)
-          : picker_(std::move(picker)) {}
-      PickResult Pick(PickArgs args) { return picker_->Pick(args); }
-
-     private:
-      std::unique_ptr<SubchannelPicker> picker_;
-    };
-
-    // A non-ref-counted wrapper for RefCountedPicker.
-    class RefCountedPickerWrapper : public SubchannelPicker {
-     public:
-      explicit RefCountedPickerWrapper(RefCountedPtr<RefCountedPicker> picker)
-          : picker_(std::move(picker)) {}
-      PickResult Pick(PickArgs args) override { return picker_->Pick(args); }
-
-     private:
-      RefCountedPtr<RefCountedPicker> picker_;
-    };
-
     class Helper : public ChannelControlHelper {
      public:
       explicit Helper(RefCountedPtr<ChildPriority> priority)
@@ -181,9 +172,10 @@ class PriorityLb : public LoadBalancingPolicy {
           ServerAddress address, const ChannelArgs& args) override;
       void UpdateState(grpc_connectivity_state state,
                        const absl::Status& status,
-                       std::unique_ptr<SubchannelPicker> picker) override;
+                       RefCountedPtr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
       absl::string_view GetAuthority() override;
+      grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
       void AddTraceEvent(TraceSeverity severity,
                          absl::string_view message) override;
 
@@ -229,7 +221,7 @@ class PriorityLb : public LoadBalancingPolicy {
 
     void OnConnectivityStateUpdateLocked(
         grpc_connectivity_state state, const absl::Status& status,
-        std::unique_ptr<SubchannelPicker> picker);
+        RefCountedPtr<SubchannelPicker> picker);
 
     RefCountedPtr<PriorityLb> priority_policy_;
     const std::string name_;
@@ -239,7 +231,7 @@ class PriorityLb : public LoadBalancingPolicy {
 
     grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_CONNECTING;
     absl::Status connectivity_status_;
-    RefCountedPtr<RefCountedPicker> picker_wrapper_;
+    RefCountedPtr<SubchannelPicker> picker_;
 
     bool seen_ready_or_idle_since_transient_failure_ = true;
 
@@ -344,7 +336,7 @@ void PriorityLb::ResetBackoffLocked() {
   for (const auto& p : children_) p.second->ResetBackoffLocked();
 }
 
-void PriorityLb::UpdateLocked(UpdateArgs args) {
+absl::Status PriorityLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO, "[priority_lb %p] received update", this);
   }
@@ -357,6 +349,7 @@ void PriorityLb::UpdateLocked(UpdateArgs args) {
   resolution_note_ = std::move(args.resolution_note);
   // Check all existing children against the new config.
   update_in_progress_ = true;
+  std::vector<std::string> errors;
   for (const auto& p : children_) {
     const std::string& child_name = p.first;
     auto& child = p.second;
@@ -366,13 +359,24 @@ void PriorityLb::UpdateLocked(UpdateArgs args) {
       child->MaybeDeactivateLocked();
     } else {
       // Existing child found in new config.  Update it.
-      child->UpdateLocked(config_it->second.config,
-                          config_it->second.ignore_reresolution_requests);
+      absl::Status status =
+          child->UpdateLocked(config_it->second.config,
+                              config_it->second.ignore_reresolution_requests);
+      if (!status.ok()) {
+        errors.emplace_back(
+            absl::StrCat("child ", child_name, ": ", status.ToString()));
+      }
     }
   }
   update_in_progress_ = false;
   // Try to get connected.
   ChoosePriorityLocked();
+  // Return status.
+  if (!errors.empty()) {
+    return absl::UnavailableError(absl::StrCat(
+        "errors from children: [", absl::StrJoin(errors, "; "), "]"));
+  }
+  return absl::OkStatus();
 }
 
 uint32_t PriorityLb::GetChildPriorityLocked(
@@ -395,7 +399,7 @@ void PriorityLb::ChoosePriorityLocked() {
         absl::UnavailableError("priority policy has empty priority list");
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        absl::make_unique<TransientFailurePicker>(status));
+        MakeRefCounted<TransientFailurePicker>(status));
     return;
   }
   // Iterate through priorities, searching for one in READY or IDLE,
@@ -416,8 +420,11 @@ void PriorityLb::ChoosePriorityLocked() {
           Ref(DEBUG_LOCATION, "ChildPriority"), child_name);
       auto child_config = config_->children().find(child_name);
       GPR_DEBUG_ASSERT(child_config != config_->children().end());
-      child->UpdateLocked(child_config->second.config,
-                          child_config->second.ignore_reresolution_requests);
+      // TODO(roth): If the child reports a non-OK status with the
+      // update, we need to propagate that back to the resolver somehow.
+      (void)child->UpdateLocked(
+          child_config->second.config,
+          child_config->second.ignore_reresolution_requests);
     } else {
       // The child already exists.  Reactivate if needed.
       child->MaybeReactivateLocked();
@@ -517,7 +524,7 @@ PriorityLb::ChildPriority::DeactivationTimer::DeactivationTimer(
   }
   GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
   Ref(DEBUG_LOCATION, "Timer").release();
-  grpc_timer_init(&timer_, ExecCtx::Get()->Now() + kChildRetentionInterval,
+  grpc_timer_init(&timer_, Timestamp::Now() + kChildRetentionInterval,
                   &on_timer_);
 }
 
@@ -537,14 +544,13 @@ void PriorityLb::ChildPriority::DeactivationTimer::Orphan() {
 void PriorityLb::ChildPriority::DeactivationTimer::OnTimer(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<DeactivationTimer*>(arg);
-  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   self->child_priority_->priority_policy_->work_serializer()->Run(
       [self, error]() { self->OnTimerLocked(error); }, DEBUG_LOCATION);
 }
 
 void PriorityLb::ChildPriority::DeactivationTimer::OnTimerLocked(
     grpc_error_handle error) {
-  if (GRPC_ERROR_IS_NONE(error) && timer_pending_) {
+  if (error.ok() && timer_pending_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,
               "[priority_lb %p] child %s (%p): deactivation timer fired, "
@@ -556,7 +562,6 @@ void PriorityLb::ChildPriority::DeactivationTimer::OnTimerLocked(
     child_priority_->priority_policy_->DeleteChild(child_priority_.get());
   }
   Unref(DEBUG_LOCATION, "Timer");
-  GRPC_ERROR_UNREF(error);
 }
 
 //
@@ -579,7 +584,7 @@ PriorityLb::ChildPriority::FailoverTimer::FailoverTimer(
   Ref(DEBUG_LOCATION, "Timer").release();
   grpc_timer_init(
       &timer_,
-      ExecCtx::Get()->Now() +
+      Timestamp::Now() +
           child_priority_->priority_policy_->child_failover_timeout_,
       &on_timer_);
 }
@@ -601,14 +606,13 @@ void PriorityLb::ChildPriority::FailoverTimer::Orphan() {
 void PriorityLb::ChildPriority::FailoverTimer::OnTimer(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<FailoverTimer*>(arg);
-  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   self->child_priority_->priority_policy_->work_serializer()->Run(
       [self, error]() { self->OnTimerLocked(error); }, DEBUG_LOCATION);
 }
 
 void PriorityLb::ChildPriority::FailoverTimer::OnTimerLocked(
     grpc_error_handle error) {
-  if (GRPC_ERROR_IS_NONE(error) && timer_pending_) {
+  if (error.ok() && timer_pending_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,
               "[priority_lb %p] child %s (%p): failover timer fired, "
@@ -623,7 +627,6 @@ void PriorityLb::ChildPriority::FailoverTimer::OnTimerLocked(
         nullptr);
   }
   Unref(DEBUG_LOCATION, "Timer");
-  GRPC_ERROR_UNREF(error);
 }
 
 //
@@ -655,23 +658,23 @@ void PriorityLb::ChildPriority::Orphan() {
   child_policy_.reset();
   // Drop our ref to the child's picker, in case it's holding a ref to
   // the child.
-  picker_wrapper_.reset();
+  picker_.reset();
   Unref(DEBUG_LOCATION, "ChildPriority+Orphan");
 }
 
-std::unique_ptr<LoadBalancingPolicy::SubchannelPicker>
+RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
 PriorityLb::ChildPriority::GetPicker() {
-  if (picker_wrapper_ == nullptr) {
-    return absl::make_unique<QueuePicker>(
+  if (picker_ == nullptr) {
+    return MakeRefCounted<QueuePicker>(
         priority_policy_->Ref(DEBUG_LOCATION, "QueuePicker"));
   }
-  return absl::make_unique<RefCountedPickerWrapper>(picker_wrapper_);
+  return picker_;
 }
 
-void PriorityLb::ChildPriority::UpdateLocked(
+absl::Status PriorityLb::ChildPriority::UpdateLocked(
     RefCountedPtr<LoadBalancingPolicy::Config> config,
     bool ignore_reresolution_requests) {
-  if (priority_policy_->shutting_down_) return;
+  if (priority_policy_->shutting_down_) return absl::OkStatus();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO, "[priority_lb %p] child %s (%p): start update",
             priority_policy_.get(), name_.c_str(), this);
@@ -697,7 +700,7 @@ void PriorityLb::ChildPriority::UpdateLocked(
             "[priority_lb %p] child %s (%p): updating child policy handler %p",
             priority_policy_.get(), name_.c_str(), this, child_policy_.get());
   }
-  child_policy_->UpdateLocked(std::move(update_args));
+  return child_policy_->UpdateLocked(std::move(update_args));
 }
 
 OrphanablePtr<LoadBalancingPolicy>
@@ -706,7 +709,7 @@ PriorityLb::ChildPriority::CreateChildPolicyLocked(const ChannelArgs& args) {
   lb_policy_args.work_serializer = priority_policy_->work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
-      absl::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
+      std::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_lb_priority_trace);
@@ -734,7 +737,7 @@ void PriorityLb::ChildPriority::ResetBackoffLocked() {
 
 void PriorityLb::ChildPriority::OnConnectivityStateUpdateLocked(
     grpc_connectivity_state state, const absl::Status& status,
-    std::unique_ptr<SubchannelPicker> picker) {
+    RefCountedPtr<SubchannelPicker> picker) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO,
             "[priority_lb %p] child %s (%p): state update: %s (%s) picker %p",
@@ -750,9 +753,7 @@ void PriorityLb::ChildPriority::OnConnectivityStateUpdateLocked(
   // TRANSIENT_FAILURE, but we have no new picker to report.  In that case,
   // just keep using the old picker, in case we wind up delegating to this
   // child when all priorities are failing.
-  if (picker != nullptr) {
-    picker_wrapper_ = MakeRefCounted<RefCountedPicker>(std::move(picker));
-  }
+  if (picker != nullptr) picker_ = std::move(picker);
   // If we transition to state CONNECTING and we've not seen
   // TRANSIENT_FAILURE more recently than READY or IDLE, start failover
   // timer if not already pending.
@@ -807,7 +808,7 @@ PriorityLb::ChildPriority::Helper::CreateSubchannel(ServerAddress address,
 
 void PriorityLb::ChildPriority::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
-    std::unique_ptr<SubchannelPicker> picker) {
+    RefCountedPtr<SubchannelPicker> picker) {
   if (priority_->priority_policy_->shutting_down_) return;
   // Notify the priority.
   priority_->OnConnectivityStateUpdateLocked(state, status, std::move(picker));
@@ -825,6 +826,12 @@ absl::string_view PriorityLb::ChildPriority::Helper::GetAuthority() {
   return priority_->priority_policy_->channel_control_helper()->GetAuthority();
 }
 
+grpc_event_engine::experimental::EventEngine*
+PriorityLb::ChildPriority::Helper::GetEventEngine() {
+  return priority_->priority_policy_->channel_control_helper()
+      ->GetEventEngine();
+}
+
 void PriorityLb::ChildPriority::Helper::AddTraceEvent(
     TraceSeverity severity, absl::string_view message) {
   if (priority_->priority_policy_->shutting_down_) return;
@@ -835,6 +842,61 @@ void PriorityLb::ChildPriority::Helper::AddTraceEvent(
 //
 // factory
 //
+
+const JsonLoaderInterface* PriorityLbConfig::PriorityLbChild::JsonLoader(
+    const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<PriorityLbChild>()
+          // Note: The "config" field requires custom parsing, so it's
+          // handled in JsonPostLoad() instead of here.
+          .OptionalField("ignore_reresolution_requests",
+                         &PriorityLbChild::ignore_reresolution_requests)
+          .Finish();
+  return loader;
+}
+
+void PriorityLbConfig::PriorityLbChild::JsonPostLoad(const Json& json,
+                                                     const JsonArgs&,
+                                                     ValidationErrors* errors) {
+  ValidationErrors::ScopedField field(errors, ".config");
+  auto it = json.object_value().find("config");
+  if (it == json.object_value().end()) {
+    errors->AddError("field not present");
+    return;
+  }
+  auto lb_config =
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          it->second);
+  if (!lb_config.ok()) {
+    errors->AddError(lb_config.status().message());
+    return;
+  }
+  config = std::move(*lb_config);
+}
+
+const JsonLoaderInterface* PriorityLbConfig::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<PriorityLbConfig>()
+          .Field("children", &PriorityLbConfig::children_)
+          .Field("priorities", &PriorityLbConfig::priorities_)
+          .Finish();
+  return loader;
+}
+
+void PriorityLbConfig::JsonPostLoad(const Json& /*json*/, const JsonArgs&,
+                                    ValidationErrors* errors) {
+  std::set<std::string> unknown_priorities;
+  for (const std::string& priority : priorities_) {
+    if (children_.find(priority) == children_.end()) {
+      unknown_priorities.insert(priority);
+    }
+  }
+  if (!unknown_priorities.empty()) {
+    errors->AddError(absl::StrCat("unknown priorit(ies): [",
+                                  absl::StrJoin(unknown_priorities, ", "),
+                                  "]"));
+  }
+}
 
 class PriorityLbFactory : public LoadBalancingPolicyFactory {
  public:
@@ -855,94 +917,8 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
           "configuration. Please use loadBalancingConfig field of service "
           "config instead.");
     }
-    std::vector<std::string> errors;
-    // Children.
-    std::map<std::string, PriorityLbConfig::PriorityLbChild> children;
-    auto it = json.object_value().find("children");
-    if (it == json.object_value().end()) {
-      errors.emplace_back("field:children error:required field missing");
-    } else if (it->second.type() != Json::Type::OBJECT) {
-      errors.emplace_back("field:children error:type should be object");
-    } else {
-      const Json::Object& object = it->second.object_value();
-      for (const auto& p : object) {
-        const std::string& child_name = p.first;
-        const Json& element = p.second;
-        if (element.type() != Json::Type::OBJECT) {
-          errors.emplace_back(absl::StrCat("field:children key:", child_name,
-                                           " error:should be type object"));
-        } else {
-          auto it2 = element.object_value().find("config");
-          if (it2 == element.object_value().end()) {
-            errors.emplace_back(absl::StrCat("field:children key:", child_name,
-                                             " error:missing 'config' field"));
-          } else {
-            bool ignore_resolution_requests = false;
-            // If present, ignore_reresolution_requests must be of type
-            // boolean.
-            auto it3 =
-                element.object_value().find("ignore_reresolution_requests");
-            if (it3 != element.object_value().end()) {
-              if (it3->second.type() == Json::Type::JSON_TRUE) {
-                ignore_resolution_requests = true;
-              } else if (it3->second.type() != Json::Type::JSON_FALSE) {
-                errors.emplace_back(
-                    absl::StrCat("field:children key:", child_name,
-                                 " field:ignore_reresolution_requests:should "
-                                 "be type boolean"));
-              }
-            }
-            auto config = CoreConfiguration::Get()
-                              .lb_policy_registry()
-                              .ParseLoadBalancingConfig(it2->second);
-            if (!config.ok()) {
-              errors.emplace_back(
-                  absl::StrCat("field:children key:", child_name, ": ",
-                               config.status().message()));
-            } else {
-              children[child_name].config = std::move(*config);
-              children[child_name].ignore_reresolution_requests =
-                  ignore_resolution_requests;
-            }
-          }
-        }
-      }
-    }
-    // Priorities.
-    std::vector<std::string> priorities;
-    it = json.object_value().find("priorities");
-    if (it == json.object_value().end()) {
-      errors.emplace_back("field:priorities error:required field missing");
-    } else if (it->second.type() != Json::Type::ARRAY) {
-      errors.emplace_back("field:priorities error:type should be array");
-    } else {
-      const Json::Array& array = it->second.array_value();
-      for (size_t i = 0; i < array.size(); ++i) {
-        const Json& element = array[i];
-        if (element.type() != Json::Type::STRING) {
-          errors.emplace_back(absl::StrCat("field:priorities element:", i,
-                                           " error:should be type string"));
-        } else if (children.find(element.string_value()) == children.end()) {
-          errors.emplace_back(absl::StrCat("field:priorities element:", i,
-                                           " error:unknown child '",
-                                           element.string_value(), "'"));
-        } else {
-          priorities.emplace_back(element.string_value());
-        }
-      }
-      if (priorities.size() != children.size()) {
-        errors.emplace_back(absl::StrCat(
-            "field:priorities error:priorities size (", priorities.size(),
-            ") != children size (", children.size(), ")"));
-      }
-    }
-    if (!errors.empty()) {
-      return absl::InvalidArgumentError(
-          absl::StrCat("priority_experimental LB policy config: [",
-                       absl::StrJoin(errors, "; "), "]"));
-    }
-    return MakeRefCounted<PriorityLbConfig>(std::move(children),
-                                            std::move(priorities));
+    return LoadRefCountedFromJson<PriorityLbConfig>(
+        json, JsonArgs(), "errors validating priority LB policy config");
   }
 };
 
@@ -950,7 +926,7 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
 
 void RegisterPriorityLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<PriorityLbFactory>());
+      std::make_unique<PriorityLbFactory>());
 }
 
 }  // namespace grpc_core

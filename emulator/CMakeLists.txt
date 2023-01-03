@@ -28,13 +28,13 @@ cmake_policy(SET CMP0079 NEW)
 
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.50.0-dev")
-set(gRPC_CORE_VERSION     "27.0.0")
-set(gRPC_CORE_SOVERSION   "27")
-set(gRPC_CPP_VERSION      "1.50.0-dev")
-set(gRPC_CPP_SOVERSION    "1.50")
-set(gRPC_CSHARP_VERSION   "2.50.0-dev")
-set(gRPC_CSHARP_SOVERSION "2.50")
+set(PACKAGE_VERSION       "1.52.0-dev")
+set(gRPC_CORE_VERSION     "29.0.0")
+set(gRPC_CORE_SOVERSION   "29")
+set(gRPC_CPP_VERSION      "1.52.0-dev")
+set(gRPC_CPP_SOVERSION    "1.52")
+set(gRPC_CSHARP_VERSION   "2.52.0-dev")
+set(gRPC_CSHARP_SOVERSION "2.52")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -396,15 +396,11 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_linux.cc
   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_posix.cc
   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_windows.cc
-  ${_gRPC_ROOT}/src/core/lib/gpr/env_linux.cc
-  ${_gRPC_ROOT}/src/core/lib/gpr/env_posix.cc
-  ${_gRPC_ROOT}/src/core/lib/gpr/env_windows.cc
   ${_gRPC_ROOT}/src/core/lib/gpr/log.cc
   ${_gRPC_ROOT}/src/core/lib/gpr/log_android.cc
   ${_gRPC_ROOT}/src/core/lib/gpr/log_linux.cc
   ${_gRPC_ROOT}/src/core/lib/gpr/log_posix.cc
   ${_gRPC_ROOT}/src/core/lib/gpr/log_windows.cc
-  ${_gRPC_ROOT}/src/core/lib/gpr/murmur_hash.cc
   ${_gRPC_ROOT}/src/core/lib/gpr/string.cc
   ${_gRPC_ROOT}/src/core/lib/gpr/string_posix.cc
   ${_gRPC_ROOT}/src/core/lib/gpr/string_util_windows.cc
@@ -421,6 +417,9 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/lib/gpr/tmpfile_posix.cc
   ${_gRPC_ROOT}/src/core/lib/gpr/tmpfile_windows.cc
   ${_gRPC_ROOT}/src/core/lib/gpr/wrap_memcpy.cc
+  ${_gRPC_ROOT}/src/core/lib/gprpp/env_linux.cc
+  ${_gRPC_ROOT}/src/core/lib/gprpp/env_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/gprpp/env_windows.cc
   ${_gRPC_ROOT}/src/core/lib/gprpp/examine_stack.cc
   ${_gRPC_ROOT}/src/core/lib/gprpp/fork.cc
   ${_gRPC_ROOT}/src/core/lib/gprpp/global_config_env.cc
@@ -428,6 +427,8 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/lib/gprpp/mpscq.cc
   ${_gRPC_ROOT}/src/core/lib/gprpp/stat_posix.cc
   ${_gRPC_ROOT}/src/core/lib/gprpp/stat_windows.cc
+  ${_gRPC_ROOT}/src/core/lib/gprpp/strerror.cc
+  ${_gRPC_ROOT}/src/core/lib/gprpp/tchar.cc
   ${_gRPC_ROOT}/src/core/lib/gprpp/thd_posix.cc
   ${_gRPC_ROOT}/src/core/lib/gprpp/thd_windows.cc
   ${_gRPC_ROOT}/src/core/lib/gprpp/time_util.cc
@@ -483,6 +484,7 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/client_channel_channelz.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/client_channel_factory.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/client_channel_plugin.cc
+  ${_gRPC_ROOT}/src/core/ext/filters/client_channel/client_channel_service_config.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/config_selector.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/dynamic_filters.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/global_subchannel_pool.cc
@@ -504,11 +506,12 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
+  ${_gRPC_ROOT}/src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc
+  ${_gRPC_ROOT}/src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/local_subchannel_pool.cc
-  ${_gRPC_ROOT}/src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
@@ -523,7 +526,6 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/resolver/polling_resolver.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
-  ${_gRPC_ROOT}/src/core/ext/filters/client_channel/resolver_result_parsing.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/retry_filter.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/retry_service_config.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/retry_throttle.cc
@@ -533,12 +535,11 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/subchannel_stream_client.cc
   ${_gRPC_ROOT}/src/core/ext/filters/deadline/deadline_filter.cc
   ${_gRPC_ROOT}/src/core/ext/filters/fault_injection/fault_injection_filter.cc
-  ${_gRPC_ROOT}/src/core/ext/filters/fault_injection/service_config_parser.cc
+  ${_gRPC_ROOT}/src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc
   ${_gRPC_ROOT}/src/core/ext/filters/http/client/http_client_filter.cc
   ${_gRPC_ROOT}/src/core/ext/filters/http/client_authority_filter.cc
   ${_gRPC_ROOT}/src/core/ext/filters/http/http_filters_plugin.cc
-  ${_gRPC_ROOT}/src/core/ext/filters/http/message_compress/message_compress_filter.cc
-  ${_gRPC_ROOT}/src/core/ext/filters/http/message_compress/message_decompress_filter.cc
+  ${_gRPC_ROOT}/src/core/ext/filters/http/message_compress/compression_filter.cc
   ${_gRPC_ROOT}/src/core/ext/filters/http/server/http_server_filter.cc
   ${_gRPC_ROOT}/src/core/ext/filters/message_size/message_size_filter.cc
   ${_gRPC_ROOT}/src/core/ext/filters/rbac/rbac_filter.cc
@@ -552,6 +553,7 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/bin_encoder.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/context_list.cc
+  ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/decode_huff.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/flow_control.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/frame_data.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/frame_goaway.cc
@@ -564,6 +566,7 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/hpack_parser.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/http2_settings.cc
+  ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/http_trace.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/huffsyms.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/parsing.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/stream_lists.cc
@@ -856,7 +859,6 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.c
   ${_gRPC_ROOT}/src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c
   ${_gRPC_ROOT}/src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c
-  ${_gRPC_ROOT}/src/core/ext/xds/certificate_provider_registry.cc
   ${_gRPC_ROOT}/src/core/ext/xds/certificate_provider_store.cc
   ${_gRPC_ROOT}/src/core/ext/xds/file_watcher_certificate_provider_factory.cc
   ${_gRPC_ROOT}/src/core/ext/xds/xds_api.cc
@@ -876,7 +878,6 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/ext/xds/xds_http_rbac_filter.cc
   ${_gRPC_ROOT}/src/core/ext/xds/xds_lb_policy_registry.cc
   ${_gRPC_ROOT}/src/core/ext/xds/xds_listener.cc
-  ${_gRPC_ROOT}/src/core/ext/xds/xds_resource_type.cc
   ${_gRPC_ROOT}/src/core/ext/xds/xds_route_config.cc
   ${_gRPC_ROOT}/src/core/ext/xds/xds_routing.cc
   ${_gRPC_ROOT}/src/core/ext/xds/xds_server_config_fetcher.cc
@@ -899,33 +900,52 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/lib/compression/compression_internal.cc
   ${_gRPC_ROOT}/src/core/lib/compression/message_compress.cc
   ${_gRPC_ROOT}/src/core/lib/config/core_configuration.cc
+  ${_gRPC_ROOT}/src/core/lib/debug/event_log.cc
+  ${_gRPC_ROOT}/src/core/lib/debug/histogram_view.cc
   ${_gRPC_ROOT}/src/core/lib/debug/stats.cc
   ${_gRPC_ROOT}/src/core/lib/debug/stats_data.cc
   ${_gRPC_ROOT}/src/core/lib/debug/trace.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/channel_args_endpoint_config.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/default_event_engine.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/default_event_engine_factory.cc
-  ${_gRPC_ROOT}/src/core/lib/event_engine/executor/threaded_executor.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/forkable.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/memory_allocator.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/internal_errqueue.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/lockfree_event.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/posix_engine.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/timer.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/timer_heap.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/timer_manager.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/resolved_address.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/slice.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/slice_buffer.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/thread_pool.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/time_util.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/trace.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/utils.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/windows/iocp.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/windows/win_socket.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/windows/windows_engine.cc
+  ${_gRPC_ROOT}/src/core/lib/experiments/config.cc
   ${_gRPC_ROOT}/src/core/lib/experiments/experiments.cc
+  ${_gRPC_ROOT}/src/core/lib/gprpp/load_file.cc
   ${_gRPC_ROOT}/src/core/lib/gprpp/status_helper.cc
   ${_gRPC_ROOT}/src/core/lib/gprpp/time.cc
   ${_gRPC_ROOT}/src/core/lib/gprpp/time_averaged_stats.cc
+  ${_gRPC_ROOT}/src/core/lib/gprpp/validation_errors.cc
   ${_gRPC_ROOT}/src/core/lib/gprpp/work_serializer.cc
+  ${_gRPC_ROOT}/src/core/lib/handshaker/proxy_mapper_registry.cc
   ${_gRPC_ROOT}/src/core/lib/http/format_request.cc
   ${_gRPC_ROOT}/src/core/lib/http/httpcli.cc
   ${_gRPC_ROOT}/src/core/lib/http/httpcli_security_connector.cc
@@ -1010,6 +1030,7 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/lib/load_balancing/lb_policy_registry.cc
   ${_gRPC_ROOT}/src/core/lib/matchers/matchers.cc
   ${_gRPC_ROOT}/src/core/lib/promise/activity.cc
+  ${_gRPC_ROOT}/src/core/lib/promise/pipe.cc
   ${_gRPC_ROOT}/src/core/lib/promise/sleep.cc
   ${_gRPC_ROOT}/src/core/lib/resolver/resolver.cc
   ${_gRPC_ROOT}/src/core/lib/resolver/resolver_registry.cc
@@ -1027,6 +1048,7 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_server_authz_filter.cc
   ${_gRPC_ROOT}/src/core/lib/security/authorization/matchers.cc
   ${_gRPC_ROOT}/src/core/lib/security/authorization/rbac_policy.cc
+  ${_gRPC_ROOT}/src/core/lib/security/certificate_provider/certificate_provider_registry.cc
   ${_gRPC_ROOT}/src/core/lib/security/context/security_context.cc
   ${_gRPC_ROOT}/src/core/lib/security/credentials/alts/alts_credentials.cc
   ${_gRPC_ROOT}/src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -1086,10 +1108,7 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/lib/slice/b64.cc
   ${_gRPC_ROOT}/src/core/lib/slice/percent_encoding.cc
   ${_gRPC_ROOT}/src/core/lib/slice/slice.cc
-  ${_gRPC_ROOT}/src/core/lib/slice/slice_api.cc
   ${_gRPC_ROOT}/src/core/lib/slice/slice_buffer.cc
-  ${_gRPC_ROOT}/src/core/lib/slice/slice_buffer_api.cc
-  ${_gRPC_ROOT}/src/core/lib/slice/slice_refcount.cc
   ${_gRPC_ROOT}/src/core/lib/slice/slice_string_helpers.cc
   ${_gRPC_ROOT}/src/core/lib/surface/api_trace.cc
   ${_gRPC_ROOT}/src/core/lib/surface/builtins.cc
@@ -1098,6 +1117,7 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/lib/surface/call.cc
   ${_gRPC_ROOT}/src/core/lib/surface/call_details.cc
   ${_gRPC_ROOT}/src/core/lib/surface/call_log_batch.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/call_trace.cc
   ${_gRPC_ROOT}/src/core/lib/surface/channel.cc
   ${_gRPC_ROOT}/src/core/lib/surface/channel_init.cc
   ${_gRPC_ROOT}/src/core/lib/surface/channel_ping.cc
@@ -1106,6 +1126,7 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/lib/surface/completion_queue_factory.cc
   ${_gRPC_ROOT}/src/core/lib/surface/event_string.cc
   ${_gRPC_ROOT}/src/core/lib/surface/init.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/init_internally.cc
   ${_gRPC_ROOT}/src/core/lib/surface/lame_client.cc
   ${_gRPC_ROOT}/src/core/lib/surface/metadata_array.cc
   ${_gRPC_ROOT}/src/core/lib/surface/server.cc
@@ -1181,6 +1202,7 @@ target_link_libraries(grpc PUBLIC
   ${_gRPC_RE2_LIBRARIES}
   upb
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::cleanup
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
@@ -1223,6 +1245,7 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/client_channel_channelz.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/client_channel_factory.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/client_channel_plugin.cc
+  ${_gRPC_ROOT}/src/core/ext/filters/client_channel/client_channel_service_config.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/config_selector.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/dynamic_filters.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/global_subchannel_pool.cc
@@ -1244,7 +1267,6 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/local_subchannel_pool.cc
-  ${_gRPC_ROOT}/src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
@@ -1257,7 +1279,6 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/resolver/polling_resolver.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
-  ${_gRPC_ROOT}/src/core/ext/filters/client_channel/resolver_result_parsing.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/retry_filter.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/retry_service_config.cc
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/retry_throttle.cc
@@ -1267,12 +1288,11 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/ext/filters/client_channel/subchannel_stream_client.cc
   ${_gRPC_ROOT}/src/core/ext/filters/deadline/deadline_filter.cc
   ${_gRPC_ROOT}/src/core/ext/filters/fault_injection/fault_injection_filter.cc
-  ${_gRPC_ROOT}/src/core/ext/filters/fault_injection/service_config_parser.cc
+  ${_gRPC_ROOT}/src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc
   ${_gRPC_ROOT}/src/core/ext/filters/http/client/http_client_filter.cc
   ${_gRPC_ROOT}/src/core/ext/filters/http/client_authority_filter.cc
   ${_gRPC_ROOT}/src/core/ext/filters/http/http_filters_plugin.cc
-  ${_gRPC_ROOT}/src/core/ext/filters/http/message_compress/message_compress_filter.cc
-  ${_gRPC_ROOT}/src/core/ext/filters/http/message_compress/message_decompress_filter.cc
+  ${_gRPC_ROOT}/src/core/ext/filters/http/message_compress/compression_filter.cc
   ${_gRPC_ROOT}/src/core/ext/filters/http/server/http_server_filter.cc
   ${_gRPC_ROOT}/src/core/ext/filters/message_size/message_size_filter.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/client/chttp2_connector.cc
@@ -1281,6 +1301,7 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/bin_encoder.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/context_list.cc
+  ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/decode_huff.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/flow_control.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/frame_data.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/frame_goaway.cc
@@ -1293,6 +1314,7 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/hpack_parser.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/http2_settings.cc
+  ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/http_trace.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/huffsyms.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/parsing.cc
   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/stream_lists.cc
@@ -1311,6 +1333,9 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/rpc/status.upb.c
+  ${_gRPC_ROOT}/src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  ${_gRPC_ROOT}/src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  ${_gRPC_ROOT}/src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   ${_gRPC_ROOT}/src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   ${_gRPC_ROOT}/src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   ${_gRPC_ROOT}/src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c
@@ -1335,33 +1360,52 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/lib/compression/compression_internal.cc
   ${_gRPC_ROOT}/src/core/lib/compression/message_compress.cc
   ${_gRPC_ROOT}/src/core/lib/config/core_configuration.cc
+  ${_gRPC_ROOT}/src/core/lib/debug/event_log.cc
+  ${_gRPC_ROOT}/src/core/lib/debug/histogram_view.cc
   ${_gRPC_ROOT}/src/core/lib/debug/stats.cc
   ${_gRPC_ROOT}/src/core/lib/debug/stats_data.cc
   ${_gRPC_ROOT}/src/core/lib/debug/trace.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/channel_args_endpoint_config.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/default_event_engine.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/default_event_engine_factory.cc
-  ${_gRPC_ROOT}/src/core/lib/event_engine/executor/threaded_executor.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/forkable.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/memory_allocator.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/internal_errqueue.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/lockfree_event.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/posix_engine.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/timer.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/timer_heap.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/timer_manager.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/resolved_address.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/slice.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/slice_buffer.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/thread_pool.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/time_util.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/trace.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/utils.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/windows/iocp.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/windows/win_socket.cc
   ${_gRPC_ROOT}/src/core/lib/event_engine/windows/windows_engine.cc
+  ${_gRPC_ROOT}/src/core/lib/experiments/config.cc
   ${_gRPC_ROOT}/src/core/lib/experiments/experiments.cc
+  ${_gRPC_ROOT}/src/core/lib/gprpp/load_file.cc
   ${_gRPC_ROOT}/src/core/lib/gprpp/status_helper.cc
   ${_gRPC_ROOT}/src/core/lib/gprpp/time.cc
   ${_gRPC_ROOT}/src/core/lib/gprpp/time_averaged_stats.cc
+  ${_gRPC_ROOT}/src/core/lib/gprpp/validation_errors.cc
   ${_gRPC_ROOT}/src/core/lib/gprpp/work_serializer.cc
+  ${_gRPC_ROOT}/src/core/lib/handshaker/proxy_mapper_registry.cc
   ${_gRPC_ROOT}/src/core/lib/http/format_request.cc
   ${_gRPC_ROOT}/src/core/lib/http/httpcli.cc
   ${_gRPC_ROOT}/src/core/lib/http/parser.cc
@@ -1439,11 +1483,11 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/lib/iomgr/wakeup_fd_posix.cc
   ${_gRPC_ROOT}/src/core/lib/json/json_object_loader.cc
   ${_gRPC_ROOT}/src/core/lib/json/json_reader.cc
-  ${_gRPC_ROOT}/src/core/lib/json/json_util.cc
   ${_gRPC_ROOT}/src/core/lib/json/json_writer.cc
   ${_gRPC_ROOT}/src/core/lib/load_balancing/lb_policy.cc
   ${_gRPC_ROOT}/src/core/lib/load_balancing/lb_policy_registry.cc
   ${_gRPC_ROOT}/src/core/lib/promise/activity.cc
+  ${_gRPC_ROOT}/src/core/lib/promise/pipe.cc
   ${_gRPC_ROOT}/src/core/lib/promise/sleep.cc
   ${_gRPC_ROOT}/src/core/lib/resolver/resolver.cc
   ${_gRPC_ROOT}/src/core/lib/resolver/resolver_registry.cc
@@ -1458,7 +1502,15 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   ${_gRPC_ROOT}/src/core/lib/security/authorization/evaluate_args.cc
   ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_server_authz_filter.cc
+  ${_gRPC_ROOT}/src/core/lib/security/certificate_provider/certificate_provider_registry.cc
   ${_gRPC_ROOT}/src/core/lib/security/context/security_context.cc
+  ${_gRPC_ROOT}/src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  ${_gRPC_ROOT}/src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  ${_gRPC_ROOT}/src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  ${_gRPC_ROOT}/src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  ${_gRPC_ROOT}/src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  ${_gRPC_ROOT}/src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  ${_gRPC_ROOT}/src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
   ${_gRPC_ROOT}/src/core/lib/security/credentials/call_creds_util.cc
   ${_gRPC_ROOT}/src/core/lib/security/credentials/composite/composite_credentials.cc
   ${_gRPC_ROOT}/src/core/lib/security/credentials/credentials.cc
@@ -1482,10 +1534,7 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/lib/slice/b64.cc
   ${_gRPC_ROOT}/src/core/lib/slice/percent_encoding.cc
   ${_gRPC_ROOT}/src/core/lib/slice/slice.cc
-  ${_gRPC_ROOT}/src/core/lib/slice/slice_api.cc
   ${_gRPC_ROOT}/src/core/lib/slice/slice_buffer.cc
-  ${_gRPC_ROOT}/src/core/lib/slice/slice_buffer_api.cc
-  ${_gRPC_ROOT}/src/core/lib/slice/slice_refcount.cc
   ${_gRPC_ROOT}/src/core/lib/slice/slice_string_helpers.cc
   ${_gRPC_ROOT}/src/core/lib/surface/api_trace.cc
   ${_gRPC_ROOT}/src/core/lib/surface/builtins.cc
@@ -1494,6 +1543,7 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/lib/surface/call.cc
   ${_gRPC_ROOT}/src/core/lib/surface/call_details.cc
   ${_gRPC_ROOT}/src/core/lib/surface/call_log_batch.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/call_trace.cc
   ${_gRPC_ROOT}/src/core/lib/surface/channel.cc
   ${_gRPC_ROOT}/src/core/lib/surface/channel_init.cc
   ${_gRPC_ROOT}/src/core/lib/surface/channel_ping.cc
@@ -1502,6 +1552,7 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/lib/surface/completion_queue_factory.cc
   ${_gRPC_ROOT}/src/core/lib/surface/event_string.cc
   ${_gRPC_ROOT}/src/core/lib/surface/init.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/init_internally.cc
   ${_gRPC_ROOT}/src/core/lib/surface/lame_client.cc
   ${_gRPC_ROOT}/src/core/lib/surface/metadata_array.cc
   ${_gRPC_ROOT}/src/core/lib/surface/server.cc
@@ -1524,6 +1575,7 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/core/lib/uri/uri_parser.cc
   ${_gRPC_ROOT}/src/core/plugin_registry/grpc_plugin_registry.cc
   ${_gRPC_ROOT}/src/core/plugin_registry/grpc_plugin_registry_noextra.cc
+  ${_gRPC_ROOT}/src/core/tsi/alts/handshaker/transport_security_common_api.cc
   ${_gRPC_ROOT}/src/core/tsi/fake_transport_security.cc
   ${_gRPC_ROOT}/src/core/tsi/local_transport_security.cc
   ${_gRPC_ROOT}/src/core/tsi/transport_security.cc
@@ -1553,6 +1605,7 @@ target_link_libraries(grpc_unsecure PUBLIC
   ${_gRPC_RE2_LIBRARIES}
   upb
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::cleanup
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
@@ -1631,7 +1684,6 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/cpp/server/async_generic_service.cc
   ${_gRPC_ROOT}/src/cpp/server/channel_argument_option.cc
   ${_gRPC_ROOT}/src/cpp/server/create_default_thread_pool.cc
-  ${_gRPC_ROOT}/src/cpp/server/dynamic_thread_pool.cc
   ${_gRPC_ROOT}/src/cpp/server/external_connection_acceptor_impl.cc
   ${_gRPC_ROOT}/src/cpp/server/health/default_health_check_service.cc
   ${_gRPC_ROOT}/src/cpp/server/health/health_check_service.cc
@@ -1673,7 +1725,6 @@ target_link_libraries(grpc++ PUBLIC
   ${_gRPC_BASELIB_LIBRARIES}
   libprotobuf
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::cleanup
   grpc
 )
 
@@ -1823,7 +1874,6 @@ SRC # cmake-format: sortable
   ${_gRPC_ROOT}/src/cpp/server/async_generic_service.cc
   ${_gRPC_ROOT}/src/cpp/server/channel_argument_option.cc
   ${_gRPC_ROOT}/src/cpp/server/create_default_thread_pool.cc
-  ${_gRPC_ROOT}/src/cpp/server/dynamic_thread_pool.cc
   ${_gRPC_ROOT}/src/cpp/server/external_connection_acceptor_impl.cc
   ${_gRPC_ROOT}/src/cpp/server/health/default_health_check_service.cc
   ${_gRPC_ROOT}/src/cpp/server/health/health_check_service.cc
@@ -1864,6 +1914,285 @@ target_link_libraries(grpc++_unsecure PUBLIC
   libprotobuf
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_unsecure
+)
+
+
+
+android_add_library(TARGET grpc_authorization_provider
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC # cmake-format: sortable
+  ${_gRPC_ROOT}/src/core/ext/upb-generated/google/protobuf/any.upb.c
+  ${_gRPC_ROOT}/src/core/ext/upb-generated/google/rpc/status.upb.c
+  ${_gRPC_ROOT}/src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  ${_gRPC_ROOT}/src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  ${_gRPC_ROOT}/src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  ${_gRPC_ROOT}/src/core/lib/address_utils/parse_address.cc
+  ${_gRPC_ROOT}/src/core/lib/address_utils/sockaddr_utils.cc
+  ${_gRPC_ROOT}/src/core/lib/channel/channel_args.cc
+  ${_gRPC_ROOT}/src/core/lib/channel/channel_args_preconditioning.cc
+  ${_gRPC_ROOT}/src/core/lib/channel/channel_stack.cc
+  ${_gRPC_ROOT}/src/core/lib/channel/channel_stack_builder.cc
+  ${_gRPC_ROOT}/src/core/lib/channel/channel_stack_builder_impl.cc
+  ${_gRPC_ROOT}/src/core/lib/channel/channel_trace.cc
+  ${_gRPC_ROOT}/src/core/lib/channel/channelz.cc
+  ${_gRPC_ROOT}/src/core/lib/channel/channelz_registry.cc
+  ${_gRPC_ROOT}/src/core/lib/channel/connected_channel.cc
+  ${_gRPC_ROOT}/src/core/lib/channel/promise_based_filter.cc
+  ${_gRPC_ROOT}/src/core/lib/channel/status_util.cc
+  ${_gRPC_ROOT}/src/core/lib/compression/compression.cc
+  ${_gRPC_ROOT}/src/core/lib/compression/compression_internal.cc
+  ${_gRPC_ROOT}/src/core/lib/compression/message_compress.cc
+  ${_gRPC_ROOT}/src/core/lib/config/core_configuration.cc
+  ${_gRPC_ROOT}/src/core/lib/debug/event_log.cc
+  ${_gRPC_ROOT}/src/core/lib/debug/histogram_view.cc
+  ${_gRPC_ROOT}/src/core/lib/debug/stats.cc
+  ${_gRPC_ROOT}/src/core/lib/debug/stats_data.cc
+  ${_gRPC_ROOT}/src/core/lib/debug/trace.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/channel_args_endpoint_config.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/default_event_engine.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/default_event_engine_factory.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/forkable.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/memory_allocator.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/internal_errqueue.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/lockfree_event.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/posix_endpoint.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/posix_engine.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/timer.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/timer_heap.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/timer_manager.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/resolved_address.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/slice.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/slice_buffer.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/thread_pool.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/time_util.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/trace.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/utils.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/windows/iocp.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/windows/win_socket.cc
+  ${_gRPC_ROOT}/src/core/lib/event_engine/windows/windows_engine.cc
+  ${_gRPC_ROOT}/src/core/lib/experiments/config.cc
+  ${_gRPC_ROOT}/src/core/lib/experiments/experiments.cc
+  ${_gRPC_ROOT}/src/core/lib/gprpp/load_file.cc
+  ${_gRPC_ROOT}/src/core/lib/gprpp/status_helper.cc
+  ${_gRPC_ROOT}/src/core/lib/gprpp/time.cc
+  ${_gRPC_ROOT}/src/core/lib/gprpp/time_averaged_stats.cc
+  ${_gRPC_ROOT}/src/core/lib/gprpp/validation_errors.cc
+  ${_gRPC_ROOT}/src/core/lib/gprpp/work_serializer.cc
+  ${_gRPC_ROOT}/src/core/lib/handshaker/proxy_mapper_registry.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/buffer_list.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/call_combiner.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/cfstream_handle.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/combiner.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/dualstack_socket_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/endpoint.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/endpoint_cfstream.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/endpoint_pair_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/endpoint_pair_windows.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/error.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/error_cfstream.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/ev_apple.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/ev_epoll1_linux.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/ev_poll_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/ev_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/ev_windows.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/exec_ctx.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/executor.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/fork_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/fork_windows.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/gethostname_fallback.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/gethostname_host_name_max.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/gethostname_sysconf.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/internal_errqueue.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/iocp_windows.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/iomgr.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/iomgr_internal.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/iomgr_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/iomgr_posix_cfstream.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/iomgr_windows.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/load_file.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/lockfree_event.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/polling_entity.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/pollset.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/pollset_set.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/pollset_set_windows.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/pollset_windows.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/resolve_address.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/resolve_address_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/resolve_address_windows.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/sockaddr_utils_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/socket_factory_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/socket_mutator.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/socket_utils_common_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/socket_utils_linux.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/socket_utils_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/socket_utils_windows.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/socket_windows.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/tcp_client.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/tcp_client_cfstream.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/tcp_client_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/tcp_client_windows.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/tcp_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/tcp_server.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/tcp_server_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/tcp_server_utils_posix_common.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/tcp_server_windows.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/tcp_windows.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/timer.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/timer_generic.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/timer_heap.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/timer_manager.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/unix_sockets_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/unix_sockets_posix_noop.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/wakeup_fd_eventfd.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/wakeup_fd_nospecial.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/wakeup_fd_pipe.cc
+  ${_gRPC_ROOT}/src/core/lib/iomgr/wakeup_fd_posix.cc
+  ${_gRPC_ROOT}/src/core/lib/json/json_reader.cc
+  ${_gRPC_ROOT}/src/core/lib/json/json_writer.cc
+  ${_gRPC_ROOT}/src/core/lib/load_balancing/lb_policy.cc
+  ${_gRPC_ROOT}/src/core/lib/load_balancing/lb_policy_registry.cc
+  ${_gRPC_ROOT}/src/core/lib/matchers/matchers.cc
+  ${_gRPC_ROOT}/src/core/lib/promise/activity.cc
+  ${_gRPC_ROOT}/src/core/lib/promise/pipe.cc
+  ${_gRPC_ROOT}/src/core/lib/resolver/resolver.cc
+  ${_gRPC_ROOT}/src/core/lib/resolver/resolver_registry.cc
+  ${_gRPC_ROOT}/src/core/lib/resolver/server_address.cc
+  ${_gRPC_ROOT}/src/core/lib/resource_quota/api.cc
+  ${_gRPC_ROOT}/src/core/lib/resource_quota/arena.cc
+  ${_gRPC_ROOT}/src/core/lib/resource_quota/memory_quota.cc
+  ${_gRPC_ROOT}/src/core/lib/resource_quota/periodic_update.cc
+  ${_gRPC_ROOT}/src/core/lib/resource_quota/resource_quota.cc
+  ${_gRPC_ROOT}/src/core/lib/resource_quota/thread_quota.cc
+  ${_gRPC_ROOT}/src/core/lib/resource_quota/trace.cc
+  ${_gRPC_ROOT}/src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
+  ${_gRPC_ROOT}/src/core/lib/security/authorization/evaluate_args.cc
+  ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_authorization_engine.cc
+  ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
+  ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_server_authz_filter.cc
+  ${_gRPC_ROOT}/src/core/lib/security/authorization/matchers.cc
+  ${_gRPC_ROOT}/src/core/lib/security/authorization/rbac_policy.cc
+  ${_gRPC_ROOT}/src/core/lib/security/authorization/rbac_translator.cc
+  ${_gRPC_ROOT}/src/core/lib/security/certificate_provider/certificate_provider_registry.cc
+  ${_gRPC_ROOT}/src/core/lib/security/context/security_context.cc
+  ${_gRPC_ROOT}/src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  ${_gRPC_ROOT}/src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  ${_gRPC_ROOT}/src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  ${_gRPC_ROOT}/src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  ${_gRPC_ROOT}/src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  ${_gRPC_ROOT}/src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  ${_gRPC_ROOT}/src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  ${_gRPC_ROOT}/src/core/lib/security/credentials/call_creds_util.cc
+  ${_gRPC_ROOT}/src/core/lib/security/credentials/composite/composite_credentials.cc
+  ${_gRPC_ROOT}/src/core/lib/security/credentials/credentials.cc
+  ${_gRPC_ROOT}/src/core/lib/security/credentials/plugin/plugin_credentials.cc
+  ${_gRPC_ROOT}/src/core/lib/security/credentials/tls/tls_utils.cc
+  ${_gRPC_ROOT}/src/core/lib/security/security_connector/load_system_roots_fallback.cc
+  ${_gRPC_ROOT}/src/core/lib/security/security_connector/load_system_roots_supported.cc
+  ${_gRPC_ROOT}/src/core/lib/security/security_connector/security_connector.cc
+  ${_gRPC_ROOT}/src/core/lib/security/transport/client_auth_filter.cc
+  ${_gRPC_ROOT}/src/core/lib/security/transport/secure_endpoint.cc
+  ${_gRPC_ROOT}/src/core/lib/security/transport/security_handshaker.cc
+  ${_gRPC_ROOT}/src/core/lib/security/transport/server_auth_filter.cc
+  ${_gRPC_ROOT}/src/core/lib/security/transport/tsi_error.cc
+  ${_gRPC_ROOT}/src/core/lib/security/util/json_util.cc
+  ${_gRPC_ROOT}/src/core/lib/service_config/service_config_parser.cc
+  ${_gRPC_ROOT}/src/core/lib/slice/b64.cc
+  ${_gRPC_ROOT}/src/core/lib/slice/percent_encoding.cc
+  ${_gRPC_ROOT}/src/core/lib/slice/slice.cc
+  ${_gRPC_ROOT}/src/core/lib/slice/slice_buffer.cc
+  ${_gRPC_ROOT}/src/core/lib/slice/slice_string_helpers.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/api_trace.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/builtins.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/byte_buffer.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/byte_buffer_reader.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/call.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/call_details.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/call_log_batch.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/call_trace.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/channel.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/channel_init.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/channel_ping.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/channel_stack_type.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/completion_queue.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/completion_queue_factory.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/event_string.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/init_internally.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/lame_client.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/metadata_array.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/server.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/validate_metadata.cc
+  ${_gRPC_ROOT}/src/core/lib/surface/version.cc
+  ${_gRPC_ROOT}/src/core/lib/transport/connectivity_state.cc
+  ${_gRPC_ROOT}/src/core/lib/transport/error_utils.cc
+  ${_gRPC_ROOT}/src/core/lib/transport/handshaker.cc
+  ${_gRPC_ROOT}/src/core/lib/transport/handshaker_registry.cc
+  ${_gRPC_ROOT}/src/core/lib/transport/metadata_batch.cc
+  ${_gRPC_ROOT}/src/core/lib/transport/parsed_metadata.cc
+  ${_gRPC_ROOT}/src/core/lib/transport/status_conversion.cc
+  ${_gRPC_ROOT}/src/core/lib/transport/timeout_encoding.cc
+  ${_gRPC_ROOT}/src/core/lib/transport/transport.cc
+  ${_gRPC_ROOT}/src/core/lib/transport/transport_op_string.cc
+  ${_gRPC_ROOT}/src/core/lib/uri/uri_parser.cc
+  ${_gRPC_ROOT}/src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  ${_gRPC_ROOT}/src/core/tsi/transport_security.cc
+  ${_gRPC_ROOT}/src/core/tsi/transport_security_grpc.cc
+)
+
+
+
+target_include_directories(grpc_authorization_provider
+  PUBLIC  ${_gRPC_ROOT}/include
+  PRIVATE
+    ${_gRPC_ROOT}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    ${_gRPC_PROTO_GENS_DIR}
+)
+target_link_libraries(grpc_authorization_provider PUBLIC
+  libprotobuf
+  zlib
+  cares
+  address_sorting
+  ${_gRPC_RE2_LIBRARIES}
+  upb
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::cleanup
+  absl::flat_hash_map
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::any_invocable
+  absl::function_ref
+  absl::hash
+  absl::type_traits
+  absl::statusor
+  absl::span
+  absl::utility
+  gpr
+  upb
 )
 
 
@@ -1922,35 +2251,8 @@ target_link_libraries(upb PUBLIC
 
 
 
-
-android_add_executable(TARGET gen_hpack_tables NODISTRIBUTE
-SRC # cmake-format: sortable
-  ${_gRPC_ROOT}/tools/codegen/core/gen_hpack_tables.cc
-)
-
-target_include_directories(gen_hpack_tables
-  PRIVATE
-    ${_gRPC_ROOT}
-    ${_gRPC_ROOT}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(gen_hpack_tables PRIVATE
-  libprotobuf
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
-  gpr
-)
-
-
+# Not building test: test
+# Not building test: test
 # Not building test: test
 # Not building test: test
 # Not building test: test
@@ -2113,6 +2415,29 @@ target_link_libraries(gen_hpack_tables PRIVATE
 # No codegen grpc_php_plugin
 # No codegen grpc_python_plugin
 # No codegen grpc_ruby_plugin
+# Not building test: test
+# Not building test: test
+# Not building test: test
+# Not building test: test
+# Not building test: test
+# Not building test: test
+# Not building test: test
+# Not building test: test
+# Not building test: test
+# Not building test: test
+# Not building test: test
+# Not building test: test
+# Not building test: test
+# Not building test: test
+# Not building test: test
+# Not building test: test
+# Not building test: test
+# Not building test: test
+# Not building test: test
+# Not building test: test
+# Not building test: test
+# Not building test: test
+# Not building test: test
 # Not building test: test
 # Not building test: test
 # Not building test: test

@@ -37,13 +37,12 @@ grpc_cc_test(
         "gtest",
         "opencensus-stats-test",
     ],
-    flaky = True,
     tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:lb_load_reporter",
-        "//:lb_server_load_reporting_filter",
+        "//src/core:lb_server_load_reporting_filter",
         "//test/core/util:grpc_test_util",
     ],
 )

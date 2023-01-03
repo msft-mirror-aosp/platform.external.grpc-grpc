@@ -31,6 +31,7 @@
 #include <grpc/support/log_windows.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -48,7 +49,7 @@ static DWORD deadline_to_millis_timeout(grpc_core::Timestamp deadline) {
   if (deadline == grpc_core::Timestamp::InfFuture()) {
     return INFINITE;
   }
-  grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
+  grpc_core::Timestamp now = grpc_core::Timestamp::Now();
   if (deadline < now) return 0;
   grpc_core::Duration timeout = deadline - now;
   if (timeout.millis() > std::numeric_limits<DWORD>::max()) return INFINITE;

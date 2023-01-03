@@ -27,7 +27,6 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = ["gtest"],
-    flaky = True,
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -83,6 +82,7 @@ grpc_cc_test(
         ":server_ssl_common",
         "//:gpr",
         "//:grpc",
+        "//src/core:closure",
         "//test/core/util:grpc_test_util",
     ],
 )

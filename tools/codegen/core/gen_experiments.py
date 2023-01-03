@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Generate experiment related code artifacts. 
+Generate experiment related code artifacts.
 
 Invoke as: tools/codegen/core/gen_experiments.py
 Experiment definitions are in src/core/lib/experiments/experiments.yaml
@@ -33,8 +33,29 @@ import sys
 
 import yaml
 
+# TODO(ctiller): if we ever add another argument switch this to argparse
+check_dates = True
+if sys.argv[1:] == ["--check"]:
+    check_dates = False  # for formatting checks we don't verify expiry dates
+
 with open('src/core/lib/experiments/experiments.yaml') as f:
     attrs = yaml.load(f.read(), Loader=yaml.FullLoader)
+
+DEFAULTS = {
+    'broken': 'false',
+    False: 'false',
+    True: 'true',
+    'debug': 'kDefaultForDebugOnly',
+    'release': 'kDefaultForReleaseOnly',
+}
+
+BZL_LIST_FOR_DEFAULTS = {
+    'broken': None,
+    False: 'off',
+    True: 'on',
+    'debug': 'dbg',
+    'release': 'opt',
+}
 
 error = False
 today = datetime.date.today()
@@ -50,21 +71,27 @@ for attr in attrs:
     if 'default' not in attr:
         print("no default for experiment %s" % attr['name'])
         error = True
-    if 'expiry' not in attr:
-        print("no expiry for experiment %s" % attr['name'])
+    if attr['default'] not in DEFAULTS:
+        print("invalid default for experiment %s: %r" %
+              (attr['name'], attr['default']))
         error = True
     if 'owner' not in attr:
         print("no owner for experiment %s" % attr['name'])
         error = True
+    if 'expiry' not in attr:
+        print("no expiry for experiment %s" % attr['name'])
+        error = True
     expiry = datetime.datetime.strptime(attr['expiry'], '%Y/%m/%d').date()
-    if expiry < today:
-        print("experiment %s expired on %s" % (attr['name'], attr['expiry']))
-        error = True
-    if expiry > two_quarters_from_now:
-        print("experiment %s expires far in the future on %s" %
-              (attr['name'], attr['expiry']))
-        print("expiry should be no more than two quarters from now")
-        error = True
+    if check_dates:
+        if expiry < today:
+            print("experiment %s expired on %s" %
+                  (attr['name'], attr['expiry']))
+            error = True
+        if expiry > two_quarters_from_now:
+            print("experiment %s expires far in the future on %s" %
+                  (attr['name'], attr['expiry']))
+            print("expiry should be no more than two quarters from now")
+            error = True
 
 if error:
     sys.exit(1)
@@ -120,7 +147,6 @@ EXPERIMENT_METADATA = """struct ExperimentMetadata {
   const char* name;
   const char* description;
   bool default_value;
-  bool (*is_enabled)();
 };"""
 
 with open('src/core/lib/experiments/experiments.h', 'w') as H:
@@ -137,11 +163,14 @@ with open('src/core/lib/experiments/experiments.h', 'w') as H:
     print("#include <grpc/support/port_platform.h>", file=H)
     print(file=H)
     print("#include <stddef.h>", file=H)
+    print("#include \"src/core/lib/experiments/config.h\"", file=H)
     print(file=H)
     print("namespace grpc_core {", file=H)
     print(file=H)
-    for attr in attrs:
-        print("bool Is%sEnabled();" % snake_to_pascal(attr['name']), file=H)
+    for i, attr in enumerate(attrs):
+        print("inline bool Is%sEnabled() { return IsExperimentEnabled(%d); }" %
+              (snake_to_pascal(attr['name']), i),
+              file=H)
     print(file=H)
     print(EXPERIMENT_METADATA, file=H)
     print(file=H)
@@ -164,47 +193,45 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
 
     print("#include <grpc/support/port_platform.h>", file=C)
     print("#include \"src/core/lib/experiments/experiments.h\"", file=C)
-    print("#include \"src/core/lib/gprpp/global_config.h\"", file=C)
     print(file=C)
     print("namespace {", file=C)
     for attr in attrs:
         print("const char* const description_%s = %s;" %
               (attr['name'], c_str(attr['description'])),
               file=C)
+    have_defaults = set(DEFAULTS[attr['default']] for attr in attrs)
+    if 'kDefaultForDebugOnly' in have_defaults or 'kDefaultForReleaseOnly' in have_defaults:
+        print("#ifdef NDEBUG", file=C)
+        if 'kDefaultForDebugOnly' in have_defaults:
+            print("const bool kDefaultForDebugOnly = false;", file=C)
+        if 'kDefaultForReleaseOnly' in have_defaults:
+            print("const bool kDefaultForReleaseOnly = true;", file=C)
+        print("#else", file=C)
+        if 'kDefaultForDebugOnly' in have_defaults:
+            print("const bool kDefaultForDebugOnly = true;", file=C)
+        if 'kDefaultForReleaseOnly' in have_defaults:
+            print("const bool kDefaultForReleaseOnly = false;", file=C)
+        print("#endif", file=C)
     print("}", file=C)
-    print(file=C)
-    for attr in attrs:
-        print(
-            "GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_enable_%s, %s, description_%s);"
-            % (attr['name'], 'true' if attr['default'] else 'false',
-               attr['name']),
-            file=C)
     print(file=C)
     print("namespace grpc_core {", file=C)
     print(file=C)
-    for attr in attrs:
-        print("bool Is%sEnabled() {" % snake_to_pascal(attr['name']), file=C)
-        print(
-            "  static const bool enabled = GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_%s);"
-            % attr['name'],
-            file=C)
-        print("  return enabled;", file=C)
-        print("}", file=C)
-    print(file=C)
     print("const ExperimentMetadata g_experiment_metadata[] = {", file=C)
     for attr in attrs:
-        print("  {%s, description_%s, %s, Is%sEnabled}," %
-              (c_str(attr['name']), attr['name'], 'true'
-               if attr['default'] else 'false', snake_to_pascal(attr['name'])),
+        print("  {%s, description_%s, %s}," %
+              (c_str(attr['name']), attr['name'], DEFAULTS[attr['default']]),
               file=C)
     print("};", file=C)
     print(file=C)
     print("}  // namespace grpc_core", file=C)
 
-tags_to_experiments = collections.defaultdict(list)
+bzl_to_tags_to_experiments = dict((key, collections.defaultdict(list))
+                                  for key in BZL_LIST_FOR_DEFAULTS.keys()
+                                  if key is not None)
+
 for attr in attrs:
     for tag in attr['test_tags']:
-        tags_to_experiments[tag].append(attr['name'])
+        bzl_to_tags_to_experiments[attr['default']][tag].append(attr['name'])
 
 with open('bazel/experiments.bzl', 'w') as B:
     put_copyright(B, "#")
@@ -218,11 +245,19 @@ with open('bazel/experiments.bzl', 'w') as B:
         "\"\"\"Dictionary of tags to experiments so we know when to test different experiments.\"\"\"",
         file=B)
 
+    bzl_to_tags_to_experiments = sorted(
+        (BZL_LIST_FOR_DEFAULTS[default], tags_to_experiments)
+        for default, tags_to_experiments in bzl_to_tags_to_experiments.items()
+        if BZL_LIST_FOR_DEFAULTS[default] is not None)
+
     print(file=B)
     print("EXPERIMENTS = {", file=B)
-    for tag, experiments in sorted(tags_to_experiments.items()):
-        print("    \"%s\": [" % tag, file=B)
-        for experiment in sorted(experiments):
-            print("        \"%s\"," % experiment, file=B)
-        print("    ],", file=B)
+    for key, tags_to_experiments in bzl_to_tags_to_experiments:
+        print("    \"%s\": {" % key, file=B)
+        for tag, experiments in sorted(tags_to_experiments.items()):
+            print("        \"%s\": [" % tag, file=B)
+            for experiment in sorted(experiments):
+                print("            \"%s\"," % experiment, file=B)
+            print("        ],", file=B)
+        print("    },", file=B)
     print("}", file=B)

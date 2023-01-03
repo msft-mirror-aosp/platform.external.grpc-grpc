@@ -37,6 +37,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -180,7 +181,7 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
 
 class CancelDuringAresQuery : public ::testing::Test {
  protected:
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
     // Sanity check the time that it takes to run the test
     // including the teardown time (the teardown
@@ -190,7 +191,7 @@ class CancelDuringAresQuery : public ::testing::Test {
     grpc_init();
   }
 
-  static void TearDownTestCase() {
+  static void TearDownTestSuite() {
     grpc_shutdown();
     if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
       gpr_log(GPR_ERROR, "Test took too long");
@@ -221,7 +222,7 @@ void MaybePollArbitraryPollsetTwice() {
   gpr_mu_lock(mu);
   GRPC_LOG_IF_ERROR(
       "pollset_work",
-      grpc_pollset_work(pollset, &worker, grpc_core::ExecCtx::Get()->Now()));
+      grpc_pollset_work(pollset, &worker, grpc_core::Timestamp::Now()));
   gpr_mu_unlock(mu);
   grpc_core::ExecCtx::Get()->Flush();
   // Make a second zero-timeout poll (in case the first one
@@ -229,7 +230,7 @@ void MaybePollArbitraryPollsetTwice() {
   gpr_mu_lock(mu);
   GRPC_LOG_IF_ERROR(
       "pollset_work",
-      grpc_pollset_work(pollset, &worker, grpc_core::ExecCtx::Get()->Now()));
+      grpc_pollset_work(pollset, &worker, grpc_core::Timestamp::Now()));
   gpr_mu_unlock(mu);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_pollset_destroy(pollset);

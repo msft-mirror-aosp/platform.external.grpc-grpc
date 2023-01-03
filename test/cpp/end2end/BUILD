@@ -126,7 +126,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    flaky = True,
     tags = [
         "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
@@ -236,7 +235,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    flaky = True,
     deps = [
         ":interceptors_util",
         ":test_service_impl",
@@ -296,6 +294,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpcpp_channelz",
+        "//src/core:slice",
         "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
@@ -691,7 +690,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    flaky = True,
     tags = [
         "no_test_ios",
         "no_windows",
@@ -942,7 +940,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    flaky = True,
     deps = [
         "//:grpc++",
         "//:grpcpp_orca_service",

@@ -80,15 +80,28 @@ inline constexpr uint32_t BitCount(uint32_t i) {
 }
 
 inline constexpr uint32_t BitCount(uint64_t i) {
-  return BitCount(uint32_t(i)) + BitCount(uint32_t(i >> 32));
+  return BitCount(static_cast<uint32_t>(i)) +
+         BitCount(static_cast<uint32_t>(i >> 32));
 }
 
-inline constexpr uint32_t BitCount(uint16_t i) { return BitCount(uint32_t(i)); }
-inline constexpr uint32_t BitCount(uint8_t i) { return BitCount(uint32_t(i)); }
-inline constexpr uint32_t BitCount(int64_t i) { return BitCount(uint64_t(i)); }
-inline constexpr uint32_t BitCount(int32_t i) { return BitCount(uint32_t(i)); }
-inline constexpr uint32_t BitCount(int16_t i) { return BitCount(uint16_t(i)); }
-inline constexpr uint32_t BitCount(int8_t i) { return BitCount(uint8_t(i)); }
+inline constexpr uint32_t BitCount(uint16_t i) {
+  return BitCount(static_cast<uint32_t>(i));
+}
+inline constexpr uint32_t BitCount(uint8_t i) {
+  return BitCount(static_cast<uint32_t>(i));
+}
+inline constexpr uint32_t BitCount(int64_t i) {
+  return BitCount(static_cast<uint64_t>(i));
+}
+inline constexpr uint32_t BitCount(int32_t i) {
+  return BitCount(static_cast<uint32_t>(i));
+}
+inline constexpr uint32_t BitCount(int16_t i) {
+  return BitCount(static_cast<uint16_t>(i));
+}
+inline constexpr uint32_t BitCount(int8_t i) {
+  return BitCount(static_cast<uint8_t>(i));
+}
 
 // This function uses operator< to implement a qsort-style comparison, whereby:
 // if a is smaller than b, a number smaller than 0 is returned.
@@ -151,6 +164,17 @@ inline int64_t SaturatingAdd(int64_t a, int64_t b) {
 
 inline uint32_t MixHash32(uint32_t a, uint32_t b) {
   return RotateLeft(a, 2u) ^ b;
+}
+
+inline uint32_t RoundUpToPowerOf2(uint32_t v) {
+  v--;
+  v |= v >> 1;
+  v |= v >> 2;
+  v |= v >> 4;
+  v |= v >> 8;
+  v |= v >> 16;
+  v++;
+  return v;
 }
 
 }  // namespace grpc_core

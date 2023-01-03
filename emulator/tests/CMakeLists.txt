@@ -81,136 +81,6 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib64)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/archives)
 
-android_add_library(TARGET end2end_nosec_tests
-LICENSE Apache-2.0
-URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
-REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
-NOTICE "REPO/NOTICE.txt"
-
-SRC
-  ${_gRPC_ROOT}/test/core/end2end/cq_verifier.cc
-  ${_gRPC_ROOT}/test/core/end2end/data/client_certs.cc
-  ${_gRPC_ROOT}/test/core/end2end/data/server1_cert.cc
-  ${_gRPC_ROOT}/test/core/end2end/data/server1_key.cc
-  ${_gRPC_ROOT}/test/core/end2end/data/test_root_cert.cc
-  ${_gRPC_ROOT}/test/core/end2end/end2end_nosec_tests.cc
-  ${_gRPC_ROOT}/test/core/end2end/end2end_test_utils.cc
-  ${_gRPC_ROOT}/test/core/end2end/fixtures/http_proxy_fixture.cc
-  ${_gRPC_ROOT}/test/core/end2end/fixtures/local_util.cc
-  ${_gRPC_ROOT}/test/core/end2end/fixtures/proxy.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/authority_not_supported.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/bad_hostname.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/bad_ping.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/binary_metadata.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/call_host_override.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/cancel_after_accept.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/cancel_after_client_done.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/cancel_after_invoke.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/cancel_after_round_trip.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/cancel_before_invoke.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/cancel_in_a_vacuum.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/cancel_with_status.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/channelz.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/client_streaming.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/compressed_payload.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/connectivity.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/default_host.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/disappearing_server.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/empty_batch.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/filter_causes_close.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/filter_context.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/filter_init_fails.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/filter_latency.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/filter_status_code.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/graceful_server_shutdown.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/high_initial_seqno.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/hpack_size.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/idempotent_request.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/invoke_large_request.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/keepalive_timeout.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/large_metadata.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/max_concurrent_streams.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/max_connection_age.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/max_connection_idle.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/max_message_length.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/negative_deadline.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/no_error_on_hotpath.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/no_logging.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/no_op.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/payload.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/ping.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/ping_pong_streaming.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/proxy_auth.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/registered_call.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/request_with_flags.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/request_with_payload.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/resource_quota_server.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_cancel_during_delay.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_cancellation.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_disabled.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_lb_drop.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_lb_fail.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_non_retriable_status.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_recv_initial_metadata.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_recv_message.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_send_initial_metadata_refs.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_send_op_fails.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_server_pushback_delay.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_server_pushback_disabled.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_streaming.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_streaming_after_commit.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_throttled.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/retry_too_many_attempts.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/server_finishes_request.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/server_streaming.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/shutdown_finishes_calls.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/shutdown_finishes_tags.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/simple_cacheable_request.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/simple_delayed_request.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/simple_metadata.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/simple_request.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/stream_compression_compressed_payload.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/stream_compression_payload.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/stream_compression_ping_pong_streaming.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/streaming_error_response.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/trailing_metadata.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/write_buffering.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/write_buffering_at_end.cc
-  ${_gRPC_ROOT}/test/core/util/test_lb_policies.cc
-)
-
-
-target_compile_definitions(end2end_nosec_tests PRIVATE -DPB_FIELD_16BIT)
-target_compile_definitions(end2end_nosec_tests PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-target_include_directories(end2end_nosec_tests
-  PUBLIC  ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-target_link_libraries(end2end_nosec_tests PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-add_dependencies(end2end_nosec_tests project_benchmark project_gflags)
-
 android_add_library(TARGET end2end_tests
 LICENSE Apache-2.0
 URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
@@ -218,11 +88,9 @@ REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
 NOTICE "REPO/NOTICE.txt"
 
 SRC
-  ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_authorization_engine.cc
   ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  ${_gRPC_ROOT}/src/core/lib/security/authorization/matchers.cc
-  ${_gRPC_ROOT}/src/core/lib/security/authorization/rbac_policy.cc
   ${_gRPC_ROOT}/src/core/lib/security/authorization/rbac_translator.cc
+  ${_gRPC_ROOT}/test/core/compression/args_utils.cc
   ${_gRPC_ROOT}/test/core/end2end/cq_verifier.cc
   ${_gRPC_ROOT}/test/core/end2end/data/client_certs.cc
   ${_gRPC_ROOT}/test/core/end2end/data/server1_cert.cc
@@ -258,10 +126,11 @@ SRC
   ${_gRPC_ROOT}/test/core/end2end/tests/filter_init_fails.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/filter_latency.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/filter_status_code.cc
+  ${_gRPC_ROOT}/test/core/end2end/tests/filtered_metadata.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/graceful_server_shutdown.cc
+  ${_gRPC_ROOT}/test/core/end2end/tests/grpc_authz.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/high_initial_seqno.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/hpack_size.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/idempotent_request.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/invoke_large_request.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/keepalive_timeout.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/large_metadata.cc
@@ -282,6 +151,7 @@ SRC
   ${_gRPC_ROOT}/test/core/end2end/tests/request_with_payload.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/resource_quota_server.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/retry.cc
+  ${_gRPC_ROOT}/test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/retry_cancel_during_delay.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/retry_cancellation.cc
@@ -297,9 +167,11 @@ SRC
   ${_gRPC_ROOT}/test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/retry_recv_initial_metadata.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/retry_recv_message.cc
+  ${_gRPC_ROOT}/test/core/end2end/tests/retry_recv_message_replay.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/retry_send_initial_metadata_refs.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/retry_send_op_fails.cc
+  ${_gRPC_ROOT}/test/core/end2end/tests/retry_send_recv_batch.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/retry_server_pushback_delay.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/retry_server_pushback_disabled.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/retry_streaming.cc
@@ -307,18 +179,18 @@ SRC
   ${_gRPC_ROOT}/test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/retry_throttled.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/retry_too_many_attempts.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/sdk_authz.cc
+  ${_gRPC_ROOT}/test/core/end2end/tests/retry_transparent_goaway.cc
+  ${_gRPC_ROOT}/test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
+  ${_gRPC_ROOT}/test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
+  ${_gRPC_ROOT}/test/core/end2end/tests/retry_unref_before_finish.cc
+  ${_gRPC_ROOT}/test/core/end2end/tests/retry_unref_before_recv.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/server_finishes_request.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/server_streaming.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/shutdown_finishes_calls.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/shutdown_finishes_tags.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/simple_cacheable_request.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/simple_delayed_request.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/simple_metadata.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/simple_request.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/stream_compression_compressed_payload.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/stream_compression_payload.cc
-  ${_gRPC_ROOT}/test/core/end2end/tests/stream_compression_ping_pong_streaming.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/streaming_error_response.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/trailing_metadata.cc
   ${_gRPC_ROOT}/test/core/end2end/tests/write_buffering.cc
@@ -355,28 +227,16 @@ REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
 NOTICE "REPO/NOTICE.txt"
 
 SRC
+  ${_gRPC_ROOT}/test/core/event_engine/test_init.cc
   ${_gRPC_ROOT}/test/core/util/build.cc
-  ${_gRPC_ROOT}/test/core/util/cmdline.cc
-  ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
-  ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
-  ${_gRPC_ROOT}/test/core/util/histogram.cc
-  ${_gRPC_ROOT}/test/core/util/memory_counters.cc
-  ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
-  ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
-  ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
   ${_gRPC_ROOT}/test/core/util/port.cc
   ${_gRPC_ROOT}/test/core/util/port_isolated_runtime_environment.cc
   ${_gRPC_ROOT}/test/core/util/port_server_client.cc
   ${_gRPC_ROOT}/test/core/util/reconnect_server.cc
-  ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
-  ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
   ${_gRPC_ROOT}/test/core/util/stack_tracer.cc
-  ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
-  ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
   ${_gRPC_ROOT}/test/core/util/test_config.cc
   ${_gRPC_ROOT}/test/core/util/test_tcp_server.cc
   ${_gRPC_ROOT}/test/core/util/tls_utils.cc
-  ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
 
 
@@ -411,27 +271,15 @@ REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
 NOTICE "REPO/NOTICE.txt"
 
 SRC
+  ${_gRPC_ROOT}/test/core/event_engine/test_init.cc
   ${_gRPC_ROOT}/test/core/util/build.cc
-  ${_gRPC_ROOT}/test/core/util/cmdline.cc
-  ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
-  ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
-  ${_gRPC_ROOT}/test/core/util/histogram.cc
-  ${_gRPC_ROOT}/test/core/util/memory_counters.cc
-  ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
-  ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
-  ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
   ${_gRPC_ROOT}/test/core/util/port.cc
   ${_gRPC_ROOT}/test/core/util/port_isolated_runtime_environment.cc
   ${_gRPC_ROOT}/test/core/util/port_server_client.cc
   ${_gRPC_ROOT}/test/core/util/reconnect_server.cc
-  ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
-  ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
   ${_gRPC_ROOT}/test/core/util/stack_tracer.cc
-  ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
-  ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
   ${_gRPC_ROOT}/test/core/util/test_config.cc
   ${_gRPC_ROOT}/test/core/util/test_tcp_server.cc
-  ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
 
 
@@ -479,12 +327,29 @@ SRC
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+  ${_gRPC_ROOT}/test/core/util/cmdline.cc
+  ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+  ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+  ${_gRPC_ROOT}/test/core/util/histogram.cc
+  ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+  ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+  ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+  ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+  ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+  ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+  ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+  ${_gRPC_ROOT}/test/core/util/tracer_util.cc
   ${_gRPC_ROOT}/test/cpp/microbenchmarks/helpers.cc
 )
 
 protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo.proto)
 protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo_messages.proto)
 protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto)
+protobuf_generate_grpc_cpp(SOURCE_DIR ${_gRPC_ROOT} SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto)
 
 target_compile_definitions(benchmark_helpers PRIVATE -DPB_FIELD_16BIT)
 target_compile_definitions(benchmark_helpers PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
@@ -596,6 +461,18 @@ SRC
   ${_gRPC_ROOT}/test/core/end2end/data/server1_cert.cc
   ${_gRPC_ROOT}/test/core/end2end/data/server1_key.cc
   ${_gRPC_ROOT}/test/core/end2end/data/test_root_cert.cc
+  ${_gRPC_ROOT}/test/core/util/cmdline.cc
+  ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+  ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+  ${_gRPC_ROOT}/test/core/util/histogram.cc
+  ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+  ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+  ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+  ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+  ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+  ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+  ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+  ${_gRPC_ROOT}/test/core/util/tracer_util.cc
   ${_gRPC_ROOT}/test/cpp/util/byte_buffer_proto_helper.cc
   ${_gRPC_ROOT}/test/cpp/util/create_test_channel.cc
   ${_gRPC_ROOT}/test/cpp/util/string_ref_helper.cc
@@ -1060,6 +937,37 @@ target_link_libraries(absl/base:malloc_internal PRIVATE
 
 add_dependencies(absl/base:malloc_internal project_benchmark project_gflags)
 
+android_add_library(TARGET absl/base:prefetch
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
+)
+
+
+target_compile_definitions(absl/base:prefetch PRIVATE -DPB_FIELD_16BIT)
+target_compile_definitions(absl/base:prefetch PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+target_include_directories(absl/base:prefetch
+  PUBLIC  ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+)
+
+target_link_libraries(absl/base:prefetch PRIVATE
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/base:config
+)
+
+add_dependencies(absl/base:prefetch project_benchmark project_gflags)
+
 android_add_library(TARGET absl/base:pretty_function
 LICENSE Apache-2.0
 URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
@@ -1120,6 +1028,7 @@ target_link_libraries(absl/base:raw_logging_internal PRIVATE
   absl/base:atomic_hook
   absl/base:config
   absl/base:core_headers
+  absl/base:errno_saver
   absl/base:log_severity
 )
 
@@ -1319,6 +1228,7 @@ target_include_directories(absl/container:btree
 target_link_libraries(absl/container:btree PRIVATE
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl/base:core_headers
+  absl/base:raw_logging_internal
   absl/base:throw_delegate
   absl/container:common
   absl/container:compressed_tuple
@@ -1495,6 +1405,7 @@ target_include_directories(absl/container:flat_hash_map
 target_link_libraries(absl/container:flat_hash_map PRIVATE
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl/algorithm:container
+  absl/base:core_headers
   absl/container:container_memory
   absl/container:hash_function_defaults
   absl/container:raw_hash_map
@@ -1695,8 +1606,8 @@ target_include_directories(absl/container:hashtablez_sampler
 target_link_libraries(absl/container:hashtablez_sampler PRIVATE
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl/base:base
+  absl/base:config
   absl/base:core_headers
-  absl/container:have_sse
   absl/debugging:stacktrace
   absl/memory:memory
   absl/profiling:exponential_biased
@@ -1706,36 +1617,6 @@ target_link_libraries(absl/container:hashtablez_sampler PRIVATE
 )
 
 add_dependencies(absl/container:hashtablez_sampler project_benchmark project_gflags)
-
-android_add_library(TARGET absl/container:have_sse
-LICENSE Apache-2.0
-URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
-REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
-NOTICE "REPO/NOTICE.txt"
-
-SRC
-)
-
-
-target_compile_definitions(absl/container:have_sse PRIVATE -DPB_FIELD_16BIT)
-target_compile_definitions(absl/container:have_sse PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-target_include_directories(absl/container:have_sse
-  PUBLIC  ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-target_link_libraries(absl/container:have_sse PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-)
-
-add_dependencies(absl/container:have_sse project_benchmark project_gflags)
 
 android_add_library(TARGET absl/container:inlined_vector
 LICENSE Apache-2.0
@@ -1870,45 +1751,15 @@ target_include_directories(absl/container:node_hash_map
 target_link_libraries(absl/container:node_hash_map PRIVATE
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl/algorithm:container
+  absl/base:core_headers
   absl/container:container_memory
   absl/container:hash_function_defaults
-  absl/container:node_hash_policy
+  absl/container:node_slot_policy
   absl/container:raw_hash_map
   absl/memory:memory
 )
 
 add_dependencies(absl/container:node_hash_map project_benchmark project_gflags)
-
-android_add_library(TARGET absl/container:node_hash_policy
-LICENSE Apache-2.0
-URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
-REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
-NOTICE "REPO/NOTICE.txt"
-
-SRC
-)
-
-
-target_compile_definitions(absl/container:node_hash_policy PRIVATE -DPB_FIELD_16BIT)
-target_compile_definitions(absl/container:node_hash_policy PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-target_include_directories(absl/container:node_hash_policy
-  PUBLIC  ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-target_link_libraries(absl/container:node_hash_policy PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl/base:config
-)
-
-add_dependencies(absl/container:node_hash_policy project_benchmark project_gflags)
 
 android_add_library(TARGET absl/container:node_hash_set
 LICENSE Apache-2.0
@@ -1937,13 +1788,45 @@ target_include_directories(absl/container:node_hash_set
 target_link_libraries(absl/container:node_hash_set PRIVATE
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl/algorithm:container
+  absl/base:core_headers
   absl/container:hash_function_defaults
-  absl/container:node_hash_policy
+  absl/container:node_slot_policy
   absl/container:raw_hash_set
   absl/memory:memory
 )
 
 add_dependencies(absl/container:node_hash_set project_benchmark project_gflags)
+
+android_add_library(TARGET absl/container:node_slot_policy
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
+)
+
+
+target_compile_definitions(absl/container:node_slot_policy PRIVATE -DPB_FIELD_16BIT)
+target_compile_definitions(absl/container:node_slot_policy PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+target_include_directories(absl/container:node_slot_policy
+  PUBLIC  ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+)
+
+target_link_libraries(absl/container:node_slot_policy PRIVATE
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/base:config
+)
+
+add_dependencies(absl/container:node_slot_policy project_benchmark project_gflags)
 
 android_add_library(TARGET absl/container:raw_hash_map
 LICENSE Apache-2.0
@@ -2008,13 +1891,13 @@ target_link_libraries(absl/container:raw_hash_set PRIVATE
   absl/base:config
   absl/base:core_headers
   absl/base:endian
+  absl/base:prefetch
   absl/container:common
   absl/container:compressed_tuple
   absl/container:container_memory
   absl/container:hash_policy_traits
   absl/container:hashtable_debug_hooks
   absl/container:hashtablez_sampler
-  absl/container:have_sse
   absl/memory:memory
   absl/meta:type_traits
   absl/numeric:bits
@@ -2161,7 +2044,6 @@ target_link_libraries(absl/debugging:failure_signal_handler PRIVATE
   absl/base:base
   absl/base:config
   absl/base:core_headers
-  absl/base:errno_saver
   absl/base:raw_logging_internal
   absl/debugging:examine_stack
   absl/debugging:stacktrace
@@ -2201,38 +2083,6 @@ target_link_libraries(absl/debugging:leak_check PRIVATE
 )
 
 add_dependencies(absl/debugging:leak_check project_benchmark project_gflags)
-
-android_add_library(TARGET absl/debugging:leak_check_disable
-LICENSE Apache-2.0
-URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
-REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
-NOTICE "REPO/NOTICE.txt"
-
-SRC
-  ${_gRPC_ROOT}/third_party/abseil-cpp/absl/debugging/leak_check_disable.cc
-)
-
-
-target_compile_definitions(absl/debugging:leak_check_disable PRIVATE -DPB_FIELD_16BIT)
-target_compile_definitions(absl/debugging:leak_check_disable PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-target_include_directories(absl/debugging:leak_check_disable
-  PUBLIC  ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-target_link_libraries(absl/debugging:leak_check_disable PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl/base:config
-)
-
-add_dependencies(absl/debugging:leak_check_disable project_benchmark project_gflags)
 
 android_add_library(TARGET absl/debugging:stacktrace
 LICENSE Apache-2.0
@@ -2482,6 +2332,7 @@ target_link_libraries(absl/flags:flag_internal PRIVATE
   absl/base:base
   absl/base:config
   absl/base:core_headers
+  absl/base:dynamic_annotations
   absl/flags:commandlineflag
   absl/flags:commandlineflag_internal
   absl/flags:config
@@ -2528,6 +2379,7 @@ target_link_libraries(absl/flags:marshalling PRIVATE
   absl/base:log_severity
   absl/strings:str_format
   absl/strings:strings
+  absl/types:optional
 )
 
 add_dependencies(absl/flags:marshalling project_benchmark project_gflags)
@@ -2799,6 +2651,41 @@ target_link_libraries(absl/flags:usage_internal PRIVATE
 
 add_dependencies(absl/flags:usage_internal project_benchmark project_gflags)
 
+android_add_library(TARGET absl/functional:any_invocable
+LICENSE Apache-2.0
+URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
+REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
+NOTICE "REPO/NOTICE.txt"
+
+SRC
+)
+
+
+target_compile_definitions(absl/functional:any_invocable PRIVATE -DPB_FIELD_16BIT)
+target_compile_definitions(absl/functional:any_invocable PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+target_include_directories(absl/functional:any_invocable
+  PUBLIC  ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+)
+
+target_link_libraries(absl/functional:any_invocable PRIVATE
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/base:base_internal
+  absl/base:config
+  absl/base:core_headers
+  absl/meta:type_traits
+  absl/utility:utility
+)
+
+add_dependencies(absl/functional:any_invocable project_benchmark project_gflags)
+
 android_add_library(TARGET absl/functional:bind_front
 LICENSE Apache-2.0
 URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
@@ -2931,6 +2818,7 @@ target_link_libraries(absl/hash:hash PRIVATE
   absl/base:core_headers
   absl/base:endian
   absl/container:fixed_array
+  absl/functional:function_ref
   absl/hash:city
   absl/hash:low_level_hash
   absl/meta:type_traits
@@ -3299,6 +3187,7 @@ target_link_libraries(absl/random/internal:fast_uniform_bits PRIVATE
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl/base:config
   absl/meta:type_traits
+  absl/random/internal:traits
 )
 
 add_dependencies(absl/random/internal:fast_uniform_bits project_benchmark project_gflags)
@@ -3495,11 +3384,11 @@ target_include_directories(absl/random/internal:nonsecure_base
 target_link_libraries(absl/random/internal:nonsecure_base PRIVATE
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl/base:core_headers
+  absl/container:inlined_vector
   absl/meta:type_traits
   absl/random/internal:pool_urbg
   absl/random/internal:salted_seed_seq
   absl/random/internal:seed_material
-  absl/types:optional
   absl/types:span
 )
 
@@ -3888,6 +3777,8 @@ target_include_directories(absl/random/internal:traits
 target_link_libraries(absl/random/internal:traits PRIVATE
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl/base:config
+  absl/numeric:bits
+  absl/numeric:int128
 )
 
 add_dependencies(absl/random/internal:traits project_benchmark project_gflags)
@@ -3920,6 +3811,7 @@ target_link_libraries(absl/random/internal:uniform_helper PRIVATE
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl/base:config
   absl/meta:type_traits
+  absl/numeric:int128
   absl/random/internal:traits
 )
 
@@ -4136,8 +4028,7 @@ target_include_directories(absl/random:seed_sequences
 
 target_link_libraries(absl/random:seed_sequences PRIVATE
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl/container:inlined_vector
-  absl/random/internal:nonsecure_base
+  absl/base:config
   absl/random/internal:pool_urbg
   absl/random/internal:salted_seed_seq
   absl/random/internal:seed_material
@@ -4176,9 +4067,9 @@ target_include_directories(absl/status:status
 target_link_libraries(absl/status:status PRIVATE
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl/base:atomic_hook
-  absl/base:config
   absl/base:core_headers
   absl/base:raw_logging_internal
+  absl/base:strerror
   absl/container:inlined_vector
   absl/debugging:stacktrace
   absl/debugging:symbolize
@@ -4238,6 +4129,8 @@ NOTICE "REPO/NOTICE.txt"
 
 SRC
   ${_gRPC_ROOT}/third_party/abseil-cpp/absl/strings/cord.cc
+  ${_gRPC_ROOT}/third_party/abseil-cpp/absl/strings/cord_analysis.cc
+  ${_gRPC_ROOT}/third_party/abseil-cpp/absl/strings/cord_buffer.cc
 )
 
 
@@ -4266,6 +4159,7 @@ target_link_libraries(absl/strings:cord PRIVATE
   absl/container:inlined_vector
   absl/functional:function_ref
   absl/meta:type_traits
+  absl/numeric:bits
   absl/strings:cord_internal
   absl/strings:cordz_functions
   absl/strings:cordz_info
@@ -4276,6 +4170,7 @@ target_link_libraries(absl/strings:cord PRIVATE
   absl/strings:str_format
   absl/strings:strings
   absl/types:optional
+  absl/types:span
 )
 
 add_dependencies(absl/strings:cord project_benchmark project_gflags)
@@ -4292,6 +4187,7 @@ SRC
   ${_gRPC_ROOT}/third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_navigator.cc
   ${_gRPC_ROOT}/third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_reader.cc
   ${_gRPC_ROOT}/third_party/abseil-cpp/absl/strings/internal/cord_rep_consume.cc
+  ${_gRPC_ROOT}/third_party/abseil-cpp/absl/strings/internal/cord_rep_crc.cc
   ${_gRPC_ROOT}/third_party/abseil-cpp/absl/strings/internal/cord_rep_ring.cc
 )
 
@@ -4686,6 +4582,7 @@ target_link_libraries(absl/strings:str_format_internal PRIVATE
   absl/strings:strings
   absl/types:optional
   absl/types:span
+  absl/utility:utility
 )
 
 add_dependencies(absl/strings:str_format_internal project_benchmark project_gflags)
@@ -5338,7 +5235,6 @@ SRC
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/asn1/a_object.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/asn1/a_octet.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/asn1/a_print.c
-  ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/asn1/a_strex.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/asn1/a_strnid.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/asn1/a_time.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/asn1/a_type.c
@@ -5347,6 +5243,7 @@ SRC
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/asn1/asn1_lib.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/asn1/asn1_par.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/asn1/asn_pack.c
+  ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/asn1/f_enum.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/asn1/f_int.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/asn1/f_string.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/asn1/tasn_dec.c
@@ -5432,6 +5329,7 @@ SRC
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/ex_data.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/fipsmodule/bcm.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.c
+  ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/fipsmodule/is_fips.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/hkdf/hkdf.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/hpke/hpke.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c
@@ -5478,13 +5376,13 @@ SRC
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/trust_token/voprf.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/x509/a_digest.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/x509/a_sign.c
+  ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/x509/a_strex.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/x509/a_verify.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/x509/algorithm.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/x509/asn1_gen.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/x509/by_dir.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/x509/by_file.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/x509/i2d_pr.c
-  ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/x509/name_print.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/x509/rsa_pss.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/x509/t_crl.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/x509/t_req.c
@@ -5498,6 +5396,7 @@ SRC
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/x509/x509_ext.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/x509/x509_lu.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/x509/x509_obj.c
+  ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/x509/x509_r2x.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/x509/x509_req.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/x509/x509_set.c
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/x509/x509_trs.c
@@ -5562,8 +5461,6 @@ SRC
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/ssl/d1_srtp.cc
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/ssl/dtls_method.cc
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/ssl/dtls_record.cc
-  ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/ssl/encrypted_client_hello.cc
-  ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/ssl/extensions.cc
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/ssl/handoff.cc
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/ssl/handshake.cc
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/ssl/handshake_client.cc
@@ -5586,6 +5483,7 @@ SRC
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/ssl/ssl_versions.cc
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/ssl/ssl_x509.cc
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/ssl/t1_enc.cc
+  ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/ssl/t1_lib.cc
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/ssl/tls13_both.cc
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/ssl/tls13_client.cc
   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/ssl/tls13_enc.cc
@@ -5706,442 +5604,6 @@ target_link_libraries(re2 PRIVATE
 add_dependencies(re2 project_benchmark project_gflags)
 
 
-  android_add_executable(TARGET algorithm_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/compression/algorithm_test.cc
-)
-
-  target_compile_definitions(algorithm_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(algorithm_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(algorithm_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(algorithm_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(algorithm_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET alloc_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/gpr/alloc_test.cc
-)
-
-  target_compile_definitions(alloc_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(alloc_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(alloc_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(alloc_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(alloc_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET alpn_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/transport/chttp2/alpn_test.cc
-)
-
-  target_compile_definitions(alpn_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(alpn_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(alpn_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(alpn_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(alpn_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET alts_counter_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/tsi/alts/crypt/gsec_test_util.cc
-   ${_gRPC_ROOT}/test/core/tsi/alts/frame_protector/alts_counter_test.cc
-)
-
-  target_compile_definitions(alts_counter_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(alts_counter_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(alts_counter_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(alts_counter_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(alts_counter_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET alts_crypt_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/tsi/alts/crypt/aes_gcm_test.cc
-   ${_gRPC_ROOT}/test/core/tsi/alts/crypt/gsec_test_util.cc
-)
-
-  target_compile_definitions(alts_crypt_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(alts_crypt_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(alts_crypt_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(alts_crypt_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(alts_crypt_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET alts_crypter_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/tsi/alts/crypt/gsec_test_util.cc
-   ${_gRPC_ROOT}/test/core/tsi/alts/frame_protector/alts_crypter_test.cc
-)
-
-  target_compile_definitions(alts_crypter_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(alts_crypter_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(alts_crypter_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(alts_crypter_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(alts_crypter_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET alts_frame_protector_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/tsi/alts/crypt/gsec_test_util.cc
-   ${_gRPC_ROOT}/test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc
-   ${_gRPC_ROOT}/test/core/tsi/transport_security_test_lib.cc
-)
-
-  target_compile_definitions(alts_frame_protector_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(alts_frame_protector_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(alts_frame_protector_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(alts_frame_protector_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(alts_frame_protector_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET alts_grpc_record_protocol_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/tsi/alts/crypt/gsec_test_util.cc
-   ${_gRPC_ROOT}/test/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_test.cc
-)
-
-  target_compile_definitions(alts_grpc_record_protocol_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(alts_grpc_record_protocol_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(alts_grpc_record_protocol_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(alts_grpc_record_protocol_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(alts_grpc_record_protocol_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET alts_handshaker_client_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
-   ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
-)
-
-  target_compile_definitions(alts_handshaker_client_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(alts_handshaker_client_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(alts_handshaker_client_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(alts_handshaker_client_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(alts_handshaker_client_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET alts_iovec_record_protocol_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/tsi/alts/crypt/gsec_test_util.cc
-   ${_gRPC_ROOT}/test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc
-)
-
-  target_compile_definitions(alts_iovec_record_protocol_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(alts_iovec_record_protocol_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(alts_iovec_record_protocol_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(alts_iovec_record_protocol_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(alts_iovec_record_protocol_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET alts_security_connector_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/security/alts_security_connector_test.cc
-)
-
-  target_compile_definitions(alts_security_connector_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(alts_security_connector_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(alts_security_connector_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(alts_security_connector_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(alts_security_connector_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET alts_tsi_handshaker_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
-   ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/alts_tsi_handshaker_test.cc
-)
-
-  target_compile_definitions(alts_tsi_handshaker_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(alts_tsi_handshaker_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(alts_tsi_handshaker_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(alts_tsi_handshaker_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(alts_tsi_handshaker_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET alts_tsi_utils_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
-   ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/alts_tsi_utils_test.cc
-)
-
-  target_compile_definitions(alts_tsi_utils_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(alts_tsi_utils_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(alts_tsi_utils_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(alts_tsi_utils_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(alts_tsi_utils_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET alts_zero_copy_grpc_protector_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/tsi/alts/crypt/gsec_test_util.cc
-   ${_gRPC_ROOT}/test/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector_test.cc
-)
-
-  target_compile_definitions(alts_zero_copy_grpc_protector_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(alts_zero_copy_grpc_protector_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(alts_zero_copy_grpc_protector_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(alts_zero_copy_grpc_protector_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(alts_zero_copy_grpc_protector_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET arena_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/gpr/arena_test.cc
-)
-
-  target_compile_definitions(arena_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(arena_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(arena_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(arena_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(arena_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET auth_context_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/security/auth_context_test.cc
-)
-
-  target_compile_definitions(auth_context_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(auth_context_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(auth_context_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(auth_context_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(auth_context_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET b64_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/slice/b64_test.cc
-)
-
-  target_compile_definitions(b64_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(b64_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(b64_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(b64_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(b64_test project_benchmark project_gflags)
-
   android_add_executable(TARGET bad_server_response_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/bad_server_response_test.cc
    ${_gRPC_ROOT}/test/core/end2end/cq_verifier.cc
@@ -6172,6 +5634,18 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   android_add_executable(TARGET bad_ssl_alpn_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/bad_ssl/bad_ssl_test.cc
    ${_gRPC_ROOT}/test/core/end2end/cq_verifier.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
 
   target_compile_definitions(bad_ssl_alpn_test PRIVATE -DPB_FIELD_16BIT)
@@ -6200,6 +5674,18 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   android_add_executable(TARGET bad_ssl_cert_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/bad_ssl/bad_ssl_test.cc
    ${_gRPC_ROOT}/test/core/end2end/cq_verifier.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
 
   target_compile_definitions(bad_ssl_cert_test PRIVATE -DPB_FIELD_16BIT)
@@ -6223,360 +5709,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
     add_dependencies(bad_ssl_cert_test project_benchmark project_gflags)
 endif()
-
-  android_add_executable(TARGET bin_decoder_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/transport/chttp2/bin_decoder_test.cc
-)
-
-  target_compile_definitions(bin_decoder_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(bin_decoder_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(bin_decoder_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(bin_decoder_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(bin_decoder_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET bin_encoder_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/transport/chttp2/bin_encoder_test.cc
-)
-
-  target_compile_definitions(bin_encoder_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(bin_encoder_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(bin_encoder_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(bin_encoder_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(bin_encoder_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET buffer_list_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/iomgr/buffer_list_test.cc
-)
-
-  target_compile_definitions(buffer_list_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(buffer_list_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(buffer_list_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(buffer_list_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(buffer_list_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET channel_args_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/channel/channel_args_test.cc
-)
-
-  target_compile_definitions(channel_args_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(channel_args_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(channel_args_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(channel_args_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(channel_args_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET channel_create_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/surface/channel_create_test.cc
-)
-
-  target_compile_definitions(channel_create_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(channel_create_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(channel_create_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(channel_create_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(channel_create_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET channel_stack_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/channel/channel_stack_test.cc
-)
-
-  target_compile_definitions(channel_stack_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(channel_stack_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(channel_stack_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(channel_stack_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(channel_stack_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET check_gcp_environment_linux_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/security/check_gcp_environment_linux_test.cc
-)
-
-  target_compile_definitions(check_gcp_environment_linux_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(check_gcp_environment_linux_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(check_gcp_environment_linux_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(check_gcp_environment_linux_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(check_gcp_environment_linux_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET check_gcp_environment_windows_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/security/check_gcp_environment_windows_test.cc
-)
-
-  target_compile_definitions(check_gcp_environment_windows_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(check_gcp_environment_windows_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(check_gcp_environment_windows_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(check_gcp_environment_windows_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(check_gcp_environment_windows_test project_benchmark project_gflags)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  android_add_executable(TARGET client_ssl_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/handshake/client_ssl.cc
-)
-
-  target_compile_definitions(client_ssl_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(client_ssl_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(client_ssl_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(client_ssl_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(client_ssl_test project_benchmark project_gflags)
-endif()
-
-  android_add_executable(TARGET cmdline_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/util/cmdline_test.cc
-)
-
-  target_compile_definitions(cmdline_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(cmdline_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(cmdline_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(cmdline_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(cmdline_test project_benchmark project_gflags)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  android_add_executable(TARGET combiner_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/iomgr/combiner_test.cc
-)
-
-  target_compile_definitions(combiner_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(combiner_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(combiner_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(combiner_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(combiner_test project_benchmark project_gflags)
-endif()
-
-  android_add_executable(TARGET completion_queue_threading_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/surface/completion_queue_threading_test.cc
-)
-
-  target_compile_definitions(completion_queue_threading_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(completion_queue_threading_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(completion_queue_threading_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(completion_queue_threading_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(completion_queue_threading_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET compression_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/compression/compression_test.cc
-)
-
-  target_compile_definitions(compression_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(compression_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(compression_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(compression_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(compression_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET concurrent_connectivity_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/surface/concurrent_connectivity_test.cc
-)
-
-  target_compile_definitions(concurrent_connectivity_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(concurrent_connectivity_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(concurrent_connectivity_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(concurrent_connectivity_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(concurrent_connectivity_test project_benchmark project_gflags)
 
   android_add_executable(TARGET connection_refused_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/connection_refused_test.cc
@@ -6603,131 +5735,6 @@ endif()
 )
 
     add_dependencies(connection_refused_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET cpu_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/gpr/cpu_test.cc
-)
-
-  target_compile_definitions(cpu_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(cpu_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(cpu_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(cpu_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(cpu_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET dns_resolver_connectivity_using_ares_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/client_channel/resolvers/dns_resolver_connectivity_test.cc
-)
-
-  target_compile_definitions(dns_resolver_connectivity_using_ares_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(dns_resolver_connectivity_using_ares_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(dns_resolver_connectivity_using_ares_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(dns_resolver_connectivity_using_ares_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(dns_resolver_connectivity_using_ares_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET dns_resolver_connectivity_using_native_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/client_channel/resolvers/dns_resolver_connectivity_test.cc
-)
-
-  target_compile_definitions(dns_resolver_connectivity_using_native_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(dns_resolver_connectivity_using_native_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(dns_resolver_connectivity_using_native_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(dns_resolver_connectivity_using_native_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(dns_resolver_connectivity_using_native_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET dns_resolver_cooldown_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
-)
-
-  target_compile_definitions(dns_resolver_cooldown_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(dns_resolver_cooldown_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(dns_resolver_cooldown_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(dns_resolver_cooldown_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(dns_resolver_cooldown_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET dns_resolver_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/client_channel/resolvers/dns_resolver_test.cc
-)
-
-  target_compile_definitions(dns_resolver_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(dns_resolver_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(dns_resolver_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(dns_resolver_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(dns_resolver_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   android_add_executable(TARGET dualstack_socket_test NODISTRIBUTE
@@ -6756,139 +5763,22 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
     add_dependencies(dualstack_socket_test project_benchmark project_gflags)
 endif()
-
-  android_add_executable(TARGET endpoint_pair_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/iomgr/endpoint_pair_test.cc
-   ${_gRPC_ROOT}/test/core/iomgr/endpoint_tests.cc
-)
-
-  target_compile_definitions(endpoint_pair_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(endpoint_pair_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(endpoint_pair_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(endpoint_pair_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(endpoint_pair_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET env_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/gpr/env_test.cc
-)
-
-  target_compile_definitions(env_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(env_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(env_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(env_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(env_test project_benchmark project_gflags)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  android_add_executable(TARGET ev_epollex_linux_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/iomgr/ev_epollex_linux_test.cc
-)
-
-  target_compile_definitions(ev_epollex_linux_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(ev_epollex_linux_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(ev_epollex_linux_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(ev_epollex_linux_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(ev_epollex_linux_test project_benchmark project_gflags)
-endif()
-
-  android_add_executable(TARGET fake_resolver_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/client_channel/resolvers/fake_resolver_test.cc
-)
-
-  target_compile_definitions(fake_resolver_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(fake_resolver_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(fake_resolver_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(fake_resolver_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(fake_resolver_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET fake_transport_security_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/tsi/fake_transport_security_test.cc
-   ${_gRPC_ROOT}/test/core/tsi/transport_security_test_lib.cc
-)
-
-  target_compile_definitions(fake_transport_security_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(fake_transport_security_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(fake_transport_security_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(fake_transport_security_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(fake_transport_security_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   android_add_executable(TARGET fd_conservation_posix_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/fd_conservation_posix_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
 
   target_compile_definitions(fd_conservation_posix_test PRIVATE -DPB_FIELD_16BIT)
@@ -6914,39 +5804,24 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  android_add_executable(TARGET fd_posix_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/iomgr/fd_posix_test.cc
-)
-
-  target_compile_definitions(fd_posix_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(fd_posix_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(fd_posix_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(fd_posix_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(fd_posix_test project_benchmark project_gflags)
-endif()
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
   android_add_executable(TARGET fling_stream_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/data/client_certs.cc
    ${_gRPC_ROOT}/test/core/end2end/data/server1_cert.cc
    ${_gRPC_ROOT}/test/core/end2end/data/server1_key.cc
    ${_gRPC_ROOT}/test/core/end2end/data/test_root_cert.cc
    ${_gRPC_ROOT}/test/core/fling/fling_stream_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
 
   target_compile_definitions(fling_stream_test PRIVATE -DPB_FIELD_16BIT)
@@ -6978,6 +5853,18 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
    ${_gRPC_ROOT}/test/core/end2end/data/server1_key.cc
    ${_gRPC_ROOT}/test/core/end2end/data/test_root_cert.cc
    ${_gRPC_ROOT}/test/core/fling/fling_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
 
   target_compile_definitions(fling_test PRIVATE -DPB_FIELD_16BIT)
@@ -7001,88 +5888,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
     add_dependencies(fling_test project_benchmark project_gflags)
 endif()
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  android_add_executable(TARGET fork_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/gprpp/fork_test.cc
-)
-
-  target_compile_definitions(fork_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(fork_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(fork_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(fork_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(fork_test project_benchmark project_gflags)
-endif()
-
-  android_add_executable(TARGET format_request_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/end2end/data/client_certs.cc
-   ${_gRPC_ROOT}/test/core/end2end/data/server1_cert.cc
-   ${_gRPC_ROOT}/test/core/end2end/data/server1_key.cc
-   ${_gRPC_ROOT}/test/core/end2end/data/test_root_cert.cc
-   ${_gRPC_ROOT}/test/core/http/format_request_test.cc
-)
-
-  target_compile_definitions(format_request_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(format_request_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(format_request_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(format_request_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(format_request_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET frame_handler_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/tsi/alts/crypt/gsec_test_util.cc
-   ${_gRPC_ROOT}/test/core/tsi/alts/frame_protector/frame_handler_test.cc
-)
-
-  target_compile_definitions(frame_handler_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(frame_handler_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(frame_handler_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(frame_handler_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(frame_handler_test project_benchmark project_gflags)
 
   android_add_executable(TARGET goaway_server_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/cq_verifier.cc
@@ -7110,272 +5915,8 @@ endif()
 
     add_dependencies(goaway_server_test project_benchmark project_gflags)
 
-  android_add_executable(TARGET grpc_alts_credentials_options_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/security/grpc_alts_credentials_options_test.cc
-)
-
-  target_compile_definitions(grpc_alts_credentials_options_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(grpc_alts_credentials_options_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(grpc_alts_credentials_options_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(grpc_alts_credentials_options_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(grpc_alts_credentials_options_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET grpc_byte_buffer_reader_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/surface/byte_buffer_reader_test.cc
-)
-
-  target_compile_definitions(grpc_byte_buffer_reader_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(grpc_byte_buffer_reader_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(grpc_byte_buffer_reader_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(grpc_byte_buffer_reader_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(grpc_byte_buffer_reader_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET grpc_completion_queue_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/surface/completion_queue_test.cc
-)
-
-  target_compile_definitions(grpc_completion_queue_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(grpc_completion_queue_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(grpc_completion_queue_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(grpc_completion_queue_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(grpc_completion_queue_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET grpc_ipv6_loopback_available_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/iomgr/grpc_ipv6_loopback_available_test.cc
-)
-
-  target_compile_definitions(grpc_ipv6_loopback_available_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(grpc_ipv6_loopback_available_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(grpc_ipv6_loopback_available_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(grpc_ipv6_loopback_available_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(grpc_ipv6_loopback_available_test project_benchmark project_gflags)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  android_add_executable(TARGET handshake_server_with_readahead_handshaker_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/handshake/readahead_handshaker_server_ssl.cc
-   ${_gRPC_ROOT}/test/core/handshake/server_ssl_common.cc
-)
-
-  target_compile_definitions(handshake_server_with_readahead_handshaker_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(handshake_server_with_readahead_handshaker_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(handshake_server_with_readahead_handshaker_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(handshake_server_with_readahead_handshaker_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(handshake_server_with_readahead_handshaker_test project_benchmark project_gflags)
-endif()
-
-  android_add_executable(TARGET histogram_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/util/histogram_test.cc
-)
-
-  target_compile_definitions(histogram_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(histogram_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(histogram_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(histogram_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(histogram_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET host_port_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/gprpp/host_port_test.cc
-)
-
-  target_compile_definitions(host_port_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(host_port_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(host_port_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(host_port_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(host_port_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET hpack_encoder_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/transport/chttp2/hpack_encoder_test.cc
-)
-
-  target_compile_definitions(hpack_encoder_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(hpack_encoder_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(hpack_encoder_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(hpack_encoder_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(hpack_encoder_test project_benchmark project_gflags)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  android_add_executable(TARGET httpcli_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/end2end/data/client_certs.cc
-   ${_gRPC_ROOT}/test/core/end2end/data/server1_cert.cc
-   ${_gRPC_ROOT}/test/core/end2end/data/server1_key.cc
-   ${_gRPC_ROOT}/test/core/end2end/data/test_root_cert.cc
-   ${_gRPC_ROOT}/test/core/http/httpcli_test.cc
-)
-
-  target_compile_definitions(httpcli_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(httpcli_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(httpcli_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(httpcli_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(httpcli_test project_benchmark project_gflags)
-endif()
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  android_add_executable(TARGET httpscli_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/end2end/data/client_certs.cc
-   ${_gRPC_ROOT}/test/core/end2end/data/server1_cert.cc
-   ${_gRPC_ROOT}/test/core/end2end/data/server1_key.cc
-   ${_gRPC_ROOT}/test/core/end2end/data/test_root_cert.cc
-   ${_gRPC_ROOT}/test/core/http/httpscli_test.cc
-)
-
-  target_compile_definitions(httpscli_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(httpscli_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(httpscli_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(httpscli_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(httpscli_test project_benchmark project_gflags)
-endif()
-
   android_add_executable(TARGET inproc_callback_test NODISTRIBUTE
+   ${_gRPC_ROOT}/test/core/end2end/fixtures/local_util.cc
    ${_gRPC_ROOT}/test/core/end2end/inproc_callback_test.cc
 )
 
@@ -7395,7 +5936,7 @@ endif()
 
   target_link_libraries(inproc_callback_test PRIVATE
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  end2end_tests
+  grpc_test_util
 )
 
     add_dependencies(inproc_callback_test project_benchmark project_gflags)
@@ -7426,225 +5967,6 @@ endif()
 
     add_dependencies(invalid_call_argument_test project_benchmark project_gflags)
 
-  android_add_executable(TARGET json_token_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/security/json_token_test.cc
-)
-
-  target_compile_definitions(json_token_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(json_token_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(json_token_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(json_token_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(json_token_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET jwt_verifier_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/security/jwt_verifier_test.cc
-)
-
-  target_compile_definitions(jwt_verifier_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(jwt_verifier_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(jwt_verifier_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(jwt_verifier_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(jwt_verifier_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET lame_client_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/end2end/cq_verifier.cc
-   ${_gRPC_ROOT}/test/core/surface/lame_client_test.cc
-)
-
-  target_compile_definitions(lame_client_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(lame_client_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(lame_client_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(lame_client_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(lame_client_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET load_file_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/iomgr/load_file_test.cc
-)
-
-  target_compile_definitions(load_file_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(load_file_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(load_file_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(load_file_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(load_file_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET manual_constructor_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/gprpp/manual_constructor_test.cc
-)
-
-  target_compile_definitions(manual_constructor_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(manual_constructor_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(manual_constructor_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(manual_constructor_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(manual_constructor_test project_benchmark project_gflags)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-
-  android_add_executable(TARGET memory_quota_stress_test NODISTRIBUTE
-   ${_gRPC_ROOT}/src/core/lib/debug/trace.cc
-   ${_gRPC_ROOT}/src/core/lib/event_engine/memory_allocator.cc
-   ${_gRPC_ROOT}/src/core/lib/iomgr/combiner.cc
-   ${_gRPC_ROOT}/src/core/lib/iomgr/error.cc
-   ${_gRPC_ROOT}/src/core/lib/iomgr/exec_ctx.cc
-   ${_gRPC_ROOT}/src/core/lib/iomgr/executor.cc
-   ${_gRPC_ROOT}/src/core/lib/iomgr/iomgr_internal.cc
-   ${_gRPC_ROOT}/src/core/lib/promise/activity.cc
-   ${_gRPC_ROOT}/src/core/lib/resource_quota/memory_quota.cc
-   ${_gRPC_ROOT}/src/core/lib/resource_quota/trace.cc
-   ${_gRPC_ROOT}/src/core/lib/slice/slice.cc
-   ${_gRPC_ROOT}/src/core/lib/slice/slice_refcount.cc
-   ${_gRPC_ROOT}/src/core/lib/slice/slice_string_helpers.cc
-   ${_gRPC_ROOT}/src/core/lib/slice/static_slice.cc
-   ${_gRPC_ROOT}/test/core/resource_quota/memory_quota_stress_test.cc
-)
-
-  target_compile_definitions(memory_quota_stress_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(memory_quota_stress_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(memory_quota_stress_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(memory_quota_stress_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl/status:statusor
-  absl/types:variant
-  gpr
-)
-
-    add_dependencies(memory_quota_stress_test project_benchmark project_gflags)
-endif()
-
-  android_add_executable(TARGET message_compress_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/compression/message_compress_test.cc
-)
-
-  target_compile_definitions(message_compress_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(message_compress_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(message_compress_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(message_compress_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(message_compress_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET metadata_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/transport/metadata_test.cc
-)
-
-  target_compile_definitions(metadata_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(metadata_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(metadata_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(metadata_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(metadata_test project_benchmark project_gflags)
-
   android_add_executable(TARGET minimal_stack_is_minimal_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/channel/minimal_stack_is_minimal_test.cc
 )
@@ -7670,60 +5992,7 @@ endif()
 
     add_dependencies(minimal_stack_is_minimal_test project_benchmark project_gflags)
 
-  android_add_executable(TARGET mpmcqueue_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/iomgr/mpmcqueue_test.cc
-)
-
-  target_compile_definitions(mpmcqueue_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(mpmcqueue_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(mpmcqueue_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(mpmcqueue_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(mpmcqueue_test project_benchmark project_gflags)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  android_add_executable(TARGET mpscq_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/gprpp/mpscq_test.cc
-)
-
-  target_compile_definitions(mpscq_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(mpscq_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(mpscq_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(mpscq_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(mpscq_test project_benchmark project_gflags)
-endif()
-
   android_add_executable(TARGET multiple_server_queues_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/end2end/cq_verifier.cc
    ${_gRPC_ROOT}/test/core/end2end/multiple_server_queues_test.cc
 )
 
@@ -7747,31 +6016,6 @@ endif()
 )
 
     add_dependencies(multiple_server_queues_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET murmur_hash_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/gpr/murmur_hash_test.cc
-)
-
-  target_compile_definitions(murmur_hash_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(murmur_hash_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(murmur_hash_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(murmur_hash_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(murmur_hash_test project_benchmark project_gflags)
 
   android_add_executable(TARGET no_server_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/end2end/cq_verifier.cc
@@ -7798,15 +6042,16 @@ endif()
 )
 
     add_dependencies(no_server_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
 
-  android_add_executable(TARGET num_external_connectivity_watchers_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/surface/num_external_connectivity_watchers_test.cc
+  android_add_executable(TARGET pollset_windows_starvation_test NODISTRIBUTE
+   ${_gRPC_ROOT}/test/core/iomgr/pollset_windows_starvation_test.cc
 )
 
-  target_compile_definitions(num_external_connectivity_watchers_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(num_external_connectivity_watchers_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+  target_compile_definitions(pollset_windows_starvation_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(pollset_windows_starvation_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
 
-  target_include_directories(num_external_connectivity_watchers_test
+  target_include_directories(pollset_windows_starvation_test
   PRIVATE ${_gRPC_ROOT}
   PRIVATE ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -7817,124 +6062,16 @@ endif()
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
 )
 
-  target_link_libraries(num_external_connectivity_watchers_test PRIVATE
+  target_link_libraries(pollset_windows_starvation_test PRIVATE
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
 
-    add_dependencies(num_external_connectivity_watchers_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET parse_address_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/address_utils/parse_address_test.cc
-)
-
-  target_compile_definitions(parse_address_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(parse_address_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(parse_address_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(parse_address_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(parse_address_test project_benchmark project_gflags)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  android_add_executable(TARGET parse_address_with_named_scope_id_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/address_utils/parse_address_with_named_scope_id_test.cc
-)
-
-  target_compile_definitions(parse_address_with_named_scope_id_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(parse_address_with_named_scope_id_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(parse_address_with_named_scope_id_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(parse_address_with_named_scope_id_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(parse_address_with_named_scope_id_test project_benchmark project_gflags)
+    add_dependencies(pollset_windows_starvation_test project_benchmark project_gflags)
 endif()
 
-  android_add_executable(TARGET parser_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/end2end/data/client_certs.cc
-   ${_gRPC_ROOT}/test/core/end2end/data/server1_cert.cc
-   ${_gRPC_ROOT}/test/core/end2end/data/server1_key.cc
-   ${_gRPC_ROOT}/test/core/end2end/data/test_root_cert.cc
-   ${_gRPC_ROOT}/test/core/http/parser_test.cc
-)
-
-  target_compile_definitions(parser_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(parser_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(parser_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(parser_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(parser_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET percent_encoding_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/slice/percent_encoding_test.cc
-)
-
-  target_compile_definitions(percent_encoding_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(percent_encoding_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(percent_encoding_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(percent_encoding_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(percent_encoding_test project_benchmark project_gflags)
-
   android_add_executable(TARGET public_headers_must_be_c89 NODISTRIBUTE
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_authorization_engine.cc
    ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/matchers.cc
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/rbac_policy.cc
    ${_gRPC_ROOT}/src/core/lib/security/authorization/rbac_translator.cc
    ${_gRPC_ROOT}/test/core/surface/public_headers_must_be_c89.c
 )
@@ -7959,656 +6096,23 @@ endif()
 )
 
     add_dependencies(public_headers_must_be_c89 project_benchmark project_gflags)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  android_add_executable(TARGET resolve_address_using_ares_resolver_posix_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/iomgr/resolve_address_posix_test.cc
-)
-
-  target_compile_definitions(resolve_address_using_ares_resolver_posix_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(resolve_address_using_ares_resolver_posix_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(resolve_address_using_ares_resolver_posix_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(resolve_address_using_ares_resolver_posix_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(resolve_address_using_ares_resolver_posix_test project_benchmark project_gflags)
-endif()
-
-  android_add_executable(TARGET resolve_address_using_ares_resolver_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/iomgr/resolve_address_test.cc
-)
-
-  target_compile_definitions(resolve_address_using_ares_resolver_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(resolve_address_using_ares_resolver_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(resolve_address_using_ares_resolver_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(resolve_address_using_ares_resolver_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(resolve_address_using_ares_resolver_test project_benchmark project_gflags)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  android_add_executable(TARGET resolve_address_using_native_resolver_posix_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/iomgr/resolve_address_posix_test.cc
-)
-
-  target_compile_definitions(resolve_address_using_native_resolver_posix_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(resolve_address_using_native_resolver_posix_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(resolve_address_using_native_resolver_posix_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(resolve_address_using_native_resolver_posix_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(resolve_address_using_native_resolver_posix_test project_benchmark project_gflags)
-endif()
-
-  android_add_executable(TARGET resolve_address_using_native_resolver_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/iomgr/resolve_address_test.cc
-)
-
-  target_compile_definitions(resolve_address_using_native_resolver_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(resolve_address_using_native_resolver_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(resolve_address_using_native_resolver_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(resolve_address_using_native_resolver_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(resolve_address_using_native_resolver_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET secure_channel_create_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/surface/secure_channel_create_test.cc
-)
-
-  target_compile_definitions(secure_channel_create_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(secure_channel_create_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(secure_channel_create_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(secure_channel_create_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(secure_channel_create_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET secure_endpoint_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/iomgr/endpoint_tests.cc
-   ${_gRPC_ROOT}/test/core/security/secure_endpoint_test.cc
-)
-
-  target_compile_definitions(secure_endpoint_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(secure_endpoint_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(secure_endpoint_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(secure_endpoint_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(secure_endpoint_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET security_connector_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/security/security_connector_test.cc
-)
-
-  target_compile_definitions(security_connector_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(security_connector_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(security_connector_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(security_connector_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(security_connector_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET sequential_connectivity_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/surface/sequential_connectivity_test.cc
-)
-
-  target_compile_definitions(sequential_connectivity_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(sequential_connectivity_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(sequential_connectivity_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(sequential_connectivity_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(sequential_connectivity_test project_benchmark project_gflags)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  android_add_executable(TARGET server_ssl_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/handshake/server_ssl.cc
-   ${_gRPC_ROOT}/test/core/handshake/server_ssl_common.cc
-)
-
-  target_compile_definitions(server_ssl_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(server_ssl_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(server_ssl_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(server_ssl_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(server_ssl_test project_benchmark project_gflags)
-endif()
-
-  android_add_executable(TARGET server_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/surface/server_test.cc
-)
-
-  target_compile_definitions(server_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(server_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(server_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(server_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(server_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET slice_buffer_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/slice/slice_buffer_test.cc
-)
-
-  target_compile_definitions(slice_buffer_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(slice_buffer_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(slice_buffer_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(slice_buffer_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(slice_buffer_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET slice_intern_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/slice/slice_intern_test.cc
-)
-
-  target_compile_definitions(slice_intern_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(slice_intern_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(slice_intern_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(slice_intern_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(slice_intern_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET slice_split_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/slice/slice_split_test.cc
-)
-
-  target_compile_definitions(slice_split_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(slice_split_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(slice_split_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(slice_split_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(slice_split_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET slice_string_helpers_test NODISTRIBUTE
-   ${_gRPC_ROOT}/src/core/lib/debug/trace.cc
-   ${_gRPC_ROOT}/src/core/lib/slice/slice.cc
-   ${_gRPC_ROOT}/src/core/lib/slice/slice_refcount.cc
-   ${_gRPC_ROOT}/src/core/lib/slice/slice_string_helpers.cc
-   ${_gRPC_ROOT}/src/core/lib/slice/static_slice.cc
-   ${_gRPC_ROOT}/test/core/slice/slice_string_helpers_test.cc
-)
-
-  target_compile_definitions(slice_string_helpers_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(slice_string_helpers_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(slice_string_helpers_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(slice_string_helpers_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gpr
-)
-
-    add_dependencies(slice_string_helpers_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET sockaddr_resolver_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/client_channel/resolvers/sockaddr_resolver_test.cc
-)
-
-  target_compile_definitions(sockaddr_resolver_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(sockaddr_resolver_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(sockaddr_resolver_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(sockaddr_resolver_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(sockaddr_resolver_test project_benchmark project_gflags)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  android_add_executable(TARGET socket_utils_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/iomgr/socket_utils_test.cc
-)
-
-  target_compile_definitions(socket_utils_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(socket_utils_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(socket_utils_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(socket_utils_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(socket_utils_test project_benchmark project_gflags)
-endif()
-
-  android_add_executable(TARGET spinlock_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/gpr/spinlock_test.cc
-)
-
-  target_compile_definitions(spinlock_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(spinlock_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(spinlock_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(spinlock_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(spinlock_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET ssl_credentials_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/security/ssl_credentials_test.cc
-)
-
-  target_compile_definitions(ssl_credentials_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(ssl_credentials_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(ssl_credentials_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(ssl_credentials_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(ssl_credentials_test project_benchmark project_gflags)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  android_add_executable(TARGET ssl_transport_security_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/tsi/ssl_transport_security_test.cc
-   ${_gRPC_ROOT}/test/core/tsi/transport_security_test_lib.cc
-)
-
-  target_compile_definitions(ssl_transport_security_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(ssl_transport_security_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(ssl_transport_security_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(ssl_transport_security_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(ssl_transport_security_test project_benchmark project_gflags)
-endif()
-
-  android_add_executable(TARGET status_conversion_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/transport/status_conversion_test.cc
-)
-
-  target_compile_definitions(status_conversion_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(status_conversion_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(status_conversion_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(status_conversion_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(status_conversion_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET stream_compression_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/compression/stream_compression_test.cc
-)
-
-  target_compile_definitions(stream_compression_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(stream_compression_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(stream_compression_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(stream_compression_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(stream_compression_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET stream_map_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/transport/chttp2/stream_map_test.cc
-)
-
-  target_compile_definitions(stream_map_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(stream_map_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(stream_map_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(stream_map_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(stream_map_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET string_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/gpr/string_test.cc
-)
-
-  target_compile_definitions(string_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(string_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(string_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(string_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(string_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET sync_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/gpr/sync_test.cc
-)
-
-  target_compile_definitions(sync_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(sync_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(sync_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(sync_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(sync_test project_benchmark project_gflags)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  android_add_executable(TARGET tcp_client_posix_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/iomgr/tcp_client_posix_test.cc
-)
-
-  target_compile_definitions(tcp_client_posix_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(tcp_client_posix_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(tcp_client_posix_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(tcp_client_posix_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(tcp_client_posix_test project_benchmark project_gflags)
-endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   android_add_executable(TARGET tcp_posix_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/endpoint_tests.cc
    ${_gRPC_ROOT}/test/core/iomgr/tcp_posix_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
 
   target_compile_definitions(tcp_posix_test PRIVATE -DPB_FIELD_16BIT)
@@ -8632,217 +6136,27 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
     add_dependencies(tcp_posix_test project_benchmark project_gflags)
 endif()
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  android_add_executable(TARGET tcp_server_posix_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/iomgr/tcp_server_posix_test.cc
-)
-
-  target_compile_definitions(tcp_server_posix_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(tcp_server_posix_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(tcp_server_posix_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(tcp_server_posix_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(tcp_server_posix_test project_benchmark project_gflags)
-endif()
-
-  android_add_executable(TARGET test_core_gpr_time_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/gpr/time_test.cc
-)
-
-  target_compile_definitions(test_core_gpr_time_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(test_core_gpr_time_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(test_core_gpr_time_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(test_core_gpr_time_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(test_core_gpr_time_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET test_core_security_credentials_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/security/credentials_test.cc
-)
-
-  target_compile_definitions(test_core_security_credentials_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(test_core_security_credentials_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(test_core_security_credentials_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(test_core_security_credentials_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(test_core_security_credentials_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET thd_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/gprpp/thd_test.cc
-)
-
-  target_compile_definitions(thd_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(thd_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(thd_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(thd_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(thd_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET threadpool_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/iomgr/threadpool_test.cc
-)
-
-  target_compile_definitions(threadpool_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(threadpool_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(threadpool_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(threadpool_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(threadpool_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET time_averaged_stats_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/iomgr/time_averaged_stats_test.cc
-)
-
-  target_compile_definitions(time_averaged_stats_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(time_averaged_stats_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(time_averaged_stats_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(time_averaged_stats_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(time_averaged_stats_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET timeout_encoding_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/transport/timeout_encoding_test.cc
-)
-
-  target_compile_definitions(timeout_encoding_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(timeout_encoding_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(timeout_encoding_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(timeout_encoding_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(timeout_encoding_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET timer_heap_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/iomgr/timer_heap_test.cc
-)
-
-  target_compile_definitions(timer_heap_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(timer_heap_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(timer_heap_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(timer_heap_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(timer_heap_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET timer_list_test NODISTRIBUTE
+  android_add_executable(TARGET test_core_iomgr_timer_list_test NODISTRIBUTE
    ${_gRPC_ROOT}/test/core/iomgr/timer_list_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
 
-  target_compile_definitions(timer_list_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(timer_list_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+  target_compile_definitions(test_core_iomgr_timer_list_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(test_core_iomgr_timer_list_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
 
-  target_include_directories(timer_list_test
+  target_include_directories(test_core_iomgr_timer_list_test
   PRIVATE ${_gRPC_ROOT}
   PRIVATE ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -8853,135 +6167,14 @@ endif()
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
 )
 
-  target_link_libraries(timer_list_test PRIVATE
+  target_link_libraries(test_core_iomgr_timer_list_test PRIVATE
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
 
-    add_dependencies(timer_list_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET transport_security_common_api_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/transport_security_common_api_test.cc
-)
-
-  target_compile_definitions(transport_security_common_api_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(transport_security_common_api_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(transport_security_common_api_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(transport_security_common_api_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(transport_security_common_api_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET transport_security_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/tsi/transport_security_test.cc
-)
-
-  target_compile_definitions(transport_security_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(transport_security_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(transport_security_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(transport_security_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(transport_security_test project_benchmark project_gflags)
-
-  android_add_executable(TARGET varint_test NODISTRIBUTE
-   ${_gRPC_ROOT}/test/core/transport/chttp2/varint_test.cc
-)
-
-  target_compile_definitions(varint_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(varint_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(varint_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-  target_link_libraries(varint_test PRIVATE
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-    add_dependencies(varint_test project_benchmark project_gflags)
+    add_dependencies(test_core_iomgr_timer_list_test project_benchmark project_gflags)
 
   android_add_test(TARGET activity_test
-   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/protobuf/any.upb.c
-   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/rpc/status.upb.c
-   ${_gRPC_ROOT}/src/core/lib/gpr/alloc.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/atm.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_iphone.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_linux.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/env_linux.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/env_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/env_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_android.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_linux.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/murmur_hash.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string_util_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync_abseil.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time_precise.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/tmpfile_msys.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/tmpfile_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/tmpfile_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/wrap_memcpy.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/examine_stack.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/fork.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/global_config_env.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/host_port.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/mpscq.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/stat_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/stat_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/status_helper.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/thd_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/thd_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/time_util.cc
-   ${_gRPC_ROOT}/src/core/lib/profiling/basic_timers.cc
-   ${_gRPC_ROOT}/src/core/lib/profiling/stap_timers.cc
    ${_gRPC_ROOT}/src/core/lib/promise/activity.cc
    ${_gRPC_ROOT}/test/core/promise/activity_test.cc
 )
@@ -9007,21 +6200,12 @@ endif()
   target_link_libraries(activity_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl/base:base
-  absl/base:core_headers
   absl/container:flat_hash_set
-  absl/memory:memory
-  absl/random:random
-  absl/status:status
+  absl/hash:hash
+  absl/meta:type_traits
   absl/status:statusor
-  absl/strings:cord
-  absl/strings:str_format
-  absl/strings:strings
-  absl/synchronization:synchronization
-  absl/time:time
-  absl/types:optional
-  absl/types:variant
-  upb
+  absl/utility:utility
+  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -9063,6 +6247,18 @@ endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   android_add_test(TARGET address_sorting_test_unsecure
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
    ${_gRPC_ROOT}/test/cpp/naming/address_sorting_test.cc
    ${_gRPC_ROOT}/test/cpp/util/byte_buffer_proto_helper.cc
    ${_gRPC_ROOT}/test/cpp/util/string_ref_helper.cc
@@ -9168,6 +6364,18 @@ protobuf_generate_grpc_cpp(
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   android_add_test(TARGET alarm_test
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
    ${_gRPC_ROOT}/test/cpp/common/alarm_test.cc
 )
   target_link_libraries(alarm_test PRIVATE gmock_main ssl crypto)
@@ -9199,6 +6407,68 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
     add_dependencies(alarm_test project_benchmark project_gflags)
 endif()
+
+  android_add_test(TARGET alloc_test
+   ${_gRPC_ROOT}/test/core/gpr/alloc_test.cc
+)
+  target_link_libraries(alloc_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(alloc_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(alloc_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(alloc_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(alloc_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(alloc_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(alloc_test project_benchmark project_gflags)
+
+  android_add_test(TARGET alpn_test
+   ${_gRPC_ROOT}/test/core/transport/chttp2/alpn_test.cc
+)
+  target_link_libraries(alpn_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(alpn_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(alpn_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(alpn_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(alpn_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(alpn_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(alpn_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   android_add_test(TARGET alts_concurrent_connectivity_test
@@ -9213,6 +6483,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
    ${_gRPC_ROOT}/test/core/end2end/cq_verifier.cc
    ${_gRPC_ROOT}/test/core/tsi/alts/fake_handshaker/fake_handshaker_server.cc
    ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/alts_concurrent_connectivity_test.cc
+   ${_gRPC_ROOT}/test/core/util/fake_udp_and_tcp_server.cc
 )
   target_link_libraries(alts_concurrent_connectivity_test PRIVATE gmock_main ssl crypto)
   target_include_directories(alts_concurrent_connectivity_test PRIVATE ${_gRPC_ROOT})
@@ -9252,6 +6523,338 @@ protobuf_generate_grpc_cpp(
     add_dependencies(alts_concurrent_connectivity_test project_benchmark project_gflags)
 endif()
 
+  android_add_test(TARGET alts_counter_test
+   ${_gRPC_ROOT}/test/core/tsi/alts/crypt/gsec_test_util.cc
+   ${_gRPC_ROOT}/test/core/tsi/alts/frame_protector/alts_counter_test.cc
+)
+  target_link_libraries(alts_counter_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(alts_counter_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(alts_counter_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(alts_counter_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(alts_counter_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(alts_counter_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(alts_counter_test project_benchmark project_gflags)
+
+  android_add_test(TARGET alts_crypt_test
+   ${_gRPC_ROOT}/test/core/tsi/alts/crypt/aes_gcm_test.cc
+   ${_gRPC_ROOT}/test/core/tsi/alts/crypt/gsec_test_util.cc
+)
+  target_link_libraries(alts_crypt_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(alts_crypt_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(alts_crypt_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(alts_crypt_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(alts_crypt_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(alts_crypt_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(alts_crypt_test project_benchmark project_gflags)
+
+  android_add_test(TARGET alts_crypter_test
+   ${_gRPC_ROOT}/test/core/tsi/alts/crypt/gsec_test_util.cc
+   ${_gRPC_ROOT}/test/core/tsi/alts/frame_protector/alts_crypter_test.cc
+)
+  target_link_libraries(alts_crypter_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(alts_crypter_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(alts_crypter_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(alts_crypter_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(alts_crypter_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(alts_crypter_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(alts_crypter_test project_benchmark project_gflags)
+
+  android_add_test(TARGET alts_frame_protector_test
+   ${_gRPC_ROOT}/test/core/tsi/alts/crypt/gsec_test_util.cc
+   ${_gRPC_ROOT}/test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc
+   ${_gRPC_ROOT}/test/core/tsi/transport_security_test_lib.cc
+)
+  target_link_libraries(alts_frame_protector_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(alts_frame_protector_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(alts_frame_protector_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(alts_frame_protector_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(alts_frame_protector_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(alts_frame_protector_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(alts_frame_protector_test project_benchmark project_gflags)
+
+  android_add_test(TARGET alts_grpc_record_protocol_test
+   ${_gRPC_ROOT}/test/core/tsi/alts/crypt/gsec_test_util.cc
+   ${_gRPC_ROOT}/test/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_test.cc
+)
+  target_link_libraries(alts_grpc_record_protocol_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(alts_grpc_record_protocol_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(alts_grpc_record_protocol_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(alts_grpc_record_protocol_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(alts_grpc_record_protocol_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(alts_grpc_record_protocol_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(alts_grpc_record_protocol_test project_benchmark project_gflags)
+
+  android_add_test(TARGET alts_handshaker_client_test
+   ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
+   ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
+)
+  target_link_libraries(alts_handshaker_client_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(alts_handshaker_client_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(alts_handshaker_client_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(alts_handshaker_client_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(alts_handshaker_client_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(alts_handshaker_client_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(alts_handshaker_client_test project_benchmark project_gflags)
+
+  android_add_test(TARGET alts_iovec_record_protocol_test
+   ${_gRPC_ROOT}/test/core/tsi/alts/crypt/gsec_test_util.cc
+   ${_gRPC_ROOT}/test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc
+)
+  target_link_libraries(alts_iovec_record_protocol_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(alts_iovec_record_protocol_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(alts_iovec_record_protocol_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(alts_iovec_record_protocol_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(alts_iovec_record_protocol_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(alts_iovec_record_protocol_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(alts_iovec_record_protocol_test project_benchmark project_gflags)
+
+  android_add_test(TARGET alts_security_connector_test
+   ${_gRPC_ROOT}/test/core/security/alts_security_connector_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(alts_security_connector_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(alts_security_connector_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(alts_security_connector_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(alts_security_connector_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(alts_security_connector_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(alts_security_connector_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(alts_security_connector_test project_benchmark project_gflags)
+
+  android_add_test(TARGET alts_tsi_handshaker_test
+   ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
+   ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/alts_tsi_handshaker_test.cc
+)
+  target_link_libraries(alts_tsi_handshaker_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(alts_tsi_handshaker_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(alts_tsi_handshaker_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(alts_tsi_handshaker_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(alts_tsi_handshaker_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(alts_tsi_handshaker_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(alts_tsi_handshaker_test project_benchmark project_gflags)
+
+  android_add_test(TARGET alts_tsi_utils_test
+   ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
+   ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/alts_tsi_utils_test.cc
+)
+  target_link_libraries(alts_tsi_utils_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(alts_tsi_utils_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(alts_tsi_utils_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(alts_tsi_utils_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(alts_tsi_utils_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(alts_tsi_utils_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(alts_tsi_utils_test project_benchmark project_gflags)
+
   android_add_test(TARGET alts_util_test
    ${_gRPC_ROOT}/test/cpp/common/alts_util_test.cc
 )
@@ -9284,9 +6887,45 @@ endif()
 
     add_dependencies(alts_util_test project_benchmark project_gflags)
 
+  android_add_test(TARGET alts_zero_copy_grpc_protector_test
+   ${_gRPC_ROOT}/test/core/tsi/alts/crypt/gsec_test_util.cc
+   ${_gRPC_ROOT}/test/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector_test.cc
+)
+  target_link_libraries(alts_zero_copy_grpc_protector_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(alts_zero_copy_grpc_protector_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(alts_zero_copy_grpc_protector_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(alts_zero_copy_grpc_protector_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(alts_zero_copy_grpc_protector_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(alts_zero_copy_grpc_protector_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(alts_zero_copy_grpc_protector_test project_benchmark project_gflags)
+
   android_add_test(TARGET arena_promise_test
+   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/protobuf/any.upb.c
+   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/rpc/status.upb.c
    ${_gRPC_ROOT}/src/core/lib/debug/trace.cc
    ${_gRPC_ROOT}/src/core/lib/event_engine/memory_allocator.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/status_helper.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/time.cc
    ${_gRPC_ROOT}/src/core/lib/iomgr/combiner.cc
    ${_gRPC_ROOT}/src/core/lib/iomgr/error.cc
    ${_gRPC_ROOT}/src/core/lib/iomgr/exec_ctx.cc
@@ -9295,13 +6934,14 @@ endif()
    ${_gRPC_ROOT}/src/core/lib/promise/activity.cc
    ${_gRPC_ROOT}/src/core/lib/resource_quota/arena.cc
    ${_gRPC_ROOT}/src/core/lib/resource_quota/memory_quota.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/periodic_update.cc
    ${_gRPC_ROOT}/src/core/lib/resource_quota/resource_quota.cc
    ${_gRPC_ROOT}/src/core/lib/resource_quota/thread_quota.cc
    ${_gRPC_ROOT}/src/core/lib/resource_quota/trace.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/percent_encoding.cc
    ${_gRPC_ROOT}/src/core/lib/slice/slice.cc
    ${_gRPC_ROOT}/src/core/lib/slice/slice_refcount.cc
    ${_gRPC_ROOT}/src/core/lib/slice/slice_string_helpers.cc
-   ${_gRPC_ROOT}/src/core/lib/slice/static_slice.cc
    ${_gRPC_ROOT}/test/core/promise/arena_promise_test.cc
 )
   target_link_libraries(arena_promise_test PRIVATE gmock_main ssl crypto)
@@ -9326,13 +6966,48 @@ endif()
   target_link_libraries(arena_promise_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/functional:any_invocable
+  absl/functional:function_ref
+  absl/meta:type_traits
   absl/status:statusor
-  absl/types:variant
+  absl/utility:utility
   gpr
+  upb
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
     add_dependencies(arena_promise_test project_benchmark project_gflags)
+
+  android_add_test(TARGET arena_test
+   ${_gRPC_ROOT}/test/core/resource_quota/arena_test.cc
+)
+  target_link_libraries(arena_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(arena_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(arena_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(arena_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(arena_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(arena_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(arena_test project_benchmark project_gflags)
 
   android_add_test(TARGET async_end2end_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
@@ -9355,6 +7030,10 @@ endif()
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/async_end2end_test.cc
 )
   target_link_libraries(async_end2end_test PRIVATE gmock_main ssl crypto)
@@ -9382,6 +7061,10 @@ protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
 )
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
 
   target_include_directories(async_end2end_test
   PRIVATE ${_gRPC_ROOT}
@@ -9404,6 +7087,49 @@ protobuf_generate_grpc_cpp(
 )
 
     add_dependencies(async_end2end_test project_benchmark project_gflags)
+
+  android_add_test(TARGET auth_context_test
+   ${_gRPC_ROOT}/test/core/security/auth_context_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(auth_context_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(auth_context_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(auth_context_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(auth_context_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(auth_context_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(auth_context_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(auth_context_test project_benchmark project_gflags)
 
   android_add_test(TARGET auth_property_iterator_test
    ${_gRPC_ROOT}/test/cpp/common/auth_property_iterator_test.cc
@@ -9437,10 +7163,19 @@ protobuf_generate_grpc_cpp(
     add_dependencies(auth_property_iterator_test project_benchmark project_gflags)
 
   android_add_test(TARGET authorization_matchers_test
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_authorization_engine.cc
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/matchers.cc
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/rbac_policy.cc
    ${_gRPC_ROOT}/test/core/security/authorization_matchers_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(authorization_matchers_test PRIVATE gmock_main ssl crypto)
   target_include_directories(authorization_matchers_test PRIVATE ${_gRPC_ROOT})
@@ -9471,10 +7206,7 @@ protobuf_generate_grpc_cpp(
     add_dependencies(authorization_matchers_test project_benchmark project_gflags)
 
   android_add_test(TARGET authorization_policy_provider_test
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_authorization_engine.cc
    ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/matchers.cc
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/rbac_policy.cc
    ${_gRPC_ROOT}/src/core/lib/security/authorization/rbac_translator.cc
    ${_gRPC_ROOT}/src/cpp/server/authorization_policy_provider.cc
    ${_gRPC_ROOT}/test/cpp/server/authorization_policy_provider_test.cc
@@ -9533,6 +7265,8 @@ protobuf_generate_grpc_cpp(
   target_link_libraries(avl_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/strings:strings
+  absl/types:variant
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -9540,6 +7274,18 @@ protobuf_generate_grpc_cpp(
 
   android_add_test(TARGET aws_request_signer_test
    ${_gRPC_ROOT}/test/core/security/aws_request_signer_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(aws_request_signer_test PRIVATE gmock_main ssl crypto)
   target_include_directories(aws_request_signer_test PRIVATE ${_gRPC_ROOT})
@@ -9568,6 +7314,37 @@ protobuf_generate_grpc_cpp(
 )
 
     add_dependencies(aws_request_signer_test project_benchmark project_gflags)
+
+  android_add_test(TARGET b64_test
+   ${_gRPC_ROOT}/test/core/slice/b64_test.cc
+)
+  target_link_libraries(b64_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(b64_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(b64_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(b64_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(b64_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(b64_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(b64_test project_benchmark project_gflags)
 
   android_add_test(TARGET backoff_test
    ${_gRPC_ROOT}/test/core/backoff/backoff_test.cc
@@ -9699,6 +7476,68 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(bdp_estimator_test project_benchmark project_gflags)
 endif()
 
+  android_add_test(TARGET bin_decoder_test
+   ${_gRPC_ROOT}/test/core/transport/chttp2/bin_decoder_test.cc
+)
+  target_link_libraries(bin_decoder_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(bin_decoder_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(bin_decoder_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(bin_decoder_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(bin_decoder_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(bin_decoder_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(bin_decoder_test project_benchmark project_gflags)
+
+  android_add_test(TARGET bin_encoder_test
+   ${_gRPC_ROOT}/test/core/transport/chttp2/bin_encoder_test.cc
+)
+  target_link_libraries(bin_encoder_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(bin_encoder_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(bin_encoder_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(bin_encoder_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(bin_encoder_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(bin_encoder_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(bin_encoder_test project_benchmark project_gflags)
+
   android_add_test(TARGET binder_resolver_test
    ${_gRPC_ROOT}/test/core/client_channel/resolvers/binder_resolver_test.cc
 )
@@ -9743,6 +7582,10 @@ endif()
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/core/transport/binder/end2end/binder_server_test.cc
    ${_gRPC_ROOT}/test/core/transport/binder/end2end/fake_binder.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
@@ -9763,6 +7606,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(binder_server_test
@@ -9832,6 +7679,7 @@ protobuf_generate_grpc_cpp(
    ${_gRPC_ROOT}/src/cpp/server/health/default_health_check_service.cc
    ${_gRPC_ROOT}/src/cpp/server/health/health_check_service.cc
    ${_gRPC_ROOT}/src/cpp/server/health/health_check_service_server_builder_option.cc
+   ${_gRPC_ROOT}/src/cpp/server/orca/call_metric_recorder.cc
    ${_gRPC_ROOT}/src/cpp/server/server_builder.cc
    ${_gRPC_ROOT}/src/cpp/server/server_callback.cc
    ${_gRPC_ROOT}/src/cpp/server/server_cc.cc
@@ -9868,6 +7716,7 @@ protobuf_generate_grpc_cpp(
   target_link_libraries(binder_transport_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/cleanup:cleanup
   grpc_test_util
   ${_gRPC_GFLAGS_LIBRARIES}
 )
@@ -9899,10 +7748,55 @@ protobuf_generate_grpc_cpp(
   target_link_libraries(bitset_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/strings:strings
+  absl/types:variant
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
     add_dependencies(bitset_test project_benchmark project_gflags)
+
+  android_add_test(TARGET buffer_list_test
+   ${_gRPC_ROOT}/test/core/iomgr/buffer_list_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(buffer_list_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(buffer_list_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(buffer_list_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(buffer_list_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(buffer_list_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(buffer_list_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(buffer_list_test project_benchmark project_gflags)
 
   android_add_test(TARGET byte_buffer_test
    ${_gRPC_ROOT}/test/cpp/util/byte_buffer_test.cc
@@ -9935,16 +7829,16 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(byte_buffer_test project_benchmark project_gflags)
 
-  android_add_test(TARGET byte_stream_test
-   ${_gRPC_ROOT}/test/core/transport/byte_stream_test.cc
+  android_add_test(TARGET c_slice_buffer_test
+   ${_gRPC_ROOT}/test/core/slice/c_slice_buffer_test.cc
 )
-  target_link_libraries(byte_stream_test PRIVATE gmock_main ssl crypto)
-  target_include_directories(byte_stream_test PRIVATE ${_gRPC_ROOT})
+  target_link_libraries(c_slice_buffer_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(c_slice_buffer_test PRIVATE ${_gRPC_ROOT})
 
-  target_compile_definitions(byte_stream_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(byte_stream_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+  target_compile_definitions(c_slice_buffer_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(c_slice_buffer_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
 
-  target_include_directories(byte_stream_test
+  target_include_directories(c_slice_buffer_test
   PRIVATE ${_gRPC_ROOT}
   PRIVATE ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -9957,19 +7851,85 @@ protobuf_generate_grpc_cpp(
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
-  target_link_libraries(byte_stream_test PRIVATE
+  target_link_libraries(c_slice_buffer_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
-    add_dependencies(byte_stream_test project_benchmark project_gflags)
+    add_dependencies(c_slice_buffer_test project_benchmark project_gflags)
+
+  android_add_test(TARGET call_finalization_test
+   ${_gRPC_ROOT}/test/core/channel/call_finalization_test.cc
+)
+  target_link_libraries(call_finalization_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(call_finalization_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(call_finalization_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(call_finalization_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(call_finalization_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(call_finalization_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(call_finalization_test project_benchmark project_gflags)
+
+  android_add_test(TARGET call_push_pull_test
+   ${_gRPC_ROOT}/test/core/promise/call_push_pull_test.cc
+)
+  target_link_libraries(call_push_pull_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(call_push_pull_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(call_push_pull_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(call_push_pull_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(call_push_pull_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(call_push_pull_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/meta:type_traits
+  absl/status:status
+  absl/status:statusor
+  absl/strings:strings
+  absl/types:variant
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(call_push_pull_test project_benchmark project_gflags)
 
   android_add_test(TARGET cancel_ares_query_test
    ${_gRPC_ROOT}/test/core/end2end/cq_verifier.cc
+   ${_gRPC_ROOT}/test/core/util/fake_udp_and_tcp_server.cc
    ${_gRPC_ROOT}/test/cpp/naming/cancel_ares_query_test.cc
-   ${_gRPC_ROOT}/test/cpp/naming/dns_test_util.cc
 )
   target_link_libraries(cancel_ares_query_test PRIVATE gmock_main ssl crypto)
   target_include_directories(cancel_ares_query_test PRIVATE ${_gRPC_ROOT})
@@ -10000,43 +7960,22 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(cancel_ares_query_test project_benchmark project_gflags)
 
-  android_add_test(TARGET capture_test
-   ${_gRPC_ROOT}/test/core/gprpp/capture_test.cc
-)
-  target_link_libraries(capture_test PRIVATE gmock_main ssl crypto)
-  target_include_directories(capture_test PRIVATE ${_gRPC_ROOT})
-
-  target_compile_definitions(capture_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(capture_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(capture_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-  target_link_libraries(capture_test PRIVATE
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl/utility:utility
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-    add_dependencies(capture_test project_benchmark project_gflags)
-
   android_add_test(TARGET cel_authorization_engine_test
+   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/type/expr.upb.c
    ${_gRPC_ROOT}/src/core/lib/security/authorization/cel_authorization_engine.cc
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_authorization_engine.cc
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/matchers.cc
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/rbac_policy.cc
    ${_gRPC_ROOT}/test/core/security/cel_authorization_engine_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(cel_authorization_engine_test PRIVATE gmock_main ssl crypto)
   target_include_directories(cel_authorization_engine_test PRIVATE ${_gRPC_ROOT})
@@ -10060,7 +7999,6 @@ protobuf_generate_grpc_cpp(
   target_link_libraries(cel_authorization_engine_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl/container:flat_hash_set
   grpc_test_util
   ${_gRPC_GFLAGS_LIBRARIES}
 )
@@ -10142,6 +8080,10 @@ protobuf_generate_grpc_cpp(
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/cfstream_test.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
 )
@@ -10161,6 +8103,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(cfstream_test
@@ -10184,6 +8130,37 @@ protobuf_generate_grpc_cpp(
 )
 
     add_dependencies(cfstream_test project_benchmark project_gflags)
+
+  android_add_test(TARGET channel_args_test
+   ${_gRPC_ROOT}/test/core/channel/channel_args_test.cc
+)
+  target_link_libraries(channel_args_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(channel_args_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(channel_args_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(channel_args_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(channel_args_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(channel_args_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(channel_args_test project_benchmark project_gflags)
 
   android_add_test(TARGET channel_arguments_test
    ${_gRPC_ROOT}/test/cpp/common/channel_arguments_test.cc
@@ -10216,6 +8193,49 @@ protobuf_generate_grpc_cpp(
 )
 
     add_dependencies(channel_arguments_test project_benchmark project_gflags)
+
+  android_add_test(TARGET channel_creds_registry_test
+   ${_gRPC_ROOT}/test/core/security/channel_creds_registry_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(channel_creds_registry_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(channel_creds_registry_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(channel_creds_registry_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(channel_creds_registry_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(channel_creds_registry_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(channel_creds_registry_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(channel_creds_registry_test project_benchmark project_gflags)
 
   android_add_test(TARGET channel_filter_test
    ${_gRPC_ROOT}/test/cpp/common/channel_filter_test.cc
@@ -10279,6 +8299,37 @@ protobuf_generate_grpc_cpp(
 )
 
     add_dependencies(channel_stack_builder_test project_benchmark project_gflags)
+
+  android_add_test(TARGET channel_stack_test
+   ${_gRPC_ROOT}/test/core/channel/channel_stack_test.cc
+)
+  target_link_libraries(channel_stack_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(channel_stack_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(channel_stack_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(channel_stack_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(channel_stack_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(channel_stack_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(channel_stack_test project_benchmark project_gflags)
 
   android_add_test(TARGET channel_trace_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.cc
@@ -10394,9 +8445,99 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(channelz_test project_benchmark project_gflags)
 
+  android_add_test(TARGET check_gcp_environment_linux_test
+   ${_gRPC_ROOT}/test/core/security/check_gcp_environment_linux_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(check_gcp_environment_linux_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(check_gcp_environment_linux_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(check_gcp_environment_linux_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(check_gcp_environment_linux_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(check_gcp_environment_linux_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(check_gcp_environment_linux_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(check_gcp_environment_linux_test project_benchmark project_gflags)
+
+  android_add_test(TARGET check_gcp_environment_windows_test
+   ${_gRPC_ROOT}/test/core/security/check_gcp_environment_windows_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(check_gcp_environment_windows_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(check_gcp_environment_windows_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(check_gcp_environment_windows_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(check_gcp_environment_windows_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(check_gcp_environment_windows_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(check_gcp_environment_windows_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(check_gcp_environment_windows_test project_benchmark project_gflags)
+
   android_add_test(TARGET chunked_vector_test
+   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/protobuf/any.upb.c
+   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/rpc/status.upb.c
    ${_gRPC_ROOT}/src/core/lib/debug/trace.cc
    ${_gRPC_ROOT}/src/core/lib/event_engine/memory_allocator.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/status_helper.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/time.cc
    ${_gRPC_ROOT}/src/core/lib/iomgr/combiner.cc
    ${_gRPC_ROOT}/src/core/lib/iomgr/error.cc
    ${_gRPC_ROOT}/src/core/lib/iomgr/exec_ctx.cc
@@ -10405,13 +8546,14 @@ protobuf_generate_grpc_cpp(
    ${_gRPC_ROOT}/src/core/lib/promise/activity.cc
    ${_gRPC_ROOT}/src/core/lib/resource_quota/arena.cc
    ${_gRPC_ROOT}/src/core/lib/resource_quota/memory_quota.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/periodic_update.cc
    ${_gRPC_ROOT}/src/core/lib/resource_quota/resource_quota.cc
    ${_gRPC_ROOT}/src/core/lib/resource_quota/thread_quota.cc
    ${_gRPC_ROOT}/src/core/lib/resource_quota/trace.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/percent_encoding.cc
    ${_gRPC_ROOT}/src/core/lib/slice/slice.cc
    ${_gRPC_ROOT}/src/core/lib/slice/slice_refcount.cc
    ${_gRPC_ROOT}/src/core/lib/slice/slice_string_helpers.cc
-   ${_gRPC_ROOT}/src/core/lib/slice/static_slice.cc
    ${_gRPC_ROOT}/test/core/gprpp/chunked_vector_test.cc
 )
   target_link_libraries(chunked_vector_test PRIVATE gmock_main ssl crypto)
@@ -10436,10 +8578,13 @@ protobuf_generate_grpc_cpp(
   target_link_libraries(chunked_vector_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/functional:any_invocable
+  absl/functional:function_ref
+  absl/meta:type_traits
   absl/status:statusor
-  absl/types:variant
   absl/utility:utility
   gpr
+  upb
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -10462,6 +8607,10 @@ protobuf_generate_grpc_cpp(
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/util/cli_call.cc
    ${_gRPC_ROOT}/test/cpp/util/cli_call_test.cc
    ${_gRPC_ROOT}/test/cpp/util/cli_credentials.cc
@@ -10491,6 +8640,10 @@ protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
 )
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
 
   target_include_directories(cli_call_test
   PRIVATE ${_gRPC_ROOT}
@@ -10514,6 +8667,37 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(cli_call_test project_benchmark project_gflags)
 
+  android_add_test(TARGET client_authority_filter_test
+   ${_gRPC_ROOT}/test/core/filters/client_authority_filter_test.cc
+)
+  target_link_libraries(client_authority_filter_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(client_authority_filter_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(client_authority_filter_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(client_authority_filter_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(client_authority_filter_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(client_authority_filter_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(client_authority_filter_test project_benchmark project_gflags)
+
   android_add_test(TARGET client_callback_end2end_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
@@ -10527,6 +8711,10 @@ protobuf_generate_grpc_cpp(
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/client_callback_end2end_test.cc
    ${_gRPC_ROOT}/test/cpp/end2end/interceptors_util.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
@@ -10547,6 +8735,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(client_callback_end2end_test
@@ -10593,6 +8785,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/client/client_channel_stress_test.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
 )
@@ -10621,6 +8817,10 @@ protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
 )
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
 
   target_include_directories(client_channel_stress_test
   PRIVATE ${_gRPC_ROOT}
@@ -10644,6 +8844,37 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(client_channel_stress_test project_benchmark project_gflags)
 endif()
+
+  android_add_test(TARGET client_channel_test
+   ${_gRPC_ROOT}/test/core/client_channel/client_channel_test.cc
+)
+  target_link_libraries(client_channel_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(client_channel_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(client_channel_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(client_channel_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(client_channel_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(client_channel_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(client_channel_test project_benchmark project_gflags)
 
   android_add_test(TARGET client_context_test_peer_test
    ${_gRPC_ROOT}/test/cpp/test/client_context_test_peer_test.cc
@@ -10690,6 +8921,10 @@ endif()
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/client_interceptors_end2end_test.cc
    ${_gRPC_ROOT}/test/cpp/end2end/interceptors_util.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
@@ -10710,6 +8945,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(client_interceptors_end2end_test
@@ -10756,8 +8995,11 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+   ${_gRPC_ROOT}/src/cpp/server/orca/orca_interceptor.cc
+   ${_gRPC_ROOT}/src/cpp/server/orca/orca_service.cc
    ${_gRPC_ROOT}/test/core/util/test_lb_policies.cc
    ${_gRPC_ROOT}/test/cpp/end2end/client_lb_end2end_test.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/connection_attempt_injector.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
 )
   target_link_libraries(client_lb_end2end_test PRIVATE gmock_main ssl crypto)
@@ -10808,6 +9050,82 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(client_lb_end2end_test project_benchmark project_gflags)
 endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET client_ssl_test
+   ${_gRPC_ROOT}/test/core/handshake/client_ssl.cc
+)
+  target_link_libraries(client_ssl_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(client_ssl_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(client_ssl_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(client_ssl_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(client_ssl_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(client_ssl_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(client_ssl_test project_benchmark project_gflags)
+endif()
+
+  android_add_test(TARGET cmdline_test
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline_test.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(cmdline_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(cmdline_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(cmdline_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(cmdline_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(cmdline_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(cmdline_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(cmdline_test project_benchmark project_gflags)
 
   android_add_test(TARGET codegen_test_full
    ${_gRPC_ROOT}/test/cpp/codegen/codegen_test_full.cc
@@ -10872,6 +9190,177 @@ endif()
 )
 
     add_dependencies(codegen_test_minimal project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET combiner_test
+   ${_gRPC_ROOT}/test/core/iomgr/combiner_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(combiner_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(combiner_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(combiner_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(combiner_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(combiner_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(combiner_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(combiner_test project_benchmark project_gflags)
+endif()
+
+  android_add_test(TARGET common_closures_test
+   ${_gRPC_ROOT}/test/core/event_engine/common_closures_test.cc
+)
+  target_link_libraries(common_closures_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(common_closures_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(common_closures_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(common_closures_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(common_closures_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(common_closures_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  grpc_test_util_unsecure
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(common_closures_test project_benchmark project_gflags)
+
+  android_add_test(TARGET completion_queue_threading_test
+   ${_gRPC_ROOT}/test/core/surface/completion_queue_threading_test.cc
+)
+  target_link_libraries(completion_queue_threading_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(completion_queue_threading_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(completion_queue_threading_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(completion_queue_threading_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(completion_queue_threading_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(completion_queue_threading_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(completion_queue_threading_test project_benchmark project_gflags)
+
+  android_add_test(TARGET compression_test
+   ${_gRPC_ROOT}/test/core/compression/args_utils.cc
+   ${_gRPC_ROOT}/test/core/compression/compression_test.cc
+)
+  target_link_libraries(compression_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(compression_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(compression_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(compression_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(compression_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(compression_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(compression_test project_benchmark project_gflags)
+
+  android_add_test(TARGET concurrent_connectivity_test
+   ${_gRPC_ROOT}/test/core/surface/concurrent_connectivity_test.cc
+)
+  target_link_libraries(concurrent_connectivity_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(concurrent_connectivity_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(concurrent_connectivity_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(concurrent_connectivity_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(concurrent_connectivity_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(concurrent_connectivity_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(concurrent_connectivity_test project_benchmark project_gflags)
 
   android_add_test(TARGET connection_prefix_bad_client_test
    ${_gRPC_ROOT}/test/core/bad_client/bad_client.cc
@@ -10908,6 +9397,18 @@ endif()
 
   android_add_test(TARGET connectivity_state_test
    ${_gRPC_ROOT}/test/core/transport/connectivity_state_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(connectivity_state_test PRIVATE gmock_main ssl crypto)
   target_include_directories(connectivity_state_test PRIVATE ${_gRPC_ROOT})
@@ -10950,6 +9451,10 @@ endif()
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/context_allocator_end2end_test.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
 )
@@ -10969,6 +9474,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(context_allocator_end2end_test
@@ -10995,6 +9504,18 @@ protobuf_generate_grpc_cpp(
 
   android_add_test(TARGET context_list_test
    ${_gRPC_ROOT}/test/core/transport/chttp2/context_list_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(context_list_test PRIVATE gmock_main ssl crypto)
   target_include_directories(context_list_test PRIVATE ${_gRPC_ROOT})
@@ -11055,58 +9576,6 @@ protobuf_generate_grpc_cpp(
     add_dependencies(context_test project_benchmark project_gflags)
 
   android_add_test(TARGET core_configuration_test
-   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/protobuf/any.upb.c
-   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/rpc/status.upb.c
-   ${_gRPC_ROOT}/src/core/lib/channel/channel_args.cc
-   ${_gRPC_ROOT}/src/core/lib/channel/channel_args_preconditioning.cc
-   ${_gRPC_ROOT}/src/core/lib/channel/handshaker_registry.cc
-   ${_gRPC_ROOT}/src/core/lib/config/core_configuration.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/alloc.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/atm.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_iphone.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_linux.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/env_linux.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/env_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/env_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_android.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_linux.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/murmur_hash.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string_util_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync_abseil.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time_precise.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/tmpfile_msys.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/tmpfile_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/tmpfile_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/wrap_memcpy.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/examine_stack.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/fork.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/global_config_env.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/host_port.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/mpscq.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/stat_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/stat_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/status_helper.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/thd_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/thd_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/time_util.cc
-   ${_gRPC_ROOT}/src/core/lib/profiling/basic_timers.cc
-   ${_gRPC_ROOT}/src/core/lib/profiling/stap_timers.cc
-   ${_gRPC_ROOT}/src/core/lib/surface/channel_init.cc
-   ${_gRPC_ROOT}/src/core/lib/surface/channel_stack_type.cc
    ${_gRPC_ROOT}/test/core/config/core_configuration_test.cc
 )
   target_link_libraries(core_configuration_test PRIVATE gmock_main ssl crypto)
@@ -11131,18 +9600,7 @@ protobuf_generate_grpc_cpp(
   target_link_libraries(core_configuration_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl/base:base
-  absl/base:core_headers
-  absl/memory:memory
-  absl/random:random
-  absl/status:status
-  absl/strings:cord
-  absl/strings:str_format
-  absl/strings:strings
-  absl/synchronization:synchronization
-  absl/time:time
-  absl/types:optional
-  upb
+  grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -11178,6 +9636,71 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(cpp_impl_of_test project_benchmark project_gflags)
 
+  android_add_test(TARGET cpu_test
+   ${_gRPC_ROOT}/test/core/gpr/cpu_test.cc
+)
+  target_link_libraries(cpu_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(cpu_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(cpu_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(cpu_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(cpu_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(cpu_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(cpu_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET crl_ssl_transport_security_test
+   ${_gRPC_ROOT}/test/core/tsi/crl_ssl_transport_security_test.cc
+   ${_gRPC_ROOT}/test/core/tsi/transport_security_test_lib.cc
+)
+  target_link_libraries(crl_ssl_transport_security_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(crl_ssl_transport_security_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(crl_ssl_transport_security_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(crl_ssl_transport_security_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(crl_ssl_transport_security_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(crl_ssl_transport_security_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(crl_ssl_transport_security_test project_benchmark project_gflags)
+endif()
+
   android_add_test(TARGET delegating_channel_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
@@ -11191,6 +9714,10 @@ protobuf_generate_grpc_cpp(
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/delegating_channel_test.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
 )
@@ -11210,6 +9737,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(delegating_channel_test
@@ -11264,6 +9795,68 @@ protobuf_generate_grpc_cpp(
 )
 
     add_dependencies(destroy_grpclb_channel_with_active_connect_stress_test project_benchmark project_gflags)
+
+  android_add_test(TARGET dns_resolver_cooldown_test
+   ${_gRPC_ROOT}/test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
+)
+  target_link_libraries(dns_resolver_cooldown_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(dns_resolver_cooldown_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(dns_resolver_cooldown_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(dns_resolver_cooldown_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(dns_resolver_cooldown_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(dns_resolver_cooldown_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(dns_resolver_cooldown_test project_benchmark project_gflags)
+
+  android_add_test(TARGET dns_resolver_test
+   ${_gRPC_ROOT}/test/core/client_channel/resolvers/dns_resolver_test.cc
+)
+  target_link_libraries(dns_resolver_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(dns_resolver_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(dns_resolver_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(dns_resolver_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(dns_resolver_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(dns_resolver_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(dns_resolver_test project_benchmark project_gflags)
 
   android_add_test(TARGET dual_ref_counted_test
    ${_gRPC_ROOT}/test/core/gprpp/dual_ref_counted_test.cc
@@ -11328,6 +9921,7 @@ protobuf_generate_grpc_cpp(
 )
 
     add_dependencies(duplicate_header_bad_client_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   android_add_test(TARGET end2end_binder_transport_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
@@ -11342,6 +9936,10 @@ protobuf_generate_grpc_cpp(
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/core/transport/binder/end2end/end2end_binder_transport_test.cc
    ${_gRPC_ROOT}/test/core/transport/binder/end2end/fake_binder.cc
    ${_gRPC_ROOT}/test/core/transport/binder/end2end/testing_channel_create.cc
@@ -11363,6 +9961,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(end2end_binder_transport_test
@@ -11386,6 +9988,7 @@ protobuf_generate_grpc_cpp(
 )
 
     add_dependencies(end2end_binder_transport_test project_benchmark project_gflags)
+endif()
 
   android_add_test(TARGET end2end_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
@@ -11404,6 +10007,10 @@ protobuf_generate_grpc_cpp(
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/end2end_test.cc
    ${_gRPC_ROOT}/test/cpp/end2end/interceptors_util.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
@@ -11428,6 +10035,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(end2end_test
@@ -11498,6 +10109,7 @@ protobuf_generate_grpc_cpp(
    ${_gRPC_ROOT}/src/cpp/server/health/default_health_check_service.cc
    ${_gRPC_ROOT}/src/cpp/server/health/health_check_service.cc
    ${_gRPC_ROOT}/src/cpp/server/health/health_check_service_server_builder_option.cc
+   ${_gRPC_ROOT}/src/cpp/server/orca/call_metric_recorder.cc
    ${_gRPC_ROOT}/src/cpp/server/server_builder.cc
    ${_gRPC_ROOT}/src/cpp/server/server_callback.cc
    ${_gRPC_ROOT}/src/cpp/server/server_cc.cc
@@ -11534,6 +10146,7 @@ protobuf_generate_grpc_cpp(
   target_link_libraries(endpoint_binder_pool_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/cleanup:cleanup
   grpc_test_util
   ${_gRPC_GFLAGS_LIBRARIES}
 )
@@ -11565,15 +10178,103 @@ protobuf_generate_grpc_cpp(
   target_link_libraries(endpoint_config_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
+  grpc
+  grpc_test_util_unsecure
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
     add_dependencies(endpoint_config_test project_benchmark project_gflags)
 
+  android_add_test(TARGET endpoint_pair_test
+   ${_gRPC_ROOT}/test/core/iomgr/endpoint_pair_test.cc
+   ${_gRPC_ROOT}/test/core/iomgr/endpoint_tests.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(endpoint_pair_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(endpoint_pair_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(endpoint_pair_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(endpoint_pair_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(endpoint_pair_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(endpoint_pair_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(endpoint_pair_test project_benchmark project_gflags)
+
+  android_add_test(TARGET env_test
+   ${_gRPC_ROOT}/test/core/gpr/env_test.cc
+)
+  target_link_libraries(env_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(env_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(env_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(env_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(env_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(env_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(env_test project_benchmark project_gflags)
+
   android_add_test(TARGET error_test
    ${_gRPC_ROOT}/test/core/iomgr/endpoint_tests.cc
    ${_gRPC_ROOT}/test/core/iomgr/error_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(error_test PRIVATE gmock_main ssl crypto)
   target_include_directories(error_test PRIVATE ${_gRPC_ROOT})
@@ -11605,6 +10306,18 @@ protobuf_generate_grpc_cpp(
 
   android_add_test(TARGET error_utils_test
    ${_gRPC_ROOT}/test/core/transport/error_utils_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(error_utils_test PRIVATE gmock_main ssl crypto)
   target_include_directories(error_utils_test PRIVATE ${_gRPC_ROOT})
@@ -11636,6 +10349,18 @@ protobuf_generate_grpc_cpp(
 
   android_add_test(TARGET evaluate_args_test
    ${_gRPC_ROOT}/test/core/security/evaluate_args_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(evaluate_args_test PRIVATE gmock_main ssl crypto)
   target_include_directories(evaluate_args_test PRIVATE ${_gRPC_ROOT})
@@ -11664,6 +10389,46 @@ protobuf_generate_grpc_cpp(
 )
 
     add_dependencies(evaluate_args_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET event_poller_posix_test
+   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
+   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
+   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/lockfree_event.cc
+   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
+   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
+   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
+   ${_gRPC_ROOT}/test/core/event_engine/posix/event_poller_posix_test.cc
+)
+  target_link_libraries(event_poller_posix_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(event_poller_posix_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(event_poller_posix_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(event_poller_posix_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(event_poller_posix_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(event_poller_posix_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(event_poller_posix_test project_benchmark project_gflags)
+endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   android_add_test(TARGET examine_stack_test
@@ -11711,6 +10476,10 @@ endif()
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/exception_test.cc
 )
   target_link_libraries(exception_test PRIVATE gmock_main ssl crypto)
@@ -11729,6 +10498,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(exception_test
@@ -11754,17 +10527,21 @@ protobuf_generate_grpc_cpp(
     add_dependencies(exception_test project_benchmark project_gflags)
 
   android_add_test(TARGET exec_ctx_wakeup_scheduler_test
+   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/protobuf/any.upb.c
+   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/rpc/status.upb.c
    ${_gRPC_ROOT}/src/core/lib/debug/trace.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/status_helper.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/time.cc
    ${_gRPC_ROOT}/src/core/lib/iomgr/combiner.cc
    ${_gRPC_ROOT}/src/core/lib/iomgr/error.cc
    ${_gRPC_ROOT}/src/core/lib/iomgr/exec_ctx.cc
    ${_gRPC_ROOT}/src/core/lib/iomgr/executor.cc
    ${_gRPC_ROOT}/src/core/lib/iomgr/iomgr_internal.cc
    ${_gRPC_ROOT}/src/core/lib/promise/activity.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/percent_encoding.cc
    ${_gRPC_ROOT}/src/core/lib/slice/slice.cc
    ${_gRPC_ROOT}/src/core/lib/slice/slice_refcount.cc
    ${_gRPC_ROOT}/src/core/lib/slice/slice_string_helpers.cc
-   ${_gRPC_ROOT}/src/core/lib/slice/static_slice.cc
    ${_gRPC_ROOT}/test/core/promise/exec_ctx_wakeup_scheduler_test.cc
 )
   target_link_libraries(exec_ctx_wakeup_scheduler_test PRIVATE gmock_main ssl crypto)
@@ -11789,9 +10566,11 @@ protobuf_generate_grpc_cpp(
   target_link_libraries(exec_ctx_wakeup_scheduler_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/functional:any_invocable
+  absl/meta:type_traits
   absl/status:statusor
-  absl/types:variant
   gpr
+  upb
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -11842,6 +10621,7 @@ protobuf_generate_grpc_cpp(
    ${_gRPC_ROOT}/src/cpp/server/health/default_health_check_service.cc
    ${_gRPC_ROOT}/src/cpp/server/health/health_check_service.cc
    ${_gRPC_ROOT}/src/cpp/server/health/health_check_service_server_builder_option.cc
+   ${_gRPC_ROOT}/src/cpp/server/orca/call_metric_recorder.cc
    ${_gRPC_ROOT}/src/cpp/server/server_builder.cc
    ${_gRPC_ROOT}/src/cpp/server/server_callback.cc
    ${_gRPC_ROOT}/src/cpp/server/server_cc.cc
@@ -11878,11 +10658,120 @@ protobuf_generate_grpc_cpp(
   target_link_libraries(fake_binder_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/cleanup:cleanup
   grpc_test_util
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
     add_dependencies(fake_binder_test project_benchmark project_gflags)
+
+  android_add_test(TARGET fake_resolver_test
+   ${_gRPC_ROOT}/test/core/client_channel/resolvers/fake_resolver_test.cc
+)
+  target_link_libraries(fake_resolver_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(fake_resolver_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(fake_resolver_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(fake_resolver_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(fake_resolver_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(fake_resolver_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(fake_resolver_test project_benchmark project_gflags)
+
+  android_add_test(TARGET fake_transport_security_test
+   ${_gRPC_ROOT}/test/core/tsi/fake_transport_security_test.cc
+   ${_gRPC_ROOT}/test/core/tsi/transport_security_test_lib.cc
+)
+  target_link_libraries(fake_transport_security_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(fake_transport_security_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(fake_transport_security_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(fake_transport_security_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(fake_transport_security_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(fake_transport_security_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(fake_transport_security_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET fd_posix_test
+   ${_gRPC_ROOT}/test/core/iomgr/fd_posix_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(fd_posix_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(fd_posix_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(fd_posix_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(fd_posix_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(fd_posix_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(fd_posix_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(fd_posix_test project_benchmark project_gflags)
+endif()
 
   android_add_test(TARGET file_watcher_certificate_provider_factory_test
    ${_gRPC_ROOT}/test/core/xds/file_watcher_certificate_provider_factory_test.cc
@@ -11932,6 +10821,10 @@ protobuf_generate_grpc_cpp(
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/filter_end2end_test.cc
 )
   target_link_libraries(filter_end2end_test PRIVATE gmock_main ssl crypto)
@@ -11954,6 +10847,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(filter_end2end_test
@@ -11991,6 +10888,10 @@ protobuf_generate_grpc_cpp(
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/flaky_network_test.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
 )
@@ -12010,6 +10911,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(flaky_network_test
@@ -12035,7 +10940,30 @@ protobuf_generate_grpc_cpp(
     add_dependencies(flaky_network_test project_benchmark project_gflags)
 
   android_add_test(TARGET flow_control_test
-   ${_gRPC_ROOT}/test/core/end2end/cq_verifier.cc
+   ${_gRPC_ROOT}/src/core/ext/transport/chttp2/transport/flow_control.cc
+   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/protobuf/any.upb.c
+   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/rpc/status.upb.c
+   ${_gRPC_ROOT}/src/core/lib/debug/trace.cc
+   ${_gRPC_ROOT}/src/core/lib/event_engine/memory_allocator.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/status_helper.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/time.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/combiner.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/error.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/exec_ctx.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/executor.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/iomgr_internal.cc
+   ${_gRPC_ROOT}/src/core/lib/promise/activity.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/memory_quota.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/periodic_update.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/resource_quota.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/thread_quota.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/trace.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/percent_encoding.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/slice.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/slice_refcount.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/slice_string_helpers.cc
+   ${_gRPC_ROOT}/src/core/lib/transport/bdp_estimator.cc
+   ${_gRPC_ROOT}/src/core/lib/transport/pid_controller.cc
    ${_gRPC_ROOT}/test/core/transport/chttp2/flow_control_test.cc
 )
   target_link_libraries(flow_control_test PRIVATE gmock_main ssl crypto)
@@ -12060,7 +10988,13 @@ protobuf_generate_grpc_cpp(
   target_link_libraries(flow_control_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
+  absl/functional:any_invocable
+  absl/functional:function_ref
+  absl/meta:type_traits
+  absl/status:statusor
+  absl/utility:utility
+  gpr
+  upb
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -12069,51 +11003,26 @@ protobuf_generate_grpc_cpp(
   android_add_test(TARGET for_each_test
    ${_gRPC_ROOT}/src/core/ext/upb-generated/google/protobuf/any.upb.c
    ${_gRPC_ROOT}/src/core/ext/upb-generated/google/rpc/status.upb.c
-   ${_gRPC_ROOT}/src/core/lib/gpr/alloc.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/atm.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_iphone.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_linux.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/env_linux.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/env_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/env_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_android.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_linux.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/murmur_hash.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string_util_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync_abseil.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time_precise.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/tmpfile_msys.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/tmpfile_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/tmpfile_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/wrap_memcpy.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/examine_stack.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/fork.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/global_config_env.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/host_port.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/mpscq.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/stat_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/stat_windows.cc
+   ${_gRPC_ROOT}/src/core/lib/debug/trace.cc
+   ${_gRPC_ROOT}/src/core/lib/event_engine/memory_allocator.cc
    ${_gRPC_ROOT}/src/core/lib/gprpp/status_helper.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/thd_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/thd_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/time_util.cc
-   ${_gRPC_ROOT}/src/core/lib/profiling/basic_timers.cc
-   ${_gRPC_ROOT}/src/core/lib/profiling/stap_timers.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/time.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/combiner.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/error.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/exec_ctx.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/executor.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/iomgr_internal.cc
    ${_gRPC_ROOT}/src/core/lib/promise/activity.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/arena.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/memory_quota.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/periodic_update.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/resource_quota.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/thread_quota.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/trace.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/percent_encoding.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/slice.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/slice_refcount.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/slice_string_helpers.cc
    ${_gRPC_ROOT}/test/core/promise/for_each_test.cc
 )
   target_link_libraries(for_each_test PRIVATE gmock_main ssl crypto)
@@ -12138,25 +11047,207 @@ protobuf_generate_grpc_cpp(
   target_link_libraries(for_each_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl/base:base
-  absl/base:core_headers
   absl/container:flat_hash_set
-  absl/memory:memory
-  absl/random:random
-  absl/status:status
+  absl/functional:any_invocable
+  absl/functional:function_ref
+  absl/hash:hash
+  absl/meta:type_traits
   absl/status:statusor
-  absl/strings:cord
-  absl/strings:str_format
-  absl/strings:strings
-  absl/synchronization:synchronization
-  absl/time:time
-  absl/types:optional
-  absl/types:variant
+  absl/utility:utility
+  gpr
   upb
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
     add_dependencies(for_each_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET fork_test
+   ${_gRPC_ROOT}/test/core/gprpp/fork_test.cc
+)
+  target_link_libraries(fork_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(fork_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(fork_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(fork_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(fork_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(fork_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(fork_test project_benchmark project_gflags)
+endif()
+
+  android_add_test(TARGET forkable_test
+   ${_gRPC_ROOT}/test/core/event_engine/forkable_test.cc
+)
+  target_link_libraries(forkable_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(forkable_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(forkable_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(forkable_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(forkable_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(forkable_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_unsecure
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(forkable_test project_benchmark project_gflags)
+
+  android_add_test(TARGET format_request_test
+   ${_gRPC_ROOT}/test/core/end2end/data/client_certs.cc
+   ${_gRPC_ROOT}/test/core/end2end/data/server1_cert.cc
+   ${_gRPC_ROOT}/test/core/end2end/data/server1_key.cc
+   ${_gRPC_ROOT}/test/core/end2end/data/test_root_cert.cc
+   ${_gRPC_ROOT}/test/core/http/format_request_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(format_request_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(format_request_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(format_request_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(format_request_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(format_request_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(format_request_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(format_request_test project_benchmark project_gflags)
+
+  android_add_test(TARGET frame_handler_test
+   ${_gRPC_ROOT}/test/core/tsi/alts/crypt/gsec_test_util.cc
+   ${_gRPC_ROOT}/test/core/tsi/alts/frame_protector/frame_handler_test.cc
+)
+  target_link_libraries(frame_handler_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(frame_handler_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(frame_handler_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(frame_handler_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(frame_handler_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(frame_handler_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(frame_handler_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET fuzzing_event_engine_test
+          ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+   ${_gRPC_ROOT}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+   ${_gRPC_ROOT}/test/core/event_engine/test_suite/event_engine_test.cc
+   ${_gRPC_ROOT}/test/core/event_engine/test_suite/event_engine_test_utils.cc
+   ${_gRPC_ROOT}/test/core/event_engine/test_suite/fuzzing_event_engine_test.cc
+   ${_gRPC_ROOT}/test/core/event_engine/test_suite/timer_test.cc
+)
+  target_link_libraries(fuzzing_event_engine_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(fuzzing_event_engine_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(fuzzing_event_engine_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(fuzzing_event_engine_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+)
+
+  target_include_directories(fuzzing_event_engine_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(fuzzing_event_engine_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(fuzzing_event_engine_test project_benchmark project_gflags)
+endif()
 
   android_add_test(TARGET generic_end2end_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
@@ -12175,6 +11266,10 @@ protobuf_generate_grpc_cpp(
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/generic_end2end_test.cc
 )
   target_link_libraries(generic_end2end_test PRIVATE gmock_main ssl crypto)
@@ -12197,6 +11292,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(generic_end2end_test
@@ -12285,6 +11384,38 @@ endif()
 
     add_dependencies(global_config_test project_benchmark project_gflags)
 
+  android_add_test(TARGET google_c2p_resolver_test
+   ${_gRPC_ROOT}/test/core/client_channel/resolvers/google_c2p_resolver_test.cc
+   ${_gRPC_ROOT}/test/core/util/fake_udp_and_tcp_server.cc
+)
+  target_link_libraries(google_c2p_resolver_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(google_c2p_resolver_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(google_c2p_resolver_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(google_c2p_resolver_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(google_c2p_resolver_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(google_c2p_resolver_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(google_c2p_resolver_test project_benchmark project_gflags)
+
   android_add_test(TARGET google_mesh_ca_certificate_provider_factory_test
    ${_gRPC_ROOT}/src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc
    ${_gRPC_ROOT}/test/core/xds/google_mesh_ca_certificate_provider_factory_test.cc
@@ -12317,11 +11448,95 @@ endif()
 
     add_dependencies(google_mesh_ca_certificate_provider_factory_test project_benchmark project_gflags)
 
+  android_add_test(TARGET graceful_shutdown_test
+   ${_gRPC_ROOT}/test/core/end2end/cq_verifier.cc
+   ${_gRPC_ROOT}/test/core/transport/chttp2/graceful_shutdown_test.cc
+)
+  target_link_libraries(graceful_shutdown_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(graceful_shutdown_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(graceful_shutdown_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(graceful_shutdown_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(graceful_shutdown_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(graceful_shutdown_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(graceful_shutdown_test project_benchmark project_gflags)
+
+  android_add_test(TARGET grpc_alts_credentials_options_test
+   ${_gRPC_ROOT}/test/core/security/grpc_alts_credentials_options_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(grpc_alts_credentials_options_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(grpc_alts_credentials_options_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(grpc_alts_credentials_options_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(grpc_alts_credentials_options_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(grpc_alts_credentials_options_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(grpc_alts_credentials_options_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(grpc_alts_credentials_options_test project_benchmark project_gflags)
+
   android_add_test(TARGET grpc_authorization_engine_test
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_authorization_engine.cc
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/matchers.cc
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/rbac_policy.cc
    ${_gRPC_ROOT}/test/core/security/grpc_authorization_engine_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(grpc_authorization_engine_test PRIVATE gmock_main ssl crypto)
   target_include_directories(grpc_authorization_engine_test PRIVATE ${_gRPC_ROOT})
@@ -12352,12 +11567,21 @@ endif()
     add_dependencies(grpc_authorization_engine_test project_benchmark project_gflags)
 
   android_add_test(TARGET grpc_authorization_policy_provider_test
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_authorization_engine.cc
    ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/matchers.cc
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/rbac_policy.cc
    ${_gRPC_ROOT}/src/core/lib/security/authorization/rbac_translator.cc
    ${_gRPC_ROOT}/test/core/security/grpc_authorization_policy_provider_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(grpc_authorization_policy_provider_test PRIVATE gmock_main ssl crypto)
   target_include_directories(grpc_authorization_policy_provider_test PRIVATE ${_gRPC_ROOT})
@@ -12386,6 +11610,104 @@ endif()
 )
 
     add_dependencies(grpc_authorization_policy_provider_test project_benchmark project_gflags)
+
+  android_add_test(TARGET grpc_authz_end2end_test
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+   ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
+   ${_gRPC_ROOT}/src/core/lib/security/authorization/rbac_translator.cc
+   ${_gRPC_ROOT}/src/cpp/server/authorization_policy_provider.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/grpc_authz_end2end_test.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
+)
+  target_link_libraries(grpc_authz_end2end_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(grpc_authz_end2end_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(grpc_authz_end2end_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(grpc_authz_end2end_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
+
+  target_include_directories(grpc_authz_end2end_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(grpc_authz_end2end_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(grpc_authz_end2end_test project_benchmark project_gflags)
+
+  android_add_test(TARGET grpc_byte_buffer_reader_test
+   ${_gRPC_ROOT}/test/core/surface/byte_buffer_reader_test.cc
+)
+  target_link_libraries(grpc_byte_buffer_reader_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(grpc_byte_buffer_reader_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(grpc_byte_buffer_reader_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(grpc_byte_buffer_reader_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(grpc_byte_buffer_reader_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(grpc_byte_buffer_reader_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(grpc_byte_buffer_reader_test project_benchmark project_gflags)
 
   android_add_test(TARGET grpc_cli
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
@@ -12434,8 +11756,94 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(grpc_cli project_benchmark project_gflags)
 
+  android_add_test(TARGET grpc_completion_queue_test
+   ${_gRPC_ROOT}/test/core/surface/completion_queue_test.cc
+)
+  target_link_libraries(grpc_completion_queue_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(grpc_completion_queue_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(grpc_completion_queue_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(grpc_completion_queue_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(grpc_completion_queue_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(grpc_completion_queue_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(grpc_completion_queue_test project_benchmark project_gflags)
+
+  android_add_test(TARGET grpc_ipv6_loopback_available_test
+   ${_gRPC_ROOT}/test/core/iomgr/grpc_ipv6_loopback_available_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(grpc_ipv6_loopback_available_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(grpc_ipv6_loopback_available_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(grpc_ipv6_loopback_available_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(grpc_ipv6_loopback_available_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(grpc_ipv6_loopback_available_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(grpc_ipv6_loopback_available_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(grpc_ipv6_loopback_available_test project_benchmark project_gflags)
+
   android_add_test(TARGET grpc_tls_certificate_distributor_test
    ${_gRPC_ROOT}/test/core/security/grpc_tls_certificate_distributor_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(grpc_tls_certificate_distributor_test PRIVATE gmock_main ssl crypto)
   target_include_directories(grpc_tls_certificate_distributor_test PRIVATE ${_gRPC_ROOT})
@@ -12467,6 +11875,18 @@ protobuf_generate_grpc_cpp(
 
   android_add_test(TARGET grpc_tls_certificate_provider_test
    ${_gRPC_ROOT}/test/core/security/grpc_tls_certificate_provider_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(grpc_tls_certificate_provider_test PRIVATE gmock_main ssl crypto)
   target_include_directories(grpc_tls_certificate_provider_test PRIVATE ${_gRPC_ROOT})
@@ -12498,6 +11918,18 @@ protobuf_generate_grpc_cpp(
 
   android_add_test(TARGET grpc_tls_certificate_verifier_test
    ${_gRPC_ROOT}/test/core/security/grpc_tls_certificate_verifier_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(grpc_tls_certificate_verifier_test PRIVATE gmock_main ssl crypto)
   target_include_directories(grpc_tls_certificate_verifier_test PRIVATE ${_gRPC_ROOT})
@@ -12527,8 +11959,63 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(grpc_tls_certificate_verifier_test project_benchmark project_gflags)
 
+  android_add_test(TARGET grpc_tls_credentials_options_comparator_test
+   ${_gRPC_ROOT}/test/core/security/grpc_tls_credentials_options_comparator_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(grpc_tls_credentials_options_comparator_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(grpc_tls_credentials_options_comparator_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(grpc_tls_credentials_options_comparator_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(grpc_tls_credentials_options_comparator_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(grpc_tls_credentials_options_comparator_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(grpc_tls_credentials_options_comparator_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(grpc_tls_credentials_options_comparator_test project_benchmark project_gflags)
+
   android_add_test(TARGET grpc_tls_credentials_options_test
    ${_gRPC_ROOT}/test/core/security/grpc_tls_credentials_options_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(grpc_tls_credentials_options_test PRIVATE gmock_main ssl crypto)
   target_include_directories(grpc_tls_credentials_options_test PRIVATE ${_gRPC_ROOT})
@@ -12619,6 +12106,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/grpclb_end2end_test.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
 )
@@ -12647,6 +12138,10 @@ protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
 )
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
 
   target_include_directories(grpclb_end2end_test
   PRIVATE ${_gRPC_ROOT}
@@ -12673,6 +12168,7 @@ protobuf_generate_grpc_cpp(
 endif()
 
   android_add_test(TARGET h2_ssl_session_reuse_test
+   ${_gRPC_ROOT}/test/core/end2end/cq_verifier.cc
    ${_gRPC_ROOT}/test/core/end2end/h2_ssl_session_reuse_test.cc
 )
   target_link_libraries(h2_ssl_session_reuse_test PRIVATE gmock_main ssl crypto)
@@ -12697,11 +12193,45 @@ endif()
   target_link_libraries(h2_ssl_session_reuse_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  end2end_tests
+  grpc_test_util
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
     add_dependencies(h2_ssl_session_reuse_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET handshake_server_with_readahead_handshaker_test
+   ${_gRPC_ROOT}/test/core/handshake/readahead_handshaker_server_ssl.cc
+   ${_gRPC_ROOT}/test/core/handshake/server_ssl_common.cc
+)
+  target_link_libraries(handshake_server_with_readahead_handshaker_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(handshake_server_with_readahead_handshaker_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(handshake_server_with_readahead_handshaker_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(handshake_server_with_readahead_handshaker_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(handshake_server_with_readahead_handshaker_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(handshake_server_with_readahead_handshaker_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(handshake_server_with_readahead_handshaker_test project_benchmark project_gflags)
+endif()
 
   android_add_test(TARGET head_of_line_blocking_bad_client_test
    ${_gRPC_ROOT}/test/core/bad_client/bad_client.cc
@@ -12790,6 +12320,10 @@ endif()
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/health_service_end2end_test.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_health_check_service_impl.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
@@ -12819,6 +12353,10 @@ protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
 )
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
 
   target_include_directories(health_service_end2end_test
   PRIVATE ${_gRPC_ROOT}
@@ -12842,16 +12380,28 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(health_service_end2end_test project_benchmark project_gflags)
 
-  android_add_test(TARGET hpack_encoder_index_test
-   ${_gRPC_ROOT}/test/core/transport/chttp2/hpack_encoder_index_test.cc
+  android_add_test(TARGET histogram_test
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/histogram_test.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
-  target_link_libraries(hpack_encoder_index_test PRIVATE gmock_main ssl crypto)
-  target_include_directories(hpack_encoder_index_test PRIVATE ${_gRPC_ROOT})
+  target_link_libraries(histogram_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(histogram_test PRIVATE ${_gRPC_ROOT})
 
-  target_compile_definitions(hpack_encoder_index_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(hpack_encoder_index_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+  target_compile_definitions(histogram_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(histogram_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
 
-  target_include_directories(hpack_encoder_index_test
+  target_include_directories(histogram_test
   PRIVATE ${_gRPC_ROOT}
   PRIVATE ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -12864,17 +12414,103 @@ protobuf_generate_grpc_cpp(
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
-  target_link_libraries(hpack_encoder_index_test PRIVATE
+  target_link_libraries(histogram_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl/types:optional
+  grpc_test_util
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
-    add_dependencies(hpack_encoder_index_test project_benchmark project_gflags)
+    add_dependencies(histogram_test project_benchmark project_gflags)
+
+  android_add_test(TARGET host_port_test
+   ${_gRPC_ROOT}/test/core/gprpp/host_port_test.cc
+)
+  target_link_libraries(host_port_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(host_port_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(host_port_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(host_port_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(host_port_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(host_port_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(host_port_test project_benchmark project_gflags)
+
+  android_add_test(TARGET hpack_encoder_test
+   ${_gRPC_ROOT}/test/core/transport/chttp2/hpack_encoder_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(hpack_encoder_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(hpack_encoder_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(hpack_encoder_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(hpack_encoder_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(hpack_encoder_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(hpack_encoder_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(hpack_encoder_test project_benchmark project_gflags)
 
   android_add_test(TARGET hpack_parser_table_test
    ${_gRPC_ROOT}/test/core/transport/chttp2/hpack_parser_table_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(hpack_parser_table_test PRIVATE gmock_main ssl crypto)
   target_include_directories(hpack_parser_table_test PRIVATE ${_gRPC_ROOT})
@@ -12906,6 +12542,18 @@ protobuf_generate_grpc_cpp(
 
   android_add_test(TARGET hpack_parser_test
    ${_gRPC_ROOT}/test/core/transport/chttp2/hpack_parser_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(hpack_parser_test PRIVATE gmock_main ssl crypto)
   target_include_directories(hpack_parser_test PRIVATE ${_gRPC_ROOT})
@@ -12991,6 +12639,107 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(http2_client project_benchmark project_gflags)
 
+  android_add_test(TARGET http_proxy_mapper_test
+   ${_gRPC_ROOT}/test/core/client_channel/http_proxy_mapper_test.cc
+)
+  target_link_libraries(http_proxy_mapper_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(http_proxy_mapper_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(http_proxy_mapper_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(http_proxy_mapper_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(http_proxy_mapper_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(http_proxy_mapper_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(http_proxy_mapper_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET httpcli_test
+   ${_gRPC_ROOT}/test/core/http/httpcli_test.cc
+   ${_gRPC_ROOT}/test/core/http/httpcli_test_util.cc
+   ${_gRPC_ROOT}/test/core/util/fake_udp_and_tcp_server.cc
+)
+  target_link_libraries(httpcli_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(httpcli_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(httpcli_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(httpcli_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(httpcli_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(httpcli_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(httpcli_test project_benchmark project_gflags)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET httpscli_test
+   ${_gRPC_ROOT}/test/core/http/httpcli_test_util.cc
+   ${_gRPC_ROOT}/test/core/http/httpscli_test.cc
+   ${_gRPC_ROOT}/test/core/util/fake_udp_and_tcp_server.cc
+)
+  target_link_libraries(httpscli_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(httpscli_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(httpscli_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(httpscli_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(httpscli_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(httpscli_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(httpscli_test project_benchmark project_gflags)
+endif()
+
   android_add_test(TARGET hybrid_end2end_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
@@ -13008,6 +12757,10 @@ protobuf_generate_grpc_cpp(
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/hybrid_end2end_test.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
 )
@@ -13031,6 +12784,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(hybrid_end2end_test
@@ -13056,7 +12813,7 @@ protobuf_generate_grpc_cpp(
     add_dependencies(hybrid_end2end_test project_benchmark project_gflags)
 
   android_add_test(TARGET idle_filter_state_test
-   ${_gRPC_ROOT}/src/core/ext/filters/client_idle/idle_filter_state.cc
+   ${_gRPC_ROOT}/src/core/ext/filters/channel_idle/idle_filter_state.cc
    ${_gRPC_ROOT}/test/core/client_idle/idle_filter_state_test.cc
 )
   target_link_libraries(idle_filter_state_test PRIVATE gmock_main ssl crypto)
@@ -13111,6 +12868,7 @@ protobuf_generate_grpc_cpp(
   target_link_libraries(if_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/meta:type_traits
   absl/status:statusor
   absl/types:variant
   ${_gRPC_GFLAGS_LIBRARIES}
@@ -13184,6 +12942,18 @@ protobuf_generate_grpc_cpp(
 
   android_add_test(TARGET insecure_security_connector_test
    ${_gRPC_ROOT}/test/core/security/insecure_security_connector_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(insecure_security_connector_test PRIVATE gmock_main ssl crypto)
   target_include_directories(insecure_security_connector_test PRIVATE ${_gRPC_ROOT})
@@ -13329,18 +13099,19 @@ protobuf_generate_grpc_cpp(
 )
 
     add_dependencies(interop_server project_benchmark project_gflags)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
 
-  android_add_test(TARGET interop_test
-   ${_gRPC_ROOT}/test/cpp/interop/interop_test.cc
+  android_add_test(TARGET iocp_test
+   ${_gRPC_ROOT}/test/core/event_engine/windows/create_sockpair.cc
+   ${_gRPC_ROOT}/test/core/event_engine/windows/iocp_test.cc
 )
-  target_link_libraries(interop_test PRIVATE gmock_main ssl crypto)
-  target_include_directories(interop_test PRIVATE ${_gRPC_ROOT})
+  target_link_libraries(iocp_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(iocp_test PRIVATE ${_gRPC_ROOT})
 
-  target_compile_definitions(interop_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(interop_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+  target_compile_definitions(iocp_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(iocp_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
 
-  target_include_directories(interop_test
+  target_include_directories(iocp_test
   PRIVATE ${_gRPC_ROOT}
   PRIVATE ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -13353,16 +13124,57 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
-  target_link_libraries(interop_test PRIVATE
+  target_link_libraries(iocp_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_config
-  grpc++_test_util
+  grpc_test_util
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
-    add_dependencies(interop_test project_benchmark project_gflags)
+    add_dependencies(iocp_test project_benchmark project_gflags)
 endif()
+
+  android_add_test(TARGET istio_echo_server_test
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/istio_echo.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/istio_echo.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/istio_echo.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/istio_echo.grpc.pb.h
+   ${_gRPC_ROOT}/test/cpp/interop/istio_echo_server_lib.cc
+   ${_gRPC_ROOT}/test/cpp/interop/istio_echo_server_test.cc
+)
+  target_link_libraries(istio_echo_server_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(istio_echo_server_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(istio_echo_server_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(istio_echo_server_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/istio_echo.proto
+)
+
+  target_include_directories(istio_echo_server_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(istio_echo_server_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++
+  grpc_test_util
+  grpc++_test_config
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(istio_echo_server_test project_benchmark project_gflags)
 
   android_add_test(TARGET join_test
    ${_gRPC_ROOT}/test/core/promise/join_test.cc
@@ -13389,11 +13201,45 @@ endif()
   target_link_libraries(join_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/meta:type_traits
+  absl/strings:strings
   absl/types:variant
+  absl/utility:utility
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
     add_dependencies(join_test project_benchmark project_gflags)
+
+  android_add_test(TARGET json_object_loader_test
+   ${_gRPC_ROOT}/test/core/json/json_object_loader_test.cc
+)
+  target_link_libraries(json_object_loader_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(json_object_loader_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(json_object_loader_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(json_object_loader_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(json_object_loader_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(json_object_loader_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(json_object_loader_test project_benchmark project_gflags)
 
   android_add_test(TARGET json_test
    ${_gRPC_ROOT}/test/core/json/json_test.cc
@@ -13425,6 +13271,124 @@ endif()
 )
 
     add_dependencies(json_test project_benchmark project_gflags)
+
+  android_add_test(TARGET json_token_test
+   ${_gRPC_ROOT}/test/core/security/json_token_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(json_token_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(json_token_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(json_token_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(json_token_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(json_token_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(json_token_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(json_token_test project_benchmark project_gflags)
+
+  android_add_test(TARGET jwt_verifier_test
+   ${_gRPC_ROOT}/test/core/security/jwt_verifier_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(jwt_verifier_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(jwt_verifier_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(jwt_verifier_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(jwt_verifier_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(jwt_verifier_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(jwt_verifier_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(jwt_verifier_test project_benchmark project_gflags)
+
+  android_add_test(TARGET lame_client_test
+   ${_gRPC_ROOT}/test/core/end2end/cq_verifier.cc
+   ${_gRPC_ROOT}/test/core/surface/lame_client_test.cc
+)
+  target_link_libraries(lame_client_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(lame_client_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(lame_client_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(lame_client_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(lame_client_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(lame_client_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(lame_client_test project_benchmark project_gflags)
 
   android_add_test(TARGET large_metadata_bad_client_test
    ${_gRPC_ROOT}/test/core/bad_client/bad_client.cc
@@ -13460,52 +13424,6 @@ endif()
     add_dependencies(large_metadata_bad_client_test project_benchmark project_gflags)
 
   android_add_test(TARGET latch_test
-   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/protobuf/any.upb.c
-   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/rpc/status.upb.c
-   ${_gRPC_ROOT}/src/core/lib/gpr/alloc.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/atm.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_iphone.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_linux.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/env_linux.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/env_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/env_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_android.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_linux.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/murmur_hash.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string_util_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync_abseil.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time_precise.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/tmpfile_msys.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/tmpfile_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/tmpfile_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/wrap_memcpy.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/examine_stack.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/fork.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/global_config_env.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/host_port.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/mpscq.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/stat_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/stat_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/status_helper.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/thd_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/thd_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/time_util.cc
-   ${_gRPC_ROOT}/src/core/lib/profiling/basic_timers.cc
-   ${_gRPC_ROOT}/src/core/lib/profiling/stap_timers.cc
    ${_gRPC_ROOT}/src/core/lib/promise/activity.cc
    ${_gRPC_ROOT}/test/core/promise/latch_test.cc
 )
@@ -13531,20 +13449,10 @@ endif()
   target_link_libraries(latch_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl/base:base
-  absl/base:core_headers
-  absl/memory:memory
-  absl/random:random
-  absl/status:status
+  absl/meta:type_traits
   absl/status:statusor
-  absl/strings:cord
-  absl/strings:str_format
-  absl/strings:strings
-  absl/synchronization:synchronization
-  absl/time:time
-  absl/types:optional
-  absl/types:variant
-  upb
+  absl/utility:utility
+  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -13579,7 +13487,6 @@ endif()
   target_link_libraries(lb_get_cpu_stats_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++
   grpc_test_util
   ${_gRPC_GFLAGS_LIBRARIES}
 )
@@ -13619,16 +13526,28 @@ endif()
 
     add_dependencies(lb_load_data_store_test project_benchmark project_gflags)
 
-  android_add_test(TARGET linux_system_roots_test
-   ${_gRPC_ROOT}/test/core/security/linux_system_roots_test.cc
+  android_add_test(TARGET load_file_test
+   ${_gRPC_ROOT}/test/core/iomgr/load_file_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
-  target_link_libraries(linux_system_roots_test PRIVATE gmock_main ssl crypto)
-  target_include_directories(linux_system_roots_test PRIVATE ${_gRPC_ROOT})
+  target_link_libraries(load_file_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(load_file_test PRIVATE ${_gRPC_ROOT})
 
-  target_compile_definitions(linux_system_roots_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(linux_system_roots_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+  target_compile_definitions(load_file_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(load_file_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
 
-  target_include_directories(linux_system_roots_test
+  target_include_directories(load_file_test
   PRIVATE ${_gRPC_ROOT}
   PRIVATE ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -13641,14 +13560,46 @@ endif()
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
-  target_link_libraries(linux_system_roots_test PRIVATE
+  target_link_libraries(load_file_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
-    add_dependencies(linux_system_roots_test project_benchmark project_gflags)
+    add_dependencies(load_file_test project_benchmark project_gflags)
+
+  android_add_test(TARGET lock_free_event_test
+   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/lockfree_event.cc
+   ${_gRPC_ROOT}/test/core/event_engine/posix/lock_free_event_test.cc
+)
+  target_link_libraries(lock_free_event_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(lock_free_event_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(lock_free_event_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(lock_free_event_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(lock_free_event_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(lock_free_event_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(lock_free_event_test project_benchmark project_gflags)
 
   android_add_test(TARGET log_test
    ${_gRPC_ROOT}/test/core/gpr/log_test.cc
@@ -13706,7 +13657,11 @@ endif()
   target_link_libraries(loop_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/meta:type_traits
+  absl/status:status
+  absl/status:statusor
   absl/types:variant
+  absl/utility:utility
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -13745,6 +13700,18 @@ endif()
 
   android_add_test(TARGET matchers_test
    ${_gRPC_ROOT}/test/core/security/matchers_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(matchers_test PRIVATE gmock_main ssl crypto)
   target_include_directories(matchers_test PRIVATE ${_gRPC_ROOT})
@@ -13773,10 +13740,15 @@ endif()
 )
 
     add_dependencies(matchers_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
-  android_add_test(TARGET memory_quota_test
+  android_add_test(TARGET memory_quota_stress_test
+   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/protobuf/any.upb.c
+   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/rpc/status.upb.c
    ${_gRPC_ROOT}/src/core/lib/debug/trace.cc
    ${_gRPC_ROOT}/src/core/lib/event_engine/memory_allocator.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/status_helper.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/time.cc
    ${_gRPC_ROOT}/src/core/lib/iomgr/combiner.cc
    ${_gRPC_ROOT}/src/core/lib/iomgr/error.cc
    ${_gRPC_ROOT}/src/core/lib/iomgr/exec_ctx.cc
@@ -13784,11 +13756,69 @@ endif()
    ${_gRPC_ROOT}/src/core/lib/iomgr/iomgr_internal.cc
    ${_gRPC_ROOT}/src/core/lib/promise/activity.cc
    ${_gRPC_ROOT}/src/core/lib/resource_quota/memory_quota.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/periodic_update.cc
    ${_gRPC_ROOT}/src/core/lib/resource_quota/trace.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/percent_encoding.cc
    ${_gRPC_ROOT}/src/core/lib/slice/slice.cc
    ${_gRPC_ROOT}/src/core/lib/slice/slice_refcount.cc
    ${_gRPC_ROOT}/src/core/lib/slice/slice_string_helpers.cc
-   ${_gRPC_ROOT}/src/core/lib/slice/static_slice.cc
+   ${_gRPC_ROOT}/test/core/resource_quota/memory_quota_stress_test.cc
+)
+  target_link_libraries(memory_quota_stress_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(memory_quota_stress_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(memory_quota_stress_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(memory_quota_stress_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(memory_quota_stress_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(memory_quota_stress_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/functional:any_invocable
+  absl/functional:function_ref
+  absl/meta:type_traits
+  absl/status:statusor
+  absl/utility:utility
+  gpr
+  upb
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(memory_quota_stress_test project_benchmark project_gflags)
+endif()
+
+  android_add_test(TARGET memory_quota_test
+   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/protobuf/any.upb.c
+   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/rpc/status.upb.c
+   ${_gRPC_ROOT}/src/core/lib/debug/trace.cc
+   ${_gRPC_ROOT}/src/core/lib/event_engine/memory_allocator.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/status_helper.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/time.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/combiner.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/error.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/exec_ctx.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/executor.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/iomgr_internal.cc
+   ${_gRPC_ROOT}/src/core/lib/promise/activity.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/memory_quota.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/periodic_update.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/trace.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/percent_encoding.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/slice.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/slice_refcount.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/slice_string_helpers.cc
    ${_gRPC_ROOT}/test/core/resource_quota/memory_quota_test.cc
 )
   target_link_libraries(memory_quota_test PRIVATE gmock_main ssl crypto)
@@ -13813,9 +13843,13 @@ endif()
   target_link_libraries(memory_quota_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/functional:any_invocable
+  absl/functional:function_ref
+  absl/meta:type_traits
   absl/status:statusor
-  absl/types:variant
+  absl/utility:utility
   gpr
+  upb
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -13834,6 +13868,10 @@ endif()
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/message_allocator_end2end_test.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
 )
@@ -13853,6 +13891,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(message_allocator_end2end_test
@@ -13877,8 +13919,63 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(message_allocator_end2end_test project_benchmark project_gflags)
 
+  android_add_test(TARGET message_compress_test
+   ${_gRPC_ROOT}/test/core/compression/message_compress_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(message_compress_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(message_compress_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(message_compress_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(message_compress_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(message_compress_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(message_compress_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(message_compress_test project_benchmark project_gflags)
+
   android_add_test(TARGET metadata_map_test
    ${_gRPC_ROOT}/test/core/transport/metadata_map_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(metadata_map_test PRIVATE gmock_main ssl crypto)
   target_include_directories(metadata_map_test PRIVATE ${_gRPC_ROOT})
@@ -13951,6 +14048,10 @@ protobuf_generate_grpc_cpp(
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/test/mock_stream_test.cc
 )
   target_link_libraries(mock_stream_test PRIVATE gmock_main ssl crypto)
@@ -13969,6 +14070,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(mock_stream_test
@@ -14011,6 +14116,10 @@ protobuf_generate_grpc_cpp(
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/mock_test.cc
 )
   target_link_libraries(mock_test PRIVATE gmock_main ssl crypto)
@@ -14033,6 +14142,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(mock_test
@@ -14057,6 +14170,101 @@ protobuf_generate_grpc_cpp(
 )
 
     add_dependencies(mock_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET mpscq_test
+   ${_gRPC_ROOT}/test/core/gprpp/mpscq_test.cc
+)
+  target_link_libraries(mpscq_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(mpscq_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(mpscq_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(mpscq_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(mpscq_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(mpscq_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(mpscq_test project_benchmark project_gflags)
+endif()
+
+  android_add_test(TARGET murmur_hash_test
+   ${_gRPC_ROOT}/test/core/gpr/murmur_hash_test.cc
+)
+  target_link_libraries(murmur_hash_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(murmur_hash_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(murmur_hash_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(murmur_hash_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(murmur_hash_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(murmur_hash_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(murmur_hash_test project_benchmark project_gflags)
+
+  android_add_test(TARGET no_destruct_test
+   ${_gRPC_ROOT}/test/core/gprpp/no_destruct_test.cc
+)
+  target_link_libraries(no_destruct_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(no_destruct_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(no_destruct_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(no_destruct_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(no_destruct_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(no_destruct_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(no_destruct_test project_benchmark project_gflags)
 
   android_add_test(TARGET nonblocking_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
@@ -14071,6 +14279,10 @@ protobuf_generate_grpc_cpp(
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/nonblocking_test.cc
 )
   target_link_libraries(nonblocking_test PRIVATE gmock_main ssl crypto)
@@ -14089,6 +14301,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(nonblocking_test
@@ -14113,53 +14329,38 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(nonblocking_test project_benchmark project_gflags)
 
+  android_add_test(TARGET num_external_connectivity_watchers_test
+   ${_gRPC_ROOT}/test/core/surface/num_external_connectivity_watchers_test.cc
+)
+  target_link_libraries(num_external_connectivity_watchers_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(num_external_connectivity_watchers_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(num_external_connectivity_watchers_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(num_external_connectivity_watchers_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(num_external_connectivity_watchers_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(num_external_connectivity_watchers_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(num_external_connectivity_watchers_test project_benchmark project_gflags)
+
   android_add_test(TARGET observable_test
-   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/protobuf/any.upb.c
-   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/rpc/status.upb.c
-   ${_gRPC_ROOT}/src/core/lib/gpr/alloc.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/atm.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_iphone.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_linux.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/env_linux.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/env_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/env_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_android.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_linux.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/murmur_hash.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string_util_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync_abseil.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time_precise.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/tmpfile_msys.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/tmpfile_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/tmpfile_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/wrap_memcpy.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/examine_stack.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/fork.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/global_config_env.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/host_port.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/mpscq.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/stat_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/stat_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/status_helper.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/thd_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/thd_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/time_util.cc
-   ${_gRPC_ROOT}/src/core/lib/profiling/basic_timers.cc
-   ${_gRPC_ROOT}/src/core/lib/profiling/stap_timers.cc
    ${_gRPC_ROOT}/src/core/lib/promise/activity.cc
    ${_gRPC_ROOT}/test/core/promise/observable_test.cc
 )
@@ -14185,25 +14386,101 @@ protobuf_generate_grpc_cpp(
   target_link_libraries(observable_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl/base:base
-  absl/base:core_headers
   absl/container:flat_hash_set
-  absl/memory:memory
-  absl/random:random
-  absl/status:status
+  absl/hash:hash
+  absl/meta:type_traits
   absl/status:statusor
-  absl/strings:cord
-  absl/strings:str_format
-  absl/strings:strings
-  absl/synchronization:synchronization
-  absl/time:time
-  absl/types:optional
-  absl/types:variant
-  upb
+  absl/utility:utility
+  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
     add_dependencies(observable_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET oracle_event_engine_posix_test
+   ${_gRPC_ROOT}/test/core/event_engine/test_suite/client_test.cc
+   ${_gRPC_ROOT}/test/core/event_engine/test_suite/event_engine_test.cc
+   ${_gRPC_ROOT}/test/core/event_engine/test_suite/event_engine_test_utils.cc
+   ${_gRPC_ROOT}/test/core/event_engine/test_suite/oracle_event_engine_posix.cc
+   ${_gRPC_ROOT}/test/core/event_engine/test_suite/oracle_event_engine_posix_test.cc
+)
+  target_link_libraries(oracle_event_engine_posix_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(oracle_event_engine_posix_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(oracle_event_engine_posix_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(oracle_event_engine_posix_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(oracle_event_engine_posix_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(oracle_event_engine_posix_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(oracle_event_engine_posix_test project_benchmark project_gflags)
+endif()
+
+  android_add_test(TARGET orca_service_end2end_test
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_service.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_service.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_service.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_service.grpc.pb.h
+   ${_gRPC_ROOT}/src/cpp/server/orca/orca_service.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/orca_service_end2end_test.cc
+)
+  target_link_libraries(orca_service_end2end_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(orca_service_end2end_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(orca_service_end2end_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(orca_service_end2end_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_service.proto
+)
+
+  target_include_directories(orca_service_end2end_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(orca_service_end2end_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(orca_service_end2end_test project_benchmark project_gflags)
 
   android_add_test(TARGET orphanable_test
    ${_gRPC_ROOT}/test/core/gprpp/orphanable_test.cc
@@ -14299,6 +14576,70 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(overload_test project_benchmark project_gflags)
 
+  android_add_test(TARGET parse_address_test
+   ${_gRPC_ROOT}/test/core/address_utils/parse_address_test.cc
+)
+  target_link_libraries(parse_address_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(parse_address_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(parse_address_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(parse_address_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(parse_address_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(parse_address_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(parse_address_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET parse_address_with_named_scope_id_test
+   ${_gRPC_ROOT}/test/core/address_utils/parse_address_with_named_scope_id_test.cc
+)
+  target_link_libraries(parse_address_with_named_scope_id_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(parse_address_with_named_scope_id_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(parse_address_with_named_scope_id_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(parse_address_with_named_scope_id_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(parse_address_with_named_scope_id_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(parse_address_with_named_scope_id_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(parse_address_with_named_scope_id_test project_benchmark project_gflags)
+endif()
+
   android_add_test(TARGET parsed_metadata_test
    ${_gRPC_ROOT}/test/core/transport/parsed_metadata_test.cc
 )
@@ -14330,8 +14671,148 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(parsed_metadata_test project_benchmark project_gflags)
 
+  android_add_test(TARGET parser_test
+   ${_gRPC_ROOT}/test/core/end2end/data/client_certs.cc
+   ${_gRPC_ROOT}/test/core/end2end/data/server1_cert.cc
+   ${_gRPC_ROOT}/test/core/end2end/data/server1_key.cc
+   ${_gRPC_ROOT}/test/core/end2end/data/test_root_cert.cc
+   ${_gRPC_ROOT}/test/core/http/parser_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(parser_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(parser_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(parser_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(parser_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(parser_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(parser_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(parser_test project_benchmark project_gflags)
+
+  android_add_test(TARGET percent_encoding_test
+   ${_gRPC_ROOT}/test/core/slice/percent_encoding_test.cc
+)
+  target_link_libraries(percent_encoding_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(percent_encoding_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(percent_encoding_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(percent_encoding_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(percent_encoding_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(percent_encoding_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(percent_encoding_test project_benchmark project_gflags)
+
+  android_add_test(TARGET periodic_update_test
+   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/protobuf/any.upb.c
+   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/rpc/status.upb.c
+   ${_gRPC_ROOT}/src/core/lib/debug/trace.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/status_helper.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/time.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/combiner.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/error.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/exec_ctx.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/executor.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/iomgr_internal.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/periodic_update.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/percent_encoding.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/slice.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/slice_refcount.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/slice_string_helpers.cc
+   ${_gRPC_ROOT}/test/core/resource_quota/periodic_update_test.cc
+)
+  target_link_libraries(periodic_update_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(periodic_update_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(periodic_update_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(periodic_update_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(periodic_update_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(periodic_update_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/functional:any_invocable
+  absl/functional:function_ref
+  absl/status:statusor
+  gpr
+  upb
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(periodic_update_test project_benchmark project_gflags)
+
   android_add_test(TARGET pid_controller_test
    ${_gRPC_ROOT}/test/core/transport/pid_controller_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(pid_controller_test PRIVATE gmock_main ssl crypto)
   target_include_directories(pid_controller_test PRIVATE ${_gRPC_ROOT})
@@ -14364,51 +14845,26 @@ protobuf_generate_grpc_cpp(
   android_add_test(TARGET pipe_test
    ${_gRPC_ROOT}/src/core/ext/upb-generated/google/protobuf/any.upb.c
    ${_gRPC_ROOT}/src/core/ext/upb-generated/google/rpc/status.upb.c
-   ${_gRPC_ROOT}/src/core/lib/gpr/alloc.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/atm.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_iphone.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_linux.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/cpu_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/env_linux.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/env_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/env_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_android.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_linux.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/log_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/murmur_hash.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string_util_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/string_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync_abseil.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/sync_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time_precise.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/time_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/tmpfile_msys.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/tmpfile_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/tmpfile_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gpr/wrap_memcpy.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/examine_stack.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/fork.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/global_config_env.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/host_port.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/mpscq.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/stat_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/stat_windows.cc
+   ${_gRPC_ROOT}/src/core/lib/debug/trace.cc
+   ${_gRPC_ROOT}/src/core/lib/event_engine/memory_allocator.cc
    ${_gRPC_ROOT}/src/core/lib/gprpp/status_helper.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/thd_posix.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/thd_windows.cc
-   ${_gRPC_ROOT}/src/core/lib/gprpp/time_util.cc
-   ${_gRPC_ROOT}/src/core/lib/profiling/basic_timers.cc
-   ${_gRPC_ROOT}/src/core/lib/profiling/stap_timers.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/time.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/combiner.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/error.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/exec_ctx.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/executor.cc
+   ${_gRPC_ROOT}/src/core/lib/iomgr/iomgr_internal.cc
    ${_gRPC_ROOT}/src/core/lib/promise/activity.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/arena.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/memory_quota.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/periodic_update.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/resource_quota.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/thread_quota.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/trace.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/percent_encoding.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/slice.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/slice_refcount.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/slice_string_helpers.cc
    ${_gRPC_ROOT}/test/core/promise/pipe_test.cc
 )
   target_link_libraries(pipe_test PRIVATE gmock_main ssl crypto)
@@ -14433,19 +14889,12 @@ protobuf_generate_grpc_cpp(
   target_link_libraries(pipe_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl/base:base
-  absl/base:core_headers
-  absl/memory:memory
-  absl/random:random
-  absl/status:status
+  absl/functional:any_invocable
+  absl/functional:function_ref
+  absl/meta:type_traits
   absl/status:statusor
-  absl/strings:cord
-  absl/strings:str_format
-  absl/strings:strings
-  absl/synchronization:synchronization
-  absl/time:time
-  absl/types:optional
-  absl/types:variant
+  absl/utility:utility
+  gpr
   upb
   ${_gRPC_GFLAGS_LIBRARIES}
 )
@@ -14483,36 +14932,6 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(poll_test project_benchmark project_gflags)
 
-  android_add_test(TARGET popularity_count_test
-   ${_gRPC_ROOT}/test/core/transport/chttp2/popularity_count_test.cc
-)
-  target_link_libraries(popularity_count_test PRIVATE gmock_main ssl crypto)
-  target_include_directories(popularity_count_test PRIVATE ${_gRPC_ROOT})
-
-  target_compile_definitions(popularity_count_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(popularity_count_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(popularity_count_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-  target_link_libraries(popularity_count_test PRIVATE
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-    add_dependencies(popularity_count_test project_benchmark project_gflags)
-
   android_add_test(TARGET port_sharing_end2end_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
@@ -14526,6 +14945,10 @@ protobuf_generate_grpc_cpp(
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/port_sharing_end2end_test.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
 )
@@ -14545,6 +14968,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(port_sharing_end2end_test
@@ -14568,6 +14995,40 @@ protobuf_generate_grpc_cpp(
 )
 
     add_dependencies(port_sharing_end2end_test project_benchmark project_gflags)
+
+  android_add_test(TARGET posix_event_engine_test
+   ${_gRPC_ROOT}/test/core/event_engine/test_suite/event_engine_test.cc
+   ${_gRPC_ROOT}/test/core/event_engine/test_suite/event_engine_test_utils.cc
+   ${_gRPC_ROOT}/test/core/event_engine/test_suite/posix_event_engine_test.cc
+   ${_gRPC_ROOT}/test/core/event_engine/test_suite/timer_test.cc
+)
+  target_link_libraries(posix_event_engine_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(posix_event_engine_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(posix_event_engine_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(posix_event_engine_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(posix_event_engine_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(posix_event_engine_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(posix_event_engine_test project_benchmark project_gflags)
 
   android_add_test(TARGET promise_factory_test
    ${_gRPC_ROOT}/test/core/promise/promise_factory_test.cc
@@ -14595,9 +15056,10 @@ protobuf_generate_grpc_cpp(
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl/functional:bind_front
+  absl/meta:type_traits
+  absl/status:status
   absl/types:optional
   absl/types:variant
-  absl/utility:utility
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -14628,6 +15090,8 @@ protobuf_generate_grpc_cpp(
   target_link_libraries(promise_map_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/meta:type_traits
+  absl/status:status
   absl/types:optional
   absl/types:variant
   ${_gRPC_GFLAGS_LIBRARIES}
@@ -14660,6 +15124,8 @@ protobuf_generate_grpc_cpp(
   target_link_libraries(promise_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/meta:type_traits
+  absl/status:status
   absl/types:optional
   absl/types:variant
   ${_gRPC_GFLAGS_LIBRARIES}
@@ -14955,6 +15421,10 @@ protobuf_generate_grpc_cpp(
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/raw_end2end_test.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
 )
@@ -14979,6 +15449,10 @@ protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
 )
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
 
   target_include_directories(raw_end2end_test
   PRIVATE ${_gRPC_ROOT}
@@ -15002,13 +15476,53 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(raw_end2end_test project_benchmark project_gflags)
 
+  android_add_test(TARGET rbac_service_config_parser_test
+   ${_gRPC_ROOT}/test/core/ext/filters/rbac/rbac_service_config_parser_test.cc
+)
+  target_link_libraries(rbac_service_config_parser_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(rbac_service_config_parser_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(rbac_service_config_parser_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(rbac_service_config_parser_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(rbac_service_config_parser_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(rbac_service_config_parser_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(rbac_service_config_parser_test project_benchmark project_gflags)
+
   android_add_test(TARGET rbac_translator_test
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_authorization_engine.cc
    ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/matchers.cc
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/rbac_policy.cc
    ${_gRPC_ROOT}/src/core/lib/security/authorization/rbac_translator.cc
    ${_gRPC_ROOT}/test/core/security/rbac_translator_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(rbac_translator_test PRIVATE gmock_main ssl crypto)
   target_include_directories(rbac_translator_test PRIVATE ${_gRPC_ROOT})
@@ -15132,10 +15646,198 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
     add_dependencies(remove_stream_from_stalled_lists_test project_benchmark project_gflags)
 endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET resolve_address_using_ares_resolver_posix_test
+   ${_gRPC_ROOT}/test/core/iomgr/resolve_address_posix_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(resolve_address_using_ares_resolver_posix_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(resolve_address_using_ares_resolver_posix_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(resolve_address_using_ares_resolver_posix_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(resolve_address_using_ares_resolver_posix_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(resolve_address_using_ares_resolver_posix_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(resolve_address_using_ares_resolver_posix_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/flags:flag
+  absl/flags:parse
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(resolve_address_using_ares_resolver_posix_test project_benchmark project_gflags)
+endif()
+
+  android_add_test(TARGET resolve_address_using_ares_resolver_test
+   ${_gRPC_ROOT}/test/core/iomgr/resolve_address_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fake_udp_and_tcp_server.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(resolve_address_using_ares_resolver_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(resolve_address_using_ares_resolver_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(resolve_address_using_ares_resolver_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(resolve_address_using_ares_resolver_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(resolve_address_using_ares_resolver_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(resolve_address_using_ares_resolver_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++_test_config
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(resolve_address_using_ares_resolver_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET resolve_address_using_native_resolver_posix_test
+   ${_gRPC_ROOT}/test/core/iomgr/resolve_address_posix_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(resolve_address_using_native_resolver_posix_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(resolve_address_using_native_resolver_posix_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(resolve_address_using_native_resolver_posix_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(resolve_address_using_native_resolver_posix_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(resolve_address_using_native_resolver_posix_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(resolve_address_using_native_resolver_posix_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/flags:flag
+  absl/flags:parse
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(resolve_address_using_native_resolver_posix_test project_benchmark project_gflags)
+endif()
+
+  android_add_test(TARGET resolve_address_using_native_resolver_test
+   ${_gRPC_ROOT}/test/core/iomgr/resolve_address_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fake_udp_and_tcp_server.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(resolve_address_using_native_resolver_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(resolve_address_using_native_resolver_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(resolve_address_using_native_resolver_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(resolve_address_using_native_resolver_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(resolve_address_using_native_resolver_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(resolve_address_using_native_resolver_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++_test_config
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(resolve_address_using_native_resolver_test project_benchmark project_gflags)
 
   android_add_test(TARGET resource_quota_test
+   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/protobuf/any.upb.c
+   ${_gRPC_ROOT}/src/core/ext/upb-generated/google/rpc/status.upb.c
    ${_gRPC_ROOT}/src/core/lib/debug/trace.cc
    ${_gRPC_ROOT}/src/core/lib/event_engine/memory_allocator.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/status_helper.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/time.cc
    ${_gRPC_ROOT}/src/core/lib/iomgr/combiner.cc
    ${_gRPC_ROOT}/src/core/lib/iomgr/error.cc
    ${_gRPC_ROOT}/src/core/lib/iomgr/exec_ctx.cc
@@ -15143,13 +15845,14 @@ endif()
    ${_gRPC_ROOT}/src/core/lib/iomgr/iomgr_internal.cc
    ${_gRPC_ROOT}/src/core/lib/promise/activity.cc
    ${_gRPC_ROOT}/src/core/lib/resource_quota/memory_quota.cc
+   ${_gRPC_ROOT}/src/core/lib/resource_quota/periodic_update.cc
    ${_gRPC_ROOT}/src/core/lib/resource_quota/resource_quota.cc
    ${_gRPC_ROOT}/src/core/lib/resource_quota/thread_quota.cc
    ${_gRPC_ROOT}/src/core/lib/resource_quota/trace.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/percent_encoding.cc
    ${_gRPC_ROOT}/src/core/lib/slice/slice.cc
    ${_gRPC_ROOT}/src/core/lib/slice/slice_refcount.cc
    ${_gRPC_ROOT}/src/core/lib/slice/slice_string_helpers.cc
-   ${_gRPC_ROOT}/src/core/lib/slice/static_slice.cc
    ${_gRPC_ROOT}/test/core/resource_quota/resource_quota_test.cc
 )
   target_link_libraries(resource_quota_test PRIVATE gmock_main ssl crypto)
@@ -15174,9 +15877,13 @@ endif()
   target_link_libraries(resource_quota_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/functional:any_invocable
+  absl/functional:function_ref
+  absl/meta:type_traits
   absl/status:statusor
-  absl/types:variant
+  absl/utility:utility
   gpr
+  upb
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -15234,8 +15941,13 @@ endif()
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/core/util/test_lb_policies.cc
    ${_gRPC_ROOT}/test/cpp/end2end/rls_end2end_test.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/rls_server.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
 )
   target_link_libraries(rls_end2end_test PRIVATE gmock_main ssl crypto)
@@ -15262,6 +15974,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(rls_end2end_test
@@ -15318,68 +16034,6 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(rls_lb_config_parser_test project_benchmark project_gflags)
 
-  android_add_test(TARGET sdk_authz_end2end_test
-          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
-          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
-          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
-          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
-          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
-          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
-          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
-          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
-          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
-          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
-          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
-          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_authorization_engine.cc
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/matchers.cc
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/rbac_policy.cc
-   ${_gRPC_ROOT}/src/core/lib/security/authorization/rbac_translator.cc
-   ${_gRPC_ROOT}/src/cpp/server/authorization_policy_provider.cc
-   ${_gRPC_ROOT}/test/cpp/end2end/sdk_authz_end2end_test.cc
-   ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
-)
-  target_link_libraries(sdk_authz_end2end_test PRIVATE gmock_main ssl crypto)
-  target_include_directories(sdk_authz_end2end_test PRIVATE ${_gRPC_ROOT})
-
-  target_compile_definitions(sdk_authz_end2end_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(sdk_authz_end2end_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-protobuf_generate_grpc_cpp(
-  SOURCE_DIR ${_gRPC_ROOT}
-  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo.proto
-)
-protobuf_generate_grpc_cpp(
-  SOURCE_DIR ${_gRPC_ROOT}
-  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo_messages.proto
-)
-protobuf_generate_grpc_cpp(
-  SOURCE_DIR ${_gRPC_ROOT}
-  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
-)
-
-  target_include_directories(sdk_authz_end2end_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-  target_link_libraries(sdk_authz_end2end_test PRIVATE
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_util
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-    add_dependencies(sdk_authz_end2end_test project_benchmark project_gflags)
-
   android_add_test(TARGET secure_auth_context_test
    ${_gRPC_ROOT}/test/cpp/common/secure_auth_context_test.cc
 )
@@ -15411,6 +16065,124 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(secure_auth_context_test project_benchmark project_gflags)
 
+  android_add_test(TARGET secure_channel_create_test
+   ${_gRPC_ROOT}/test/core/surface/secure_channel_create_test.cc
+)
+  target_link_libraries(secure_channel_create_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(secure_channel_create_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(secure_channel_create_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(secure_channel_create_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(secure_channel_create_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(secure_channel_create_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(secure_channel_create_test project_benchmark project_gflags)
+
+  android_add_test(TARGET secure_endpoint_test
+   ${_gRPC_ROOT}/test/core/iomgr/endpoint_tests.cc
+   ${_gRPC_ROOT}/test/core/security/secure_endpoint_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(secure_endpoint_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(secure_endpoint_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(secure_endpoint_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(secure_endpoint_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(secure_endpoint_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(secure_endpoint_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(secure_endpoint_test project_benchmark project_gflags)
+
+  android_add_test(TARGET security_connector_test
+   ${_gRPC_ROOT}/test/core/security/security_connector_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(security_connector_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(security_connector_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(security_connector_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(security_connector_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(security_connector_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(security_connector_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(security_connector_test project_benchmark project_gflags)
+
   android_add_test(TARGET seq_test
    ${_gRPC_ROOT}/test/core/promise/seq_test.cc
 )
@@ -15436,11 +16208,44 @@ protobuf_generate_grpc_cpp(
   target_link_libraries(seq_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/meta:type_traits
   absl/types:variant
+  absl/utility:utility
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
     add_dependencies(seq_test project_benchmark project_gflags)
+
+  android_add_test(TARGET sequential_connectivity_test
+   ${_gRPC_ROOT}/test/core/surface/sequential_connectivity_test.cc
+)
+  target_link_libraries(sequential_connectivity_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(sequential_connectivity_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(sequential_connectivity_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(sequential_connectivity_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(sequential_connectivity_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(sequential_connectivity_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(sequential_connectivity_test project_benchmark project_gflags)
 
   android_add_test(TARGET server_builder_plugin_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
@@ -15459,6 +16264,10 @@ protobuf_generate_grpc_cpp(
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/server_builder_plugin_test.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
 )
@@ -15482,6 +16291,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(server_builder_plugin_test
@@ -15520,6 +16333,22 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
    ${_gRPC_ROOT}/test/cpp/server/server_builder_test.cc
 )
   target_link_libraries(server_builder_test PRIVATE gmock_main ssl crypto)
@@ -15538,6 +16367,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(server_builder_test
@@ -15578,6 +16411,22 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
    ${_gRPC_ROOT}/test/cpp/server/server_builder_with_socket_mutator_test.cc
 )
   target_link_libraries(server_builder_with_socket_mutator_test PRIVATE gmock_main ssl crypto)
@@ -15596,6 +16445,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(server_builder_with_socket_mutator_test
@@ -15729,6 +16582,10 @@ endif()
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/server_early_return_test.cc
 )
   target_link_libraries(server_early_return_test PRIVATE gmock_main ssl crypto)
@@ -15747,6 +16604,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(server_early_return_test
@@ -15784,6 +16645,10 @@ protobuf_generate_grpc_cpp(
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/interceptors_util.cc
    ${_gRPC_ROOT}/test/cpp/end2end/server_interceptors_end2end_test.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
@@ -15804,6 +16669,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(server_interceptors_end2end_test
@@ -15875,6 +16744,22 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
    ${_gRPC_ROOT}/test/cpp/server/server_request_call_test.cc
 )
   target_link_libraries(server_request_call_test PRIVATE gmock_main ssl crypto)
@@ -15893,6 +16778,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(server_request_call_test
@@ -15918,6 +16807,71 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(server_request_call_test project_benchmark project_gflags)
 endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET server_ssl_test
+   ${_gRPC_ROOT}/test/core/handshake/server_ssl.cc
+   ${_gRPC_ROOT}/test/core/handshake/server_ssl_common.cc
+)
+  target_link_libraries(server_ssl_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(server_ssl_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(server_ssl_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(server_ssl_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(server_ssl_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(server_ssl_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(server_ssl_test project_benchmark project_gflags)
+endif()
+
+  android_add_test(TARGET server_test
+   ${_gRPC_ROOT}/test/core/surface/server_test.cc
+)
+  target_link_libraries(server_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(server_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(server_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(server_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(server_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(server_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(server_test project_benchmark project_gflags)
 
   android_add_test(TARGET service_config_end2end_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
@@ -15936,6 +16890,10 @@ endif()
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/service_config_end2end_test.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
 )
@@ -15959,6 +16917,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(service_config_end2end_test
@@ -16016,6 +16978,18 @@ protobuf_generate_grpc_cpp(
 
   android_add_test(TARGET settings_timeout_test
    ${_gRPC_ROOT}/test/core/transport/chttp2/settings_timeout_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(settings_timeout_test PRIVATE gmock_main ssl crypto)
   target_include_directories(settings_timeout_test PRIVATE ${_gRPC_ROOT})
@@ -16062,6 +17036,10 @@ protobuf_generate_grpc_cpp(
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/shutdown_test.cc
 )
   target_link_libraries(shutdown_test PRIVATE gmock_main ssl crypto)
@@ -16084,6 +17062,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(shutdown_test
@@ -16141,6 +17123,165 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(simple_request_bad_client_test project_benchmark project_gflags)
 
+  android_add_test(TARGET single_set_ptr_test
+   ${_gRPC_ROOT}/test/core/gprpp/single_set_ptr_test.cc
+)
+  target_link_libraries(single_set_ptr_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(single_set_ptr_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(single_set_ptr_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(single_set_ptr_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(single_set_ptr_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(single_set_ptr_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(single_set_ptr_test project_benchmark project_gflags)
+
+  android_add_test(TARGET sleep_test
+   ${_gRPC_ROOT}/test/core/promise/sleep_test.cc
+)
+  target_link_libraries(sleep_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(sleep_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(sleep_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(sleep_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(sleep_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(sleep_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(sleep_test project_benchmark project_gflags)
+
+  android_add_test(TARGET slice_string_helpers_test
+   ${_gRPC_ROOT}/src/core/lib/slice/slice.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/slice_refcount.cc
+   ${_gRPC_ROOT}/src/core/lib/slice/slice_string_helpers.cc
+   ${_gRPC_ROOT}/test/core/slice/slice_string_helpers_test.cc
+)
+  target_link_libraries(slice_string_helpers_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(slice_string_helpers_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(slice_string_helpers_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(slice_string_helpers_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(slice_string_helpers_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(slice_string_helpers_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(slice_string_helpers_test project_benchmark project_gflags)
+
+  android_add_test(TARGET smoke_test
+   ${_gRPC_ROOT}/test/core/event_engine/smoke_test.cc
+)
+  target_link_libraries(smoke_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(smoke_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(smoke_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(smoke_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(smoke_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(smoke_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  grpc_test_util_unsecure
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(smoke_test project_benchmark project_gflags)
+
+  android_add_test(TARGET sockaddr_resolver_test
+   ${_gRPC_ROOT}/test/core/client_channel/resolvers/sockaddr_resolver_test.cc
+)
+  target_link_libraries(sockaddr_resolver_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(sockaddr_resolver_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(sockaddr_resolver_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(sockaddr_resolver_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(sockaddr_resolver_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(sockaddr_resolver_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(sockaddr_resolver_test project_benchmark project_gflags)
+
   android_add_test(TARGET sockaddr_utils_test
    ${_gRPC_ROOT}/test/core/address_utils/sockaddr_utils_test.cc
 )
@@ -16171,6 +17312,189 @@ protobuf_generate_grpc_cpp(
 )
 
     add_dependencies(sockaddr_utils_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET socket_utils_test
+   ${_gRPC_ROOT}/test/core/iomgr/socket_utils_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(socket_utils_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(socket_utils_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(socket_utils_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(socket_utils_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(socket_utils_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(socket_utils_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(socket_utils_test project_benchmark project_gflags)
+endif()
+
+  android_add_test(TARGET sorted_pack_test
+   ${_gRPC_ROOT}/test/core/gprpp/sorted_pack_test.cc
+)
+  target_link_libraries(sorted_pack_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(sorted_pack_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(sorted_pack_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(sorted_pack_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(sorted_pack_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(sorted_pack_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(sorted_pack_test project_benchmark project_gflags)
+
+  android_add_test(TARGET spinlock_test
+   ${_gRPC_ROOT}/test/core/gpr/spinlock_test.cc
+)
+  target_link_libraries(spinlock_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(spinlock_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(spinlock_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(spinlock_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(spinlock_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(spinlock_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(spinlock_test project_benchmark project_gflags)
+
+  android_add_test(TARGET ssl_credentials_test
+   ${_gRPC_ROOT}/test/core/security/ssl_credentials_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(ssl_credentials_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(ssl_credentials_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(ssl_credentials_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(ssl_credentials_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(ssl_credentials_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(ssl_credentials_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(ssl_credentials_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET ssl_transport_security_test
+   ${_gRPC_ROOT}/test/core/tsi/ssl_transport_security_test.cc
+   ${_gRPC_ROOT}/test/core/tsi/transport_security_test_lib.cc
+)
+  target_link_libraries(ssl_transport_security_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(ssl_transport_security_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(ssl_transport_security_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(ssl_transport_security_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(ssl_transport_security_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(ssl_transport_security_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(ssl_transport_security_test project_benchmark project_gflags)
+endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   android_add_test(TARGET stack_tracer_test
@@ -16236,37 +17560,6 @@ endif()
 
     add_dependencies(stat_test project_benchmark project_gflags)
 
-  android_add_test(TARGET static_metadata_test
-   ${_gRPC_ROOT}/test/core/transport/static_metadata_test.cc
-)
-  target_link_libraries(static_metadata_test PRIVATE gmock_main ssl crypto)
-  target_include_directories(static_metadata_test PRIVATE ${_gRPC_ROOT})
-
-  target_compile_definitions(static_metadata_test PRIVATE -DPB_FIELD_16BIT)
-  target_compile_definitions(static_metadata_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
-
-  target_include_directories(static_metadata_test
-  PRIVATE ${_gRPC_ROOT}
-  PRIVATE ${_gRPC_ROOT}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-  target_link_libraries(static_metadata_test PRIVATE
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-    add_dependencies(static_metadata_test project_benchmark project_gflags)
-
   android_add_test(TARGET stats_test
    ${_gRPC_ROOT}/test/core/debug/stats_test.cc
 )
@@ -16297,6 +17590,49 @@ endif()
 )
 
     add_dependencies(stats_test project_benchmark project_gflags)
+
+  android_add_test(TARGET status_conversion_test
+   ${_gRPC_ROOT}/test/core/transport/status_conversion_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(status_conversion_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(status_conversion_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(status_conversion_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(status_conversion_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(status_conversion_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(status_conversion_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(status_conversion_test project_benchmark project_gflags)
 
   android_add_test(TARGET status_helper_test
    ${_gRPC_ROOT}/test/core/gprpp/status_helper_test.cc
@@ -16364,6 +17700,18 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   android_add_test(TARGET stranded_event_test
    ${_gRPC_ROOT}/test/core/end2end/cq_verifier.cc
    ${_gRPC_ROOT}/test/core/iomgr/stranded_event_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(stranded_event_test PRIVATE gmock_main ssl crypto)
   target_include_directories(stranded_event_test PRIVATE ${_gRPC_ROOT})
@@ -16393,6 +17741,49 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
     add_dependencies(stranded_event_test project_benchmark project_gflags)
 endif()
+
+  android_add_test(TARGET stream_map_test
+   ${_gRPC_ROOT}/test/core/transport/chttp2/stream_map_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(stream_map_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(stream_map_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(stream_map_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(stream_map_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(stream_map_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(stream_map_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(stream_map_test project_benchmark project_gflags)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   android_add_test(TARGET streaming_throughput_test
@@ -16412,6 +17803,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/streaming_throughput_test.cc
 )
   target_link_libraries(streaming_throughput_test PRIVATE gmock_main ssl crypto)
@@ -16434,6 +17829,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(streaming_throughput_test
@@ -16458,6 +17857,50 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(streaming_throughput_test project_benchmark project_gflags)
 endif()
+
+  android_add_test(TARGET streams_not_seen_test
+   ${_gRPC_ROOT}/test/core/end2end/cq_verifier.cc
+   ${_gRPC_ROOT}/test/core/transport/chttp2/streams_not_seen_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(streams_not_seen_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(streams_not_seen_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(streams_not_seen_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(streams_not_seen_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(streams_not_seen_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(streams_not_seen_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(streams_not_seen_test project_benchmark project_gflags)
 
   android_add_test(TARGET string_ref_test
    ${_gRPC_ROOT}/test/cpp/util/string_ref_test.cc
@@ -16491,6 +17934,111 @@ endif()
 
     add_dependencies(string_ref_test project_benchmark project_gflags)
 
+  android_add_test(TARGET string_test
+   ${_gRPC_ROOT}/test/core/gpr/string_test.cc
+)
+  target_link_libraries(string_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(string_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(string_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(string_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(string_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(string_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(string_test project_benchmark project_gflags)
+
+  android_add_test(TARGET sync_test
+   ${_gRPC_ROOT}/test/core/gpr/sync_test.cc
+)
+  target_link_libraries(sync_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(sync_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(sync_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(sync_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(sync_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(sync_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(sync_test project_benchmark project_gflags)
+
+  android_add_test(TARGET system_roots_test
+   ${_gRPC_ROOT}/test/core/security/system_roots_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(system_roots_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(system_roots_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(system_roots_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(system_roots_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(system_roots_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(system_roots_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(system_roots_test project_benchmark project_gflags)
+
   android_add_test(TARGET table_test
    ${_gRPC_ROOT}/test/core/gprpp/table_test.cc
 )
@@ -16516,19 +18064,395 @@ endif()
   target_link_libraries(table_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/meta:type_traits
+  absl/strings:strings
   absl/types:optional
+  absl/types:variant
   absl/utility:utility
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
     add_dependencies(table_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET tcp_client_posix_test
+   ${_gRPC_ROOT}/test/core/iomgr/tcp_client_posix_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(tcp_client_posix_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(tcp_client_posix_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(tcp_client_posix_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(tcp_client_posix_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(tcp_client_posix_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(tcp_client_posix_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(tcp_client_posix_test project_benchmark project_gflags)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET tcp_server_posix_test
+   ${_gRPC_ROOT}/test/core/iomgr/tcp_server_posix_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(tcp_server_posix_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(tcp_server_posix_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(tcp_server_posix_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(tcp_server_posix_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(tcp_server_posix_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(tcp_server_posix_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(tcp_server_posix_test project_benchmark project_gflags)
+endif()
+
+  android_add_test(TARGET test_core_event_engine_posix_timer_heap_test
+   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/timer.cc
+   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/timer_heap.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/time.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/time_averaged_stats.cc
+   ${_gRPC_ROOT}/test/core/event_engine/posix/timer_heap_test.cc
+)
+  target_link_libraries(test_core_event_engine_posix_timer_heap_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(test_core_event_engine_posix_timer_heap_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(test_core_event_engine_posix_timer_heap_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(test_core_event_engine_posix_timer_heap_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(test_core_event_engine_posix_timer_heap_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(test_core_event_engine_posix_timer_heap_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/functional:any_invocable
+  absl/status:statusor
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(test_core_event_engine_posix_timer_heap_test project_benchmark project_gflags)
+
+  android_add_test(TARGET test_core_event_engine_posix_timer_list_test
+   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/timer.cc
+   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/timer_heap.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/time.cc
+   ${_gRPC_ROOT}/src/core/lib/gprpp/time_averaged_stats.cc
+   ${_gRPC_ROOT}/test/core/event_engine/posix/timer_list_test.cc
+)
+  target_link_libraries(test_core_event_engine_posix_timer_list_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(test_core_event_engine_posix_timer_list_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(test_core_event_engine_posix_timer_list_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(test_core_event_engine_posix_timer_list_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(test_core_event_engine_posix_timer_list_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(test_core_event_engine_posix_timer_list_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/functional:any_invocable
+  absl/status:statusor
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(test_core_event_engine_posix_timer_list_test project_benchmark project_gflags)
+
+  android_add_test(TARGET test_core_event_engine_slice_buffer_test
+   ${_gRPC_ROOT}/test/core/event_engine/slice_buffer_test.cc
+)
+  target_link_libraries(test_core_event_engine_slice_buffer_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(test_core_event_engine_slice_buffer_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(test_core_event_engine_slice_buffer_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(test_core_event_engine_slice_buffer_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(test_core_event_engine_slice_buffer_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(test_core_event_engine_slice_buffer_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  grpc_test_util_unsecure
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(test_core_event_engine_slice_buffer_test project_benchmark project_gflags)
+
+  android_add_test(TARGET test_core_gpr_time_test
+   ${_gRPC_ROOT}/test/core/gpr/time_test.cc
+)
+  target_link_libraries(test_core_gpr_time_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(test_core_gpr_time_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(test_core_gpr_time_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(test_core_gpr_time_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(test_core_gpr_time_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(test_core_gpr_time_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(test_core_gpr_time_test project_benchmark project_gflags)
+
+  android_add_test(TARGET test_core_gprpp_time_test
+   ${_gRPC_ROOT}/src/core/lib/gprpp/time.cc
+   ${_gRPC_ROOT}/test/core/gprpp/time_test.cc
+)
+  target_link_libraries(test_core_gprpp_time_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(test_core_gprpp_time_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(test_core_gprpp_time_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(test_core_gprpp_time_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(test_core_gprpp_time_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(test_core_gprpp_time_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/functional:any_invocable
+  absl/status:statusor
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(test_core_gprpp_time_test project_benchmark project_gflags)
+
+  android_add_test(TARGET test_core_iomgr_timer_heap_test
+   ${_gRPC_ROOT}/test/core/iomgr/timer_heap_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(test_core_iomgr_timer_heap_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(test_core_iomgr_timer_heap_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(test_core_iomgr_timer_heap_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(test_core_iomgr_timer_heap_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(test_core_iomgr_timer_heap_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(test_core_iomgr_timer_heap_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(test_core_iomgr_timer_heap_test project_benchmark project_gflags)
+
+  android_add_test(TARGET test_core_security_credentials_test
+   ${_gRPC_ROOT}/test/core/security/credentials_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(test_core_security_credentials_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(test_core_security_credentials_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(test_core_security_credentials_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(test_core_security_credentials_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(test_core_security_credentials_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(test_core_security_credentials_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(test_core_security_credentials_test project_benchmark project_gflags)
+
+  android_add_test(TARGET test_core_slice_slice_buffer_test
+   ${_gRPC_ROOT}/test/core/slice/slice_buffer_test.cc
+)
+  target_link_libraries(test_core_slice_slice_buffer_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(test_core_slice_slice_buffer_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(test_core_slice_slice_buffer_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(test_core_slice_slice_buffer_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(test_core_slice_slice_buffer_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(test_core_slice_slice_buffer_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(test_core_slice_slice_buffer_test project_benchmark project_gflags)
 
   android_add_test(TARGET test_core_slice_slice_test
-   ${_gRPC_ROOT}/src/core/lib/debug/trace.cc
-   ${_gRPC_ROOT}/src/core/lib/slice/slice.cc
-   ${_gRPC_ROOT}/src/core/lib/slice/slice_refcount.cc
-   ${_gRPC_ROOT}/src/core/lib/slice/slice_string_helpers.cc
-   ${_gRPC_ROOT}/src/core/lib/slice/static_slice.cc
    ${_gRPC_ROOT}/test/core/slice/slice_test.cc
    ${_gRPC_ROOT}/test/core/util/build.cc
 )
@@ -16554,7 +18478,7 @@ endif()
   target_link_libraries(test_core_slice_slice_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  gpr
+  grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -16688,6 +18612,37 @@ endif()
 
     add_dependencies(test_cpp_util_time_test project_benchmark project_gflags)
 
+  android_add_test(TARGET thd_test
+   ${_gRPC_ROOT}/test/core/gprpp/thd_test.cc
+)
+  target_link_libraries(thd_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(thd_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(thd_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(thd_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(thd_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(thd_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(thd_test project_benchmark project_gflags)
+
   android_add_test(TARGET thread_manager_test
    ${_gRPC_ROOT}/test/cpp/thread_manager/thread_manager_test.cc
 )
@@ -16721,7 +18676,6 @@ endif()
     add_dependencies(thread_manager_test project_benchmark project_gflags)
 
   android_add_test(TARGET thread_quota_test
-   ${_gRPC_ROOT}/src/core/lib/debug/trace.cc
    ${_gRPC_ROOT}/src/core/lib/resource_quota/thread_quota.cc
    ${_gRPC_ROOT}/test/core/resource_quota/thread_quota_test.cc
 )
@@ -16771,6 +18725,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/thread_stress_test.cc
 )
   target_link_libraries(thread_stress_test PRIVATE gmock_main ssl crypto)
@@ -16793,6 +18751,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(thread_stress_test
@@ -16883,6 +18845,80 @@ endif()
 
     add_dependencies(time_util_test project_benchmark project_gflags)
 
+  android_add_test(TARGET timeout_encoding_test
+   ${_gRPC_ROOT}/test/core/transport/timeout_encoding_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
+)
+  target_link_libraries(timeout_encoding_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(timeout_encoding_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(timeout_encoding_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(timeout_encoding_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(timeout_encoding_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(timeout_encoding_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(timeout_encoding_test project_benchmark project_gflags)
+
+  android_add_test(TARGET timer_manager_test
+   ${_gRPC_ROOT}/test/core/event_engine/posix/timer_manager_test.cc
+)
+  target_link_libraries(timer_manager_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(timer_manager_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(timer_manager_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(timer_manager_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(timer_manager_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(timer_manager_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(timer_manager_test project_benchmark project_gflags)
+
   android_add_test(TARGET timer_test
    ${_gRPC_ROOT}/test/cpp/common/timer_test.cc
 )
@@ -16948,8 +18984,83 @@ endif()
 
     add_dependencies(tls_certificate_verifier_test project_benchmark project_gflags)
 
+  android_add_test(TARGET tls_key_export_test
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+   ${_gRPC_ROOT}/test/cpp/end2end/tls_key_export_test.cc
+)
+  target_link_libraries(tls_key_export_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(tls_key_export_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(tls_key_export_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(tls_key_export_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
+
+  target_include_directories(tls_key_export_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(tls_key_export_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(tls_key_export_test project_benchmark project_gflags)
+
   android_add_test(TARGET tls_security_connector_test
    ${_gRPC_ROOT}/test/core/security/tls_security_connector_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(tls_security_connector_test PRIVATE gmock_main ssl crypto)
   target_include_directories(tls_security_connector_test PRIVATE ${_gRPC_ROOT})
@@ -17042,6 +19153,103 @@ endif()
 )
 
     add_dependencies(too_many_pings_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET traced_buffer_list_test
+   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/internal_errqueue.cc
+   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
+   ${_gRPC_ROOT}/test/core/event_engine/posix/traced_buffer_list_test.cc
+)
+  target_link_libraries(traced_buffer_list_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(traced_buffer_list_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(traced_buffer_list_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(traced_buffer_list_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(traced_buffer_list_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(traced_buffer_list_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(traced_buffer_list_test project_benchmark project_gflags)
+endif()
+
+  android_add_test(TARGET transport_security_common_api_test
+   ${_gRPC_ROOT}/test/core/tsi/alts/handshaker/transport_security_common_api_test.cc
+)
+  target_link_libraries(transport_security_common_api_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(transport_security_common_api_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(transport_security_common_api_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(transport_security_common_api_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(transport_security_common_api_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(transport_security_common_api_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(transport_security_common_api_test project_benchmark project_gflags)
+
+  android_add_test(TARGET transport_security_test
+   ${_gRPC_ROOT}/test/core/tsi/transport_security_test.cc
+)
+  target_link_libraries(transport_security_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(transport_security_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(transport_security_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(transport_security_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(transport_security_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(transport_security_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(transport_security_test project_benchmark project_gflags)
 
   android_add_test(TARGET transport_stream_receiver_test
    ${_gRPC_ROOT}/src/core/ext/transport/binder/client/binder_connector.cc
@@ -17088,6 +19296,7 @@ endif()
    ${_gRPC_ROOT}/src/cpp/server/health/default_health_check_service.cc
    ${_gRPC_ROOT}/src/cpp/server/health/health_check_service.cc
    ${_gRPC_ROOT}/src/cpp/server/health/health_check_service_server_builder_option.cc
+   ${_gRPC_ROOT}/src/cpp/server/orca/call_metric_recorder.cc
    ${_gRPC_ROOT}/src/cpp/server/server_builder.cc
    ${_gRPC_ROOT}/src/cpp/server/server_callback.cc
    ${_gRPC_ROOT}/src/cpp/server/server_cc.cc
@@ -17123,6 +19332,7 @@ endif()
   target_link_libraries(transport_stream_receiver_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/cleanup:cleanup
   grpc_test_util
   ${_gRPC_GFLAGS_LIBRARIES}
 )
@@ -17154,13 +19364,47 @@ endif()
   target_link_libraries(try_join_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/meta:type_traits
   absl/status:status
   absl/status:statusor
+  absl/strings:strings
   absl/types:variant
+  absl/utility:utility
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
     add_dependencies(try_join_test project_benchmark project_gflags)
+
+  android_add_test(TARGET try_seq_metadata_test
+   ${_gRPC_ROOT}/test/core/promise/try_seq_metadata_test.cc
+)
+  target_link_libraries(try_seq_metadata_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(try_seq_metadata_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(try_seq_metadata_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(try_seq_metadata_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(try_seq_metadata_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(try_seq_metadata_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(try_seq_metadata_test project_benchmark project_gflags)
 
   android_add_test(TARGET try_seq_test
    ${_gRPC_ROOT}/test/core/promise/try_seq_test.cc
@@ -17187,13 +19431,48 @@ endif()
   target_link_libraries(try_seq_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/meta:type_traits
   absl/status:status
   absl/status:statusor
   absl/types:variant
+  absl/utility:utility
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
     add_dependencies(try_seq_test project_benchmark project_gflags)
+
+  android_add_test(TARGET unique_type_name_test
+   ${_gRPC_ROOT}/test/core/gprpp/unique_type_name_test.cc
+)
+  target_link_libraries(unique_type_name_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(unique_type_name_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(unique_type_name_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(unique_type_name_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(unique_type_name_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(unique_type_name_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/strings:str_format
+  absl/strings:strings
+  absl/types:variant
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(unique_type_name_test project_benchmark project_gflags)
 
   android_add_test(TARGET unknown_frame_bad_client_test
    ${_gRPC_ROOT}/test/core/bad_client/bad_client.cc
@@ -17253,7 +19532,8 @@ endif()
   target_link_libraries(uri_parser_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
+  grpc
+  grpc_test_util_unsecure
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -17284,10 +19564,112 @@ endif()
   target_link_libraries(useful_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/strings:strings
+  absl/types:variant
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
     add_dependencies(useful_test project_benchmark project_gflags)
+
+  android_add_test(TARGET varint_test
+   ${_gRPC_ROOT}/test/core/transport/chttp2/varint_test.cc
+)
+  target_link_libraries(varint_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(varint_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(varint_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(varint_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(varint_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(varint_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(varint_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET wakeup_fd_posix_test
+   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
+   ${_gRPC_ROOT}/src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
+   ${_gRPC_ROOT}/test/core/event_engine/posix/wakeup_fd_posix_test.cc
+)
+  target_link_libraries(wakeup_fd_posix_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(wakeup_fd_posix_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(wakeup_fd_posix_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(wakeup_fd_posix_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(wakeup_fd_posix_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(wakeup_fd_posix_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(wakeup_fd_posix_test project_benchmark project_gflags)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
+
+  android_add_test(TARGET win_socket_test
+   ${_gRPC_ROOT}/test/core/event_engine/windows/create_sockpair.cc
+   ${_gRPC_ROOT}/test/core/event_engine/windows/win_socket_test.cc
+)
+  target_link_libraries(win_socket_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(win_socket_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(win_socket_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(win_socket_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+
+  target_include_directories(win_socket_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(win_socket_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(win_socket_test project_benchmark project_gflags)
+endif()
 
   android_add_test(TARGET window_overflow_bad_client_test
    ${_gRPC_ROOT}/test/core/bad_client/bad_client.cc
@@ -17367,6 +19749,7 @@ endif()
    ${_gRPC_ROOT}/src/cpp/server/health/default_health_check_service.cc
    ${_gRPC_ROOT}/src/cpp/server/health/health_check_service.cc
    ${_gRPC_ROOT}/src/cpp/server/health/health_check_service_server_builder_option.cc
+   ${_gRPC_ROOT}/src/cpp/server/orca/call_metric_recorder.cc
    ${_gRPC_ROOT}/src/cpp/server/server_builder.cc
    ${_gRPC_ROOT}/src/cpp/server/server_callback.cc
    ${_gRPC_ROOT}/src/cpp/server/server_cc.cc
@@ -17403,6 +19786,7 @@ endif()
   target_link_libraries(wire_reader_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/cleanup:cleanup
   grpc_test_util
   ${_gRPC_GFLAGS_LIBRARIES}
 )
@@ -17454,6 +19838,7 @@ endif()
    ${_gRPC_ROOT}/src/cpp/server/health/default_health_check_service.cc
    ${_gRPC_ROOT}/src/cpp/server/health/health_check_service.cc
    ${_gRPC_ROOT}/src/cpp/server/health/health_check_service_server_builder_option.cc
+   ${_gRPC_ROOT}/src/cpp/server/orca/call_metric_recorder.cc
    ${_gRPC_ROOT}/src/cpp/server/server_builder.cc
    ${_gRPC_ROOT}/src/cpp/server/server_callback.cc
    ${_gRPC_ROOT}/src/cpp/server/server_cc.cc
@@ -17490,6 +19875,7 @@ endif()
   target_link_libraries(wire_writer_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/cleanup:cleanup
   grpc_test_util
   ${_gRPC_GFLAGS_LIBRARIES}
 )
@@ -17498,7 +19884,7 @@ endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   android_add_test(TARGET work_serializer_test
-   ${_gRPC_ROOT}/test/core/iomgr/work_serializer_test.cc
+   ${_gRPC_ROOT}/test/core/gprpp/work_serializer_test.cc
 )
   target_link_libraries(work_serializer_test PRIVATE gmock_main ssl crypto)
   target_include_directories(work_serializer_test PRIVATE ${_gRPC_ROOT})
@@ -17543,26 +19929,21 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-   ${_gRPC_ROOT}/test/core/util/build.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/core/util/cmdline.cc
    ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
    ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
    ${_gRPC_ROOT}/test/core/util/histogram.cc
-   ${_gRPC_ROOT}/test/core/util/memory_counters.cc
    ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
    ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
    ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
-   ${_gRPC_ROOT}/test/core/util/port.cc
-   ${_gRPC_ROOT}/test/core/util/port_isolated_runtime_environment.cc
-   ${_gRPC_ROOT}/test/core/util/port_server_client.cc
-   ${_gRPC_ROOT}/test/core/util/reconnect_server.cc
    ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
    ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
-   ${_gRPC_ROOT}/test/core/util/stack_tracer.cc
    ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
    ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
-   ${_gRPC_ROOT}/test/core/util/test_config.cc
-   ${_gRPC_ROOT}/test/core/util/test_tcp_server.cc
    ${_gRPC_ROOT}/test/core/util/tracer_util.cc
    ${_gRPC_ROOT}/test/cpp/performance/writes_per_rpc_test.cc
 )
@@ -17583,6 +19964,10 @@ protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
 )
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
 
   target_include_directories(writes_per_rpc_test
   PRIVATE ${_gRPC_ROOT}
@@ -17600,10 +19985,8 @@ protobuf_generate_grpc_cpp(
   target_link_libraries(writes_per_rpc_test PRIVATE
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl/debugging:failure_signal_handler
-  absl/debugging:stacktrace
-  absl/debugging:symbolize
   grpc++
+  grpc_test_util
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -17671,6 +20054,919 @@ endif()
 )
 
     add_dependencies(xds_certificate_provider_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET xds_cluster_end2end_test
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
+   ${_gRPC_ROOT}/test/cpp/end2end/connection_attempt_injector.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_cluster_end2end_test.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_end2end_test_lib.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_server.cc
+   ${_gRPC_ROOT}/test/cpp/util/tls_test_utils.cc
+)
+  target_link_libraries(xds_cluster_end2end_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(xds_cluster_end2end_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(xds_cluster_end2end_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(xds_cluster_end2end_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/duplicate/echo_duplicate.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/ads_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/eds_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/lrs_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/address.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/ads.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/base.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/cluster.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/config_source.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/discovery.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/endpoint.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/expr.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/extension.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/listener.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/lrs.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/metadata.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/outlier_detection.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/path.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/percent.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/protocol.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/range.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/rbac.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/regex.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/route.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/router.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/string.proto
+)
+
+  target_include_directories(xds_cluster_end2end_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(xds_cluster_end2end_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(xds_cluster_end2end_test project_benchmark project_gflags)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET xds_cluster_type_end2end_test
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
+   ${_gRPC_ROOT}/test/cpp/end2end/connection_attempt_injector.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_cluster_type_end2end_test.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_end2end_test_lib.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_server.cc
+   ${_gRPC_ROOT}/test/cpp/util/tls_test_utils.cc
+)
+  target_link_libraries(xds_cluster_type_end2end_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(xds_cluster_type_end2end_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(xds_cluster_type_end2end_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(xds_cluster_type_end2end_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/duplicate/echo_duplicate.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/ads_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/eds_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/lrs_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/address.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/ads.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/base.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/cluster.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/config_source.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/discovery.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/endpoint.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/expr.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/extension.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/listener.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/lrs.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/metadata.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/outlier_detection.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/path.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/percent.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/protocol.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/range.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/rbac.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/regex.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/route.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/router.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/string.proto
+)
+
+  target_include_directories(xds_cluster_type_end2end_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(xds_cluster_type_end2end_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(xds_cluster_type_end2end_test project_benchmark project_gflags)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET xds_core_end2end_test
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
+   ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_core_end2end_test.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_end2end_test_lib.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_server.cc
+   ${_gRPC_ROOT}/test/cpp/util/tls_test_utils.cc
+)
+  target_link_libraries(xds_core_end2end_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(xds_core_end2end_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(xds_core_end2end_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(xds_core_end2end_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/duplicate/echo_duplicate.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/ads_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/eds_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/lrs_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/address.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/ads.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/base.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/cluster.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/config_source.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/discovery.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/endpoint.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/expr.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/extension.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/listener.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/lrs.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/metadata.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/outlier_detection.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/path.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/percent.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/protocol.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/range.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/rbac.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/regex.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/route.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/router.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/string.proto
+)
+
+  target_include_directories(xds_core_end2end_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(xds_core_end2end_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(xds_core_end2end_test project_benchmark project_gflags)
+endif()
 
   android_add_test(TARGET xds_credentials_end2end_test
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
@@ -17685,6 +20981,10 @@ endif()
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
    ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_credentials_end2end_test.cc
 )
@@ -17704,6 +21004,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 
   target_include_directories(xds_credentials_end2end_test
@@ -17730,6 +21034,18 @@ protobuf_generate_grpc_cpp(
 
   android_add_test(TARGET xds_credentials_test
    ${_gRPC_ROOT}/test/core/security/xds_credentials_test.cc
+   ${_gRPC_ROOT}/test/core/util/cmdline.cc
+   ${_gRPC_ROOT}/test/core/util/fuzzer_util.cc
+   ${_gRPC_ROOT}/test/core/util/grpc_profiler.cc
+   ${_gRPC_ROOT}/test/core/util/histogram.cc
+   ${_gRPC_ROOT}/test/core/util/mock_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/parse_hexstring.cc
+   ${_gRPC_ROOT}/test/core/util/passthru_endpoint.cc
+   ${_gRPC_ROOT}/test/core/util/resolve_localhost_ip46.cc
+   ${_gRPC_ROOT}/test/core/util/slice_splitter.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_posix.cc
+   ${_gRPC_ROOT}/test/core/util/subprocess_windows.cc
+   ${_gRPC_ROOT}/test/core/util/tracer_util.cc
 )
   target_link_libraries(xds_credentials_test PRIVATE gmock_main ssl crypto)
   target_include_directories(xds_credentials_test PRIVATE ${_gRPC_ROOT})
@@ -17758,6 +21074,324 @@ protobuf_generate_grpc_cpp(
 )
 
     add_dependencies(xds_credentials_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET xds_csds_end2end_test
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
+   ${_gRPC_ROOT}/src/cpp/server/csds/csds.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_csds_end2end_test.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_end2end_test_lib.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_server.cc
+   ${_gRPC_ROOT}/test/cpp/util/tls_test_utils.cc
+)
+  target_link_libraries(xds_csds_end2end_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(xds_csds_end2end_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(xds_csds_end2end_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(xds_csds_end2end_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/duplicate/echo_duplicate.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/ads_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/eds_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/lrs_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/address.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/ads.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/base.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/cluster.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/config_dump.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/config_source.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/csds.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/discovery.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/endpoint.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/expr.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/extension.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/listener.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/lrs.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/metadata.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/outlier_detection.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/path.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/percent.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/protocol.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/range.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/rbac.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/regex.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/route.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/router.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/string.proto
+)
+
+  target_include_directories(xds_csds_end2end_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(xds_csds_end2end_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(xds_csds_end2end_test project_benchmark project_gflags)
+endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   android_add_test(TARGET xds_end2end_test
@@ -17817,18 +21451,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h
-          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.pb.cc
-          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.grpc.pb.cc
-          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.pb.h
-          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.grpc.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.h
-          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.pb.cc
-          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.cc
-          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.pb.h
-          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.h
@@ -17837,6 +21463,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
@@ -17853,6 +21483,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.h
@@ -17865,6 +21499,22 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
@@ -17877,6 +21527,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h
@@ -17897,9 +21551,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.cc
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.pb.h
           ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.h
-   ${_gRPC_ROOT}/src/cpp/server/csds/csds.cc
    ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
    ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_end2end_test.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_end2end_test_lib.cc
    ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_server.cc
    ${_gRPC_ROOT}/test/cpp/util/tls_test_utils.cc
 )
@@ -17966,15 +21620,7 @@ protobuf_generate_grpc_cpp(
 )
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
-  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/config_dump.proto
-)
-protobuf_generate_grpc_cpp(
-  SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/config_source.proto
-)
-protobuf_generate_grpc_cpp(
-  SOURCE_DIR ${_gRPC_ROOT}
-  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/csds.proto
 )
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
@@ -17983,6 +21629,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/endpoint.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/expr.proto
 )
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
@@ -18002,6 +21652,10 @@ protobuf_generate_grpc_cpp(
 )
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/listener.proto
 )
 protobuf_generate_grpc_cpp(
@@ -18014,6 +21668,22 @@ protobuf_generate_grpc_cpp(
 )
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/metadata.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/outlier_detection.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/path.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/percent.proto
 )
 protobuf_generate_grpc_cpp(
@@ -18023,6 +21693,10 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
   SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/range.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/rbac.proto
 )
 protobuf_generate_grpc_cpp(
   SOURCE_DIR ${_gRPC_ROOT}
@@ -18067,6 +21741,323 @@ protobuf_generate_grpc_cpp(
 )
 
     add_dependencies(xds_end2end_test project_benchmark project_gflags)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET xds_fault_injection_end2end_test
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
+   ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_end2end_test_lib.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_fault_injection_end2end_test.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_server.cc
+   ${_gRPC_ROOT}/test/cpp/util/tls_test_utils.cc
+)
+  target_link_libraries(xds_fault_injection_end2end_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(xds_fault_injection_end2end_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(xds_fault_injection_end2end_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(xds_fault_injection_end2end_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/duplicate/echo_duplicate.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/ads_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/eds_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/lrs_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/address.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/ads.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/base.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/cluster.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/config_source.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/discovery.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/endpoint.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/expr.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/extension.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/fault.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/fault_common.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/listener.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/lrs.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/metadata.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/outlier_detection.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/path.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/percent.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/protocol.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/range.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/rbac.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/regex.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/route.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/router.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/string.proto
+)
+
+  target_include_directories(xds_fault_injection_end2end_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(xds_fault_injection_end2end_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(xds_fault_injection_end2end_test project_benchmark project_gflags)
 endif()
 
   android_add_test(TARGET xds_interop_client
@@ -18264,6 +22255,1418 @@ protobuf_generate_grpc_cpp(
 
     add_dependencies(xds_interop_server project_benchmark project_gflags)
 
+  android_add_test(TARGET xds_lb_policy_registry_test
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ring_hash.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ring_hash.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ring_hash.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ring_hash.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/round_robin.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/round_robin.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/round_robin.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/round_robin.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/udpa_typed_struct.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/udpa_typed_struct.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/udpa_typed_struct.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/udpa_typed_struct.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/wrr_locality.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/wrr_locality.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/wrr_locality.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/wrr_locality.grpc.pb.h
+   ${_gRPC_ROOT}/test/core/xds/xds_lb_policy_registry_test.cc
+   ${_gRPC_ROOT}/test/cpp/util/cli_call.cc
+   ${_gRPC_ROOT}/test/cpp/util/cli_credentials.cc
+   ${_gRPC_ROOT}/test/cpp/util/proto_file_parser.cc
+   ${_gRPC_ROOT}/test/cpp/util/proto_reflection_descriptor_database.cc
+   ${_gRPC_ROOT}/test/cpp/util/service_describer.cc
+)
+  target_link_libraries(xds_lb_policy_registry_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(xds_lb_policy_registry_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(xds_lb_policy_registry_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(xds_lb_policy_registry_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/reflection/v1alpha/reflection.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/address.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/base.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/cluster.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/config_source.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/endpoint.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/extension.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/outlier_detection.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/percent.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/ring_hash.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/round_robin.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/typed_struct.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/udpa_typed_struct.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/wrr_locality.proto
+)
+
+  target_include_directories(xds_lb_policy_registry_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(xds_lb_policy_registry_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl/flags:flag
+  grpc++
+  grpc_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(xds_lb_policy_registry_test project_benchmark project_gflags)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET xds_outlier_detection_end2end_test
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
+   ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_end2end_test_lib.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_outlier_detection_end2end_test.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_server.cc
+   ${_gRPC_ROOT}/test/cpp/util/tls_test_utils.cc
+)
+  target_link_libraries(xds_outlier_detection_end2end_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(xds_outlier_detection_end2end_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(xds_outlier_detection_end2end_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(xds_outlier_detection_end2end_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/duplicate/echo_duplicate.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/ads_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/eds_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/lrs_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/address.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/ads.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/base.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/cluster.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/config_source.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/discovery.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/endpoint.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/expr.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/extension.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/fault.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/fault_common.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/listener.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/lrs.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/metadata.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/outlier_detection.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/path.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/percent.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/protocol.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/range.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/rbac.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/regex.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/route.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/router.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/string.proto
+)
+
+  target_include_directories(xds_outlier_detection_end2end_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(xds_outlier_detection_end2end_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(xds_outlier_detection_end2end_test project_benchmark project_gflags)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET xds_ring_hash_end2end_test
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
+   ${_gRPC_ROOT}/test/cpp/end2end/connection_attempt_injector.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_end2end_test_lib.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_ring_hash_end2end_test.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_server.cc
+   ${_gRPC_ROOT}/test/cpp/util/tls_test_utils.cc
+)
+  target_link_libraries(xds_ring_hash_end2end_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(xds_ring_hash_end2end_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(xds_ring_hash_end2end_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(xds_ring_hash_end2end_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/duplicate/echo_duplicate.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/ads_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/eds_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/lrs_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/address.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/ads.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/base.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/cluster.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/config_source.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/discovery.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/endpoint.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/expr.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/extension.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/listener.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/lrs.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/metadata.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/outlier_detection.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/path.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/percent.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/protocol.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/range.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/rbac.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/regex.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/route.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/router.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/string.proto
+)
+
+  target_include_directories(xds_ring_hash_end2end_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(xds_ring_hash_end2end_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(xds_ring_hash_end2end_test project_benchmark project_gflags)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET xds_rls_end2end_test
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
+   ${_gRPC_ROOT}/test/cpp/end2end/rls_server.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_end2end_test_lib.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_rls_end2end_test.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_server.cc
+   ${_gRPC_ROOT}/test/cpp/util/tls_test_utils.cc
+)
+  target_link_libraries(xds_rls_end2end_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(xds_rls_end2end_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(xds_rls_end2end_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(xds_rls_end2end_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/lookup/v1/rls.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/lookup/v1/rls_config.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/duplicate/echo_duplicate.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/ads_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/eds_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/lrs_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/address.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/ads.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/base.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/cluster.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/config_source.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/discovery.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/endpoint.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/expr.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/extension.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/listener.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/lrs.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/metadata.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/outlier_detection.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/path.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/percent.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/protocol.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/range.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/rbac.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/regex.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/route.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/router.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/string.proto
+)
+
+  target_include_directories(xds_rls_end2end_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(xds_rls_end2end_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(xds_rls_end2end_test project_benchmark project_gflags)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  android_add_test(TARGET xds_routing_end2end_test
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
+          ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
+   ${_gRPC_ROOT}/test/cpp/end2end/test_service_impl.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_end2end_test_lib.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_routing_end2end_test.cc
+   ${_gRPC_ROOT}/test/cpp/end2end/xds/xds_server.cc
+   ${_gRPC_ROOT}/test/cpp/util/tls_test_utils.cc
+)
+  target_link_libraries(xds_routing_end2end_test PRIVATE gmock_main ssl crypto)
+  target_include_directories(xds_routing_end2end_test PRIVATE ${_gRPC_ROOT})
+
+  target_compile_definitions(xds_routing_end2end_test PRIVATE -DPB_FIELD_16BIT)
+  target_compile_definitions(xds_routing_end2end_test PUBLIC  -DGRPC_ALLOW_EXCEPTIONS=0)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/duplicate/echo_duplicate.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/echo_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/ads_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/eds_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/lrs_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/address.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/ads.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/base.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/cluster.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/config_source.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/discovery.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/endpoint.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/expr.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/extension.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/fault.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/fault_common.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/listener.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/lrs.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/metadata.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/outlier_detection.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/path.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/percent.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/protocol.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/range.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/rbac.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/regex.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/route.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/router.proto
+)
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  SOURCES ${_gRPC_ROOT}/src/proto/grpc/testing/xds/v3/string.proto
+)
+
+  target_include_directories(xds_routing_end2end_test
+  PRIVATE ${_gRPC_ROOT}
+  PRIVATE ${_gRPC_ROOT}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GTEST_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+  target_link_libraries(xds_routing_end2end_test PRIVATE
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+    add_dependencies(xds_routing_end2end_test project_benchmark project_gflags)
+endif()
+
   android_add_test(TARGET boringssl_ssl_test
    ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/test/abi_test.cc
    ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/test/gtest_main.cc
@@ -18314,7 +23717,6 @@ protobuf_generate_grpc_cpp(
    ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/cipher_extra/cipher_test.cc
    ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/cmac/cmac_test.cc
    ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/compiler_test.cc
-   ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/conf/conf_test.cc
    ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/constant_time_test.cc
    ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/cpu-arm-linux_test.cc
    ${_gRPC_ROOT}/third_party/boringssl-with-bazel/src/crypto/crypto_test.cc
@@ -18403,23 +23805,6 @@ protobuf_generate_grpc_cpp(
 
 
 add_custom_target(buildtests_c)
-   add_dependencies(buildtests_c algorithm_test)
-   add_dependencies(buildtests_c alloc_test)
-   add_dependencies(buildtests_c alpn_test)
-   add_dependencies(buildtests_c alts_counter_test)
-   add_dependencies(buildtests_c alts_crypt_test)
-   add_dependencies(buildtests_c alts_crypter_test)
-   add_dependencies(buildtests_c alts_frame_protector_test)
-   add_dependencies(buildtests_c alts_grpc_record_protocol_test)
-   add_dependencies(buildtests_c alts_handshaker_client_test)
-   add_dependencies(buildtests_c alts_iovec_record_protocol_test)
-   add_dependencies(buildtests_c alts_security_connector_test)
-   add_dependencies(buildtests_c alts_tsi_handshaker_test)
-   add_dependencies(buildtests_c alts_tsi_utils_test)
-   add_dependencies(buildtests_c alts_zero_copy_grpc_protector_test)
-   add_dependencies(buildtests_c arena_test)
-   add_dependencies(buildtests_c auth_context_test)
-   add_dependencies(buildtests_c b64_test)
    add_dependencies(buildtests_c bad_server_response_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
    add_dependencies(buildtests_c bad_ssl_alpn_test)
@@ -18427,45 +23812,12 @@ endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
    add_dependencies(buildtests_c bad_ssl_cert_test)
 endif()
-   add_dependencies(buildtests_c bin_decoder_test)
-   add_dependencies(buildtests_c bin_encoder_test)
-   add_dependencies(buildtests_c buffer_list_test)
-   add_dependencies(buildtests_c channel_args_test)
-   add_dependencies(buildtests_c channel_create_test)
-   add_dependencies(buildtests_c channel_stack_test)
-   add_dependencies(buildtests_c check_gcp_environment_linux_test)
-   add_dependencies(buildtests_c check_gcp_environment_windows_test)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-   add_dependencies(buildtests_c client_ssl_test)
-endif()
-   add_dependencies(buildtests_c cmdline_test)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-   add_dependencies(buildtests_c combiner_test)
-endif()
-   add_dependencies(buildtests_c completion_queue_threading_test)
-   add_dependencies(buildtests_c compression_test)
-   add_dependencies(buildtests_c concurrent_connectivity_test)
    add_dependencies(buildtests_c connection_refused_test)
-   add_dependencies(buildtests_c cpu_test)
-   add_dependencies(buildtests_c dns_resolver_connectivity_using_ares_test)
-   add_dependencies(buildtests_c dns_resolver_connectivity_using_native_test)
-   add_dependencies(buildtests_c dns_resolver_cooldown_test)
-   add_dependencies(buildtests_c dns_resolver_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
    add_dependencies(buildtests_c dualstack_socket_test)
 endif()
-   add_dependencies(buildtests_c endpoint_pair_test)
-   add_dependencies(buildtests_c env_test)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-   add_dependencies(buildtests_c ev_epollex_linux_test)
-endif()
-   add_dependencies(buildtests_c fake_resolver_test)
-   add_dependencies(buildtests_c fake_transport_security_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
    add_dependencies(buildtests_c fd_conservation_posix_test)
-endif()
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-   add_dependencies(buildtests_c fd_posix_test)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
    add_dependencies(buildtests_c fling_stream_test)
@@ -18473,110 +23825,20 @@ endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
    add_dependencies(buildtests_c fling_test)
 endif()
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-   add_dependencies(buildtests_c fork_test)
-endif()
-   add_dependencies(buildtests_c format_request_test)
-   add_dependencies(buildtests_c frame_handler_test)
    add_dependencies(buildtests_c goaway_server_test)
-   add_dependencies(buildtests_c grpc_alts_credentials_options_test)
-   add_dependencies(buildtests_c grpc_byte_buffer_reader_test)
-   add_dependencies(buildtests_c grpc_completion_queue_test)
-   add_dependencies(buildtests_c grpc_ipv6_loopback_available_test)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-   add_dependencies(buildtests_c handshake_server_with_readahead_handshaker_test)
-endif()
-   add_dependencies(buildtests_c histogram_test)
-   add_dependencies(buildtests_c host_port_test)
-   add_dependencies(buildtests_c hpack_encoder_test)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-   add_dependencies(buildtests_c httpcli_test)
-endif()
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-   add_dependencies(buildtests_c httpscli_test)
-endif()
    add_dependencies(buildtests_c inproc_callback_test)
    add_dependencies(buildtests_c invalid_call_argument_test)
-   add_dependencies(buildtests_c json_token_test)
-   add_dependencies(buildtests_c jwt_verifier_test)
-   add_dependencies(buildtests_c lame_client_test)
-   add_dependencies(buildtests_c load_file_test)
-   add_dependencies(buildtests_c manual_constructor_test)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-   add_dependencies(buildtests_c memory_quota_stress_test)
-endif()
-   add_dependencies(buildtests_c message_compress_test)
-   add_dependencies(buildtests_c metadata_test)
    add_dependencies(buildtests_c minimal_stack_is_minimal_test)
-   add_dependencies(buildtests_c mpmcqueue_test)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-   add_dependencies(buildtests_c mpscq_test)
-endif()
    add_dependencies(buildtests_c multiple_server_queues_test)
-   add_dependencies(buildtests_c murmur_hash_test)
    add_dependencies(buildtests_c no_server_test)
-   add_dependencies(buildtests_c num_external_connectivity_watchers_test)
-   add_dependencies(buildtests_c parse_address_test)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-   add_dependencies(buildtests_c parse_address_with_named_scope_id_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
+   add_dependencies(buildtests_c pollset_windows_starvation_test)
 endif()
-   add_dependencies(buildtests_c parser_test)
-   add_dependencies(buildtests_c percent_encoding_test)
    add_dependencies(buildtests_c public_headers_must_be_c89)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-   add_dependencies(buildtests_c resolve_address_using_ares_resolver_posix_test)
-endif()
-   add_dependencies(buildtests_c resolve_address_using_ares_resolver_test)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-   add_dependencies(buildtests_c resolve_address_using_native_resolver_posix_test)
-endif()
-   add_dependencies(buildtests_c resolve_address_using_native_resolver_test)
-   add_dependencies(buildtests_c secure_channel_create_test)
-   add_dependencies(buildtests_c secure_endpoint_test)
-   add_dependencies(buildtests_c security_connector_test)
-   add_dependencies(buildtests_c sequential_connectivity_test)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-   add_dependencies(buildtests_c server_ssl_test)
-endif()
-   add_dependencies(buildtests_c server_test)
-   add_dependencies(buildtests_c slice_buffer_test)
-   add_dependencies(buildtests_c slice_intern_test)
-   add_dependencies(buildtests_c slice_split_test)
-   add_dependencies(buildtests_c slice_string_helpers_test)
-   add_dependencies(buildtests_c sockaddr_resolver_test)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-   add_dependencies(buildtests_c socket_utils_test)
-endif()
-   add_dependencies(buildtests_c spinlock_test)
-   add_dependencies(buildtests_c ssl_credentials_test)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-   add_dependencies(buildtests_c ssl_transport_security_test)
-endif()
-   add_dependencies(buildtests_c status_conversion_test)
-   add_dependencies(buildtests_c stream_compression_test)
-   add_dependencies(buildtests_c stream_map_test)
-   add_dependencies(buildtests_c string_test)
-   add_dependencies(buildtests_c sync_test)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-   add_dependencies(buildtests_c tcp_client_posix_test)
-endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
    add_dependencies(buildtests_c tcp_posix_test)
 endif()
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-   add_dependencies(buildtests_c tcp_server_posix_test)
-endif()
-   add_dependencies(buildtests_c test_core_gpr_time_test)
-   add_dependencies(buildtests_c test_core_security_credentials_test)
-   add_dependencies(buildtests_c thd_test)
-   add_dependencies(buildtests_c threadpool_test)
-   add_dependencies(buildtests_c time_averaged_stats_test)
-   add_dependencies(buildtests_c timeout_encoding_test)
-   add_dependencies(buildtests_c timer_heap_test)
-   add_dependencies(buildtests_c timer_list_test)
-   add_dependencies(buildtests_c transport_security_common_api_test)
-   add_dependencies(buildtests_c transport_security_test)
-   add_dependencies(buildtests_c varint_test)
+   add_dependencies(buildtests_c test_core_iomgr_timer_list_test)
 
 add_custom_target(buildtests_cxx)
   add_dependencies(buildtests_cxx activity_test)
@@ -18590,54 +23852,92 @@ endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_dependencies(buildtests_cxx alarm_test)
 endif()
+  add_dependencies(buildtests_cxx alloc_test)
+  add_dependencies(buildtests_cxx alpn_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   add_dependencies(buildtests_cxx alts_concurrent_connectivity_test)
 endif()
+  add_dependencies(buildtests_cxx alts_counter_test)
+  add_dependencies(buildtests_cxx alts_crypt_test)
+  add_dependencies(buildtests_cxx alts_crypter_test)
+  add_dependencies(buildtests_cxx alts_frame_protector_test)
+  add_dependencies(buildtests_cxx alts_grpc_record_protocol_test)
+  add_dependencies(buildtests_cxx alts_handshaker_client_test)
+  add_dependencies(buildtests_cxx alts_iovec_record_protocol_test)
+  add_dependencies(buildtests_cxx alts_security_connector_test)
+  add_dependencies(buildtests_cxx alts_tsi_handshaker_test)
+  add_dependencies(buildtests_cxx alts_tsi_utils_test)
   add_dependencies(buildtests_cxx alts_util_test)
+  add_dependencies(buildtests_cxx alts_zero_copy_grpc_protector_test)
   add_dependencies(buildtests_cxx arena_promise_test)
+  add_dependencies(buildtests_cxx arena_test)
   add_dependencies(buildtests_cxx async_end2end_test)
+  add_dependencies(buildtests_cxx auth_context_test)
   add_dependencies(buildtests_cxx auth_property_iterator_test)
   add_dependencies(buildtests_cxx authorization_matchers_test)
   add_dependencies(buildtests_cxx authorization_policy_provider_test)
   add_dependencies(buildtests_cxx avl_test)
   add_dependencies(buildtests_cxx aws_request_signer_test)
+  add_dependencies(buildtests_cxx b64_test)
   add_dependencies(buildtests_cxx backoff_test)
   add_dependencies(buildtests_cxx bad_streaming_id_bad_client_test)
   add_dependencies(buildtests_cxx badreq_bad_client_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_dependencies(buildtests_cxx bdp_estimator_test)
 endif()
+  add_dependencies(buildtests_cxx bin_decoder_test)
+  add_dependencies(buildtests_cxx bin_encoder_test)
   add_dependencies(buildtests_cxx binder_resolver_test)
   add_dependencies(buildtests_cxx binder_server_test)
   add_dependencies(buildtests_cxx binder_transport_test)
   add_dependencies(buildtests_cxx bitset_test)
+  add_dependencies(buildtests_cxx buffer_list_test)
   add_dependencies(buildtests_cxx byte_buffer_test)
-  add_dependencies(buildtests_cxx byte_stream_test)
+  add_dependencies(buildtests_cxx c_slice_buffer_test)
+  add_dependencies(buildtests_cxx call_finalization_test)
+  add_dependencies(buildtests_cxx call_push_pull_test)
   add_dependencies(buildtests_cxx cancel_ares_query_test)
-  add_dependencies(buildtests_cxx capture_test)
   add_dependencies(buildtests_cxx cel_authorization_engine_test)
   add_dependencies(buildtests_cxx certificate_provider_registry_test)
   add_dependencies(buildtests_cxx certificate_provider_store_test)
   add_dependencies(buildtests_cxx cfstream_test)
+  add_dependencies(buildtests_cxx channel_args_test)
   add_dependencies(buildtests_cxx channel_arguments_test)
+  add_dependencies(buildtests_cxx channel_creds_registry_test)
   add_dependencies(buildtests_cxx channel_filter_test)
   add_dependencies(buildtests_cxx channel_stack_builder_test)
+  add_dependencies(buildtests_cxx channel_stack_test)
   add_dependencies(buildtests_cxx channel_trace_test)
   add_dependencies(buildtests_cxx channelz_registry_test)
   add_dependencies(buildtests_cxx channelz_test)
+  add_dependencies(buildtests_cxx check_gcp_environment_linux_test)
+  add_dependencies(buildtests_cxx check_gcp_environment_windows_test)
   add_dependencies(buildtests_cxx chunked_vector_test)
   add_dependencies(buildtests_cxx cli_call_test)
+  add_dependencies(buildtests_cxx client_authority_filter_test)
   add_dependencies(buildtests_cxx client_callback_end2end_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_dependencies(buildtests_cxx client_channel_stress_test)
 endif()
+  add_dependencies(buildtests_cxx client_channel_test)
   add_dependencies(buildtests_cxx client_context_test_peer_test)
   add_dependencies(buildtests_cxx client_interceptors_end2end_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_dependencies(buildtests_cxx client_lb_end2end_test)
 endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx client_ssl_test)
+endif()
+  add_dependencies(buildtests_cxx cmdline_test)
   add_dependencies(buildtests_cxx codegen_test_full)
   add_dependencies(buildtests_cxx codegen_test_minimal)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx combiner_test)
+endif()
+  add_dependencies(buildtests_cxx common_closures_test)
+  add_dependencies(buildtests_cxx completion_queue_threading_test)
+  add_dependencies(buildtests_cxx compression_test)
+  add_dependencies(buildtests_cxx concurrent_connectivity_test)
   add_dependencies(buildtests_cxx connection_prefix_bad_client_test)
   add_dependencies(buildtests_cxx connectivity_state_test)
   add_dependencies(buildtests_cxx context_allocator_end2end_test)
@@ -18645,53 +23945,100 @@ endif()
   add_dependencies(buildtests_cxx context_test)
   add_dependencies(buildtests_cxx core_configuration_test)
   add_dependencies(buildtests_cxx cpp_impl_of_test)
+  add_dependencies(buildtests_cxx cpu_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx crl_ssl_transport_security_test)
+endif()
   add_dependencies(buildtests_cxx delegating_channel_test)
   add_dependencies(buildtests_cxx destroy_grpclb_channel_with_active_connect_stress_test)
+  add_dependencies(buildtests_cxx dns_resolver_cooldown_test)
+  add_dependencies(buildtests_cxx dns_resolver_test)
   add_dependencies(buildtests_cxx dual_ref_counted_test)
   add_dependencies(buildtests_cxx duplicate_header_bad_client_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   add_dependencies(buildtests_cxx end2end_binder_transport_test)
+endif()
   add_dependencies(buildtests_cxx end2end_test)
   add_dependencies(buildtests_cxx endpoint_binder_pool_test)
   add_dependencies(buildtests_cxx endpoint_config_test)
+  add_dependencies(buildtests_cxx endpoint_pair_test)
+  add_dependencies(buildtests_cxx env_test)
   add_dependencies(buildtests_cxx error_test)
   add_dependencies(buildtests_cxx error_utils_test)
   add_dependencies(buildtests_cxx evaluate_args_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx event_poller_posix_test)
+endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_dependencies(buildtests_cxx examine_stack_test)
 endif()
   add_dependencies(buildtests_cxx exception_test)
   add_dependencies(buildtests_cxx exec_ctx_wakeup_scheduler_test)
   add_dependencies(buildtests_cxx fake_binder_test)
+  add_dependencies(buildtests_cxx fake_resolver_test)
+  add_dependencies(buildtests_cxx fake_transport_security_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx fd_posix_test)
+endif()
   add_dependencies(buildtests_cxx file_watcher_certificate_provider_factory_test)
   add_dependencies(buildtests_cxx filter_end2end_test)
   add_dependencies(buildtests_cxx flaky_network_test)
   add_dependencies(buildtests_cxx flow_control_test)
   add_dependencies(buildtests_cxx for_each_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx fork_test)
+endif()
+  add_dependencies(buildtests_cxx forkable_test)
+  add_dependencies(buildtests_cxx format_request_test)
+  add_dependencies(buildtests_cxx frame_handler_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx fuzzing_event_engine_test)
+endif()
   add_dependencies(buildtests_cxx generic_end2end_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_dependencies(buildtests_cxx global_config_env_test)
 endif()
   add_dependencies(buildtests_cxx global_config_test)
+  add_dependencies(buildtests_cxx google_c2p_resolver_test)
   add_dependencies(buildtests_cxx google_mesh_ca_certificate_provider_factory_test)
+  add_dependencies(buildtests_cxx graceful_shutdown_test)
+  add_dependencies(buildtests_cxx grpc_alts_credentials_options_test)
   add_dependencies(buildtests_cxx grpc_authorization_engine_test)
   add_dependencies(buildtests_cxx grpc_authorization_policy_provider_test)
+  add_dependencies(buildtests_cxx grpc_authz_end2end_test)
+  add_dependencies(buildtests_cxx grpc_byte_buffer_reader_test)
   add_dependencies(buildtests_cxx grpc_cli)
+  add_dependencies(buildtests_cxx grpc_completion_queue_test)
+  add_dependencies(buildtests_cxx grpc_ipv6_loopback_available_test)
   add_dependencies(buildtests_cxx grpc_tls_certificate_distributor_test)
   add_dependencies(buildtests_cxx grpc_tls_certificate_provider_test)
   add_dependencies(buildtests_cxx grpc_tls_certificate_verifier_test)
+  add_dependencies(buildtests_cxx grpc_tls_credentials_options_comparator_test)
   add_dependencies(buildtests_cxx grpc_tls_credentials_options_test)
   add_dependencies(buildtests_cxx grpclb_api_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_dependencies(buildtests_cxx grpclb_end2end_test)
 endif()
   add_dependencies(buildtests_cxx h2_ssl_session_reuse_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx handshake_server_with_readahead_handshaker_test)
+endif()
   add_dependencies(buildtests_cxx head_of_line_blocking_bad_client_test)
   add_dependencies(buildtests_cxx headers_bad_client_test)
   add_dependencies(buildtests_cxx health_service_end2end_test)
-  add_dependencies(buildtests_cxx hpack_encoder_index_test)
+  add_dependencies(buildtests_cxx histogram_test)
+  add_dependencies(buildtests_cxx host_port_test)
+  add_dependencies(buildtests_cxx hpack_encoder_test)
   add_dependencies(buildtests_cxx hpack_parser_table_test)
   add_dependencies(buildtests_cxx hpack_parser_test)
   add_dependencies(buildtests_cxx http2_client)
+  add_dependencies(buildtests_cxx http_proxy_mapper_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx httpcli_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx httpscli_test)
+endif()
   add_dependencies(buildtests_cxx hybrid_end2end_test)
   add_dependencies(buildtests_cxx idle_filter_state_test)
   add_dependencies(buildtests_cxx if_test)
@@ -18700,37 +24047,64 @@ endif()
   add_dependencies(buildtests_cxx insecure_security_connector_test)
   add_dependencies(buildtests_cxx interop_client)
   add_dependencies(buildtests_cxx interop_server)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-  add_dependencies(buildtests_cxx interop_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
+  add_dependencies(buildtests_cxx iocp_test)
 endif()
+  add_dependencies(buildtests_cxx istio_echo_server_test)
   add_dependencies(buildtests_cxx join_test)
+  add_dependencies(buildtests_cxx json_object_loader_test)
   add_dependencies(buildtests_cxx json_test)
+  add_dependencies(buildtests_cxx json_token_test)
+  add_dependencies(buildtests_cxx jwt_verifier_test)
+  add_dependencies(buildtests_cxx lame_client_test)
   add_dependencies(buildtests_cxx large_metadata_bad_client_test)
   add_dependencies(buildtests_cxx latch_test)
   add_dependencies(buildtests_cxx lb_get_cpu_stats_test)
   add_dependencies(buildtests_cxx lb_load_data_store_test)
-  add_dependencies(buildtests_cxx linux_system_roots_test)
+  add_dependencies(buildtests_cxx load_file_test)
+  add_dependencies(buildtests_cxx lock_free_event_test)
   add_dependencies(buildtests_cxx log_test)
   add_dependencies(buildtests_cxx loop_test)
   add_dependencies(buildtests_cxx match_test)
   add_dependencies(buildtests_cxx matchers_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx memory_quota_stress_test)
+endif()
   add_dependencies(buildtests_cxx memory_quota_test)
   add_dependencies(buildtests_cxx message_allocator_end2end_test)
+  add_dependencies(buildtests_cxx message_compress_test)
   add_dependencies(buildtests_cxx metadata_map_test)
   add_dependencies(buildtests_cxx miscompile_with_no_unique_address_test)
   add_dependencies(buildtests_cxx mock_stream_test)
   add_dependencies(buildtests_cxx mock_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx mpscq_test)
+endif()
+  add_dependencies(buildtests_cxx murmur_hash_test)
+  add_dependencies(buildtests_cxx no_destruct_test)
   add_dependencies(buildtests_cxx nonblocking_test)
+  add_dependencies(buildtests_cxx num_external_connectivity_watchers_test)
   add_dependencies(buildtests_cxx observable_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx oracle_event_engine_posix_test)
+endif()
+  add_dependencies(buildtests_cxx orca_service_end2end_test)
   add_dependencies(buildtests_cxx orphanable_test)
   add_dependencies(buildtests_cxx out_of_bounds_bad_client_test)
   add_dependencies(buildtests_cxx overload_test)
+  add_dependencies(buildtests_cxx parse_address_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx parse_address_with_named_scope_id_test)
+endif()
   add_dependencies(buildtests_cxx parsed_metadata_test)
+  add_dependencies(buildtests_cxx parser_test)
+  add_dependencies(buildtests_cxx percent_encoding_test)
+  add_dependencies(buildtests_cxx periodic_update_test)
   add_dependencies(buildtests_cxx pid_controller_test)
   add_dependencies(buildtests_cxx pipe_test)
   add_dependencies(buildtests_cxx poll_test)
-  add_dependencies(buildtests_cxx popularity_count_test)
   add_dependencies(buildtests_cxx port_sharing_end2end_test)
+  add_dependencies(buildtests_cxx posix_event_engine_test)
   add_dependencies(buildtests_cxx promise_factory_test)
   add_dependencies(buildtests_cxx promise_map_test)
   add_dependencies(buildtests_cxx promise_test)
@@ -18739,19 +24113,31 @@ endif()
   add_dependencies(buildtests_cxx qps_worker)
   add_dependencies(buildtests_cxx race_test)
   add_dependencies(buildtests_cxx raw_end2end_test)
+  add_dependencies(buildtests_cxx rbac_service_config_parser_test)
   add_dependencies(buildtests_cxx rbac_translator_test)
   add_dependencies(buildtests_cxx ref_counted_ptr_test)
   add_dependencies(buildtests_cxx ref_counted_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_dependencies(buildtests_cxx remove_stream_from_stalled_lists_test)
 endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx resolve_address_using_ares_resolver_posix_test)
+endif()
+  add_dependencies(buildtests_cxx resolve_address_using_ares_resolver_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx resolve_address_using_native_resolver_posix_test)
+endif()
+  add_dependencies(buildtests_cxx resolve_address_using_native_resolver_test)
   add_dependencies(buildtests_cxx resource_quota_test)
   add_dependencies(buildtests_cxx retry_throttle_test)
   add_dependencies(buildtests_cxx rls_end2end_test)
   add_dependencies(buildtests_cxx rls_lb_config_parser_test)
-  add_dependencies(buildtests_cxx sdk_authz_end2end_test)
   add_dependencies(buildtests_cxx secure_auth_context_test)
+  add_dependencies(buildtests_cxx secure_channel_create_test)
+  add_dependencies(buildtests_cxx secure_endpoint_test)
+  add_dependencies(buildtests_cxx security_connector_test)
   add_dependencies(buildtests_cxx seq_test)
+  add_dependencies(buildtests_cxx sequential_connectivity_test)
   add_dependencies(buildtests_cxx server_builder_plugin_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_dependencies(buildtests_cxx server_builder_test)
@@ -18768,33 +24154,71 @@ endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_dependencies(buildtests_cxx server_request_call_test)
 endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx server_ssl_test)
+endif()
+  add_dependencies(buildtests_cxx server_test)
   add_dependencies(buildtests_cxx service_config_end2end_test)
   add_dependencies(buildtests_cxx service_config_test)
   add_dependencies(buildtests_cxx settings_timeout_test)
   add_dependencies(buildtests_cxx shutdown_test)
   add_dependencies(buildtests_cxx simple_request_bad_client_test)
+  add_dependencies(buildtests_cxx single_set_ptr_test)
+  add_dependencies(buildtests_cxx sleep_test)
+  add_dependencies(buildtests_cxx slice_string_helpers_test)
+  add_dependencies(buildtests_cxx smoke_test)
+  add_dependencies(buildtests_cxx sockaddr_resolver_test)
   add_dependencies(buildtests_cxx sockaddr_utils_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx socket_utils_test)
+endif()
+  add_dependencies(buildtests_cxx sorted_pack_test)
+  add_dependencies(buildtests_cxx spinlock_test)
+  add_dependencies(buildtests_cxx ssl_credentials_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx ssl_transport_security_test)
+endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_dependencies(buildtests_cxx stack_tracer_test)
 endif()
   add_dependencies(buildtests_cxx stat_test)
-  add_dependencies(buildtests_cxx static_metadata_test)
   add_dependencies(buildtests_cxx stats_test)
+  add_dependencies(buildtests_cxx status_conversion_test)
   add_dependencies(buildtests_cxx status_helper_test)
   add_dependencies(buildtests_cxx status_util_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_dependencies(buildtests_cxx stranded_event_test)
 endif()
+  add_dependencies(buildtests_cxx stream_map_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_dependencies(buildtests_cxx streaming_throughput_test)
 endif()
+  add_dependencies(buildtests_cxx streams_not_seen_test)
   add_dependencies(buildtests_cxx string_ref_test)
+  add_dependencies(buildtests_cxx string_test)
+  add_dependencies(buildtests_cxx sync_test)
+  add_dependencies(buildtests_cxx system_roots_test)
   add_dependencies(buildtests_cxx table_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx tcp_client_posix_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx tcp_server_posix_test)
+endif()
+  add_dependencies(buildtests_cxx test_core_event_engine_posix_timer_heap_test)
+  add_dependencies(buildtests_cxx test_core_event_engine_posix_timer_list_test)
+  add_dependencies(buildtests_cxx test_core_event_engine_slice_buffer_test)
+  add_dependencies(buildtests_cxx test_core_gpr_time_test)
+  add_dependencies(buildtests_cxx test_core_gprpp_time_test)
+  add_dependencies(buildtests_cxx test_core_iomgr_timer_heap_test)
+  add_dependencies(buildtests_cxx test_core_security_credentials_test)
+  add_dependencies(buildtests_cxx test_core_slice_slice_buffer_test)
   add_dependencies(buildtests_cxx test_core_slice_slice_test)
   add_dependencies(buildtests_cxx test_cpp_client_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_server_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_util_slice_test)
   add_dependencies(buildtests_cxx test_cpp_util_time_test)
+  add_dependencies(buildtests_cxx thd_test)
   add_dependencies(buildtests_cxx thread_manager_test)
   add_dependencies(buildtests_cxx thread_quota_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -18804,17 +24228,34 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_dependencies(buildtests_cxx time_jump_test)
 endif()
   add_dependencies(buildtests_cxx time_util_test)
+  add_dependencies(buildtests_cxx timeout_encoding_test)
+  add_dependencies(buildtests_cxx timer_manager_test)
   add_dependencies(buildtests_cxx timer_test)
   add_dependencies(buildtests_cxx tls_certificate_verifier_test)
+  add_dependencies(buildtests_cxx tls_key_export_test)
   add_dependencies(buildtests_cxx tls_security_connector_test)
   add_dependencies(buildtests_cxx tls_test)
   add_dependencies(buildtests_cxx too_many_pings_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx traced_buffer_list_test)
+endif()
+  add_dependencies(buildtests_cxx transport_security_common_api_test)
+  add_dependencies(buildtests_cxx transport_security_test)
   add_dependencies(buildtests_cxx transport_stream_receiver_test)
   add_dependencies(buildtests_cxx try_join_test)
+  add_dependencies(buildtests_cxx try_seq_metadata_test)
   add_dependencies(buildtests_cxx try_seq_test)
+  add_dependencies(buildtests_cxx unique_type_name_test)
   add_dependencies(buildtests_cxx unknown_frame_bad_client_test)
   add_dependencies(buildtests_cxx uri_parser_test)
   add_dependencies(buildtests_cxx useful_test)
+  add_dependencies(buildtests_cxx varint_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx wakeup_fd_posix_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
+  add_dependencies(buildtests_cxx win_socket_test)
+endif()
   add_dependencies(buildtests_cxx window_overflow_bad_client_test)
   add_dependencies(buildtests_cxx wire_reader_test)
   add_dependencies(buildtests_cxx wire_writer_test)
@@ -18826,13 +24267,41 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
   add_dependencies(buildtests_cxx xds_bootstrap_test)
   add_dependencies(buildtests_cxx xds_certificate_provider_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx xds_cluster_end2end_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx xds_cluster_type_end2end_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx xds_core_end2end_test)
+endif()
   add_dependencies(buildtests_cxx xds_credentials_end2end_test)
   add_dependencies(buildtests_cxx xds_credentials_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx xds_csds_end2end_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_dependencies(buildtests_cxx xds_end2end_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx xds_fault_injection_end2end_test)
 endif()
   add_dependencies(buildtests_cxx xds_interop_client)
   add_dependencies(buildtests_cxx xds_interop_server)
+  add_dependencies(buildtests_cxx xds_lb_policy_registry_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx xds_outlier_detection_end2end_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx xds_ring_hash_end2end_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx xds_rls_end2end_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  add_dependencies(buildtests_cxx xds_routing_end2end_test)
+endif()
 
 add_custom_target(buildtests
   DEPENDS buildtests_c buildtests_cxx)

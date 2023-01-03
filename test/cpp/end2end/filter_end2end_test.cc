@@ -44,9 +44,6 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-
 namespace grpc {
 namespace testing {
 namespace {
@@ -104,7 +101,7 @@ class ChannelDataImpl : public ChannelData {
   grpc_error_handle Init(grpc_channel_element* /*elem*/,
                          grpc_channel_element_args* /*args*/) override {
     IncrementConnectionCounter();
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 };
 
@@ -123,7 +120,7 @@ class FilterEnd2endTest : public ::testing::Test {
  protected:
   FilterEnd2endTest() : server_host_("localhost") {}
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     // Workaround for
     // https://github.com/google/google-toolbox-for-mac/issues/242
     static bool setup_done = false;
@@ -161,7 +158,7 @@ class FilterEnd2endTest : public ::testing::Test {
   void ResetStub() {
     std::shared_ptr<Channel> channel = grpc::CreateChannel(
         server_address_.str(), InsecureChannelCredentials());
-    generic_stub_ = absl::make_unique<GenericStub>(channel);
+    generic_stub_ = std::make_unique<GenericStub>(channel);
     ResetConnectionCounter();
     ResetCallCounter();
   }

@@ -22,31 +22,87 @@
 
 #include "src/core/lib/debug/stats_data.h"
 
-#include <inttypes.h>
+#include <stdint.h>
 
-#include "src/core/lib/debug/stats.h"
-#include "src/core/lib/gpr/useful.h"
-
-const char* grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
-    "client_calls_created",    "server_calls_created",
-    "client_channels_created", "client_subchannels_created",
-    "server_channels_created", "histogram_slow_lookups",
-    "syscall_write",           "syscall_read",
-    "http2_settings_writes",   "http2_pings_sent",
-    "http2_writes_begun",      "http2_transport_stalls",
-    "http2_stream_stalls",
+namespace grpc_core {
+namespace {
+union DblUint {
+  double dbl;
+  uint64_t uint;
 };
-const char* grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
+}  // namespace
+void HistogramCollector_32768_24::Collect(Histogram_32768_24* result) const {
+  for (int i = 0; i < 24; i++) {
+    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
+  }
+}
+Histogram_32768_24 operator-(const Histogram_32768_24& left,
+                             const Histogram_32768_24& right) {
+  Histogram_32768_24 result;
+  for (int i = 0; i < 24; i++) {
+    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];
+  }
+  return result;
+}
+void HistogramCollector_16777216_20::Collect(
+    Histogram_16777216_20* result) const {
+  for (int i = 0; i < 20; i++) {
+    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
+  }
+}
+Histogram_16777216_20 operator-(const Histogram_16777216_20& left,
+                                const Histogram_16777216_20& right) {
+  Histogram_16777216_20 result;
+  for (int i = 0; i < 20; i++) {
+    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];
+  }
+  return result;
+}
+void HistogramCollector_80_10::Collect(Histogram_80_10* result) const {
+  for (int i = 0; i < 10; i++) {
+    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
+  }
+}
+Histogram_80_10 operator-(const Histogram_80_10& left,
+                          const Histogram_80_10& right) {
+  Histogram_80_10 result;
+  for (int i = 0; i < 10; i++) {
+    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];
+  }
+  return result;
+}
+const absl::string_view
+    GlobalStats::counter_name[static_cast<int>(Counter::COUNT)] = {
+        "client_calls_created",
+        "server_calls_created",
+        "client_channels_created",
+        "client_subchannels_created",
+        "server_channels_created",
+        "syscall_write",
+        "syscall_read",
+        "tcp_read_alloc_8k",
+        "tcp_read_alloc_64k",
+        "http2_settings_writes",
+        "http2_pings_sent",
+        "http2_writes_begun",
+        "http2_transport_stalls",
+        "http2_stream_stalls",
+        "cq_pluck_creates",
+        "cq_next_creates",
+        "cq_callback_creates",
+};
+const absl::string_view GlobalStats::counter_doc[static_cast<int>(
+    Counter::COUNT)] = {
     "Number of client side calls created by this process",
     "Number of server side calls created by this process",
     "Number of client channels created",
     "Number of client subchannels created",
     "Number of server channels created",
-    "Number of times histogram increments went through the slow (binary "
-    "search) path",
     "Number of write syscalls (or equivalent - eg sendmsg) made by this "
     "process",
     "Number of read syscalls (or equivalent - eg recvmsg) made by this process",
+    "Number of 8k allocations by the TCP subsystem for reading",
+    "Number of 64k allocations by the TCP subsystem for reading",
     "Number of settings frames sent",
     "Number of HTTP2 pings sent by process",
     "Number of HTTP2 writes initiated",
@@ -54,267 +110,232 @@ const char* grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "control window",
     "Number of times sending was completely stalled by the stream flow control "
     "window",
+    "Number of completion queues created for cq_pluck (indicates sync api "
+    "usage)",
+    "Number of completion queues created for cq_next (indicates cq async api "
+    "usage)",
+    "Number of completion queues created for cq_callback (indicates callback "
+    "api usage)",
 };
-const char* grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
-    "call_initial_size",       "tcp_write_size",          "tcp_write_iov_size",
-    "tcp_read_allocation",     "tcp_read_size",           "tcp_read_offer",
-    "tcp_read_offer_iov_size", "http2_send_message_size",
+const absl::string_view
+    GlobalStats::histogram_name[static_cast<int>(Histogram::COUNT)] = {
+        "call_initial_size",       "tcp_write_size", "tcp_write_iov_size",
+        "tcp_read_size",           "tcp_read_offer", "tcp_read_offer_iov_size",
+        "http2_send_message_size",
 };
-const char* grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT] = {
-    "Initial size of the grpc_call arena created at call start",
-    "Number of bytes offered to each syscall_write",
-    "Number of byte segments offered to each syscall_write",
-    "Number of bytes allocated in each slice by tcp reads",
-    "Number of bytes received by each syscall_read",
-    "Number of bytes offered to each syscall_read",
-    "Number of byte segments offered to each syscall_read",
-    "Size of messages received by HTTP2 transport",
+const absl::string_view
+    GlobalStats::histogram_doc[static_cast<int>(Histogram::COUNT)] = {
+        "Initial size of the grpc_call arena created at call start",
+        "Number of bytes offered to each syscall_write",
+        "Number of byte segments offered to each syscall_write",
+        "Number of bytes received by each syscall_read",
+        "Number of bytes offered to each syscall_read",
+        "Number of byte segments offered to each syscall_read",
+        "Size of messages received by HTTP2 transport",
 };
-const int grpc_stats_table_0[65] = {
-    0,      1,      2,      3,      4,     5,     7,     9,     11,    14,
-    17,     21,     26,     32,     39,    47,    57,    68,    82,    98,
-    117,    140,    167,    199,    238,   284,   339,   404,   482,   575,
-    685,    816,    972,    1158,   1380,  1644,  1959,  2334,  2780,  3312,
-    3945,   4699,   5597,   6667,   7941,  9459,  11267, 13420, 15984, 19038,
-    22676,  27009,  32169,  38315,  45635, 54353, 64737, 77104, 91834, 109378,
-    130273, 155159, 184799, 220100, 262144};
-const uint8_t grpc_stats_table_1[124] = {
-    0,  0,  0,  1,  1,  1,  2,  2,  3,  3,  3,  4,  4,  5,  5,  6,  6,  6,
-    7,  7,  7,  8,  9,  9,  10, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15,
-    15, 16, 16, 17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 22, 23, 24,
-    24, 25, 25, 26, 26, 26, 27, 27, 28, 29, 29, 30, 30, 30, 31, 31, 32, 33,
-    33, 34, 34, 34, 35, 35, 36, 37, 37, 37, 38, 38, 39, 39, 40, 40, 41, 41,
-    42, 42, 43, 43, 44, 44, 45, 45, 46, 46, 47, 47, 48, 48, 49, 49, 50, 50,
-    51, 51, 52, 52, 53, 53, 54, 54, 55, 55, 56, 56, 57, 57, 58, 58};
-const int grpc_stats_table_2[65] = {
-    0,       1,       2,       3,       4,       6,       8,        11,
-    15,      20,      26,      34,      44,      57,      73,       94,
-    121,     155,     199,     255,     327,     419,     537,      688,
-    881,     1128,    1444,    1848,    2365,    3026,    3872,     4954,
-    6338,    8108,    10373,   13270,   16976,   21717,   27782,    35541,
-    45467,   58165,   74409,   95189,   121772,  155778,  199281,   254933,
-    326126,  417200,  533707,  682750,  873414,  1117323, 1429345,  1828502,
-    2339127, 2992348, 3827987, 4896985, 6264509, 8013925, 10251880, 13114801,
-    16777216};
-const uint8_t grpc_stats_table_3[87] = {
-    0,  0,  1,  1,  2,  3,  3,  4,  4,  5,  6,  6,  7,  8,  8,  9,  10, 11,
-    11, 12, 13, 13, 14, 15, 15, 16, 17, 17, 18, 19, 20, 20, 21, 22, 22, 23,
-    24, 25, 25, 26, 27, 27, 28, 29, 29, 30, 31, 31, 32, 33, 34, 34, 35, 36,
-    36, 37, 38, 39, 39, 40, 41, 41, 42, 43, 44, 44, 45, 45, 46, 47, 48, 48,
-    49, 50, 51, 51, 52, 53, 53, 54, 55, 56, 56, 57, 58, 58, 59};
-const int grpc_stats_table_4[65] = {
-    0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  12,
-    14,  16,  18,  20,  22,  24,  27,  30,  33,  36,  39,  43,  47,
-    51,  56,  61,  66,  72,  78,  85,  92,  100, 109, 118, 128, 139,
-    151, 164, 178, 193, 209, 226, 244, 264, 285, 308, 333, 359, 387,
-    418, 451, 486, 524, 565, 609, 656, 707, 762, 821, 884, 952, 1024};
-const uint8_t grpc_stats_table_5[102] = {
-    0,  0,  0,  1,  1,  1,  1,  2,  2,  3,  3,  4,  4,  5,  5,  6,  6,
-    6,  7,  7,  7,  8,  8,  9,  9,  10, 11, 11, 12, 12, 13, 13, 14, 14,
-    14, 15, 15, 16, 16, 17, 17, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23,
-    23, 24, 24, 24, 25, 26, 27, 27, 28, 28, 29, 29, 30, 30, 31, 31, 32,
-    32, 33, 33, 34, 35, 35, 36, 37, 37, 38, 38, 39, 39, 40, 40, 41, 41,
-    42, 42, 43, 44, 44, 45, 46, 46, 47, 48, 48, 49, 49, 50, 50, 51, 51};
-void grpc_stats_inc_call_initial_size(int value) {
-  value = grpc_core::Clamp(value, 0, 262144);
-  if (value < 6) {
-    GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE, value);
-    return;
+namespace {
+const int kStatsTable0[25] = {
+    0,   1,   2,   4,    7,    11,   17,   26,   40,   61,    93,    142,  216,
+    329, 500, 760, 1155, 1755, 2667, 4052, 6155, 9350, 14203, 21574, 32768};
+const uint8_t kStatsTable1[27] = {3,  3,  4,  5,  6,  6,  7,  8,  9,
+                                  10, 11, 11, 12, 13, 14, 15, 16, 16,
+                                  17, 18, 19, 20, 20, 21, 22, 23, 24};
+const int kStatsTable2[21] = {
+    0,     1,      3,      8,       19,      45,      106,
+    250,   588,    1383,   3252,    7646,    17976,   42262,
+    99359, 233593, 549177, 1291113, 3035402, 7136218, 16777216};
+const uint8_t kStatsTable3[23] = {2,  3,  3,  4,  5,  6,  7,  8,
+                                  8,  9,  10, 11, 12, 12, 13, 14,
+                                  15, 16, 16, 17, 18, 19, 20};
+const int kStatsTable4[11] = {0, 1, 2, 4, 7, 11, 17, 26, 38, 56, 80};
+const uint8_t kStatsTable5[9] = {3, 3, 4, 5, 6, 6, 7, 8, 9};
+}  // namespace
+int Histogram_32768_24::BucketFor(int value) {
+  if (value < 3) {
+    if (value < 0) {
+      return 0;
+    } else {
+      return value;
+    }
+  } else {
+    if (value < 24577) {
+      DblUint val;
+      val.dbl = value;
+      const int bucket =
+          kStatsTable1[((val.uint - 4613937818241073152ull) >> 51)];
+      return bucket - (value < kStatsTable0[bucket]);
+    } else {
+      return 23;
+    }
   }
-  union {
-    double dbl;
-    uint64_t uint;
-  } _val, _bkt;
-  _val.dbl = value;
-  if (_val.uint < 4651092515166879744ull) {
-    int bucket =
-        grpc_stats_table_1[((_val.uint - 4618441417868443648ull) >> 49)] + 6;
-    _bkt.dbl = grpc_stats_table_0[bucket];
-    bucket -= (_val.uint < _bkt.uint);
-    GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE, bucket);
-    return;
-  }
-  GRPC_STATS_INC_HISTOGRAM(
-      GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE,
-      grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_0, 64));
 }
-void grpc_stats_inc_tcp_write_size(int value) {
-  value = grpc_core::Clamp(value, 0, 16777216);
-  if (value < 5) {
-    GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE, value);
-    return;
+int Histogram_16777216_20::BucketFor(int value) {
+  if (value < 2) {
+    if (value < 0) {
+      return 0;
+    } else {
+      return value;
+    }
+  } else {
+    if (value < 8388609) {
+      DblUint val;
+      val.dbl = value;
+      const int bucket =
+          kStatsTable3[((val.uint - 4611686018427387904ull) >> 52)];
+      return bucket - (value < kStatsTable2[bucket]);
+    } else {
+      return 19;
+    }
   }
-  union {
-    double dbl;
-    uint64_t uint;
-  } _val, _bkt;
-  _val.dbl = value;
-  if (_val.uint < 4683743612465315840ull) {
-    int bucket =
-        grpc_stats_table_3[((_val.uint - 4617315517961601024ull) >> 50)] + 5;
-    _bkt.dbl = grpc_stats_table_2[bucket];
-    bucket -= (_val.uint < _bkt.uint);
-    GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE, bucket);
-    return;
-  }
-  GRPC_STATS_INC_HISTOGRAM(
-      GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
-      grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_2, 64));
 }
-void grpc_stats_inc_tcp_write_iov_size(int value) {
-  value = grpc_core::Clamp(value, 0, 1024);
-  if (value < 13) {
-    GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE, value);
-    return;
+int Histogram_80_10::BucketFor(int value) {
+  if (value < 3) {
+    if (value < 0) {
+      return 0;
+    } else {
+      return value;
+    }
+  } else {
+    if (value < 49) {
+      DblUint val;
+      val.dbl = value;
+      const int bucket =
+          kStatsTable5[((val.uint - 4613937818241073152ull) >> 51)];
+      return bucket - (value < kStatsTable4[bucket]);
+    } else {
+      if (value < 56) {
+        return 8;
+      } else {
+        return 9;
+      }
+    }
   }
-  union {
-    double dbl;
-    uint64_t uint;
-  } _val, _bkt;
-  _val.dbl = value;
-  if (_val.uint < 4637863191261478912ull) {
-    int bucket =
-        grpc_stats_table_5[((_val.uint - 4623507967449235456ull) >> 48)] + 13;
-    _bkt.dbl = grpc_stats_table_4[bucket];
-    bucket -= (_val.uint < _bkt.uint);
-    GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE, bucket);
-    return;
-  }
-  GRPC_STATS_INC_HISTOGRAM(
-      GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,
-      grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_4, 64));
 }
-void grpc_stats_inc_tcp_read_allocation(int value) {
-  value = grpc_core::Clamp(value, 0, 16777216);
-  if (value < 5) {
-    GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_READ_ALLOCATION, value);
-    return;
+GlobalStats::GlobalStats()
+    : client_calls_created{0},
+      server_calls_created{0},
+      client_channels_created{0},
+      client_subchannels_created{0},
+      server_channels_created{0},
+      syscall_write{0},
+      syscall_read{0},
+      tcp_read_alloc_8k{0},
+      tcp_read_alloc_64k{0},
+      http2_settings_writes{0},
+      http2_pings_sent{0},
+      http2_writes_begun{0},
+      http2_transport_stalls{0},
+      http2_stream_stalls{0},
+      cq_pluck_creates{0},
+      cq_next_creates{0},
+      cq_callback_creates{0} {}
+HistogramView GlobalStats::histogram(Histogram which) const {
+  switch (which) {
+    default:
+      GPR_UNREACHABLE_CODE(return HistogramView());
+    case Histogram::kCallInitialSize:
+      return HistogramView{&Histogram_32768_24::BucketFor, kStatsTable0, 24,
+                           call_initial_size.buckets()};
+    case Histogram::kTcpWriteSize:
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable2, 20,
+                           tcp_write_size.buckets()};
+    case Histogram::kTcpWriteIovSize:
+      return HistogramView{&Histogram_80_10::BucketFor, kStatsTable4, 10,
+                           tcp_write_iov_size.buckets()};
+    case Histogram::kTcpReadSize:
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable2, 20,
+                           tcp_read_size.buckets()};
+    case Histogram::kTcpReadOffer:
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable2, 20,
+                           tcp_read_offer.buckets()};
+    case Histogram::kTcpReadOfferIovSize:
+      return HistogramView{&Histogram_80_10::BucketFor, kStatsTable4, 10,
+                           tcp_read_offer_iov_size.buckets()};
+    case Histogram::kHttp2SendMessageSize:
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable2, 20,
+                           http2_send_message_size.buckets()};
   }
-  union {
-    double dbl;
-    uint64_t uint;
-  } _val, _bkt;
-  _val.dbl = value;
-  if (_val.uint < 4683743612465315840ull) {
-    int bucket =
-        grpc_stats_table_3[((_val.uint - 4617315517961601024ull) >> 50)] + 5;
-    _bkt.dbl = grpc_stats_table_2[bucket];
-    bucket -= (_val.uint < _bkt.uint);
-    GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_READ_ALLOCATION, bucket);
-    return;
-  }
-  GRPC_STATS_INC_HISTOGRAM(
-      GRPC_STATS_HISTOGRAM_TCP_READ_ALLOCATION,
-      grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_2, 64));
 }
-void grpc_stats_inc_tcp_read_size(int value) {
-  value = grpc_core::Clamp(value, 0, 16777216);
-  if (value < 5) {
-    GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_READ_SIZE, value);
-    return;
+std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
+  auto result = std::make_unique<GlobalStats>();
+  for (const auto& data : data_) {
+    result->client_calls_created +=
+        data.client_calls_created.load(std::memory_order_relaxed);
+    result->server_calls_created +=
+        data.server_calls_created.load(std::memory_order_relaxed);
+    result->client_channels_created +=
+        data.client_channels_created.load(std::memory_order_relaxed);
+    result->client_subchannels_created +=
+        data.client_subchannels_created.load(std::memory_order_relaxed);
+    result->server_channels_created +=
+        data.server_channels_created.load(std::memory_order_relaxed);
+    result->syscall_write += data.syscall_write.load(std::memory_order_relaxed);
+    result->syscall_read += data.syscall_read.load(std::memory_order_relaxed);
+    result->tcp_read_alloc_8k +=
+        data.tcp_read_alloc_8k.load(std::memory_order_relaxed);
+    result->tcp_read_alloc_64k +=
+        data.tcp_read_alloc_64k.load(std::memory_order_relaxed);
+    result->http2_settings_writes +=
+        data.http2_settings_writes.load(std::memory_order_relaxed);
+    result->http2_pings_sent +=
+        data.http2_pings_sent.load(std::memory_order_relaxed);
+    result->http2_writes_begun +=
+        data.http2_writes_begun.load(std::memory_order_relaxed);
+    result->http2_transport_stalls +=
+        data.http2_transport_stalls.load(std::memory_order_relaxed);
+    result->http2_stream_stalls +=
+        data.http2_stream_stalls.load(std::memory_order_relaxed);
+    result->cq_pluck_creates +=
+        data.cq_pluck_creates.load(std::memory_order_relaxed);
+    result->cq_next_creates +=
+        data.cq_next_creates.load(std::memory_order_relaxed);
+    result->cq_callback_creates +=
+        data.cq_callback_creates.load(std::memory_order_relaxed);
+    data.call_initial_size.Collect(&result->call_initial_size);
+    data.tcp_write_size.Collect(&result->tcp_write_size);
+    data.tcp_write_iov_size.Collect(&result->tcp_write_iov_size);
+    data.tcp_read_size.Collect(&result->tcp_read_size);
+    data.tcp_read_offer.Collect(&result->tcp_read_offer);
+    data.tcp_read_offer_iov_size.Collect(&result->tcp_read_offer_iov_size);
+    data.http2_send_message_size.Collect(&result->http2_send_message_size);
   }
-  union {
-    double dbl;
-    uint64_t uint;
-  } _val, _bkt;
-  _val.dbl = value;
-  if (_val.uint < 4683743612465315840ull) {
-    int bucket =
-        grpc_stats_table_3[((_val.uint - 4617315517961601024ull) >> 50)] + 5;
-    _bkt.dbl = grpc_stats_table_2[bucket];
-    bucket -= (_val.uint < _bkt.uint);
-    GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_READ_SIZE, bucket);
-    return;
-  }
-  GRPC_STATS_INC_HISTOGRAM(
-      GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
-      grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_2, 64));
+  return result;
 }
-void grpc_stats_inc_tcp_read_offer(int value) {
-  value = grpc_core::Clamp(value, 0, 16777216);
-  if (value < 5) {
-    GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_READ_OFFER, value);
-    return;
-  }
-  union {
-    double dbl;
-    uint64_t uint;
-  } _val, _bkt;
-  _val.dbl = value;
-  if (_val.uint < 4683743612465315840ull) {
-    int bucket =
-        grpc_stats_table_3[((_val.uint - 4617315517961601024ull) >> 50)] + 5;
-    _bkt.dbl = grpc_stats_table_2[bucket];
-    bucket -= (_val.uint < _bkt.uint);
-    GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_READ_OFFER, bucket);
-    return;
-  }
-  GRPC_STATS_INC_HISTOGRAM(
-      GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,
-      grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_2, 64));
+std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
+  auto result = std::make_unique<GlobalStats>();
+  result->client_calls_created =
+      client_calls_created - other.client_calls_created;
+  result->server_calls_created =
+      server_calls_created - other.server_calls_created;
+  result->client_channels_created =
+      client_channels_created - other.client_channels_created;
+  result->client_subchannels_created =
+      client_subchannels_created - other.client_subchannels_created;
+  result->server_channels_created =
+      server_channels_created - other.server_channels_created;
+  result->syscall_write = syscall_write - other.syscall_write;
+  result->syscall_read = syscall_read - other.syscall_read;
+  result->tcp_read_alloc_8k = tcp_read_alloc_8k - other.tcp_read_alloc_8k;
+  result->tcp_read_alloc_64k = tcp_read_alloc_64k - other.tcp_read_alloc_64k;
+  result->http2_settings_writes =
+      http2_settings_writes - other.http2_settings_writes;
+  result->http2_pings_sent = http2_pings_sent - other.http2_pings_sent;
+  result->http2_writes_begun = http2_writes_begun - other.http2_writes_begun;
+  result->http2_transport_stalls =
+      http2_transport_stalls - other.http2_transport_stalls;
+  result->http2_stream_stalls = http2_stream_stalls - other.http2_stream_stalls;
+  result->cq_pluck_creates = cq_pluck_creates - other.cq_pluck_creates;
+  result->cq_next_creates = cq_next_creates - other.cq_next_creates;
+  result->cq_callback_creates = cq_callback_creates - other.cq_callback_creates;
+  result->call_initial_size = call_initial_size - other.call_initial_size;
+  result->tcp_write_size = tcp_write_size - other.tcp_write_size;
+  result->tcp_write_iov_size = tcp_write_iov_size - other.tcp_write_iov_size;
+  result->tcp_read_size = tcp_read_size - other.tcp_read_size;
+  result->tcp_read_offer = tcp_read_offer - other.tcp_read_offer;
+  result->tcp_read_offer_iov_size =
+      tcp_read_offer_iov_size - other.tcp_read_offer_iov_size;
+  result->http2_send_message_size =
+      http2_send_message_size - other.http2_send_message_size;
+  return result;
 }
-void grpc_stats_inc_tcp_read_offer_iov_size(int value) {
-  value = grpc_core::Clamp(value, 0, 1024);
-  if (value < 13) {
-    GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE,
-                             value);
-    return;
-  }
-  union {
-    double dbl;
-    uint64_t uint;
-  } _val, _bkt;
-  _val.dbl = value;
-  if (_val.uint < 4637863191261478912ull) {
-    int bucket =
-        grpc_stats_table_5[((_val.uint - 4623507967449235456ull) >> 48)] + 13;
-    _bkt.dbl = grpc_stats_table_4[bucket];
-    bucket -= (_val.uint < _bkt.uint);
-    GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE,
-                             bucket);
-    return;
-  }
-  GRPC_STATS_INC_HISTOGRAM(
-      GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE,
-      grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_4, 64));
-}
-void grpc_stats_inc_http2_send_message_size(int value) {
-  value = grpc_core::Clamp(value, 0, 16777216);
-  if (value < 5) {
-    GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,
-                             value);
-    return;
-  }
-  union {
-    double dbl;
-    uint64_t uint;
-  } _val, _bkt;
-  _val.dbl = value;
-  if (_val.uint < 4683743612465315840ull) {
-    int bucket =
-        grpc_stats_table_3[((_val.uint - 4617315517961601024ull) >> 50)] + 5;
-    _bkt.dbl = grpc_stats_table_2[bucket];
-    bucket -= (_val.uint < _bkt.uint);
-    GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,
-                             bucket);
-    return;
-  }
-  GRPC_STATS_INC_HISTOGRAM(
-      GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,
-      grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_2, 64));
-}
-const int grpc_stats_histo_buckets[8] = {64, 64, 64, 64, 64, 64, 64, 64};
-const int grpc_stats_histo_start[8] = {0, 64, 128, 192, 256, 320, 384, 448};
-const int* const grpc_stats_histo_bucket_boundaries[8] = {
-    grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_4,
-    grpc_stats_table_2, grpc_stats_table_2, grpc_stats_table_2,
-    grpc_stats_table_4, grpc_stats_table_2};
-void (*const grpc_stats_inc_histogram[8])(int x) = {
-    grpc_stats_inc_call_initial_size,
-    grpc_stats_inc_tcp_write_size,
-    grpc_stats_inc_tcp_write_iov_size,
-    grpc_stats_inc_tcp_read_allocation,
-    grpc_stats_inc_tcp_read_size,
-    grpc_stats_inc_tcp_read_offer,
-    grpc_stats_inc_tcp_read_offer_iov_size,
-    grpc_stats_inc_http2_send_message_size};
+}  // namespace grpc_core

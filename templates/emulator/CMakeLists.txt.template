@@ -69,7 +69,7 @@
       deps.append("libprotoc")
     if target_dict.language == 'c++':
       deps.append("libprotobuf")
-    if target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure']:
+    if target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure', 'grpc_authorization_provider']:
       deps.append("zlib")
       deps.append("cares")
       deps.append("address_sorting")

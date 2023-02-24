@@ -71,7 +71,8 @@
   if (NOT _gRPC_ROOT)
     get_filename_component(_gRPC_ROOT "<%text>${CMAKE_CURRENT_LIST_DIR}/../..</%text>" ABSOLUTE)
   endif()
-  set(_gRPC_PROTOBUF_LIBRARIES libprotoc)
+  set(_gRPC_PROTOBUF_PROTOC_LIBRARIES protobuf::libprotoc)
+  set(_gRPC_PROTOBUF_LIBRARIES protobuf::protobuf)
 
   if (NOT TARGET protoc)
     add_subdirectory(<%text>${ANDROID_QEMU2_TOP_DIR}/android/third_party/protobuf/</%text> protoc)

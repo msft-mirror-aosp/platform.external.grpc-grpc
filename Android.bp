@@ -233,6 +233,7 @@ cc_library_host_static {
         "test/cpp/util/proto_file_parser.cc",
         "test/cpp/util/service_describer.cc",
         "test/cpp/util/proto_reflection_descriptor_database.cc",
+        "test/cpp/util/test_config_cc.cc",
     ],
     local_include_dirs: [
         "test/cpp/util",

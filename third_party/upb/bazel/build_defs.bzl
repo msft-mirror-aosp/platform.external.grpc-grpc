@@ -38,7 +38,7 @@ _DEFAULT_CPPOPTS.extend([
     "-Wno-long-long",
 ])
 _DEFAULT_COPTS.extend([
-    "-std=c99",
+    "-std=c11",
     "-pedantic",
     "-Werror=pedantic",
     "-Wall",

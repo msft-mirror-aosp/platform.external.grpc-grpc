@@ -200,6 +200,31 @@ genrule {
 }
 
 cc_library_host_static {
+    name: "libgrpc++_reflection",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "src/cpp/ext/proto_server_reflection.cc",
+        "src/cpp/ext/proto_server_reflection_plugin.cc",
+    ],
+    generated_headers: [
+        "reflection_proto_h",
+    ],
+    export_generated_headers: [
+        "reflection_proto_h",
+    ],
+    generated_sources: [
+        "reflection_proto_cc",
+    ],
+    local_include_dirs: [
+        "include",
+    ],
+    static_libs: [
+        "libgrpc_base",
+        "libprotobuf-cpp-full",
+    ],
+}
+
+cc_library_host_static {
     name: "grpc_cli_libs",
     srcs: [
         "test/cpp/util/cli_call.cc",
@@ -208,6 +233,7 @@ cc_library_host_static {
         "test/cpp/util/proto_file_parser.cc",
         "test/cpp/util/service_describer.cc",
         "test/cpp/util/proto_reflection_descriptor_database.cc",
+        "test/cpp/util/test_config_cc.cc",
     ],
     local_include_dirs: [
         "test/cpp/util",

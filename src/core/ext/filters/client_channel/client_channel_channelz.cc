@@ -49,6 +49,7 @@ ClientChannelNode::ClientChannelNode(grpc_channel* channel,
     : ChannelNode(channel, channel_tracer_max_nodes, is_top_level_channel) {
   client_channel_ =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
+  grpc_client_channel_set_channelz_node(client_channel_, this);
   GPR_ASSERT(client_channel_->filter == &grpc_client_channel_filter);
 }
 
@@ -127,7 +128,8 @@ void SubchannelNode::PopulateConnectivityState(grpc_json* json) {
   if (subchannel_ == nullptr) {
     state = GRPC_CHANNEL_SHUTDOWN;
   } else {
-    state = grpc_subchannel_check_connectivity(subchannel_, nullptr);
+    state = grpc_subchannel_check_connectivity(
+        subchannel_, nullptr, true /* inhibit_health_checking */);
   }
   json = grpc_json_create_child(nullptr, json, "state", nullptr,
                                 GRPC_JSON_OBJECT, false);
@@ -166,6 +168,17 @@ grpc_json* SubchannelNode::RenderJson() {
   }
   // ask CallCountingHelper to populate trace and call count data.
   call_counter_.PopulateCallCounts(json);
+  json = top_level_json;
+  // populate the child socket.
+  intptr_t socket_uuid = grpc_subchannel_get_child_socket_uuid(subchannel_);
+  if (socket_uuid != 0) {
+    grpc_json* array_parent = grpc_json_create_child(
+        nullptr, json, "socketRef", nullptr, GRPC_JSON_ARRAY, false);
+    json_iterator = grpc_json_create_child(json_iterator, array_parent, nullptr,
+                                           nullptr, GRPC_JSON_OBJECT, false);
+    grpc_json_add_number_string_child(json_iterator, nullptr, "socketId",
+                                      socket_uuid);
+  }
   return top_level_json;
 }
 

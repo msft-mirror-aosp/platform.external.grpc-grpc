@@ -85,8 +85,11 @@ class ConnectedSubchannel : public RefCountedWithTracing<ConnectedSubchannel> {
     size_t parent_data_size;
   };
 
-  explicit ConnectedSubchannel(grpc_channel_stack* channel_stack,
-                               channelz::SubchannelNode* channelz_subchannel);
+  explicit ConnectedSubchannel(
+      grpc_channel_stack* channel_stack,
+      grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode>
+          channelz_subchannel,
+      intptr_t socket_uuid);
   ~ConnectedSubchannel();
 
   grpc_channel_stack* channel_stack() { return channel_stack_; }
@@ -96,14 +99,20 @@ class ConnectedSubchannel : public RefCountedWithTracing<ConnectedSubchannel> {
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
   grpc_error* CreateCall(const CallArgs& args, grpc_subchannel_call** call);
   channelz::SubchannelNode* channelz_subchannel() {
-    return channelz_subchannel_;
+    return channelz_subchannel_.get();
   }
+  intptr_t socket_uuid() { return socket_uuid_; }
+
+  size_t GetInitialCallSizeEstimate(size_t parent_data_size) const;
 
  private:
   grpc_channel_stack* channel_stack_;
-  // backpointer to the channelz node in this connected subchannel's
+  // ref counted pointer to the channelz node in this connected subchannel's
   // owning subchannel.
-  channelz::SubchannelNode* channelz_subchannel_;
+  grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode>
+      channelz_subchannel_;
+  // uuid of this subchannel's socket. 0 if this subchannel is not connected.
+  const intptr_t socket_uuid_;
 };
 
 }  // namespace grpc_core
@@ -126,6 +135,8 @@ void grpc_subchannel_call_unref(
 grpc_core::channelz::SubchannelNode* grpc_subchannel_get_channelz_node(
     grpc_subchannel* subchannel);
 
+intptr_t grpc_subchannel_get_child_socket_uuid(grpc_subchannel* subchannel);
+
 /** Returns a pointer to the parent data associated with \a subchannel_call.
     The data will be of the size specified in \a parent_data_size
     field of the args passed to \a grpc_connected_subchannel_create_call(). */
@@ -134,13 +145,14 @@ void* grpc_connected_subchannel_call_get_parent_data(
 
 /** poll the current connectivity state of a channel */
 grpc_connectivity_state grpc_subchannel_check_connectivity(
-    grpc_subchannel* channel, grpc_error** error);
+    grpc_subchannel* channel, grpc_error** error, bool inhibit_health_checking);
 
 /** Calls notify when the connectivity state of a channel becomes different
     from *state.  Updates *state with the new state of the channel. */
 void grpc_subchannel_notify_on_state_change(
     grpc_subchannel* channel, grpc_pollset_set* interested_parties,
-    grpc_connectivity_state* state, grpc_closure* notify);
+    grpc_connectivity_state* state, grpc_closure* notify,
+    bool inhibit_health_checks);
 
 /** retrieve the grpc_core::ConnectedSubchannel - or nullptr if not connected
  * (which may happen before it initially connects or during transient failures)

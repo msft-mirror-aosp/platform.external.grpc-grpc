@@ -240,7 +240,6 @@ cc_library_host_static {
         "test/cpp/util/test_config_cc.cc",
     ],
     local_include_dirs: [
-        "test/cpp/util",
         "include"
     ],
     static_libs: [
@@ -262,9 +261,7 @@ cc_library_host_static {
     cflags: [
         "-Wno-unused-parameter",
     ],
-    export_include_dirs: [
-        "test/cpp/util",
-    ],
+    export_include_dirs: ["."],
     visibility: ["//device/google/cuttlefish:__subpackages__"],
 }
 
@@ -1320,6 +1317,13 @@ cc_library_static {
     ],
 }
 
+cc_library_headers {
+    name: "libgrpc++_internal_headers",
+    defaults: ["grpc_defaults"],
+    export_include_dirs: ["."],
+    visibility: ["//visibility:public"],
+}
+
 // gRPC C++ library target with no encryption or authentication
 cc_library_shared {
     name: "libgrpc++_unsecure",
@@ -1340,7 +1344,6 @@ cc_library_shared {
     ],
     export_include_dirs: [
         "include",
-        ".",
     ],
     visibility: ["//visibility:public"],
 }
@@ -1372,7 +1375,6 @@ cc_library_shared {
     ],
     export_include_dirs: [
         "include",
-        ".",
     ],
     visibility: ["//visibility:public"],
 }

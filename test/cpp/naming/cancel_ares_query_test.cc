@@ -390,7 +390,7 @@ TEST(
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   gpr_setenv("GRPC_DNS_RESOLVER", "ares");
   // Sanity check the time that it takes to run the test

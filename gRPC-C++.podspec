@@ -23,15 +23,15 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  # version = '1.18.0'
-  version = '0.0.6'
+  # version = '1.19.1'
+  version = '0.0.8'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  grpc_version = '1.18.0'
+  grpc_version = '1.19.1'
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
@@ -40,6 +40,8 @@ Pod::Spec.new do |s|
 
   s.ios.deployment_target = '7.0'
   s.osx.deployment_target = '10.9'
+  s.tvos.deployment_target = '10.0'
+
   s.requires_arc = false
 
   name = 'grpcpp'
@@ -298,6 +300,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/oauth2/oauth2_credentials.h',
                       'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                       'src/core/lib/security/credentials/ssl/ssl_credentials.h',
+                      'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
                       'src/core/lib/security/security_connector/alts/alts_security_connector.h',
                       'src/core/lib/security/security_connector/fake/fake_security_connector.h',
                       'src/core/lib/security/security_connector/load_system_roots.h',
@@ -346,12 +349,14 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/client_channel_channelz.h',
                       'src/core/ext/filters/client_channel/client_channel_factory.h',
                       'src/core/ext/filters/client_channel/connector.h',
+                      'src/core/ext/filters/client_channel/global_subchannel_pool.h',
                       'src/core/ext/filters/client_channel/health/health_check_client.h',
                       'src/core/ext/filters/client_channel/http_connect_handshaker.h',
                       'src/core/ext/filters/client_channel/http_proxy.h',
                       'src/core/ext/filters/client_channel/lb_policy.h',
                       'src/core/ext/filters/client_channel/lb_policy_factory.h',
                       'src/core/ext/filters/client_channel/lb_policy_registry.h',
+                      'src/core/ext/filters/client_channel/local_subchannel_pool.h',
                       'src/core/ext/filters/client_channel/parse_address.h',
                       'src/core/ext/filters/client_channel/proxy_mapper.h',
                       'src/core/ext/filters/client_channel/proxy_mapper_registry.h',
@@ -363,7 +368,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/retry_throttle.h',
                       'src/core/ext/filters/client_channel/server_address.h',
                       'src/core/ext/filters/client_channel/subchannel.h',
-                      'src/core/ext/filters/client_channel/subchannel_index.h',
+                      'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
                       'src/core/ext/filters/deadline/deadline_filter.h',
                       'src/core/ext/filters/client_channel/health/health.pb.h',
                       'src/core/tsi/fake_transport_security.h',
@@ -400,6 +405,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/debug/stats_data.h',
                       'src/core/lib/gprpp/debug_location.h',
                       'src/core/lib/gprpp/inlined_vector.h',
+                      'src/core/lib/gprpp/optional.h',
                       'src/core/lib/gprpp/orphanable.h',
                       'src/core/lib/gprpp/ref_counted.h',
                       'src/core/lib/gprpp/ref_counted_ptr.h',
@@ -423,6 +429,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/exec_ctx.h',
                       'src/core/lib/iomgr/executor.h',
                       'src/core/lib/iomgr/gethostname.h',
+                      'src/core/lib/iomgr/grpc_if_nametoindex.h',
                       'src/core/lib/iomgr/internal_errqueue.h',
                       'src/core/lib/iomgr/iocp_windows.h',
                       'src/core/lib/iomgr/iomgr.h',
@@ -433,7 +440,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/load_file.h',
                       'src/core/lib/iomgr/lockfree_event.h',
                       'src/core/lib/iomgr/nameser.h',
-                      'src/core/lib/iomgr/network_status_tracker.h',
                       'src/core/lib/iomgr/polling_entity.h',
                       'src/core/lib/iomgr/pollset.h',
                       'src/core/lib/iomgr/pollset_custom.h',
@@ -593,6 +599,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/debug/stats_data.h',
                               'src/core/lib/gprpp/debug_location.h',
                               'src/core/lib/gprpp/inlined_vector.h',
+                              'src/core/lib/gprpp/optional.h',
                               'src/core/lib/gprpp/orphanable.h',
                               'src/core/lib/gprpp/ref_counted.h',
                               'src/core/lib/gprpp/ref_counted_ptr.h',
@@ -616,6 +623,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/exec_ctx.h',
                               'src/core/lib/iomgr/executor.h',
                               'src/core/lib/iomgr/gethostname.h',
+                              'src/core/lib/iomgr/grpc_if_nametoindex.h',
                               'src/core/lib/iomgr/internal_errqueue.h',
                               'src/core/lib/iomgr/iocp_windows.h',
                               'src/core/lib/iomgr/iomgr.h',
@@ -626,7 +634,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
                               'src/core/lib/iomgr/nameser.h',
-                              'src/core/lib/iomgr/network_status_tracker.h',
                               'src/core/lib/iomgr/polling_entity.h',
                               'src/core/lib/iomgr/pollset.h',
                               'src/core/lib/iomgr/pollset_custom.h',

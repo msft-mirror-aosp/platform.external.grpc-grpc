@@ -20,8 +20,7 @@ launchctl limit maxfiles
 ulimit -a
 
 # Add GCP credentials for BQ access
-# pin google-api-python-client to avoid https://github.com/grpc/grpc/issues/15600
-pip install google-api-python-client==1.6.7 --user python
+pip install google-api-python-client oauth2client --user python
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
 
 # If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
@@ -43,7 +42,7 @@ source $HOME/.rvm/scripts/rvm
 set -e  # rvm commands are very verbose
 time rvm install 2.5.0
 rvm use 2.5.0 --default
-time gem install bundler --no-ri --no-doc
+time gem install bundler -v 1.17.3 --no-ri --no-doc
 time gem install cocoapods --version 1.3.1 --no-ri --no-doc
 time gem install rake-compiler --no-ri --no-doc
 rvm osx-ssl-certs status all
@@ -56,7 +55,7 @@ time pod repo update  # needed by python
 
 # python
 time pip install virtualenv --user python
-time pip install -U Mako six tox setuptools twisted pyyaml --user python
+time pip install -U Mako six tox setuptools twisted pyyaml pyjwt cryptography requests --user python
 export PYTHONPATH=/Library/Python/3.4/site-packages
 
 # Install Python 3.7
@@ -83,3 +82,6 @@ mkdir -p /tmpfs/DerivedData
 rm -rf ~/Library/Developer/Xcode/DerivedData
 mkdir -p ~/Library/Developer/Xcode
 ln -s /tmpfs/DerivedData ~/Library/Developer/Xcode/DerivedData
+
+# PHP tests currently require using an older version of PHPUnit
+ln -sf /usr/local/bin/phpunit-5.7 /usr/local/bin/phpunit

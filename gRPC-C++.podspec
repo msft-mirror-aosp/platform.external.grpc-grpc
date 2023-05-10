@@ -23,7 +23,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  # version = '1.17.1'
+  # version = '1.18.0'
   version = '0.0.6'
   s.version  = version
   s.summary  = 'gRPC C++ library'
@@ -31,7 +31,7 @@ Pod::Spec.new do |s|
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  grpc_version = '1.17.1'
+  grpc_version = '1.18.0'
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
@@ -78,6 +78,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = 'include/grpcpp'
 
     ss.source_files = 'include/grpcpp/alarm.h',
+                      'include/grpcpp/alarm_impl.h',
                       'include/grpcpp/channel.h',
                       'include/grpcpp/client_context.h',
                       'include/grpcpp/completion_queue.h',
@@ -115,10 +116,13 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/byte_buffer.h',
                       'include/grpcpp/support/channel_arguments.h',
                       'include/grpcpp/support/client_callback.h',
+                      'include/grpcpp/support/client_interceptor.h',
                       'include/grpcpp/support/config.h',
+                      'include/grpcpp/support/interceptor.h',
                       'include/grpcpp/support/proto_buffer_reader.h',
                       'include/grpcpp/support/proto_buffer_writer.h',
                       'include/grpcpp/support/server_callback.h',
+                      'include/grpcpp/support/server_interceptor.h',
                       'include/grpcpp/support/slice.h',
                       'include/grpcpp/support/status.h',
                       'include/grpcpp/support/status_code_enum.h',
@@ -256,6 +260,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/bin_decoder.h',
                       'src/core/ext/transport/chttp2/transport/bin_encoder.h',
                       'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
+                      'src/core/ext/transport/chttp2/transport/context_list.h',
                       'src/core/ext/transport/chttp2/transport/flow_control.h',
                       'src/core/ext/transport/chttp2/transport/frame.h',
                       'src/core/ext/transport/chttp2/transport/frame_data.h',
@@ -350,11 +355,13 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/parse_address.h',
                       'src/core/ext/filters/client_channel/proxy_mapper.h',
                       'src/core/ext/filters/client_channel/proxy_mapper_registry.h',
+                      'src/core/ext/filters/client_channel/request_routing.h',
                       'src/core/ext/filters/client_channel/resolver.h',
                       'src/core/ext/filters/client_channel/resolver_factory.h',
                       'src/core/ext/filters/client_channel/resolver_registry.h',
                       'src/core/ext/filters/client_channel/resolver_result_parsing.h',
                       'src/core/ext/filters/client_channel/retry_throttle.h',
+                      'src/core/ext/filters/client_channel/server_address.h',
                       'src/core/ext/filters/client_channel/subchannel.h',
                       'src/core/ext/filters/client_channel/subchannel_index.h',
                       'src/core/ext/filters/deadline/deadline_filter.h',
@@ -404,6 +411,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/call_combiner.h',
                       'src/core/lib/iomgr/closure.h',
                       'src/core/lib/iomgr/combiner.h',
+                      'src/core/lib/iomgr/dynamic_annotations.h',
                       'src/core/lib/iomgr/endpoint.h',
                       'src/core/lib/iomgr/endpoint_pair.h',
                       'src/core/lib/iomgr/error.h',
@@ -596,6 +604,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/call_combiner.h',
                               'src/core/lib/iomgr/closure.h',
                               'src/core/lib/iomgr/combiner.h',
+                              'src/core/lib/iomgr/dynamic_annotations.h',
                               'src/core/lib/iomgr/endpoint.h',
                               'src/core/lib/iomgr/endpoint_pair.h',
                               'src/core/lib/iomgr/error.h',

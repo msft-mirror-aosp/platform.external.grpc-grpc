@@ -23,6 +23,8 @@
 # each change must be ported from one to the other.
 #
 
+load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epollex", "epoll1", "poll", "poll-cv"]
 
@@ -111,7 +113,6 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
         deps = deps,
     )
 
-load("//:bazel/cc_grpc_library.bzl", "cc_grpc_library")
 
 def grpc_proto_library(
         name,
@@ -131,7 +132,7 @@ def grpc_proto_library(
         generate_mocks = generate_mocks,
     )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = "moderate", tags = [], exec_compatible_with = []):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = []):
     copts = []
     if language.upper() == "C":
         copts = if_not_windows(["-std=c99"])

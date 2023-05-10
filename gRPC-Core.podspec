@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.17.1'
+  version = '1.18.0'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -93,7 +93,7 @@ Pod::Spec.new do |s|
   }
 
   s.default_subspecs = 'Interface', 'Implementation'
-  s.compiler_flags = '-DGRPC_ARES=0', '-DPB_FIELD_16BIT'
+  s.compiler_flags = '-DGRPC_ARES=0', '-DPB_FIELD_32BIT'
   s.libraries = 'c++'
 
   # Like many other C libraries, gRPC-Core has its public headers under `include/<libname>/` and its
@@ -254,6 +254,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/bin_decoder.h',
                       'src/core/ext/transport/chttp2/transport/bin_encoder.h',
                       'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
+                      'src/core/ext/transport/chttp2/transport/context_list.h',
                       'src/core/ext/transport/chttp2/transport/flow_control.h',
                       'src/core/ext/transport/chttp2/transport/frame.h',
                       'src/core/ext/transport/chttp2/transport/frame_data.h',
@@ -348,11 +349,13 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/parse_address.h',
                       'src/core/ext/filters/client_channel/proxy_mapper.h',
                       'src/core/ext/filters/client_channel/proxy_mapper_registry.h',
+                      'src/core/ext/filters/client_channel/request_routing.h',
                       'src/core/ext/filters/client_channel/resolver.h',
                       'src/core/ext/filters/client_channel/resolver_factory.h',
                       'src/core/ext/filters/client_channel/resolver_registry.h',
                       'src/core/ext/filters/client_channel/resolver_result_parsing.h',
                       'src/core/ext/filters/client_channel/retry_throttle.h',
+                      'src/core/ext/filters/client_channel/server_address.h',
                       'src/core/ext/filters/client_channel/subchannel.h',
                       'src/core/ext/filters/client_channel/subchannel_index.h',
                       'src/core/ext/filters/deadline/deadline_filter.h',
@@ -402,6 +405,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/call_combiner.h',
                       'src/core/lib/iomgr/closure.h',
                       'src/core/lib/iomgr/combiner.h',
+                      'src/core/lib/iomgr/dynamic_annotations.h',
                       'src/core/lib/iomgr/endpoint.h',
                       'src/core/lib/iomgr/endpoint_pair.h',
                       'src/core/lib/iomgr/error.h',
@@ -680,6 +684,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/bin_encoder.cc',
                       'src/core/ext/transport/chttp2/transport/chttp2_plugin.cc',
                       'src/core/ext/transport/chttp2/transport/chttp2_transport.cc',
+                      'src/core/ext/transport/chttp2/transport/context_list.cc',
                       'src/core/ext/transport/chttp2/transport/flow_control.cc',
                       'src/core/ext/transport/chttp2/transport/frame_data.cc',
                       'src/core/ext/transport/chttp2/transport/frame_goaway.cc',
@@ -783,15 +788,16 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/http_connect_handshaker.cc',
                       'src/core/ext/filters/client_channel/http_proxy.cc',
                       'src/core/ext/filters/client_channel/lb_policy.cc',
-                      'src/core/ext/filters/client_channel/lb_policy_factory.cc',
                       'src/core/ext/filters/client_channel/lb_policy_registry.cc',
                       'src/core/ext/filters/client_channel/parse_address.cc',
                       'src/core/ext/filters/client_channel/proxy_mapper.cc',
                       'src/core/ext/filters/client_channel/proxy_mapper_registry.cc',
+                      'src/core/ext/filters/client_channel/request_routing.cc',
                       'src/core/ext/filters/client_channel/resolver.cc',
                       'src/core/ext/filters/client_channel/resolver_registry.cc',
                       'src/core/ext/filters/client_channel/resolver_result_parsing.cc',
                       'src/core/ext/filters/client_channel/retry_throttle.cc',
+                      'src/core/ext/filters/client_channel/server_address.cc',
                       'src/core/ext/filters/client_channel/subchannel.cc',
                       'src/core/ext/filters/client_channel/subchannel_index.cc',
                       'src/core/ext/filters/deadline/deadline_filter.cc',
@@ -871,6 +877,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/bin_decoder.h',
                               'src/core/ext/transport/chttp2/transport/bin_encoder.h',
                               'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
+                              'src/core/ext/transport/chttp2/transport/context_list.h',
                               'src/core/ext/transport/chttp2/transport/flow_control.h',
                               'src/core/ext/transport/chttp2/transport/frame.h',
                               'src/core/ext/transport/chttp2/transport/frame_data.h',
@@ -965,11 +972,13 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/parse_address.h',
                               'src/core/ext/filters/client_channel/proxy_mapper.h',
                               'src/core/ext/filters/client_channel/proxy_mapper_registry.h',
+                              'src/core/ext/filters/client_channel/request_routing.h',
                               'src/core/ext/filters/client_channel/resolver.h',
                               'src/core/ext/filters/client_channel/resolver_factory.h',
                               'src/core/ext/filters/client_channel/resolver_registry.h',
                               'src/core/ext/filters/client_channel/resolver_result_parsing.h',
                               'src/core/ext/filters/client_channel/retry_throttle.h',
+                              'src/core/ext/filters/client_channel/server_address.h',
                               'src/core/ext/filters/client_channel/subchannel.h',
                               'src/core/ext/filters/client_channel/subchannel_index.h',
                               'src/core/ext/filters/deadline/deadline_filter.h',
@@ -1019,6 +1028,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/call_combiner.h',
                               'src/core/lib/iomgr/closure.h',
                               'src/core/lib/iomgr/combiner.h',
+                              'src/core/lib/iomgr/dynamic_annotations.h',
                               'src/core/lib/iomgr/endpoint.h',
                               'src/core/lib/iomgr/endpoint_pair.h',
                               'src/core/lib/iomgr/error.h',
@@ -1191,15 +1201,14 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Implementation", version
 
-    ss.source_files = 'test/core/util/test_config.cc',
-                      'test/core/util/test_config.h',
-                      'test/core/end2end/data/client_certs.cc',
+    ss.source_files = 'test/core/end2end/data/client_certs.cc',
                       'test/core/end2end/data/server1_cert.cc',
                       'test/core/end2end/data/server1_key.cc',
                       'test/core/end2end/data/test_root_cert.cc',
                       'test/core/security/oauth2_utils.cc',
                       'test/core/end2end/cq_verifier.cc',
                       'test/core/end2end/fixtures/http_proxy_fixture.cc',
+                      'test/core/end2end/fixtures/local_util.cc',
                       'test/core/end2end/fixtures/proxy.cc',
                       'test/core/iomgr/endpoint_tests.cc',
                       'test/core/util/debugger_macros.cc',
@@ -1216,6 +1225,7 @@ Pod::Spec.new do |s|
                       'test/core/util/slice_splitter.cc',
                       'test/core/util/subprocess_posix.cc',
                       'test/core/util/subprocess_windows.cc',
+                      'test/core/util/test_config.cc',
                       'test/core/util/tracer_util.cc',
                       'test/core/util/trickle_endpoint.cc',
                       'test/core/util/cmdline.cc',
@@ -1226,6 +1236,7 @@ Pod::Spec.new do |s|
                       'test/core/security/oauth2_utils.h',
                       'test/core/end2end/cq_verifier.h',
                       'test/core/end2end/fixtures/http_proxy_fixture.h',
+                      'test/core/end2end/fixtures/local_util.h',
                       'test/core/end2end/fixtures/proxy.h',
                       'test/core/iomgr/endpoint_tests.h',
                       'test/core/util/debugger_macros.h',
@@ -1240,6 +1251,7 @@ Pod::Spec.new do |s|
                       'test/core/util/port_server_client.h',
                       'test/core/util/slice_splitter.h',
                       'test/core/util/subprocess.h',
+                      'test/core/util/test_config.h',
                       'test/core/util/tracer_util.h',
                       'test/core/util/trickle_endpoint.h',
                       'test/core/util/cmdline.h',

@@ -1150,7 +1150,7 @@ static void end_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
 }
 
 #ifndef NDEBUG
-static long sys_gettid(void) { return syscall(__NR_gettid); }
+static long gettid(void) { return syscall(__NR_gettid); }
 #endif
 
 /* pollset->mu lock must be held by the caller before calling this.
@@ -1170,7 +1170,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
 #define WORKER_PTR (&worker)
 #endif
 #ifndef NDEBUG
-  WORKER_PTR->originator = sys_gettid();
+  WORKER_PTR->originator = gettid();
 #endif
   if (grpc_polling_trace.enabled()) {
     gpr_log(GPR_INFO,
@@ -1604,6 +1604,8 @@ static void pollset_set_del_pollset_set(grpc_pollset_set* bag,
  * Event engine binding
  */
 
+static void shutdown_background_closure(void) {}
+
 static void shutdown_engine(void) {
   fd_global_shutdown();
   pollset_global_shutdown();
@@ -1612,6 +1614,7 @@ static void shutdown_engine(void) {
 static const grpc_event_engine_vtable vtable = {
     sizeof(grpc_pollset),
     true,
+    false,
 
     fd_create,
     fd_wrapped_fd,
@@ -1641,6 +1644,7 @@ static const grpc_event_engine_vtable vtable = {
     pollset_set_add_fd,
     pollset_set_del_fd,
 
+    shutdown_background_closure,
     shutdown_engine,
 };
 

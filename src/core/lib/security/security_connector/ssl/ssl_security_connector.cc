@@ -44,24 +44,15 @@ namespace {
 grpc_error* ssl_check_peer(
     const char* peer_name, const tsi_peer* peer,
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context) {
-#if TSI_OPENSSL_ALPN_SUPPORT
-  /* Check the ALPN if ALPN is supported. */
-  const tsi_peer_property* p =
-      tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
-  if (p == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Cannot check peer: missing selected ALPN property.");
+  grpc_error* error = grpc_ssl_check_alpn(peer);
+  if (error != GRPC_ERROR_NONE) {
+    return error;
   }
-  if (!grpc_chttp2_is_alpn_version_supported(p->value.data, p->value.length)) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Cannot check peer: invalid ALPN value.");
-  }
-#endif /* TSI_OPENSSL_ALPN_SUPPORT */
   /* Check the peer name if specified. */
   if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
     char* msg;
     gpr_asprintf(&msg, "Peer name %s is not in peer certificate", peer_name);
-    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     return error;
   }
@@ -128,7 +119,7 @@ class grpc_ssl_channel_security_connector final
   }
 
   void add_handshakers(grpc_pollset_set* interested_parties,
-                       grpc_handshake_manager* handshake_mgr) override {
+                       grpc_core::HandshakeManager* handshake_mgr) override {
     // Instantiate TSI handshaker.
     tsi_handshaker* tsi_hs = nullptr;
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
@@ -142,8 +133,7 @@ class grpc_ssl_channel_security_connector final
       return;
     }
     // Create handshakers.
-    grpc_handshake_manager_add(handshake_mgr,
-                               grpc_security_handshaker_create(tsi_hs, this));
+    handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(tsi_hs, this));
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
@@ -283,7 +273,7 @@ class grpc_ssl_server_security_connector
   }
 
   void add_handshakers(grpc_pollset_set* interested_parties,
-                       grpc_handshake_manager* handshake_mgr) override {
+                       grpc_core::HandshakeManager* handshake_mgr) override {
     // Instantiate TSI handshaker.
     try_fetch_ssl_server_credentials();
     tsi_handshaker* tsi_hs = nullptr;
@@ -295,8 +285,7 @@ class grpc_ssl_server_security_connector
       return;
     }
     // Create handshakers.
-    grpc_handshake_manager_add(handshake_mgr,
-                               grpc_security_handshaker_create(tsi_hs, this));
+    handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(tsi_hs, this));
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,

@@ -26,7 +26,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
-#include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/mutex_lock.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -47,7 +46,7 @@ constexpr char kPickFirst[] = "pick_first";
 
 class PickFirst : public LoadBalancingPolicy {
  public:
-  explicit PickFirst(const Args& args);
+  explicit PickFirst(Args args);
 
   const char* name() const override { return kPickFirst; }
 
@@ -80,7 +79,7 @@ class PickFirst : public LoadBalancingPolicy {
     PickFirstSubchannelData(
         SubchannelList<PickFirstSubchannelList, PickFirstSubchannelData>*
             subchannel_list,
-        const ServerAddress& address, grpc_subchannel* subchannel,
+        const ServerAddress& address, Subchannel* subchannel,
         grpc_combiner* combiner)
         : SubchannelData(subchannel_list, address, subchannel, combiner) {}
 
@@ -155,7 +154,7 @@ class PickFirst : public LoadBalancingPolicy {
   channelz::ChildRefsList child_channels_;
 };
 
-PickFirst::PickFirst(const Args& args) : LoadBalancingPolicy(args) {
+PickFirst::PickFirst(Args args) : LoadBalancingPolicy(std::move(args)) {
   GPR_ASSERT(args.client_channel_factory != nullptr);
   gpr_mu_init(&child_refs_mu_);
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE,
@@ -164,7 +163,6 @@ PickFirst::PickFirst(const Args& args) : LoadBalancingPolicy(args) {
     gpr_log(GPR_INFO, "Pick First %p created.", this);
   }
   UpdateLocked(*args.args, args.lb_config);
-  grpc_subchannel_index_ref();
 }
 
 PickFirst::~PickFirst() {
@@ -176,7 +174,6 @@ PickFirst::~PickFirst() {
   GPR_ASSERT(latest_pending_subchannel_list_ == nullptr);
   GPR_ASSERT(pending_picks_ == nullptr);
   grpc_connectivity_state_destroy(&state_tracker_);
-  grpc_subchannel_index_unref();
 }
 
 void PickFirst::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {
@@ -254,7 +251,12 @@ void PickFirst::CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
 
 void PickFirst::StartPickingLocked() {
   started_picking_ = true;
-  if (subchannel_list_ != nullptr && subchannel_list_->num_subchannels() > 0) {
+  if (subchannel_list_ == nullptr || subchannel_list_->num_subchannels() == 0) {
+    grpc_connectivity_state_set(
+        &state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("No addresses to connect to"),
+        "pf_no_subchannels");
+  } else {
     subchannel_list_->subchannel(0)
         ->CheckConnectivityStateAndStartWatchingLocked();
   }
@@ -372,13 +374,19 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args,
   grpc_channel_args_destroy(new_args);
   if (subchannel_list->num_subchannels() == 0) {
     // Empty update or no valid subchannels. Unsubscribe from all current
-    // subchannels and put the channel in TRANSIENT_FAILURE.
-    grpc_connectivity_state_set(
-        &state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
-        "pf_update_empty");
+    // subchannels.
     subchannel_list_ = std::move(subchannel_list);  // Empty list.
     selected_ = nullptr;
+    // If started picking, put the channel in TRANSIENT_FAILURE.
+    // (If we haven't started picking, then this will happen in ExitIdleLocked()
+    // if we haven't gotten a non-empty update by the time the application tries
+    // to start a new call.)
+    if (started_picking_) {
+      grpc_connectivity_state_set(
+          &state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
+          "pf_update_empty");
+    }
     return;
   }
   // If one of the subchannels in the new list is already in state
@@ -622,8 +630,8 @@ void PickFirst::PickFirstSubchannelData::
 class PickFirstFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      const LoadBalancingPolicy::Args& args) const override {
-    return OrphanablePtr<LoadBalancingPolicy>(New<PickFirst>(args));
+      LoadBalancingPolicy::Args args) const override {
+    return OrphanablePtr<LoadBalancingPolicy>(New<PickFirst>(std::move(args)));
   }
 
   const char* name() const override { return kPickFirst; }

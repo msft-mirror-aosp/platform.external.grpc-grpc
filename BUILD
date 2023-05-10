@@ -64,11 +64,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "goose"
+g_stands_for = "gold"
 
 core_version = "7.0.0"
 
-version = "1.18.0"
+version = "1.19.1"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -297,6 +297,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
     standalone = True,
     deps = [
+        "grpc_cfstream",
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
         "grpc_lb_policy_xds_secure",
@@ -644,6 +645,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "optional",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/gprpp/optional.h",
+    ],
+    deps = [
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
     name = "orphanable",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
@@ -690,7 +702,6 @@ grpc_cc_library(
         "src/core/lib/channel/channelz_registry.cc",
         "src/core/lib/channel/connected_channel.cc",
         "src/core/lib/channel/handshaker.cc",
-        "src/core/lib/channel/handshaker_factory.cc",
         "src/core/lib/channel/handshaker_registry.cc",
         "src/core/lib/channel/status_util.cc",
         "src/core/lib/compression/compression.cc",
@@ -724,6 +735,8 @@ grpc_cc_library(
         "src/core/lib/iomgr/gethostname_fallback.cc",
         "src/core/lib/iomgr/gethostname_host_name_max.cc",
         "src/core/lib/iomgr/gethostname_sysconf.cc",
+        "src/core/lib/iomgr/grpc_if_nametoindex_posix.cc",
+        "src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc",
         "src/core/lib/iomgr/internal_errqueue.cc",
         "src/core/lib/iomgr/iocp_windows.cc",
         "src/core/lib/iomgr/iomgr.cc",
@@ -734,7 +747,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/is_epollexclusive_available.cc",
         "src/core/lib/iomgr/load_file.cc",
         "src/core/lib/iomgr/lockfree_event.cc",
-        "src/core/lib/iomgr/network_status_tracker.cc",
         "src/core/lib/iomgr/polling_entity.cc",
         "src/core/lib/iomgr/pollset.cc",
         "src/core/lib/iomgr/pollset_custom.cc",
@@ -873,6 +885,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/executor.h",
         "src/core/lib/iomgr/gethostname.h",
         "src/core/lib/iomgr/gevent_util.h",
+        "src/core/lib/iomgr/grpc_if_nametoindex.h",
         "src/core/lib/iomgr/internal_errqueue.h",
         "src/core/lib/iomgr/iocp_windows.h",
         "src/core/lib/iomgr/iomgr.h",
@@ -883,7 +896,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/load_file.h",
         "src/core/lib/iomgr/lockfree_event.h",
         "src/core/lib/iomgr/nameser.h",
-        "src/core/lib/iomgr/network_status_tracker.h",
         "src/core/lib/iomgr/polling_entity.h",
         "src/core/lib/iomgr/pollset.h",
         "src/core/lib/iomgr/pollset_custom.h",
@@ -975,6 +987,7 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_trace",
         "inlined_vector",
+        "optional",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
@@ -1048,11 +1061,13 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/client_channel_factory.cc",
         "src/core/ext/filters/client_channel/client_channel_plugin.cc",
         "src/core/ext/filters/client_channel/connector.cc",
+        "src/core/ext/filters/client_channel/global_subchannel_pool.cc",
         "src/core/ext/filters/client_channel/health/health_check_client.cc",
         "src/core/ext/filters/client_channel/http_connect_handshaker.cc",
         "src/core/ext/filters/client_channel/http_proxy.cc",
         "src/core/ext/filters/client_channel/lb_policy.cc",
         "src/core/ext/filters/client_channel/lb_policy_registry.cc",
+        "src/core/ext/filters/client_channel/local_subchannel_pool.cc",
         "src/core/ext/filters/client_channel/parse_address.cc",
         "src/core/ext/filters/client_channel/proxy_mapper.cc",
         "src/core/ext/filters/client_channel/proxy_mapper_registry.cc",
@@ -1063,7 +1078,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/retry_throttle.cc",
         "src/core/ext/filters/client_channel/server_address.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
-        "src/core/ext/filters/client_channel/subchannel_index.cc",
+        "src/core/ext/filters/client_channel/subchannel_pool_interface.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/backup_poller.h",
@@ -1071,12 +1086,14 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/client_channel_channelz.h",
         "src/core/ext/filters/client_channel/client_channel_factory.h",
         "src/core/ext/filters/client_channel/connector.h",
+        "src/core/ext/filters/client_channel/global_subchannel_pool.h",
         "src/core/ext/filters/client_channel/health/health_check_client.h",
         "src/core/ext/filters/client_channel/http_connect_handshaker.h",
         "src/core/ext/filters/client_channel/http_proxy.h",
         "src/core/ext/filters/client_channel/lb_policy.h",
         "src/core/ext/filters/client_channel/lb_policy_factory.h",
         "src/core/ext/filters/client_channel/lb_policy_registry.h",
+        "src/core/ext/filters/client_channel/local_subchannel_pool.h",
         "src/core/ext/filters/client_channel/parse_address.h",
         "src/core/ext/filters/client_channel/proxy_mapper.h",
         "src/core/ext/filters/client_channel/proxy_mapper_registry.h",
@@ -1088,7 +1105,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/retry_throttle.h",
         "src/core/ext/filters/client_channel/server_address.h",
         "src/core/ext/filters/client_channel/subchannel.h",
-        "src/core/ext/filters/client_channel/subchannel_index.h",
+        "src/core/ext/filters/client_channel/subchannel_pool_interface.h",
     ],
     language = "c++",
     deps = [
@@ -1592,6 +1609,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/oauth2/oauth2_credentials.cc",
         "src/core/lib/security/credentials/plugin/plugin_credentials.cc",
         "src/core/lib/security/credentials/ssl/ssl_credentials.cc",
+        "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc",
         "src/core/lib/security/security_connector/alts/alts_security_connector.cc",
         "src/core/lib/security/security_connector/fake/fake_security_connector.cc",
         "src/core/lib/security/security_connector/load_system_roots_fallback.cc",
@@ -1626,6 +1644,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/oauth2/oauth2_credentials.h",
         "src/core/lib/security/credentials/plugin/plugin_credentials.h",
         "src/core/lib/security/credentials/ssl/ssl_credentials.h",
+        "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h",
         "src/core/lib/security/security_connector/alts/alts_security_connector.h",
         "src/core/lib/security/security_connector/fake/fake_security_connector.h",
         "src/core/lib/security/security_connector/load_system_roots.h",

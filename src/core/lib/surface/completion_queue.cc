@@ -79,6 +79,7 @@ typedef struct non_polling_worker {
 
 typedef struct {
   gpr_mu mu;
+  bool kicked_without_poller;
   non_polling_worker* root;
   grpc_closure* shutdown;
 } non_polling_poller;
@@ -103,6 +104,10 @@ static grpc_error* non_polling_poller_work(grpc_pollset* pollset,
                                            grpc_millis deadline) {
   non_polling_poller* npp = reinterpret_cast<non_polling_poller*>(pollset);
   if (npp->shutdown) return GRPC_ERROR_NONE;
+  if (npp->kicked_without_poller) {
+    npp->kicked_without_poller = false;
+    return GRPC_ERROR_NONE;
+  }
   non_polling_worker w;
   gpr_cv_init(&w.cv);
   if (worker != nullptr) *worker = reinterpret_cast<grpc_pollset_worker*>(&w);
@@ -148,6 +153,8 @@ static grpc_error* non_polling_poller_kick(
       w->kicked = true;
       gpr_cv_signal(&w->cv);
     }
+  } else {
+    p->kicked_without_poller = true;
   }
   return GRPC_ERROR_NONE;
 }
@@ -847,21 +854,17 @@ static void cq_end_op_for_callback(
   // for reserved storage. Invoke the done callback right away to release it.
   done(done_arg, storage);
 
-  gpr_mu_lock(cq->mu);
-  cq_check_tag(cq, tag, false); /* Used in debug builds only */
+  cq_check_tag(cq, tag, true); /* Used in debug builds only */
 
   gpr_atm_no_barrier_fetch_add(&cqd->things_queued_ever, 1);
   if (gpr_atm_full_fetch_add(&cqd->pending_events, -1) == 1) {
     cq_finish_shutdown_callback(cq);
-    gpr_mu_unlock(cq->mu);
-  } else {
-    gpr_mu_unlock(cq->mu);
   }
 
   GRPC_ERROR_UNREF(error);
 
   auto* functor = static_cast<grpc_experimental_completion_queue_functor*>(tag);
-  (*functor->functor_run)(functor, is_success);
+  grpc_core::ApplicationCallbackExecCtx::Enqueue(functor, is_success);
 }
 
 void grpc_cq_end_op(grpc_completion_queue* cq, void* tag, grpc_error* error,
@@ -1345,7 +1348,7 @@ static void cq_finish_shutdown_callback(grpc_completion_queue* cq) {
   GPR_ASSERT(cqd->shutdown_called);
 
   cq->poller_vtable->shutdown(POLLSET_FROM_CQ(cq), &cq->pollset_shutdown_done);
-  (*callback->functor_run)(callback, true);
+  grpc_core::ApplicationCallbackExecCtx::Enqueue(callback, true);
 }
 
 static void cq_shutdown_callback(grpc_completion_queue* cq) {
@@ -1378,6 +1381,7 @@ static void cq_shutdown_callback(grpc_completion_queue* cq) {
    to zero here, then enter shutdown mode and wake up any waiters */
 void grpc_completion_queue_shutdown(grpc_completion_queue* cq) {
   GPR_TIMER_SCOPE("grpc_completion_queue_shutdown", 0);
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_completion_queue_shutdown(cq=%p)", 1, (cq));
   cq->vtable->shutdown(cq);

@@ -24,7 +24,7 @@ grpc_cc_test(
     external_deps = [
         "benchmark",
     ],
-    deps = ["//test/core/util:gpr_test_util",]
+    deps = ["//test/core/util:grpc_test_util"],
 )
 
 grpc_cc_library(
@@ -55,6 +55,13 @@ grpc_cc_binary(
 )
 
 grpc_cc_binary(
+    name = "bm_alarm",
+    testonly = 1,
+    srcs = ["bm_alarm.cc"],
+    deps = [":helpers"],
+)
+
+grpc_cc_binary(
     name = "bm_arena",
     testonly = 1,
     srcs = ["bm_arena.cc"],
@@ -62,9 +69,23 @@ grpc_cc_binary(
 )
 
 grpc_cc_binary(
+    name = "bm_byte_buffer",
+    testonly = 1,
+    srcs = ["bm_byte_buffer.cc"],
+    deps = [":helpers"],
+)
+
+grpc_cc_binary(
     name = "bm_channel",
     testonly = 1,
     srcs = ["bm_channel.cc"],
+    deps = [":helpers"],
+)
+
+grpc_cc_binary(
+    name = "bm_call_create",
+    testonly = 1,
+    srcs = ["bm_call_create.cc"],
     deps = [":helpers"],
 )
 
@@ -174,4 +195,11 @@ grpc_cc_binary(
         "//:grpc_opencensus_plugin",
         "//src/proto/grpc/testing:echo_proto",
     ],
+)
+
+grpc_cc_binary(
+    name = "bm_timer",
+    testonly = 1,
+    srcs = ["bm_timer.cc"],
+    deps = [":helpers"],
 )

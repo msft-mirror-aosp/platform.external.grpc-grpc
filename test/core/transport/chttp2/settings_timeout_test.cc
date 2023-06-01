@@ -196,6 +196,8 @@ class Client {
           "grpc_pollset_work",
           grpc_pollset_work(pollset_, &worker,
                             grpc_core::ExecCtx::Get()->Now() + 1000));
+      // Flushes any work scheduled before or during polling.
+      grpc_core::ExecCtx::Get()->Flush();
       gpr_mu_unlock(mu_);
       if (state != nullptr && state->done()) return true;
       if (grpc_core::ExecCtx::Get()->Now() >= deadline) return false;
@@ -246,7 +248,7 @@ TEST(SettingsTimeout, Basic) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   int result = RUN_ALL_TESTS();
   grpc_shutdown();

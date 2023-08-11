@@ -57,6 +57,11 @@ cc_defaults {
     stl: "libc++",
     min_sdk_version: "30",
     visibility: ["//external/grpc-grpc:__subpackages__"],
+    target: {
+        darwin: {
+            cflags: ["-UANDROID"],
+        },
+    },
 }
 
 cc_defaults {

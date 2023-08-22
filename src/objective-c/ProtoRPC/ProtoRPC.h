@@ -17,12 +17,16 @@
  */
 
 #import <Foundation/Foundation.h>
-#import <GRPCClient/GRPCCall.h>
+
+// import legacy header for compatibility with users using the ProtoRPC interface
+#import "ProtoRPCLegacy.h"
 
 #import "ProtoMethod.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class GRPCRequestOptions;
+@class GRPCCallOptions;
 @class GPBMessage;
 
 /** An object can implement this protocol to receive responses from server from a call. */
@@ -56,6 +60,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
                                error:(nullable NSError *)error;
+
+/**
+ * Issued when flow control is enabled for the call and a message (written with writeMessage: method
+ * of GRPCStreamingProtoCall or the initializer of GRPCUnaryProtoCall) is passed to gRPC core with
+ * SEND_MESSAGE operation.
+ */
+- (void)didWriteMessage;
 
 @end
 
@@ -130,38 +141,26 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)finish;
 
+/**
+ * Tell gRPC to receive another message.
+ *
+ * This method should only be used when flow control is enabled. If flow control is enabled, gRPC
+ * will only receive additional messages after the user indicates so by using either
+ * receiveNextMessage: or receiveNextMessages: methods. If flow control is not enabled, messages
+ * will be automatically received after the previous one is delivered.
+ */
+- (void)receiveNextMessage;
+
+/**
+ * Tell gRPC to receive another N message.
+ *
+ * This method should only be used when flow control is enabled. If flow control is enabled, the
+ * messages received from the server are buffered in gRPC until the user want to receive the next
+ * message. If flow control is not enabled, messages will be automatically received after the
+ * previous one is delivered.
+ */
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages;
+
 @end
 
 NS_ASSUME_NONNULL_END
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wnullability-completeness"
-
-__attribute__((deprecated("Please use GRPCProtoCall."))) @interface ProtoRPC
-    : GRPCCall
-
-      /**
-       * host parameter should not contain the scheme (http:// or https://), only the name or IP
-       * addr and the port number, for example @"localhost:5050".
-       */
-      -
-      (instancetype)initWithHost : (NSString *)host method
-    : (GRPCProtoMethod *)method requestsWriter : (GRXWriter *)requestsWriter responseClass
-    : (Class)responseClass responsesWriteable
-    : (id<GRXWriteable>)responsesWriteable NS_DESIGNATED_INITIALIZER;
-
-- (void)start;
-@end
-
-/**
- * This subclass is empty now. Eventually we'll remove ProtoRPC class
- * to avoid potential naming conflict
- */
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    @interface GRPCProtoCall : ProtoRPC
-#pragma clang diagnostic pop
-
-                               @end
-
-#pragma clang diagnostic pop

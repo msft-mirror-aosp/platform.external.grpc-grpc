@@ -95,6 +95,8 @@ static const grpc_event_engine_vtable* init_engine_vtable(bool) {
   g_vtable.pollset_work = pollset_work;
   g_vtable.pollset_kick = pollset_kick;
   g_vtable.is_any_background_poller_thread = [] { return false; };
+  g_vtable.add_closure_to_background_poller =
+      [](grpc_closure* closure, grpc_error* error) { return false; };
   g_vtable.shutdown_background_closure = [] {};
   g_vtable.shutdown_engine = [] {};
 
@@ -136,7 +138,7 @@ static void teardown() {
  Setup:
   The benchmark framework ensures that none of the threads proceed beyond the
   state.KeepRunning() call unless all the threads have called state.keepRunning
-  atleast once.  So it is safe to do the initialization in one of the threads
+  at least once.  So it is safe to do the initialization in one of the threads
   before state.KeepRunning() is called.
 
  Teardown:
@@ -172,7 +174,7 @@ static void BM_Cq_Throughput(benchmark::State& state) {
   // (optionally including low-level counters) before and after the test
   TrackCounters track_counters;
 
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     GPR_ASSERT(grpc_completion_queue_next(g_cq, deadline, nullptr).type ==
                GRPC_OP_COMPLETE);
   }

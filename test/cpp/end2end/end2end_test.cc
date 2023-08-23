@@ -212,7 +212,7 @@ class Proxy : public ::grpc::testing::EchoTestService::Service {
 class TestServiceImplDupPkg
     : public ::grpc::testing::duplicate::EchoTestService::Service {
  public:
-  Status Echo(ServerContext* context, const EchoRequest* request,
+  Status Echo(ServerContext* /*context*/, const EchoRequest* /*request*/,
               EchoResponse* response) override {
     response->set_message("no package");
     return Status::OK;
@@ -1884,6 +1884,7 @@ TEST_P(SecureEnd2endTest, CallCredentialsInterceptionWithSetCredentials) {
   std::shared_ptr<CallCredentials> creds1 =
       GoogleIAMCredentials("wrong_token", "wrong_selector");
   context.set_credentials(creds1);
+  EXPECT_EQ(context.credentials(), creds1);
   request.set_message("Hello");
   request.mutable_param()->set_echo_metadata(true);
 
@@ -1907,9 +1908,11 @@ TEST_P(SecureEnd2endTest, OverridePerCallCredentials) {
   std::shared_ptr<CallCredentials> creds1 =
       GoogleIAMCredentials("fake_token1", "fake_selector1");
   context.set_credentials(creds1);
+  EXPECT_EQ(context.credentials(), creds1);
   std::shared_ptr<CallCredentials> creds2 =
       GoogleIAMCredentials("fake_token2", "fake_selector2");
   context.set_credentials(creds2);
+  EXPECT_EQ(context.credentials(), creds2);
   request.set_message("Hello");
   request.mutable_param()->set_echo_metadata(true);
 
@@ -2251,23 +2254,23 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   return scenarios;
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     End2end, End2endTest,
     ::testing::ValuesIn(CreateTestScenarios(false, true, true, true, true)));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     End2endServerTryCancel, End2endServerTryCancelTest,
     ::testing::ValuesIn(CreateTestScenarios(false, true, true, true, true)));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     ProxyEnd2end, ProxyEnd2endTest,
     ::testing::ValuesIn(CreateTestScenarios(true, true, true, true, true)));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     SecureEnd2end, SecureEnd2endTest,
     ::testing::ValuesIn(CreateTestScenarios(false, false, true, false, true)));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     ResourceQuotaEnd2end, ResourceQuotaEnd2endTest,
     ::testing::ValuesIn(CreateTestScenarios(false, true, true, true, true)));
 

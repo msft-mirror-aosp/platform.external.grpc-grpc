@@ -1131,8 +1131,7 @@ static size_t batch_slot_for_op(grpc_op_type type) {
 }
 
 static batch_control* reuse_or_allocate_batch_control(grpc_call* call,
-                                                      const grpc_op* ops,
-                                                      size_t num_ops) {
+                                                      const grpc_op* ops) {
   size_t slot_idx = batch_slot_for_op(ops[0].op);
   batch_control** pslot = &call->active_batches[slot_idx];
   batch_control* bctl;
@@ -1268,6 +1267,7 @@ static void continue_receiving_slices(batch_control* bctl) {
         *call->receiving_buffer = nullptr;
         call->receiving_message = 0;
         finish_batch_step(bctl);
+        GRPC_ERROR_UNREF(error);
         return;
       }
     } else {
@@ -1579,7 +1579,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
     goto done;
   }
 
-  bctl = reuse_or_allocate_batch_control(call, ops, nops);
+  bctl = reuse_or_allocate_batch_control(call, ops);
   if (bctl == nullptr) {
     return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
   }

@@ -75,7 +75,7 @@ cc_defaults {
     target: {
         vendor: {
             // Needs to be updated when a new version is imported.
-            suffix: "-1.24.3",
+            suffix: "-1.25.0",
         },
     },
 }
@@ -852,50 +852,57 @@ cc_library_static {
 }
 
 cc_library_static {
-    name: "libgrpc_lb_policy_xds",
+    name: "libgrpc_xds_client",
     defaults: ["grpc_defaults"],
     srcs: [
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc",
-    ],
-    local_include_dirs: [
-        "include",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb",
+        "src/core/ext/filters/client_channel/xds/xds_api.cc",
+        "src/core/ext/filters/client_channel/xds/xds_bootstrap.cc",
+        "src/core/ext/filters/client_channel/xds/xds_client.cc",
+        "src/core/ext/filters/client_channel/xds/xds_channel.cc",
+        "src/core/ext/filters/client_channel/xds/xds_client_stats.cc",
     ],
     static_libs: [
         "libgrpc_base",
         "libgrpc_client_channel",
-        "libgrpc_resolver_fake",
         "libgrpc_third_party_upb",
         "libgrpc_upb_protos",
     ],
 }
 
 cc_library_static {
-    name: "libgrpc_lb_policy_xds_secure",
+    name: "libgrpc_xds_client_secure",
     defaults: ["grpc_defaults"],
     srcs: [
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc",
-    ],
-    local_include_dirs: [
-        "include",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb",
+        "src/core/ext/filters/client_channel/xds/xds_api.cc",
+        "src/core/ext/filters/client_channel/xds/xds_bootstrap.cc",
+        "src/core/ext/filters/client_channel/xds/xds_client.cc",
+        "src/core/ext/filters/client_channel/xds/xds_channel_secure.cc",
+        "src/core/ext/filters/client_channel/xds/xds_client_stats.cc",
     ],
     static_libs: [
         "libgrpc_base",
         "libgrpc_client_channel",
-        "libgrpc_resolver_fake",
         "libgrpc_secure",
         "libgrpc_third_party_upb",
         "libgrpc_upb_protos",
     ],
 }
 
+cc_library_static {
+    name: "libgrpc_lb_policy_xds",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
+    ],
+    local_include_dirs: [
+        "include",
+    ],
+    static_libs: [
+        "libgrpc_base",
+        "libgrpc_client_channel",
+        "libgrpc_xds_client",
+    ],
+}
 
 cc_library_static {
     name: "libgrpc++_codegen_base_src",
@@ -926,7 +933,6 @@ cc_library_static {
         "src/core/lib/gpr/log_linux.cc",
         "src/core/lib/gpr/log_posix.cc",
         "src/core/lib/gpr/log_windows.cc",
-        "src/core/lib/gpr/mpscq.cc",
         "src/core/lib/gpr/murmur_hash.cc",
         "src/core/lib/gpr/string.cc",
         "src/core/lib/gpr/string_posix.cc",
@@ -948,6 +954,7 @@ cc_library_static {
         "src/core/lib/gprpp/fork.cc",
         "src/core/lib/gprpp/global_config_env.cc",
         "src/core/lib/gprpp/host_port.cc",
+        "src/core/lib/gprpp/mpscq.cc",
         "src/core/lib/gprpp/thd_posix.cc",
         "src/core/lib/gprpp/thd_windows.cc",
         "src/core/lib/profiling/basic_timers.cc",
@@ -1211,6 +1218,7 @@ grpc_common_libs = [
     "libgrpc_client_idle_filter",
     "libgrpc_lb_policy_pick_first",
     "libgrpc_lb_policy_round_robin",
+    "libgrpc_lb_policy_xds",
     "libgrpc_max_age_filter",
     "libgrpc_message_size_filter",
     "libgrpc_resolver_dns_ares",
@@ -1241,7 +1249,7 @@ cc_library_static {
     ],
     whole_static_libs: grpc_common_libs + [
         "libgrpc_lb_policy_grpclb",
-        "libgrpc_lb_policy_xds",
+        "libgrpc_xds_client",
     ],
     export_include_dirs: [
         "include",
@@ -1262,10 +1270,10 @@ cc_library_static {
     ],
     whole_static_libs: grpc_common_libs + [
         "libgrpc_lb_policy_grpclb_secure",
-        "libgrpc_lb_policy_xds_secure",
         "libgrpc_secure",
         "libgrpc_transport_chttp2_client_secure",
         "libgrpc_transport_chttp2_server_secure",
+        "libgrpc_xds_client_secure",
     ],
     export_include_dirs: [
         "include",
@@ -1418,6 +1426,8 @@ cc_library_shared {
         "src/cpp/common/secure_auth_context.cc",
         "src/cpp/common/secure_channel_arguments.cc",
         "src/cpp/common/secure_create_auth_context.cc",
+        "src/cpp/common/tls_credentials_options.cc",
+        "src/cpp/common/tls_credentials_options_util.cc",
         "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/secure_server_credentials.cc",
     ],

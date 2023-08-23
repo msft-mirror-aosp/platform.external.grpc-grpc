@@ -231,7 +231,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         languages=['python'],
         configs=['opt'],
         platforms=['linux', 'macos', 'windows'],
-        iomgr_platforms=['native', 'gevent'],
+        iomgr_platforms=['native', 'gevent', 'asyncio'],
         labels=['basictests', 'multilang'],
         extra_args=extra_args + ['--report_multi_target'],
         inner_jobs=inner_jobs)
@@ -316,8 +316,8 @@ def _create_portability_test_jobs(extra_args=[],
 
     # portability C and C++ on x64
     for compiler in [
-            'gcc4.8', 'gcc5.3', 'gcc7.2', 'gcc_musl', 'clang3.5', 'clang3.6',
-            'clang3.7', 'clang7.0'
+            'gcc4.8', 'gcc5.3', 'gcc7.4', 'gcc8.3', 'gcc_musl', 'clang3.5',
+            'clang3.6', 'clang3.7', 'clang7.0'
     ]:
         test_jobs += _generate_jobs(
             languages=['c', 'c++'],
@@ -351,7 +351,8 @@ def _create_portability_test_jobs(extra_args=[],
         compiler='default',
         labels=['portability', 'corelang'],
         extra_args=extra_args + ['--build_only'],
-        inner_jobs=inner_jobs)
+        inner_jobs=inner_jobs,
+        timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     # portability C and C++ on Windows using VS2017 (build only)
     # TODO(jtattermusch): some of the tests are failing, so we force --build_only
@@ -363,7 +364,8 @@ def _create_portability_test_jobs(extra_args=[],
         compiler='cmake_vs2017',
         labels=['portability', 'corelang'],
         extra_args=extra_args + ['--build_only'],
-        inner_jobs=inner_jobs)
+        inner_jobs=inner_jobs,
+        timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     # C and C++ with the c-ares DNS resolver on Linux
     test_jobs += _generate_jobs(

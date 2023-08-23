@@ -24,6 +24,7 @@ build --spawn_strategy=remote
 build --strategy=Javac=remote
 build --strategy=Closure=remote
 build --genrule_strategy=remote
+build --remote_timeout=7200  # very large value to avoid problems like https://github.com/grpc/grpc/issues/20777
 
 build --remote_instance_name=projects/grpc-testing/instances/grpc-windows-rbe-test
 
@@ -46,7 +47,7 @@ test --test_env=GRPC_VERBOSITY=debug
 # Set flags for uploading to BES in order to view results in the Bazel Build
 # Results UI.
 build --bes_backend=grpcs://buildeventservice.googleapis.com
-build --bes_timeout=60s
+build --bes_timeout=600s
 build --bes_results_url="https://source.cloud.google.com/results/invocations/"
 build --project_id=grpc-testing
 

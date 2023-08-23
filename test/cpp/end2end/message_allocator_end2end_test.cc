@@ -70,7 +70,7 @@ class CallbackTestServiceImpl
     allocator_mutator_ = mutator;
   }
 
-  void Echo(ServerContext* context, const EchoRequest* request,
+  void Echo(ServerContext* /*context*/, const EchoRequest* request,
             EchoResponse* response,
             experimental::ServerCallbackRpcController* controller) override {
     response->set_message(request->message());
@@ -400,12 +400,12 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   return scenarios;
 }
 
-INSTANTIATE_TEST_CASE_P(NullAllocatorTest, NullAllocatorTest,
-                        ::testing::ValuesIn(CreateTestScenarios(true)));
-INSTANTIATE_TEST_CASE_P(SimpleAllocatorTest, SimpleAllocatorTest,
-                        ::testing::ValuesIn(CreateTestScenarios(true)));
-INSTANTIATE_TEST_CASE_P(ArenaAllocatorTest, ArenaAllocatorTest,
-                        ::testing::ValuesIn(CreateTestScenarios(true)));
+INSTANTIATE_TEST_SUITE_P(NullAllocatorTest, NullAllocatorTest,
+                         ::testing::ValuesIn(CreateTestScenarios(true)));
+INSTANTIATE_TEST_SUITE_P(SimpleAllocatorTest, SimpleAllocatorTest,
+                         ::testing::ValuesIn(CreateTestScenarios(true)));
+INSTANTIATE_TEST_SUITE_P(ArenaAllocatorTest, ArenaAllocatorTest,
+                         ::testing::ValuesIn(CreateTestScenarios(true)));
 
 }  // namespace
 }  // namespace testing

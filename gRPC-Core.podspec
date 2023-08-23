@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.25.0'
+  version = '1.26.0'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -201,7 +201,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/client_channel_factory.cc',
                       'src/core/ext/filters/client_channel/client_channel_factory.h',
                       'src/core/ext/filters/client_channel/client_channel_plugin.cc',
-                      'src/core/ext/filters/client_channel/connector.cc',
                       'src/core/ext/filters/client_channel/connector.h',
                       'src/core/ext/filters/client_channel/global_subchannel_pool.cc',
                       'src/core/ext/filters/client_channel/global_subchannel_pool.h',
@@ -226,6 +225,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc',
                       'src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc',
                       'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
+                      'src/core/ext/filters/client_channel/lb_policy/xds/cds.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds.h',
                       'src/core/ext/filters/client_channel/lb_policy_factory.h',
@@ -235,7 +235,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/local_subchannel_pool.h',
                       'src/core/ext/filters/client_channel/parse_address.cc',
                       'src/core/ext/filters/client_channel/parse_address.h',
-                      'src/core/ext/filters/client_channel/proxy_mapper.cc',
                       'src/core/ext/filters/client_channel/proxy_mapper.h',
                       'src/core/ext/filters/client_channel/proxy_mapper_registry.cc',
                       'src/core/ext/filters/client_channel/proxy_mapper_registry.h',
@@ -406,6 +405,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h',
                       'src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c',
                       'src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h',
+                      'src/core/ext/upb-generated/envoy/type/http.upb.c',
+                      'src/core/ext/upb-generated/envoy/type/http.upb.h',
                       'src/core/ext/upb-generated/envoy/type/percent.upb.c',
                       'src/core/ext/upb-generated/envoy/type/percent.upb.h',
                       'src/core/ext/upb-generated/envoy/type/range.upb.c',
@@ -560,7 +561,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/orphanable.h',
                       'src/core/lib/gprpp/ref_counted.h',
                       'src/core/lib/gprpp/ref_counted_ptr.h',
-                      'src/core/lib/gprpp/set.h',
                       'src/core/lib/gprpp/string_view.h',
                       'src/core/lib/gprpp/sync.h',
                       'src/core/lib/gprpp/thd.h',
@@ -644,6 +644,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/load_file.h',
                       'src/core/lib/iomgr/lockfree_event.cc',
                       'src/core/lib/iomgr/lockfree_event.h',
+                      'src/core/lib/iomgr/logical_thread.cc',
+                      'src/core/lib/iomgr/logical_thread.h',
                       'src/core/lib/iomgr/nameser.h',
                       'src/core/lib/iomgr/polling_entity.cc',
                       'src/core/lib/iomgr/polling_entity.h',
@@ -1066,6 +1068,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h',
                               'src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h',
                               'src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h',
+                              'src/core/ext/upb-generated/envoy/type/http.upb.h',
                               'src/core/ext/upb-generated/envoy/type/percent.upb.h',
                               'src/core/ext/upb-generated/envoy/type/range.upb.h',
                               'src/core/ext/upb-generated/gogoproto/gogo.upb.h',
@@ -1142,7 +1145,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/orphanable.h',
                               'src/core/lib/gprpp/ref_counted.h',
                               'src/core/lib/gprpp/ref_counted_ptr.h',
-                              'src/core/lib/gprpp/set.h',
                               'src/core/lib/gprpp/string_view.h',
                               'src/core/lib/gprpp/sync.h',
                               'src/core/lib/gprpp/thd.h',
@@ -1181,6 +1183,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/is_epollexclusive_available.h',
                               'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
+                              'src/core/lib/iomgr/logical_thread.h',
                               'src/core/lib/iomgr/nameser.h',
                               'src/core/lib/iomgr/polling_entity.h',
                               'src/core/lib/iomgr/pollset.h',

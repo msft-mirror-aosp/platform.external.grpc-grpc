@@ -62,6 +62,9 @@ cc_defaults {
     shared_libs: [
         "libz",
     ],
+    local_include_dirs: [
+        "include",
+    ],
     stl: "libc++",
     target: {
         darwin: {
@@ -75,7 +78,7 @@ cc_defaults {
     target: {
         vendor: {
             // Needs to be updated when a new version is imported.
-            suffix: "-1.25.0",
+            suffix: "-1.26.0",
         },
     },
 }
@@ -101,9 +104,6 @@ cc_binary_host {
     srcs: [
         "src/compiler/cpp_plugin.cc",
     ],
-    local_include_dirs: [
-        "include",
-    ],
     static_libs: [
         "libgrpc_plugin_support",
     ],
@@ -118,9 +118,6 @@ cc_binary_host {
     defaults: ["grpc_defaults"],
     srcs: [
         "src/compiler/python_plugin.cc",
-    ],
-    local_include_dirs: [
-        "include",
     ],
     static_libs: [
         "libgrpc_plugin_support",
@@ -137,9 +134,6 @@ cc_library_static {
     srcs: [
         "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc",
     ],
-    local_include_dirs: [
-        "include",
-    ],
     static_libs: [
         "libgrpc_base",
         "libgrpc_client_channel",
@@ -151,9 +145,6 @@ cc_library_static {
     defaults: ["grpc_defaults"],
     srcs: [
         "src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc",
-    ],
-    local_include_dirs: [
-        "include",
     ],
     static_libs: [
         "libgrpc_base",
@@ -167,9 +158,6 @@ cc_library_static {
     srcs: [
         "src/core/ext/filters/deadline/deadline_filter.cc",
     ],
-    local_include_dirs: [
-        "include",
-    ],
     static_libs: [
         "libgrpc_base",
     ],
@@ -180,9 +168,6 @@ cc_library_static {
     defaults: ["grpc_defaults"],
     srcs: [
         "src/core/ext/filters/workarounds/workaround_utils.cc",
-    ],
-    local_include_dirs: [
-        "include",
     ],
     static_libs: [
         "libgrpc_base",
@@ -237,9 +222,6 @@ cc_library_host_static {
     generated_sources: [
         "reflection_proto_cc",
     ],
-    local_include_dirs: [
-        "include",
-    ],
     static_libs: [
         "libgrpc_base",
         "libprotobuf-cpp-full",
@@ -290,9 +272,6 @@ cc_library_static {
     srcs: [
         "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc",
     ],
-    local_include_dirs: [
-        "include",
-    ],
     static_libs: [
         "libgrpc_base",
         "libgrpc_server_backward_compatibility",
@@ -305,9 +284,6 @@ cc_library_static {
     srcs: [
         "src/core/ext/filters/http/client_authority_filter.cc",
     ],
-    local_include_dirs: [
-        "include",
-    ],
     static_libs: [
         "libgrpc_base",
     ],
@@ -318,9 +294,6 @@ cc_library_static {
     defaults: ["grpc_defaults"],
     srcs: [
         "src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc",
-    ],
-    local_include_dirs: [
-        "include",
     ],
     static_libs: [
         "libgrpc_base",
@@ -335,9 +308,6 @@ cc_library_static {
     srcs: [
         "src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc",
     ],
-    local_include_dirs: [
-        "include",
-    ],
     static_libs: [
         "libgrpc_base",
         "libgrpc_client_channel",
@@ -351,9 +321,6 @@ cc_library_static {
     srcs: [
         "src/core/ext/filters/client_idle/client_idle_filter.cc",
     ],
-    local_include_dirs: [
-        "include",
-    ],
     static_libs: [
         "libgrpc_base",
     ],
@@ -364,9 +331,6 @@ cc_library_static {
     defaults: ["grpc_defaults"],
     srcs: [
         "src/core/ext/filters/max_age/max_age_filter.cc",
-    ],
-    local_include_dirs: [
-        "include",
     ],
     static_libs: [
         "libgrpc_base",
@@ -394,9 +358,6 @@ cc_library_static {
         "src/core/ext/transport/chttp2/client/authority.cc",
         "src/core/ext/transport/chttp2/client/chttp2_connector.cc",
     ],
-    local_include_dirs: [
-        "include",
-    ],
     static_libs: [
         "libgrpc_base",
         "libgrpc_client_channel",
@@ -413,9 +374,6 @@ cc_library_static {
         "src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc",
         "src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc",
     ],
-    local_include_dirs: [
-        "include",
-    ],
     static_libs: [
         "libgrpc_base",
         "libgrpc_transport_chttp2",
@@ -429,9 +387,6 @@ cc_library_static {
         "src/core/ext/transport/chttp2/server/chttp2_server.cc",
         "src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc",
     ],
-    local_include_dirs: [
-        "include",
-    ],
     static_libs: [
         "libgrpc_base",
         "libgrpc_transport_chttp2",
@@ -444,9 +399,6 @@ cc_library_static {
     srcs: [
         "src/core/ext/transport/chttp2/client/insecure/channel_create.cc",
         "src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc",
-    ],
-    local_include_dirs: [
-        "include",
     ],
     static_libs: [
         "libgrpc_base",
@@ -463,9 +415,6 @@ cc_library_static {
     srcs: [
         "src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc",
     ],
-    local_include_dirs: [
-        "include",
-    ],
     static_libs: [
         "libgrpc_base",
         "libgrpc_client_channel",
@@ -481,9 +430,6 @@ cc_library_static {
     srcs: [
         "src/core/ext/filters/message_size/message_size_filter.cc",
     ],
-    local_include_dirs: [
-        "include",
-    ],
     static_libs: [
         "libgrpc_base",
     ],
@@ -495,9 +441,6 @@ cc_library_static {
     srcs: [
         "src/core/ext/transport/inproc/inproc_plugin.cc",
         "src/core/ext/transport/inproc/inproc_transport.cc",
-    ],
-    local_include_dirs: [
-        "include",
     ],
     static_libs: [
         "libgrpc_base",
@@ -520,7 +463,6 @@ cc_library_static {
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc",
     ],
     local_include_dirs: [
-        "include",
         "third_party/cares",
         "third_party/cares/config_android",
     ],
@@ -538,9 +480,6 @@ cc_library_static {
     srcs: [
         "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc",
     ],
-    local_include_dirs: [
-        "include",
-    ],
     static_libs: [
         "libgrpc_base",
     ],
@@ -551,9 +490,6 @@ cc_library_static {
     defaults: ["grpc_defaults"],
     srcs: [
         "src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc",
-    ],
-    local_include_dirs: [
-        "include",
     ],
     static_libs: [
         "libgrpc_base",
@@ -567,9 +503,6 @@ cc_library_static {
     defaults: ["grpc_defaults"],
     srcs: [
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
-    ],
-    local_include_dirs: [
-        "include",
     ],
     static_libs: [
         "libgrpc_base",
@@ -585,9 +518,6 @@ cc_library_static {
         "src/core/ext/filters/http/http_filters_plugin.cc",
         "src/core/ext/filters/http/message_compress/message_compress_filter.cc",
         "src/core/ext/filters/http/server/http_server_filter.cc",
-    ],
-    local_include_dirs: [
-        "include",
     ],
     static_libs: [
         "libgrpc_base",
@@ -637,9 +567,6 @@ cc_library_static {
         "src/core/lib/security/util/json_util.cc",
         "src/core/lib/surface/init_secure.cc",
     ],
-    local_include_dirs: [
-        "include",
-    ],
     static_libs: [
         "libgrpc_base",
         "libgrpc_transport_chttp2_alpn",
@@ -669,9 +596,6 @@ cc_library_static {
         "src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc",
         "src/core/tsi/alts/handshaker/transport_security_common_api.cc",
     ],
-    local_include_dirs: [
-        "include",
-    ],
     static_libs: [
         "libgrpc_third_party_upb",
         "libgrpc_upb_protos",
@@ -696,9 +620,6 @@ cc_library_static {
         "src/core/tsi/ssl/session_cache/ssl_session_openssl.cc",
         "src/core/tsi/ssl_transport_security.cc",
         "src/core/tsi/transport_security_grpc.cc",
-    ],
-    local_include_dirs: [
-        "include",
     ],
     static_libs: [
         "libalts_frame_protector",
@@ -735,9 +656,6 @@ cc_library_static {
         "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc",
         "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc",
         "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc",
-    ],
-    local_include_dirs: [
-        "include",
     ],
     static_libs: [
         "gpr_base",
@@ -791,9 +709,6 @@ cc_library_static {
         "src/core/ext/transport/chttp2/transport/varint.cc",
         "src/core/ext/transport/chttp2/transport/writing.cc",
     ],
-    local_include_dirs: [
-        "include",
-    ],
     static_libs: [
         "libgrpc_base",
         "libgrpc_http_filters",
@@ -812,10 +727,6 @@ cc_library_static {
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc",
-    ],
-    local_include_dirs: [
-        "include",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb",
     ],
     static_libs: [
         "libgrpc_base",
@@ -837,10 +748,6 @@ cc_library_static {
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc",
     ],
-    local_include_dirs: [
-        "include",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb",
-    ],
     static_libs: [
         "libgrpc_base",
         "libgrpc_client_channel",
@@ -857,8 +764,8 @@ cc_library_static {
     srcs: [
         "src/core/ext/filters/client_channel/xds/xds_api.cc",
         "src/core/ext/filters/client_channel/xds/xds_bootstrap.cc",
-        "src/core/ext/filters/client_channel/xds/xds_client.cc",
         "src/core/ext/filters/client_channel/xds/xds_channel.cc",
+        "src/core/ext/filters/client_channel/xds/xds_client.cc",
         "src/core/ext/filters/client_channel/xds/xds_client_stats.cc",
     ],
     static_libs: [
@@ -875,8 +782,8 @@ cc_library_static {
     srcs: [
         "src/core/ext/filters/client_channel/xds/xds_api.cc",
         "src/core/ext/filters/client_channel/xds/xds_bootstrap.cc",
-        "src/core/ext/filters/client_channel/xds/xds_client.cc",
         "src/core/ext/filters/client_channel/xds/xds_channel_secure.cc",
+        "src/core/ext/filters/client_channel/xds/xds_client.cc",
         "src/core/ext/filters/client_channel/xds/xds_client_stats.cc",
     ],
     static_libs: [
@@ -894,9 +801,6 @@ cc_library_static {
     srcs: [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
     ],
-    local_include_dirs: [
-        "include",
-    ],
     static_libs: [
         "libgrpc_base",
         "libgrpc_client_channel",
@@ -909,9 +813,6 @@ cc_library_static {
     defaults: ["grpc_defaults"],
     srcs: [
         "src/cpp/codegen/codegen_init.cc",
-    ],
-    local_include_dirs: [
-        "include",
     ],
 }
 
@@ -973,14 +874,13 @@ cc_library_static {
     name: "libgrpc_client_channel",
     defaults: ["grpc_defaults"],
     srcs: [
-        "src/core/ext/filters/client_channel/backup_poller.cc",
         "src/core/ext/filters/client_channel/backend_metric.cc",
+        "src/core/ext/filters/client_channel/backup_poller.cc",
         "src/core/ext/filters/client_channel/channel_connectivity.cc",
         "src/core/ext/filters/client_channel/client_channel.cc",
         "src/core/ext/filters/client_channel/client_channel_channelz.cc",
         "src/core/ext/filters/client_channel/client_channel_factory.cc",
         "src/core/ext/filters/client_channel/client_channel_plugin.cc",
-        "src/core/ext/filters/client_channel/connector.cc",
         "src/core/ext/filters/client_channel/health/health_check_client.cc",
         "src/core/ext/filters/client_channel/http_connect_handshaker.cc",
         "src/core/ext/filters/client_channel/http_proxy.cc",
@@ -989,7 +889,6 @@ cc_library_static {
         "src/core/ext/filters/client_channel/lb_policy_registry.cc",
         "src/core/ext/filters/client_channel/global_subchannel_pool.cc",
         "src/core/ext/filters/client_channel/parse_address.cc",
-        "src/core/ext/filters/client_channel/proxy_mapper.cc",
         "src/core/ext/filters/client_channel/proxy_mapper_registry.cc",
         "src/core/ext/filters/client_channel/resolver.cc",
         "src/core/ext/filters/client_channel/resolver_registry.cc",
@@ -1000,10 +899,6 @@ cc_library_static {
         "src/core/ext/filters/client_channel/service_config.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.cc",
-    ],
-    local_include_dirs: [
-        "include",
-        "src/core/ext/filters/client_channel",
     ],
     static_libs: [
         "libgrpc_base",
@@ -1093,6 +988,7 @@ cc_library_static {
         "src/core/lib/iomgr/is_epollexclusive_available.cc",
         "src/core/lib/iomgr/load_file.cc",
         "src/core/lib/iomgr/lockfree_event.cc",
+        "src/core/lib/iomgr/logical_thread.cc",
         "src/core/lib/iomgr/polling_entity.cc",
         "src/core/lib/iomgr/pollset.cc",
         "src/core/lib/iomgr/pollset_custom.cc",
@@ -1203,8 +1099,19 @@ cc_library_static {
     static_libs: [
         "libgrpc_base",
     ],
-    local_include_dirs: [
-        "include",
+}
+
+// In the BUILD file, there are separate secure and insecure versions, but
+// Soong dependencies work differently and the split is not required.
+cc_library_static {
+    name: "libgrpc_lb_policy_cds",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "src/core/ext/filters/client_channel/lb_policy/xds/cds.cc",
+    ],
+    static_libs: [
+        "libgrpc_base",
+        "libgrpc_client_channel",
     ],
 }
 
@@ -1216,6 +1123,7 @@ grpc_common_libs = [
     "libgrpc_client_authority_filter",
     "libgrpc_client_channel",
     "libgrpc_client_idle_filter",
+    "libgrpc_lb_policy_cds",
     "libgrpc_lb_policy_pick_first",
     "libgrpc_lb_policy_round_robin",
     "libgrpc_lb_policy_xds",
@@ -1312,6 +1220,7 @@ GRPCXX_SRCS = [
     "src/cpp/server/health/health_check_service.cc",
     "src/cpp/server/health/health_check_service_server_builder_option.cc",
     "src/cpp/server/server_builder.cc",
+    "src/cpp/server/server_callback.cc",
     "src/cpp/server/server_cc.cc",
     "src/cpp/server/server_context.cc",
     "src/cpp/server/server_credentials.cc",
@@ -1327,9 +1236,6 @@ cc_library_static {
     name: "libgrpc++_base",
     defaults: ["grpc_defaults"],
     srcs: GRPCXX_SRCS,
-    local_include_dirs: [
-        "include",
-    ],
     static_libs: [
         "libgrpc",
         "libgrpc_third_party_upb",
@@ -1347,9 +1253,6 @@ cc_library_static {
     name: "libgrpc++_base_unsecure",
     defaults: ["grpc_defaults"],
     srcs: GRPCXX_SRCS,
-    local_include_dirs: [
-        "include",
-    ],
     static_libs: [
         "libgrpc_third_party_upb",
         "libgrpc_unsecure",
@@ -1460,5 +1363,38 @@ cc_library_static {
     ],
     static_libs: [
         "libgrpc_third_party_upb",
+    ],
+}
+
+cc_library_static {
+    name: "libgpr_test_util",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "test/core/util/memory_counters.cc",
+        "test/core/util/test_config.cc",
+    ],
+    header_libs: [
+        "libgrpc++_internal_headers",
+    ],
+    static_libs: [
+        "gpr_base",
+    ],
+}
+
+cc_test {
+    name: "grpc_alarm_test",
+    defaults: ["grpc_defaults"],
+    test_suites: ["general-tests"],
+    srcs: [
+        "test/cpp/common/alarm_test.cc",
+    ],
+    header_libs: [
+        "libgrpc++_internal_headers",
+    ],
+    static_libs: [
+        "libgpr_test_util",
+    ],
+    shared_libs: [
+        "libgrpc++_unsecure",
     ],
 }

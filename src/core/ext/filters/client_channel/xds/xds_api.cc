@@ -30,6 +30,7 @@
 
 #include "envoy/api/v2/core/address.upb.h"
 #include "envoy/api/v2/core/base.upb.h"
+#include "envoy/api/v2/core/health_check.upb.h"
 #include "envoy/api/v2/discovery.upb.h"
 #include "envoy/api/v2/eds.upb.h"
 #include "envoy/api/v2/endpoint/endpoint.upb.h"
@@ -87,7 +88,8 @@ bool XdsPriorityListUpdate::Contains(
   return false;
 }
 
-bool XdsDropConfig::ShouldDrop(const UniquePtr<char>** category_name) const {
+bool XdsDropConfig::ShouldDrop(
+    const grpc_core::UniquePtr<char>** category_name) const {
   for (size_t i = 0; i < drop_category_list_.size(); ++i) {
     const auto& drop_category = drop_category_list_[i];
     // Generate a random number in [0, 1000000).
@@ -113,9 +115,9 @@ void PopulateListValue(upb_arena* arena, google_protobuf_ListValue* list_value,
   }
 }
 
-void PopulateMetadata(
-    upb_arena* arena, google_protobuf_Struct* metadata_pb,
-    const Map<const char*, XdsBootstrap::MetadataValue, StringLess>& metadata) {
+void PopulateMetadata(upb_arena* arena, google_protobuf_Struct* metadata_pb,
+                      const std::map<const char*, XdsBootstrap::MetadataValue,
+                                     StringLess>& metadata) {
   for (const auto& p : metadata) {
     google_protobuf_Struct_FieldsEntry* field =
         google_protobuf_Struct_add_fields(metadata_pb, arena);
@@ -223,6 +225,13 @@ namespace {
 grpc_error* ServerAddressParseAndAppend(
     const envoy_api_v2_endpoint_LbEndpoint* lb_endpoint,
     ServerAddressList* list) {
+  // If health_status is not HEALTHY or UNKNOWN, skip this endpoint.
+  const int32_t health_status =
+      envoy_api_v2_endpoint_LbEndpoint_health_status(lb_endpoint);
+  if (health_status != envoy_api_v2_core_UNKNOWN &&
+      health_status != envoy_api_v2_core_HEALTHY) {
+    return GRPC_ERROR_NONE;
+  }
   // Find the ip:port.
   const envoy_api_v2_endpoint_Endpoint* endpoint =
       envoy_api_v2_endpoint_LbEndpoint_endpoint(lb_endpoint);
@@ -250,11 +259,11 @@ grpc_error* ServerAddressParseAndAppend(
 
 namespace {
 
-UniquePtr<char> StringCopy(const upb_strview& strview) {
+grpc_core::UniquePtr<char> StringCopy(const upb_strview& strview) {
   char* str = static_cast<char*>(gpr_malloc(strview.size + 1));
   memcpy(str, strview.data, strview.size);
   str[strview.size] = '\0';
-  return UniquePtr<char>(str);
+  return grpc_core::UniquePtr<char>(str);
 }
 
 }  // namespace
@@ -533,9 +542,10 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
   return LrsRequestEncode(request, arena.ptr());
 }
 
-grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
-                                         UniquePtr<char>* cluster_name,
-                                         grpc_millis* load_reporting_interval) {
+grpc_error* XdsLrsResponseDecodeAndParse(
+    const grpc_slice& encoded_response,
+    grpc_core::UniquePtr<char>* cluster_name,
+    grpc_millis* load_reporting_interval) {
   upb::Arena arena;
   // Decode the response.
   const envoy_service_load_stats_v2_LoadStatsResponse* decoded_response =

@@ -44,7 +44,7 @@ cc_defaults {
     name: "grpc_deps_defaults",
     host_supported: true,
     vendor_available: true,
-    min_sdk_version: "30",
+    stl: "libc++",
     apex_available: [
         "//apex_available:platform",
     ],
@@ -59,13 +59,15 @@ cc_defaults {
         "-Wno-implicit-fallthrough",
         "-Wno-unused-result",
     ],
+    static_libs: [
+        "libabsl",
+    ],
     shared_libs: [
         "libz",
     ],
     local_include_dirs: [
         "include",
     ],
-    stl: "libc++",
     target: {
         darwin: {
             cflags: ["-UANDROID"],
@@ -78,7 +80,7 @@ cc_defaults {
     target: {
         vendor: {
             // Needs to be updated when a new version is imported.
-            suffix: "-1.26.0",
+            suffix: "-1.27.3",
         },
     },
 }
@@ -244,6 +246,7 @@ cc_library_host_static {
         "include"
     ],
     static_libs: [
+        "libabsl",
         "libgflags",
         "libgrpc_base",
     ],
@@ -389,6 +392,7 @@ cc_library_static {
     ],
     static_libs: [
         "libgrpc_base",
+        "libgrpc_secure",
         "libgrpc_transport_chttp2",
     ],
 }
@@ -419,6 +423,7 @@ cc_library_static {
         "libgrpc_base",
         "libgrpc_client_channel",
         "libgrpc_deadline_filter",
+        "libgrpc_secure",
         "libgrpc_transport_chttp2",
         "libgrpc_transport_chttp2_client_connector",
     ],
@@ -547,7 +552,7 @@ cc_library_static {
         "src/core/lib/security/credentials/plugin/plugin_credentials.cc",
         "src/core/lib/security/credentials/ssl/ssl_credentials.cc",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc",
-        "src/core/lib/security/credentials/tls/spiffe_credentials.cc",
+        "src/core/lib/security/credentials/tls/tls_credentials.cc",
         "src/core/lib/security/security_connector/alts/alts_security_connector.cc",
         "src/core/lib/security/security_connector/fake/fake_security_connector.cc",
         "src/core/lib/security/security_connector/load_system_roots_fallback.cc",
@@ -557,7 +562,7 @@ cc_library_static {
         "src/core/lib/security/security_connector/ssl/ssl_security_connector.cc",
         "src/core/lib/security/security_connector/ssl_utils.cc",
         "src/core/lib/security/security_connector/ssl_utils_config.cc",
-        "src/core/lib/security/security_connector/tls/spiffe_security_connector.cc",
+        "src/core/lib/security/security_connector/tls/tls_security_connector.cc",
         "src/core/lib/security/transport/client_auth_filter.cc",
         "src/core/lib/security/transport/secure_endpoint.cc",
         "src/core/lib/security/transport/security_handshaker.cc",
@@ -580,6 +585,9 @@ cc_library_static {
     shared_libs: [
         "libcrypto",
         "libssl",
+    ],
+    export_shared_lib_headers: [
+        "libcrypto",
     ],
 }
 
@@ -753,6 +761,7 @@ cc_library_static {
         "libgrpc_client_channel",
         "libgrpc_deadline_filter",
         "libgrpc_resolver_fake",
+        "libgrpc_secure",
         "libgrpc_third_party_upb",
         "libgrpc_upb_protos",
     ],
@@ -1042,7 +1051,6 @@ cc_library_static {
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
         "src/core/lib/json/json.cc",
         "src/core/lib/json/json_reader.cc",
-        "src/core/lib/json/json_string.cc",
         "src/core/lib/json/json_writer.cc",
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/percent_encoding.cc",

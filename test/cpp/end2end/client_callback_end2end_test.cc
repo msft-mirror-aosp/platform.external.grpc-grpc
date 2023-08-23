@@ -326,8 +326,8 @@ class ClientCallbackEnd2endTest
           };
           activate_();
         }
-        void OnWriteDone(bool ok) override { StartWritesDone(); }
-        void OnReadDone(bool ok) override {
+        void OnWriteDone(bool /*ok*/) override { StartWritesDone(); }
+        void OnReadDone(bool /*ok*/) override {
           EchoResponse response;
           EXPECT_TRUE(ParseFromByteBuffer(&recv_buf_, &response));
           EXPECT_EQ(request_.message(), response.message());
@@ -1375,8 +1375,8 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   return scenarios;
 }
 
-INSTANTIATE_TEST_CASE_P(ClientCallbackEnd2endTest, ClientCallbackEnd2endTest,
-                        ::testing::ValuesIn(CreateTestScenarios(true)));
+INSTANTIATE_TEST_SUITE_P(ClientCallbackEnd2endTest, ClientCallbackEnd2endTest,
+                         ::testing::ValuesIn(CreateTestScenarios(true)));
 
 }  // namespace
 }  // namespace testing

@@ -20,22 +20,20 @@ import grpc
 
 _LOGGER = logging.getLogger(__name__)
 
+
 cdef class Server:
 
   def __cinit__(self, object arguments):
     fork_handlers_and_grpc_init()
     self.references = []
     self.registered_completion_queues = []
-    self._vtable.copy = &_copy_pointer
-    self._vtable.destroy = &_destroy_pointer
-    self._vtable.cmp = &_compare_pointer
-    cdef _ChannelArgs channel_args = _ChannelArgs.from_args(
-        arguments, &self._vtable)
-    self.c_server = grpc_server_create(channel_args.c_args(), NULL)
-    self.references.append(arguments)
     self.is_started = False
     self.is_shutting_down = False
     self.is_shutdown = False
+    self.c_server = NULL
+    cdef _ChannelArgs channel_args = _ChannelArgs(arguments)
+    self.c_server = grpc_server_create(channel_args.c_args(), NULL)
+    self.references.append(arguments)
 
   def request_call(
       self, CompletionQueue call_queue not None,
@@ -63,16 +61,25 @@ cdef class Server:
           self.c_server, queue.c_completion_queue, NULL)
     self.registered_completion_queues.append(queue)
 
-  def start(self):
+  def start(self, backup_queue=True):
+    """Start the Cython gRPC Server.
+    
+    Args:
+      backup_queue: a bool indicates whether to spawn a backup completion
+        queue. In the case that no CQ is bound to the server, and the shutdown
+        of server becomes un-observable.
+    """
     if self.is_started:
       raise ValueError("the server has already started")
-    self.backup_shutdown_queue = CompletionQueue(shutdown_cq=True)
-    self.register_completion_queue(self.backup_shutdown_queue)
+    if backup_queue:
+      self.backup_shutdown_queue = CompletionQueue(shutdown_cq=True)
+      self.register_completion_queue(self.backup_shutdown_queue)
     self.is_started = True
     with nogil:
       grpc_server_start(self.c_server)
-    # Ensure the core has gotten a chance to do the start-up work
-    self.backup_shutdown_queue.poll(deadline=time.time())
+    if backup_queue:
+      # Ensure the core has gotten a chance to do the start-up work
+      self.backup_shutdown_queue.poll(deadline=time.time())
 
   def add_http2_port(self, bytes address,
                      ServerCredentials server_credentials=None):
@@ -136,11 +143,14 @@ cdef class Server:
       elif self.is_shutdown:
         pass
       elif not self.is_shutting_down:
-        # the user didn't call shutdown - use our backup queue
-        self._c_shutdown(self.backup_shutdown_queue, None)
-        # and now we wait
-        while not self.is_shutdown:
-          self.backup_shutdown_queue.poll()
+        if self.backup_shutdown_queue is None:
+          raise RuntimeError('Server shutdown failed: no completion queue.')
+        else:
+          # the user didn't call shutdown - use our backup queue
+          self._c_shutdown(self.backup_shutdown_queue, None)
+          # and now we wait
+          while not self.is_shutdown:
+            self.backup_shutdown_queue.poll()
       else:
         # We're in the process of shutting down, but have not shutdown; can't do
         # much but repeatedly release the GIL and wait
@@ -151,4 +161,4 @@ cdef class Server:
 
   def __dealloc__(self):
     if self.c_server == NULL:
-      grpc_shutdown()
+      grpc_shutdown_blocking()

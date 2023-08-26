@@ -24,7 +24,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -93,7 +92,7 @@ static void test_unauthenticated_ssl_peer(void) {
                  TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_X509_CERTIFICATE_TYPE,
                  &peer.properties[0]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
-      grpc_ssl_peer_to_auth_context(&peer);
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
   GPR_ASSERT(ctx != nullptr);
   GPR_ASSERT(!grpc_auth_context_peer_is_authenticated(ctx.get()));
   GPR_ASSERT(check_transport_security_type(ctx.get()));
@@ -193,7 +192,7 @@ static void test_cn_only_ssl_peer_to_auth_context(void) {
                  TSI_X509_PEM_CERT_PROPERTY, expected_pem_cert,
                  &peer.properties[2]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
-      grpc_ssl_peer_to_auth_context(&peer);
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
   GPR_ASSERT(ctx != nullptr);
   GPR_ASSERT(grpc_auth_context_peer_is_authenticated(ctx.get()));
   GPR_ASSERT(
@@ -231,7 +230,7 @@ static void test_cn_and_one_san_ssl_peer_to_auth_context(void) {
                  &peer.properties[3]) == TSI_OK);
 
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
-      grpc_ssl_peer_to_auth_context(&peer);
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
   GPR_ASSERT(ctx != nullptr);
   GPR_ASSERT(grpc_auth_context_peer_is_authenticated(ctx.get()));
   GPR_ASSERT(
@@ -272,7 +271,7 @@ static void test_cn_and_multiple_sans_ssl_peer_to_auth_context(void) {
                    expected_sans[i], &peer.properties[3 + i]) == TSI_OK);
   }
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
-      grpc_ssl_peer_to_auth_context(&peer);
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
   GPR_ASSERT(ctx != nullptr);
   GPR_ASSERT(grpc_auth_context_peer_is_authenticated(ctx.get()));
   GPR_ASSERT(check_identity(ctx.get(), GRPC_X509_SAN_PROPERTY_NAME,
@@ -318,7 +317,7 @@ static void test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context(
                    expected_sans[i], &peer.properties[5 + i]) == TSI_OK);
   }
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
-      grpc_ssl_peer_to_auth_context(&peer);
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
   GPR_ASSERT(ctx != nullptr);
   GPR_ASSERT(grpc_auth_context_peer_is_authenticated(ctx.get()));
   GPR_ASSERT(check_identity(ctx.get(), GRPC_X509_SAN_PROPERTY_NAME,
@@ -344,7 +343,7 @@ static grpc_ssl_roots_override_result override_roots_success(
 }
 
 static grpc_ssl_roots_override_result override_roots_permanent_failure(
-    char** pem_root_certs) {
+    char** /*pem_root_certs*/) {
   return GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY;
 }
 
@@ -394,7 +393,7 @@ static void test_default_ssl_roots(void) {
 
   /* First let's get the root through the override: set the env to an invalid
      value. */
-  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, "");
+  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, "");
   grpc_set_ssl_roots_override_callback(override_roots_success);
   grpc_slice roots =
       grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
@@ -405,7 +404,8 @@ static void test_default_ssl_roots(void) {
 
   /* Now let's set the env var: We should get the contents pointed value
      instead. */
-  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, roots_env_var_file_path);
+  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path,
+                        roots_env_var_file_path);
   roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
   roots_contents = grpc_slice_to_c_string(roots);
   grpc_slice_unref(roots);
@@ -414,7 +414,7 @@ static void test_default_ssl_roots(void) {
 
   /* Now reset the env var. We should fall back to the value overridden using
      the api. */
-  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, "");
+  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, "");
   roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
   roots_contents = grpc_slice_to_c_string(roots);
   grpc_slice_unref(roots);
@@ -423,7 +423,7 @@ static void test_default_ssl_roots(void) {
 
   /* Now setup a permanent failure for the overridden roots and we should get
      an empty slice. */
-  gpr_setenv("GRPC_NOT_USE_SYSTEM_SSL_ROOTS", "true");
+  GPR_GLOBAL_CONFIG_SET(grpc_not_use_system_ssl_roots, true);
   grpc_set_ssl_roots_override_callback(override_roots_permanent_failure);
   roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
   GPR_ASSERT(GRPC_SLICE_IS_EMPTY(roots));
@@ -485,7 +485,6 @@ int main(int argc, char** argv) {
   test_ipv6_address_san();
   test_default_ssl_roots();
   test_peer_alpn_check();
-
   grpc_shutdown();
   return 0;
 }

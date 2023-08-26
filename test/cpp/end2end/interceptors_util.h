@@ -72,12 +72,12 @@ class DummyInterceptorFactory
       public experimental::ServerInterceptorFactoryInterface {
  public:
   virtual experimental::Interceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* info) override {
+      experimental::ClientRpcInfo* /*info*/) override {
     return new DummyInterceptor();
   }
 
   virtual experimental::Interceptor* CreateServerInterceptor(
-      experimental::ServerRpcInfo* info) override {
+      experimental::ServerRpcInfo* /*info*/) override {
     return new DummyInterceptor();
   }
 };
@@ -88,12 +88,12 @@ class NullInterceptorFactory
       public experimental::ServerInterceptorFactoryInterface {
  public:
   virtual experimental::Interceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* info) override {
+      experimental::ClientRpcInfo* /*info*/) override {
     return nullptr;
   }
 
   virtual experimental::Interceptor* CreateServerInterceptor(
-      experimental::ServerRpcInfo* info) override {
+      experimental::ServerRpcInfo* /*info*/) override {
     return nullptr;
   }
 };
@@ -151,6 +151,8 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
     return Status::OK;
   }
 };
+
+constexpr int kNumStreamingMessages = 10;
 
 void MakeCall(const std::shared_ptr<Channel>& channel);
 

@@ -17,7 +17,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library")
 
-POLLERS = ["epollex", "epoll1", "poll", "poll-cv"]
+POLLERS = ["epollex", "epoll1", "poll"]
 
 def _fixture_options(
         fullstack = True,
@@ -31,7 +31,8 @@ def _fixture_options(
         is_http2 = True,
         supports_proxy_auth = False,
         supports_write_buffering = True,
-        client_channel = True):
+        client_channel = True,
+        supports_msvc = True):
     return struct(
         fullstack = fullstack,
         includes_proxy = includes_proxy,
@@ -44,7 +45,8 @@ def _fixture_options(
         supports_proxy_auth = supports_proxy_auth,
         supports_write_buffering = supports_write_buffering,
         client_channel = client_channel,
-        #_platforms=_platforms,
+        supports_msvc = supports_msvc,
+        _platforms = _platforms,
     )
 
 # maps fixture name to whether it requires the security library
@@ -85,6 +87,8 @@ END2END_FIXTURES = {
         client_channel = False,
     ),
     "h2_ssl": _fixture_options(secure = True),
+    "h2_ssl_cred_reload": _fixture_options(secure = True),
+    "h2_spiffe": _fixture_options(secure = True),
     "h2_local_uds": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
     "h2_local_ipv4": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
     "h2_local_ipv6": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
@@ -119,10 +123,11 @@ END2END_NOSEC_FIXTURES = {
         client_channel = False,
         secure = False,
         _platforms = ["linux", "mac", "posix"],
+        supports_msvc = False,
     ),
     "h2_full": _fixture_options(secure = False),
-    "h2_full+pipe": _fixture_options(secure = False, _platforms = ["linux"]),
-    "h2_full+trace": _fixture_options(secure = False, tracing = True),
+    "h2_full+pipe": _fixture_options(secure = False, _platforms = ["linux"], supports_msvc = False),
+    "h2_full+trace": _fixture_options(secure = False, tracing = True, supports_msvc = False),
     "h2_full+workarounds": _fixture_options(secure = False),
     "h2_http_proxy": _fixture_options(secure = False, supports_proxy_auth = True),
     "h2_proxy": _fixture_options(secure = False, includes_proxy = True),
@@ -146,11 +151,13 @@ END2END_NOSEC_FIXTURES = {
         client_channel = False,
     ),
     "h2_ssl": _fixture_options(secure = False),
+    "h2_ssl_cred_reload": _fixture_options(secure = False),
     "h2_ssl_proxy": _fixture_options(includes_proxy = True, secure = False),
     "h2_uds": _fixture_options(
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
         secure = False,
+        supports_msvc = False,
     ),
 }
 
@@ -215,6 +222,7 @@ END2END_TESTS = {
     "empty_batch": _test_options(),
     "filter_causes_close": _test_options(),
     "filter_call_init_fails": _test_options(),
+    "filter_context": _test_options(),
     "graceful_server_shutdown": _test_options(exclude_inproc = True),
     "hpack_size": _test_options(
         proxyable = False,
@@ -360,6 +368,16 @@ def _compatible(fopt, topt):
             return False
     return True
 
+def _platform_support_tags(fopt):
+    result = []
+    if not "windows" in fopt._platforms:
+        result += ["no_windows"]
+    if not "mac" in fopt._platforms:
+        result += ["no_mac"]
+    if not "linux" in fopt._platforms:
+        result += ["no_linux"]
+    return result
+
 def grpc_end2end_tests():
     grpc_cc_library(
         name = "end2end_tests",
@@ -392,11 +410,25 @@ def grpc_end2end_tests():
                 "//:grpc",
                 "//:gpr",
             ],
+            tags = _platform_support_tags(fopt),
         )
+
         for t, topt in END2END_TESTS.items():
             #print(_compatible(fopt, topt), f, t, fopt, topt)
             if not _compatible(fopt, topt):
                 continue
+
+            native.sh_test(
+                name = "%s_test@%s" % (f, t),
+                data = [":%s_test" % f],
+                srcs = ["end2end_test.sh"],
+                args = [
+                    "$(location %s_test)" % f,
+                    t,
+                ],
+                tags = ["no_linux"] + _platform_support_tags(fopt),
+            )
+
             for poller in POLLERS:
                 native.sh_test(
                     name = "%s_test@%s@poller=%s" % (f, t, poller),
@@ -407,6 +439,7 @@ def grpc_end2end_tests():
                         t,
                         poller,
                     ],
+                    tags = ["no_mac", "no_windows"],
                 )
 
 def grpc_end2end_nosec_tests():
@@ -444,6 +477,7 @@ def grpc_end2end_nosec_tests():
                 "//:grpc_unsecure",
                 "//:gpr",
             ],
+            tags = _platform_support_tags(fopt),
         )
         for t, topt in END2END_TESTS.items():
             #print(_compatible(fopt, topt), f, t, fopt, topt)
@@ -451,6 +485,18 @@ def grpc_end2end_nosec_tests():
                 continue
             if topt.secure:
                 continue
+
+            native.sh_test(
+                name = "%s_nosec_test@%s" % (f, t),
+                data = [":%s_nosec_test" % f],
+                srcs = ["end2end_test.sh"],
+                args = [
+                    "$(location %s_nosec_test)" % f,
+                    t,
+                ],
+                tags = ["no_linux"] + _platform_support_tags(fopt),
+            )
+
             for poller in POLLERS:
                 native.sh_test(
                     name = "%s_nosec_test@%s@poller=%s" % (f, t, poller),
@@ -461,4 +507,5 @@ def grpc_end2end_nosec_tests():
                         t,
                         poller,
                     ],
+                    tags = ["no_mac", "no_windows"],
                 )

@@ -14,7 +14,7 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_binary", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 grpc_package(
     name = "test/cpp/util",
@@ -75,6 +75,7 @@ grpc_cc_library(
         "test_credentials_provider.h",
     ],
     external_deps = [
+        "gflags",
         "protobuf",
     ],
     deps = [
@@ -186,7 +187,11 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["nomsan"],  # death tests seem to be incompatible with msan
+    tags = [
+        "no_test_ios",
+        "no_windows",
+        "nomsan",  # death tests seem to be incompatible with msan
+    ],
     deps = [
         ":grpc_cli_libs",
         ":test_util",
@@ -207,6 +212,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    uses_polling = False,
     deps = [
         ":test_util",
     ],
@@ -220,6 +226,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    uses_polling = False,
     deps = [
         ":test_util",
     ],
@@ -233,6 +240,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    uses_polling = False,
     deps = [
         "//:grpc++",
         "//test/core/util:grpc_test_util",
@@ -247,6 +255,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    uses_polling = False,
     deps = [
         ":test_util",
     ],

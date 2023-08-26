@@ -133,7 +133,8 @@ class Client {
     grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 3000;
     while (true) {
       EventState state;
-      grpc_endpoint_read(endpoint_, &read_buffer, state.closure());
+      grpc_endpoint_read(endpoint_, &read_buffer, state.closure(),
+                         /*urgent=*/true);
       if (!PollUntilDone(&state, deadline)) {
         retval = false;
         break;
@@ -204,7 +205,7 @@ class Client {
     }
   }
 
-  static void PollsetDestroy(void* arg, grpc_error* error) {
+  static void PollsetDestroy(void* arg, grpc_error* /*error*/) {
     grpc_pollset* pollset = static_cast<grpc_pollset*>(arg);
     grpc_pollset_destroy(pollset);
     gpr_free(pollset);

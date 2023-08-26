@@ -17,12 +17,16 @@
  */
 
 #import <Foundation/Foundation.h>
-#import <GRPCClient/GRPCCall.h>
+
+// import legacy header for compatibility with users using the ProtoRPC interface
+#import "ProtoRPCLegacy.h"
 
 #import "ProtoMethod.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class GRPCRequestOptions;
+@class GRPCCallOptions;
 @class GPBMessage;
 
 /** An object can implement this protocol to receive responses from server from a call. */
@@ -49,13 +53,47 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)didReceiveProtoMessage:(nullable GPBMessage *)message;
 
 /**
- * Issued when a call finished. If the call finished successfully, \a error is nil and \a
- * trainingMetadata consists any trailing metadata received from the server. Otherwise, \a error
+ * Issued when a call finished. If the call finished successfully, \p error is nil and \p
+ * trainingMetadata consists any trailing metadata received from the server. Otherwise, \p error
  * is non-nil and contains the corresponding error information, including gRPC error codes and
  * error descriptions.
  */
 - (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
                                error:(nullable NSError *)error;
+
+/**
+ * Issued when flow control is enabled for the call and a message (written with writeMessage: method
+ * of GRPCStreamingProtoCall or the initializer of GRPCUnaryProtoCall) is passed to gRPC core with
+ * SEND_MESSAGE operation.
+ */
+- (void)didWriteMessage;
+
+@end
+
+/**
+ * A convenience class of objects that act as response handlers of calls. Issues
+ * response to a single handler when the response is completed.
+ *
+ * The object is stateful and should not be reused for multiple calls. If multiple calls share the
+ * same response handling logic, create separate GRPCUnaryResponseHandler objects for each call.
+ */
+@interface GRPCUnaryResponseHandler<ResponseType> : NSObject<GRPCProtoResponseHandler>
+
+/**
+ * Creates a responsehandler object with a unary call handler.
+ *
+ * responseHandler: The unary handler to be called when the call is completed.
+ * responseDispatchQueue: the dispatch queue on which the response handler
+ * should be issued. If it's nil, the handler will use the main queue.
+ */
+- (nullable instancetype)initWithResponseHandler:(void (^)(ResponseType, NSError *))handler
+                           responseDispatchQueue:(nullable dispatch_queue_t)dispatchQueue;
+
+/** Response headers received during the call. */
+@property(readonly, nullable) NSDictionary *responseHeaders;
+
+/** Response trailers received during the call. */
+@property(readonly, nullable) NSDictionary *responseTrailers;
 
 @end
 
@@ -130,38 +168,26 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)finish;
 
+/**
+ * Tell gRPC to receive another message.
+ *
+ * This method should only be used when flow control is enabled. If flow control is enabled, gRPC
+ * will only receive additional messages after the user indicates so by using either
+ * receiveNextMessage: or receiveNextMessages: methods. If flow control is not enabled, messages
+ * will be automatically received after the previous one is delivered.
+ */
+- (void)receiveNextMessage;
+
+/**
+ * Tell gRPC to receive another N message.
+ *
+ * This method should only be used when flow control is enabled. If flow control is enabled, the
+ * messages received from the server are buffered in gRPC until the user want to receive the next
+ * message. If flow control is not enabled, messages will be automatically received after the
+ * previous one is delivered.
+ */
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages;
+
 @end
 
 NS_ASSUME_NONNULL_END
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wnullability-completeness"
-
-__attribute__((deprecated("Please use GRPCProtoCall."))) @interface ProtoRPC
-    : GRPCCall
-
-      /**
-       * host parameter should not contain the scheme (http:// or https://), only the name or IP
-       * addr and the port number, for example @"localhost:5050".
-       */
-      -
-      (instancetype)initWithHost : (NSString *)host method
-    : (GRPCProtoMethod *)method requestsWriter : (GRXWriter *)requestsWriter responseClass
-    : (Class)responseClass responsesWriteable
-    : (id<GRXWriteable>)responsesWriteable NS_DESIGNATED_INITIALIZER;
-
-- (void)start;
-@end
-
-/**
- * This subclass is empty now. Eventually we'll remove ProtoRPC class
- * to avoid potential naming conflict
- */
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    @interface GRPCProtoCall : ProtoRPC
-#pragma clang diagnostic pop
-
-                               @end
-
-#pragma clang diagnostic pop

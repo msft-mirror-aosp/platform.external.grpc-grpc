@@ -90,23 +90,24 @@ class CallbackTestServiceImpl
   explicit CallbackTestServiceImpl(const grpc::string& host)
       : signal_client_(false), host_(new grpc::string(host)) {}
 
-  void Echo(ServerContext* context, const EchoRequest* request,
-            EchoResponse* response,
-            experimental::ServerCallbackRpcController* controller) override;
+  experimental::ServerUnaryReactor* Echo(
+      experimental::CallbackServerContext* context, const EchoRequest* request,
+      EchoResponse* response) override;
 
-  void CheckClientInitialMetadata(
-      ServerContext* context, const SimpleRequest* request,
-      SimpleResponse* response,
-      experimental::ServerCallbackRpcController* controller) override;
+  experimental::ServerUnaryReactor* CheckClientInitialMetadata(
+      experimental::CallbackServerContext* context, const SimpleRequest*,
+      SimpleResponse*) override;
 
-  experimental::ServerReadReactor<EchoRequest, EchoResponse>* RequestStream()
-      override;
+  experimental::ServerReadReactor<EchoRequest>* RequestStream(
+      experimental::CallbackServerContext* context,
+      EchoResponse* response) override;
 
-  experimental::ServerWriteReactor<EchoRequest, EchoResponse>* ResponseStream()
-      override;
+  experimental::ServerWriteReactor<EchoResponse>* ResponseStream(
+      experimental::CallbackServerContext* context,
+      const EchoRequest* request) override;
 
-  experimental::ServerBidiReactor<EchoRequest, EchoResponse>* BidiStream()
-      override;
+  experimental::ServerBidiReactor<EchoRequest, EchoResponse>* BidiStream(
+      experimental::CallbackServerContext* context) override;
 
   // Unimplemented is left unimplemented to test the returned error.
   bool signal_client() {
@@ -115,11 +116,6 @@ class CallbackTestServiceImpl
   }
 
  private:
-  void EchoNonDelayed(ServerContext* context, const EchoRequest* request,
-                      EchoResponse* response,
-                      experimental::ServerCallbackRpcController* controller);
-
-  Alarm alarm_;
   bool signal_client_;
   std::mutex mu_;
   std::unique_ptr<grpc::string> host_;

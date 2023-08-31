@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Tests behavior of the grpc.aio.UnaryUnaryCall class."""
+"""Tests behavior of the Call classes."""
 
 import asyncio
 import datetime
@@ -49,6 +49,17 @@ class _MulticallableTestMixin():
 
 class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
 
+    async def test_call_to_string(self):
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+
+        self.assertTrue(str(call) is not None)
+        self.assertTrue(repr(call) is not None)
+
+        response = await call
+
+        self.assertTrue(str(call) is not None)
+        self.assertTrue(repr(call) is not None)
+
     async def test_call_ok(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
 
@@ -69,25 +80,16 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
         async with aio.insecure_channel(_UNREACHABLE_TARGET) as channel:
             stub = test_pb2_grpc.TestServiceStub(channel)
 
-            call = stub.UnaryCall(messages_pb2.SimpleRequest(), timeout=0.1)
+            call = stub.UnaryCall(messages_pb2.SimpleRequest())
 
-            with self.assertRaises(grpc.RpcError) as exception_context:
+            with self.assertRaises(aio.AioRpcError) as exception_context:
                 await call
 
-            self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED,
+            self.assertEqual(grpc.StatusCode.UNAVAILABLE,
                              exception_context.exception.code())
 
             self.assertTrue(call.done())
-            self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED, await
-                             call.code())
-
-            # Exception is cached at call object level, reentrance
-            # returns again the same exception
-            with self.assertRaises(grpc.RpcError) as exception_context_retry:
-                await call
-
-            self.assertIs(exception_context.exception,
-                          exception_context_retry.exception)
+            self.assertEqual(grpc.StatusCode.UNAVAILABLE, await call.code())
 
     async def test_call_code_awaitable(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
@@ -104,6 +106,65 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
     async def test_call_trailing_metadata_awaitable(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
         self.assertEqual((), await call.trailing_metadata())
+
+    async def test_call_initial_metadata_cancelable(self):
+        coro_started = asyncio.Event()
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+
+        async def coro():
+            coro_started.set()
+            await call.initial_metadata()
+
+        task = self.loop.create_task(coro())
+        await coro_started.wait()
+        task.cancel()
+
+        # Test that initial metadata can still be asked thought
+        # a cancellation happened with the previous task
+        self.assertEqual((), await call.initial_metadata())
+
+    async def test_call_initial_metadata_multiple_waiters(self):
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+
+        async def coro():
+            return await call.initial_metadata()
+
+        task1 = self.loop.create_task(coro())
+        task2 = self.loop.create_task(coro())
+
+        await call
+
+        self.assertEqual([(), ()], await asyncio.gather(*[task1, task2]))
+
+    async def test_call_code_cancelable(self):
+        coro_started = asyncio.Event()
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+
+        async def coro():
+            coro_started.set()
+            await call.code()
+
+        task = self.loop.create_task(coro())
+        await coro_started.wait()
+        task.cancel()
+
+        # Test that code can still be asked thought
+        # a cancellation happened with the previous task
+        self.assertEqual(grpc.StatusCode.OK, await call.code())
+
+    async def test_call_code_multiple_waiters(self):
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+
+        async def coro():
+            return await call.code()
+
+        task1 = self.loop.create_task(coro())
+        task2 = self.loop.create_task(coro())
+
+        await call
+
+        self.assertEqual([grpc.StatusCode.OK, grpc.StatusCode.OK], await
+                         asyncio.gather(task1, task2))
 
     async def test_cancel_unary_unary(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())

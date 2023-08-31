@@ -66,8 +66,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> local_auth_context_create(
   return ctx;
 }
 
-void local_check_peer(grpc_security_connector* sc, tsi_peer peer,
-                      grpc_endpoint* ep,
+void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
                       grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                       grpc_closure* on_peer_checked,
                       grpc_local_connect_type type) {
@@ -120,10 +119,9 @@ void local_check_peer(grpc_security_connector* sc, tsi_peer peer,
   }
   if (peer.properties != nullptr) gpr_free(peer.properties);
   peer.properties = new_properties;
+  // TODO(yihuazhang): Set security level of local TCP to TSI_SECURITY_NONE.
   const char* security_level =
-      type == LOCAL_TCP
-          ? tsi_security_level_to_string(TSI_SECURITY_NONE)
-          : tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY);
+      tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY);
   tsi_result result = tsi_construct_string_peer_property_from_cstring(
       TSI_SECURITY_LEVEL_PEER_PROPERTY, security_level,
       &peer.properties[peer.property_count]);
@@ -179,7 +177,7 @@ class grpc_local_channel_security_connector final
                   grpc_closure* on_peer_checked) override {
     grpc_local_credentials* creds =
         reinterpret_cast<grpc_local_credentials*>(mutable_channel_creds());
-    local_check_peer(this, peer, ep, auth_context, on_peer_checked,
+    local_check_peer(peer, ep, auth_context, on_peer_checked,
                      creds->connect_type());
   }
 
@@ -228,7 +226,7 @@ class grpc_local_server_security_connector final
                   grpc_closure* on_peer_checked) override {
     grpc_local_server_credentials* creds =
         static_cast<grpc_local_server_credentials*>(mutable_server_creds());
-    local_check_peer(this, peer, ep, auth_context, on_peer_checked,
+    local_check_peer(peer, ep, auth_context, on_peer_checked,
                      creds->connect_type());
   }
 

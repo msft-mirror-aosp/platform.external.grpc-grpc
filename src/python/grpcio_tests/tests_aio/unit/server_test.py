@@ -37,6 +37,7 @@ _STREAM_STREAM_ASYNC_GEN = '/test/StreamStreamAsyncGen'
 _STREAM_STREAM_READER_WRITER = '/test/StreamStreamReaderWriter'
 _STREAM_STREAM_EVILLY_MIXED = '/test/StreamStreamEvillyMixed'
 _UNIMPLEMENTED_METHOD = '/test/UnimplementedMethod'
+_ERROR_IN_STREAM_STREAM = '/test/ErrorInStreamStream'
 
 _REQUEST = b'\x00\x00\x00'
 _RESPONSE = b'\x01\x01\x01'
@@ -82,6 +83,9 @@ class _GenericHandler(grpc.GenericRpcHandler):
             _STREAM_STREAM_EVILLY_MIXED:
                 grpc.stream_stream_rpc_method_handler(
                     self._stream_stream_evilly_mixed),
+            _ERROR_IN_STREAM_STREAM:
+                grpc.stream_stream_rpc_method_handler(
+                    self._error_in_stream_stream),
         }
 
     @staticmethod
@@ -158,6 +162,12 @@ class _GenericHandler(grpc.GenericRpcHandler):
         for _ in range(_NUM_STREAM_RESPONSES - 1):
             await context.write(_RESPONSE)
 
+    async def _error_in_stream_stream(self, request_iterator, unused_context):
+        async for request in request_iterator:
+            assert _REQUEST == request
+            raise RuntimeError('A testing RuntimeError!')
+        yield _RESPONSE
+
     def service(self, handler_details):
         self._called.set_result(None)
         return self._routing_table.get(handler_details.method)
@@ -221,14 +231,10 @@ class TestServer(AioTestBase):
         # Uses reader API
         self.assertEqual(_RESPONSE, await call.read())
 
-        # Uses async generator API
-        response_cnt = 0
-        async for response in call:
-            response_cnt += 1
-            self.assertEqual(_RESPONSE, response)
-
-        self.assertEqual(_NUM_STREAM_RESPONSES - 1, response_cnt)
-        self.assertEqual(await call.code(), grpc.StatusCode.OK)
+        # Uses async generator API, mixed!
+        with self.assertRaises(aio.UsageError):
+            async for response in call:
+                self.assertEqual(_RESPONSE, response)
 
     async def test_stream_unary_async_generator(self):
         stream_unary_call = self._channel.stream_unary(_STREAM_UNARY_ASYNC_GEN)
@@ -400,6 +406,29 @@ class TestServer(AioTestBase):
             await call(_REQUEST)
         rpc_error = exception_context.exception
         self.assertEqual(grpc.StatusCode.UNIMPLEMENTED, rpc_error.code())
+
+    async def test_shutdown_during_stream_stream(self):
+        stream_stream_call = self._channel.stream_stream(
+            _STREAM_STREAM_ASYNC_GEN)
+        call = stream_stream_call()
+
+        # Don't half close the RPC yet, keep it alive.
+        await call.write(_REQUEST)
+        await self._server.stop(None)
+
+        self.assertEqual(grpc.StatusCode.UNAVAILABLE, await call.code())
+        # No segfault
+
+    async def test_error_in_stream_stream(self):
+        stream_stream_call = self._channel.stream_stream(
+            _ERROR_IN_STREAM_STREAM)
+        call = stream_stream_call()
+
+        # Don't half close the RPC yet, keep it alive.
+        await call.write(_REQUEST)
+
+        # Don't segfault here
+        self.assertEqual(grpc.StatusCode.UNKNOWN, await call.code())
 
 
 if __name__ == '__main__':

@@ -17,16 +17,28 @@ import inspect
 import traceback
 
 
-# TODO(https://github.com/grpc/grpc/issues/20850) refactor this.
-_LOGGER = logging.getLogger(__name__)
 cdef int _EMPTY_FLAG = 0
-# TODO(lidiz) Use a designated value other than None.
+cdef str _RPC_FINISHED_DETAILS = 'RPC already finished.'
 cdef str _SERVER_STOPPED_DETAILS = 'Server already stopped.'
+
+cdef _augment_metadata(tuple metadata, object compression):
+    if compression is None:
+        return metadata
+    else:
+        return ((
+            GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY,
+            _COMPRESSION_METADATA_STRING_MAPPING[compression]
+        ),) + metadata
+
 
 cdef class _HandlerCallDetails:
     def __cinit__(self, str method, tuple invocation_metadata):
         self.method = method
         self.invocation_metadata = invocation_metadata
+
+
+class _ServerStoppedError(BaseError):
+    """Raised if the server is stopped."""
 
 
 cdef class RPCState:
@@ -40,7 +52,11 @@ cdef class RPCState:
         self.abort_exception = None
         self.metadata_sent = False
         self.status_sent = False
-        self.trailing_metadata = _EMPTY_METADATA
+        self.status_code = StatusCode.ok
+        self.status_details = ''
+        self.trailing_metadata = _IMMUTABLE_EMPTY_METADATA
+        self.compression_algorithm = None
+        self.disable_next_compression = False
 
     cdef bytes method(self):
         return _slice_bytes(self.details.method)
@@ -48,28 +64,47 @@ cdef class RPCState:
     cdef tuple invocation_metadata(self):
         return _metadata(&self.request_metadata)
 
+    cdef void raise_for_termination(self) except *:
+        """Raise exceptions if RPC is not running.
+
+        Server method handlers may suppress the abort exception. We need to halt
+        the RPC execution in that case. This function needs to be called after
+        running application code.
+
+        Also, the server may stop unexpected. We need to check before calling
+        into Core functions, otherwise, segfault.
+        """
+        if self.abort_exception is not None:
+            raise self.abort_exception
+        if self.status_sent:
+            raise UsageError(_RPC_FINISHED_DETAILS)
+        if self.server._status == AIO_SERVER_STATUS_STOPPED:
+            raise _ServerStoppedError(_SERVER_STOPPED_DETAILS)
+
+    cdef int get_write_flag(self):
+        if self.disable_next_compression:
+            self.disable_next_compression = False
+            return WriteFlag.no_compress
+        else:
+            return _EMPTY_FLAG
+
+    cdef Operation create_send_initial_metadata_op_if_not_sent(self):
+        cdef SendInitialMetadataOperation op
+        if self.metadata_sent:
+            return None
+        else:
+            op = SendInitialMetadataOperation(
+                _augment_metadata(_IMMUTABLE_EMPTY_METADATA, self.compression_algorithm),
+                _EMPTY_FLAG
+            )
+            return op
+
     def __dealloc__(self):
         """Cleans the Core objects."""
         grpc_call_details_destroy(&self.details)
         grpc_metadata_array_destroy(&self.request_metadata)
         if self.call:
             grpc_call_unref(self.call)
-
-
-# TODO(lidiz) inherit this from Python level `AioRpcStatus`, we need to improve
-# current code structure to make it happen.
-class AbortError(Exception): pass
-
-
-def _raise_if_aborted(RPCState rpc_state):
-    """Raise AbortError if RPC is aborted.
-
-    Server method handlers may suppress the abort exception. We need to halt
-    the RPC execution in that case. This function needs to be called after
-    running application code.
-    """
-    if rpc_state.abort_exception is not None:
-        raise rpc_state.abort_exception
 
 
 cdef class _ServicerContext:
@@ -90,10 +125,8 @@ cdef class _ServicerContext:
 
     async def read(self):
         cdef bytes raw_message
-        if self._rpc_state.server._status == AIO_SERVER_STATUS_STOPPED:
-            raise RuntimeError(_SERVER_STOPPED_DETAILS)
-        if self._rpc_state.status_sent:
-            raise RuntimeError('RPC already finished.')
+        self._rpc_state.raise_for_termination()
+
         if self._rpc_state.client_closed:
             return EOF
         raw_message = await _receive_message(self._rpc_state, self._loop)
@@ -104,50 +137,56 @@ cdef class _ServicerContext:
                             raw_message)
 
     async def write(self, object message):
-        if self._rpc_state.server._status == AIO_SERVER_STATUS_STOPPED:
-            raise RuntimeError(_SERVER_STOPPED_DETAILS)
-        if self._rpc_state.status_sent:
-            raise RuntimeError('RPC already finished.')
+        self._rpc_state.raise_for_termination()
+
         await _send_message(self._rpc_state,
                             serialize(self._response_serializer, message),
-                            self._rpc_state.metadata_sent,
+                            self._rpc_state.create_send_initial_metadata_op_if_not_sent(),
+                            self._rpc_state.get_write_flag(),
                             self._loop)
-        if not self._rpc_state.metadata_sent:
-            self._rpc_state.metadata_sent = True
+        self._rpc_state.metadata_sent = True
 
     async def send_initial_metadata(self, tuple metadata):
-        if self._rpc_state.status_sent:
-            raise RuntimeError('RPC already finished.')
-        elif self._rpc_state.server._status == AIO_SERVER_STATUS_STOPPED:
-            raise RuntimeError(_SERVER_STOPPED_DETAILS)
-        elif self._rpc_state.metadata_sent:
-            raise RuntimeError('Send initial metadata failed: already sent')
+        self._rpc_state.raise_for_termination()
+
+        if self._rpc_state.metadata_sent:
+            raise UsageError('Send initial metadata failed: already sent')
         else:
-            await _send_initial_metadata(self._rpc_state, metadata, self._loop)
+            await _send_initial_metadata(
+                self._rpc_state,
+                _augment_metadata(metadata, self._rpc_state.compression_algorithm),
+                _EMPTY_FLAG,
+                self._loop
+            )
             self._rpc_state.metadata_sent = True
 
     async def abort(self,
               object code,
               str details='',
-              tuple trailing_metadata=_EMPTY_METADATA):
+              tuple trailing_metadata=_IMMUTABLE_EMPTY_METADATA):
         if self._rpc_state.abort_exception is not None:
-            raise RuntimeError('Abort already called!')
+            raise UsageError('Abort already called!')
         else:
             # Keeps track of the exception object. After abort happen, the RPC
             # should stop execution. However, if users decided to suppress it, it
             # could lead to undefined behavior.
             self._rpc_state.abort_exception = AbortError('Locally aborted.')
 
-            if trailing_metadata == _EMPTY_METADATA and self._rpc_state.trailing_metadata:
+            if trailing_metadata == _IMMUTABLE_EMPTY_METADATA and self._rpc_state.trailing_metadata:
                 trailing_metadata = self._rpc_state.trailing_metadata
+
+            if details == '' and self._rpc_state.status_details:
+                details = self._rpc_state.status_details
+
+            actual_code = get_status_code(code)
 
             self._rpc_state.status_sent = True
             await _send_error_status_from_server(
                 self._rpc_state,
-                code.value[0],
+                actual_code,
                 details,
                 trailing_metadata,
-                self._rpc_state.metadata_sent,
+                self._rpc_state.create_send_initial_metadata_op_if_not_sent(),
                 self._loop
             )
 
@@ -158,6 +197,21 @@ cdef class _ServicerContext:
 
     def invocation_metadata(self):
         return self._rpc_state.invocation_metadata()
+
+    def set_code(self, object code):
+        self._rpc_state.status_code = get_status_code(code)
+
+    def set_details(self, str details):
+        self._rpc_state.status_details = details
+
+    def set_compression(self, object compression):
+        if self._rpc_state.metadata_sent:
+            raise RuntimeError('Compression setting must be specified before sending initial metadata')
+        else:
+            self._rpc_state.compression_algorithm = compression
+
+    def disable_next_message_compression(self):
+        self._rpc_state.disable_next_compression = True
 
 
 cdef _find_method_handler(str method, tuple metadata, list generic_handlers):
@@ -191,7 +245,7 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
     )
 
     # Raises exception if aborted
-    _raise_if_aborted(rpc_state)
+    rpc_state.raise_for_termination()
 
     # Serializes the response message
     cdef bytes response_raw = serialize(
@@ -202,11 +256,11 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
     # Assembles the batch operations
     cdef tuple finish_ops
     finish_ops = (
-        SendMessageOperation(response_raw, _EMPTY_FLAGS),
+        SendMessageOperation(response_raw, rpc_state.get_write_flag()),
         SendStatusFromServerOperation(
             rpc_state.trailing_metadata,
-            StatusCode.ok,
-            b'',
+            rpc_state.status_code,
+            rpc_state.status_details,
             _EMPTY_FLAGS,
         ),
     )
@@ -238,9 +292,6 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
             request,
             servicer_context,
         )
-
-        # Raises exception if aborted
-        _raise_if_aborted(rpc_state)
     else:
         # The handler uses async generator API
         async_response_generator = stream_handler(
@@ -251,21 +302,18 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
         # Consumes messages from the generator
         async for response_message in async_response_generator:
             # Raises exception if aborted
-            _raise_if_aborted(rpc_state)
+            rpc_state.raise_for_termination()
 
-            if rpc_state.server._status == AIO_SERVER_STATUS_STOPPED:
-                # The async generator might yield much much later after the
-                # server is destroied. If we proceed, Core will crash badly.
-                _LOGGER.info('Aborting RPC due to server stop.')
-                return
-            else:
-                await servicer_context.write(response_message)
+            await servicer_context.write(response_message)
+
+    # Raises exception if aborted
+    rpc_state.raise_for_termination()
 
     # Sends the final status of this RPC
     cdef SendStatusFromServerOperation op = SendStatusFromServerOperation(
         rpc_state.trailing_metadata,
-        StatusCode.ok,
-        b'',
+        rpc_state.status_code,
+        rpc_state.status_details,
         _EMPTY_FLAGS,
     )
 
@@ -285,6 +333,9 @@ async def _handle_unary_unary_rpc(object method_handler,
                                   object loop):
     # Receives request message
     cdef bytes request_raw = await _receive_message(rpc_state, loop)
+    if request_raw is None:
+        # The RPC was cancelled immediately after start on client side.
+        return
 
     # Deserializes the request message
     cdef object request_message = deserialize(
@@ -316,6 +367,8 @@ async def _handle_unary_stream_rpc(object method_handler,
                                    object loop):
     # Receives request message
     cdef bytes request_raw = await _receive_message(rpc_state, loop)
+    if request_raw is None:
+        return
 
     # Deserializes the request message
     cdef object request_message = deserialize(
@@ -418,15 +471,28 @@ async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
                 )
     except (KeyboardInterrupt, SystemExit):
         raise
+    except asyncio.CancelledError:
+        _LOGGER.debug('RPC cancelled for servicer method [%s]', _decode(rpc_state.method()))
+    except _ServerStoppedError:
+        _LOGGER.info('Aborting RPC due to server stop.')
     except Exception as e:
-        _LOGGER.exception(e)
+        _LOGGER.exception('Unexpected [%s] raised by servicer method [%s]' % (
+            type(e).__name__,
+            _decode(rpc_state.method()),
+        ))
         if not rpc_state.status_sent and rpc_state.server._status != AIO_SERVER_STATUS_STOPPED:
+            # Allows users to raise other types of exception with specified status code
+            if rpc_state.status_code == StatusCode.ok:
+                status_code = StatusCode.unknown
+            else:
+                status_code = rpc_state.status_code
+
             await _send_error_status_from_server(
                 rpc_state,
-                StatusCode.unknown,
+                status_code,
                 'Unexpected %s: %s' % (type(e), e),
                 rpc_state.trailing_metadata,
-                rpc_state.metadata_sent,
+                rpc_state.create_send_initial_metadata_op_if_not_sent(),
                 loop
             )
 
@@ -471,8 +537,8 @@ async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
             rpc_state,
             StatusCode.unimplemented,
             'Method not found!',
-            _EMPTY_METADATA,
-            rpc_state.metadata_sent,
+            _IMMUTABLE_EMPTY_METADATA,
+            rpc_state.create_send_initial_metadata_op_if_not_sent(),
             loop
         )
         return
@@ -515,13 +581,13 @@ cdef CallbackFailureHandler REQUEST_CALL_FAILURE_HANDLER = CallbackFailureHandle
 cdef CallbackFailureHandler SERVER_SHUTDOWN_FAILURE_HANDLER = CallbackFailureHandler(
     'grpc_server_shutdown_and_notify',
     None,
-    RuntimeError)
+    InternalError)
 
 
 cdef class AioServer:
 
     def __init__(self, loop, thread_pool, generic_handlers, interceptors,
-                 options, maximum_concurrent_rpcs, compression):
+                 options, maximum_concurrent_rpcs):
         # NOTE(lidiz) Core objects won't be deallocated automatically.
         # If AioServer.shutdown is not called, those objects will leak.
         self._server = Server(options)
@@ -550,8 +616,6 @@ cdef class AioServer:
             raise NotImplementedError()
         if maximum_concurrent_rpcs:
             raise NotImplementedError()
-        if compression:
-            raise NotImplementedError()
         if thread_pool:
             raise NotImplementedError()
 
@@ -564,7 +628,7 @@ cdef class AioServer:
 
     def add_secure_port(self, address, server_credentials):
         return self._server.add_http2_port(address,
-                                          server_credentials._credentials)
+                                           server_credentials._credentials)
 
     async def _request_call(self):
         cdef grpc_call_error error
@@ -580,7 +644,7 @@ cdef class AioServer:
             wrapper.c_functor()
         )
         if error != GRPC_CALL_OK:
-            raise RuntimeError("Error in grpc_server_request_call: %s" % error)
+            raise InternalError("Error in grpc_server_request_call: %s" % error)
 
         await future
         return rpc_state
@@ -630,7 +694,7 @@ cdef class AioServer:
         if self._status == AIO_SERVER_STATUS_RUNNING:
             return
         elif self._status != AIO_SERVER_STATUS_READY:
-            raise RuntimeError('Server not in ready state')
+            raise UsageError('Server not in ready state')
 
         self._status = AIO_SERVER_STATUS_RUNNING
         cdef object server_started = self._loop.create_future()
@@ -726,11 +790,7 @@ cdef class AioServer:
         return True
 
     def __dealloc__(self):
-        """Deallocation of Core objects are ensured by Python grpc.aio.Server.
-
-        If the Cython representation is deallocated without underlying objects
-        freed, raise an RuntimeError.
-        """
+        """Deallocation of Core objects are ensured by Python layer."""
         # TODO(lidiz) if users create server, and then dealloc it immediately.
         # There is a potential memory leak of created Core server.
         if self._status != AIO_SERVER_STATUS_STOPPED:

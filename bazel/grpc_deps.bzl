@@ -129,9 +129,11 @@ def grpc_deps():
     if "boringssl" not in native.existing_rules():
         http_archive(
             name = "boringssl",
-            # NOTE: This URL generates a tarball containing dynamic date
-            # information, so the sha256 is not consistent.
-            url = "https://boringssl.googlesource.com/boringssl/+archive/83da28a68f32023fd3b95a8ae94991a07b1f6c62.tar.gz",
+            # Use github mirror instead of https://boringssl.googlesource.com/boringssl
+            # to obtain a boringssl archive with consistent sha256
+            sha256 = "a3d4de4f03cb321ef943678d72a045c9a19d26b23d6f4e313f97600c65201a27",
+            strip_prefix = "boringssl-1c2769383f027befac5b75b6cedd25daf3bf4dcf",
+            url = "https://github.com/google/boringssl/archive/1c2769383f027befac5b75b6cedd25daf3bf4dcf.tar.gz",
         )
 
     if "zlib" not in native.existing_rules():
@@ -195,9 +197,9 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "19391fb4882601a65cb648d638c11aa301ce5f525ef02da1a9eafd22f72d7c59",
-            strip_prefix = "abseil-cpp-37dd2562ec830d547a1524bb306be313ac3f2556",
-            url = "https://github.com/abseil/abseil-cpp/archive/37dd2562ec830d547a1524bb306be313ac3f2556.tar.gz",
+            sha256 = "c14b840dc57926b8b671805426a82249e5ea0d7fddf709fd4619eb38cbb36fb5",
+            strip_prefix = "abseil-cpp-b832dce8489ef7b6231384909fd9b68d5a5ff2b7",
+            url = "https://github.com/abseil/abseil-cpp/archive/b832dce8489ef7b6231384909fd9b68d5a5ff2b7.tar.gz",
         )
 
     if "bazel_toolchains" not in native.existing_rules():
@@ -236,12 +238,13 @@ def grpc_deps():
             strip_prefix = "upb-d8f3d6f9d415b31f3ce56d46791706c38fa311bc",
             url = "https://github.com/protocolbuffers/upb/archive/d8f3d6f9d415b31f3ce56d46791706c38fa311bc.tar.gz",
         )
+
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
-            sha256 = "9e8cf42abce32c9b0e9e271b0cb62803084cbe5e5b49f5d5c2aef0766f9d69ca",
-            strip_prefix = "data-plane-api-c83ed7ea9eb5fb3b93d1ad52b59750f1958b8bde",
-            url = "https://github.com/envoyproxy/data-plane-api/archive/c83ed7ea9eb5fb3b93d1ad52b59750f1958b8bde.tar.gz",
+            sha256 = "4ba23e0370ec358d1050c020e00cd020f03644a733aaf8fd85cc43d17b92236a",
+            strip_prefix = "data-plane-api-0487bbb43c3e8b54c7332f74ba7344d8265774f7",
+            url = "https://github.com/envoyproxy/data-plane-api/archive/0487bbb43c3e8b54c7332f74ba7344d8265774f7.tar.gz",
         )
 
     if "io_bazel_rules_go" not in native.existing_rules():

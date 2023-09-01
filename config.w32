@@ -19,16 +19,22 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\http_connect_handshaker.cc " +
     "src\\core\\ext\\filters\\client_channel\\http_proxy.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\address_filtering.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\child_policy_handler.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\client_load_reporting_filter.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb_balancer_addresses.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb_channel_secure.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb_client_stats.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\load_balancer_api.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\pick_first\\pick_first.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\priority\\priority.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\round_robin\\round_robin.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\weighted_target\\weighted_target.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\cds.cc " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\xds.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\eds.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\lrs.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\xds_routing.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy_registry.cc " +
     "src\\core\\ext\\filters\\client_channel\\local_subchannel_pool.cc " +
     "src\\core\\ext\\filters\\client_channel\\parse_address.cc " +
@@ -68,6 +74,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\http\\client_authority_filter.cc " +
     "src\\core\\ext\\filters\\http\\http_filters_plugin.cc " +
     "src\\core\\ext\\filters\\http\\message_compress\\message_compress_filter.cc " +
+    "src\\core\\ext\\filters\\http\\message_compress\\message_decompress_filter.cc " +
     "src\\core\\ext\\filters\\http\\server\\http_server_filter.cc " +
     "src\\core\\ext\\filters\\max_age\\max_age_filter.cc " +
     "src\\core\\ext\\filters\\message_size\\message_size_filter.cc " +
@@ -242,6 +249,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\call_combiner.cc " +
     "src\\core\\lib\\iomgr\\cfstream_handle.cc " +
     "src\\core\\lib\\iomgr\\combiner.cc " +
+    "src\\core\\lib\\iomgr\\dualstack_socket_posix.cc " +
     "src\\core\\lib\\iomgr\\endpoint.cc " +
     "src\\core\\lib\\iomgr\\endpoint_cfstream.cc " +
     "src\\core\\lib\\iomgr\\endpoint_pair_posix.cc " +
@@ -249,6 +257,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\endpoint_pair_windows.cc " +
     "src\\core\\lib\\iomgr\\error.cc " +
     "src\\core\\lib\\iomgr\\error_cfstream.cc " +
+    "src\\core\\lib\\iomgr\\ev_apple.cc " +
     "src\\core\\lib\\iomgr\\ev_epoll1_linux.cc " +
     "src\\core\\lib\\iomgr\\ev_epollex_linux.cc " +
     "src\\core\\lib\\iomgr\\ev_poll_posix.cc " +
@@ -488,6 +497,21 @@ if (PHP_GRPC != "no") {
     "third_party\\abseil-cpp\\absl\\strings\\str_split.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\string_view.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\substitute.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\civil_time.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\clock.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\duration.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\format.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\civil_time_detail.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_fixed.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_format.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_if.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_impl.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_info.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_libc.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_lookup.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\time_zone_posix.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src\\zone_info_source.cc " +
+    "third_party\\abseil-cpp\\absl\\time\\time.cc " +
     "third_party\\abseil-cpp\\absl\\types\\bad_optional_access.cc " +
     "third_party\\address_sorting\\address_sorting.c " +
     "third_party\\address_sorting\\address_sorting_posix.c " +
@@ -804,7 +828,9 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\pick_first");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\priority");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\round_robin");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\weighted_target");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\xds");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver\\dns");
@@ -945,6 +971,10 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings\\internal");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\strings\\internal\\str_format");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\time");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\time\\internal");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\time\\internal\\cctz");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\time\\internal\\cctz\\src");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\types");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\address_sorting");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel");

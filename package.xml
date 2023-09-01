@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.28.2</release>
-  <api>1.28.2</api>
+  <release>1.29.1</release>
+  <api>1.29.1</api>
  </version>
  <stability>
   <release>stable</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.28.2 update
+- gRPC Core 1.29.1 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -108,12 +108,16 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/http_proxy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/address_filtering.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/address_filtering.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc" role="src" />
@@ -121,11 +125,15 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/priority/priority.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/subchannel_list.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/cds.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/eds.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_registry.h" role="src" />
@@ -196,6 +204,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/http/http_filters_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/message_compress_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/message_compress_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/message_decompress_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/message_decompress_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/server/http_server_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/server/http_server_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/max_age/max_age_filter.cc" role="src" />
@@ -534,6 +544,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/closure.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/combiner.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/combiner.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/dualstack_socket_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/dynamic_annotations.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.h" role="src" />
@@ -548,6 +559,8 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/error_cfstream.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/error_cfstream.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/error_internal.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_apple.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_apple.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll1_linux.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll1_linux.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epollex_linux.cc" role="src" />
@@ -611,9 +624,11 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_uv.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_uv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/port.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/python_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_custom.cc" role="src" />
@@ -672,6 +687,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_custom.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_custom.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_generic.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/timer_generic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_heap.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_heap.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_manager.cc" role="src" />
@@ -887,7 +903,6 @@
     <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/grpc_shadow_boringssl.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/local_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/local_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session.h" role="src" />
@@ -1037,6 +1052,37 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/strip.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/substitute.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/strings/substitute.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/civil_time.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/civil_time.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/clock.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/clock.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/duration.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/format.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/include/cctz/civil_time.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/include/cctz/civil_time_detail.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/include/cctz/time_zone.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/include/cctz/zone_info_source.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/civil_time_detail.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_fixed.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_fixed.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_format.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_if.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_if.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_impl.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_impl.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_info.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_info.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_libc.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_libc.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_lookup.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/tzfile.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/get_current_time_chrono.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/get_current_time_posix.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/time.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/time.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/bad_optional_access.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/bad_optional_access.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/internal/optional.h" role="src" />

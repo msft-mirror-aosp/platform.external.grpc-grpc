@@ -75,11 +75,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build.yaml
-g_stands_for = "galactic"
+g_stands_for = "gringotts"
 
-core_version = "9.0.0"
+core_version = "10.0.0"
 
-version = "1.28.2"
+version = "1.29.1"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -319,8 +319,10 @@ grpc_cc_library(
     deps = [
         "grpc_common",
         "grpc_lb_policy_cds",
+        "grpc_lb_policy_eds",
         "grpc_lb_policy_grpclb",
-        "grpc_lb_policy_xds",
+        "grpc_lb_policy_lrs",
+        "grpc_lb_policy_xds_routing",
         "grpc_resolver_xds",
     ],
 )
@@ -337,8 +339,10 @@ grpc_cc_library(
     deps = [
         "grpc_common",
         "grpc_lb_policy_cds_secure",
+        "grpc_lb_policy_eds_secure",
         "grpc_lb_policy_grpclb_secure",
-        "grpc_lb_policy_xds_secure",
+        "grpc_lb_policy_lrs_secure",
+        "grpc_lb_policy_xds_routing",
         "grpc_resolver_xds_secure",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
@@ -559,6 +563,7 @@ grpc_cc_library(
         "absl/memory",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/time:time",
     ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
@@ -713,6 +718,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/call_combiner.cc",
         "src/core/lib/iomgr/cfstream_handle.cc",
         "src/core/lib/iomgr/combiner.cc",
+        "src/core/lib/iomgr/dualstack_socket_posix.cc",
         "src/core/lib/iomgr/endpoint.cc",
         "src/core/lib/iomgr/endpoint_cfstream.cc",
         "src/core/lib/iomgr/endpoint_pair_posix.cc",
@@ -720,6 +726,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/endpoint_pair_windows.cc",
         "src/core/lib/iomgr/error.cc",
         "src/core/lib/iomgr/error_cfstream.cc",
+        "src/core/lib/iomgr/ev_apple.cc",
         "src/core/lib/iomgr/ev_epoll1_linux.cc",
         "src/core/lib/iomgr/ev_epollex_linux.cc",
         "src/core/lib/iomgr/ev_poll_posix.cc",
@@ -881,6 +888,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/error.h",
         "src/core/lib/iomgr/error_cfstream.h",
         "src/core/lib/iomgr/error_internal.h",
+        "src/core/lib/iomgr/ev_apple.h",
         "src/core/lib/iomgr/ev_epoll1_linux.h",
         "src/core/lib/iomgr/ev_epollex_linux.h",
         "src/core/lib/iomgr/ev_poll_posix.h",
@@ -985,7 +993,6 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
-    use_cfstream = True,
     deps = [
         "eventmanager_libuv",
         "gpr_base",
@@ -1021,7 +1028,9 @@ grpc_cc_library(
         "grpc_deadline_filter",
         "grpc_client_authority_filter",
         "grpc_lb_policy_pick_first",
+        "grpc_lb_policy_priority",
         "grpc_lb_policy_round_robin",
+        "grpc_lb_policy_weighted_target",
         "grpc_client_idle_filter",
         "grpc_max_age_filter",
         "grpc_message_size_filter",
@@ -1187,11 +1196,13 @@ grpc_cc_library(
         "src/core/ext/filters/http/client/http_client_filter.cc",
         "src/core/ext/filters/http/http_filters_plugin.cc",
         "src/core/ext/filters/http/message_compress/message_compress_filter.cc",
+        "src/core/ext/filters/http/message_compress/message_decompress_filter.cc",
         "src/core/ext/filters/http/server/http_server_filter.cc",
     ],
     hdrs = [
         "src/core/ext/filters/http/client/http_client_filter.h",
         "src/core/ext/filters/http/message_compress/message_compress_filter.h",
+        "src/core/ext/filters/http/message_compress/message_decompress_filter.h",
         "src/core/ext/filters/http/server/http_server_filter.h",
     ],
     language = "c++",
@@ -1234,6 +1245,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_grpclb_balancer_addresses",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_grpclb",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc",
@@ -1253,6 +1279,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_grpclb_balancer_addresses",
         "grpc_lb_upb",
         "grpc_resolver_fake",
         "grpc_transport_chttp2_client_insecure",
@@ -1279,6 +1306,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_grpclb_balancer_addresses",
         "grpc_lb_upb",
         "grpc_resolver_fake",
         "grpc_secure",
@@ -1338,38 +1366,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_lb_policy_xds",
-    srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
-    ],
-    hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_base",
-        "grpc_client_channel",
-        "grpc_xds_client",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_lb_policy_xds_secure",
-    srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
-    ],
-    hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_base",
-        "grpc_client_channel",
-        "grpc_xds_client_secure",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_lb_policy_cds",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/cds.cc",
@@ -1392,6 +1388,102 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_xds_client_secure",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_eds",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/eds.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_lb_address_filtering",
+        "grpc_xds_client",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_eds_secure",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/eds.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_lb_address_filtering",
+        "grpc_xds_client_secure",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_lrs",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_xds_client",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_lrs_secure",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_xds_client_secure",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_xds_routing",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_address_filtering",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/address_filtering.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/address_filtering.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
     ],
 )
 
@@ -1430,6 +1522,35 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_lb_subchannel_list",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_priority",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/priority/priority.cc",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_lb_address_filtering",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_weighted_target",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_lb_address_filtering",
     ],
 )
 
@@ -1604,6 +1725,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_grpclb_balancer_addresses",
         "grpc_resolver_dns_selection",
     ],
 )
@@ -1740,7 +1862,6 @@ grpc_cc_library(
     deps = [
         "alts_util",
         "grpc_base",
-        "grpc_shadow_boringssl",
         "grpc_transport_chttp2_alpn",
         "tsi",
     ],
@@ -1981,7 +2102,6 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc_base",
-        "grpc_shadow_boringssl",
         "tsi_interface",
     ],
 )
@@ -2050,7 +2170,6 @@ grpc_cc_library(
         "alts_util",
         "gpr",
         "grpc_base",
-        "grpc_shadow_boringssl",
         "grpc_transport_chttp2_client_insecure",
         "tsi_interface",
     ],
@@ -2261,12 +2380,16 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc++_test",
+    srcs = [
+        "src/cpp/client/channel_test_peer.cc",
+    ],
     public_hdrs = [
         "include/grpc++/test/mock_stream.h",
         "include/grpc++/test/server_context_test_spouse.h",
+        "include/grpcpp/test/channel_test_peer.h",
+        "include/grpcpp/test/default_reactor_test_peer.h",
         "include/grpcpp/test/mock_stream.h",
         "include/grpcpp/test/server_context_test_spouse.h",
-        "include/grpcpp/test/default_reactor_test_peer.h",
     ],
     deps = [
         ":grpc++",
@@ -2316,7 +2439,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "include/grpcpp/opencensus.h",
-        "include/grpcpp/opencensus_impl.h",
         "src/cpp/ext/filters/census/channel_filter.h",
         "src/cpp/ext/filters/census/client_filter.h",
         "src/cpp/ext/filters/census/context.h",
@@ -2337,13 +2459,6 @@ grpc_cc_library(
     deps = [
         ":census",
         ":grpc++",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_shadow_boringssl",
-    hdrs = [
-        "src/core/tsi/grpc_shadow_boringssl.h",
     ],
 )
 

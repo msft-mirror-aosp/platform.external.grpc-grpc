@@ -866,9 +866,19 @@ class PythonLanguage(object):
             else:
                 if args.iomgr_platform == 'asyncio':
                     return (python36_config,)
+                elif os.uname()[0] == 'Darwin':
+                    # NOTE(rbellevi): Testing takes significantly longer on
+                    # MacOS, so we restrict the number of interpreter versions
+                    # tested.
+                    return (
+                        python27_config,
+                        python36_config,
+                        python37_config,
+                    )
                 else:
                     return (
                         python27_config,
+                        python35_config,
                         python36_config,
                         python37_config,
                     )
@@ -1243,6 +1253,11 @@ class Sanity(object):
             if _is_use_docker_child():
                 environ['CLANG_FORMAT_SKIP_DOCKER'] = 'true'
                 environ['CLANG_TIDY_SKIP_DOCKER'] = 'true'
+                # sanity tests run tools/bazel wrapper concurrently
+                # and that can result in a download/run race in the wrapper.
+                # under docker we already have the right version of bazel
+                # so we can just disable the wrapper.
+                environ['DISABLE_BAZEL_WRAPPER'] = 'true'
             return [
                 self.config.job_spec(cmd['script'].split(),
                                      timeout_seconds=30 * 60,

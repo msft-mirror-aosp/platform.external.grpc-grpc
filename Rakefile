@@ -88,7 +88,7 @@ task 'dlls' do
 
   env = 'CPPFLAGS="-D_WIN32_WINNT=0x600 -DNTDDI_VERSION=0x06000000 -DUNICODE -D_UNICODE -Wno-unused-variable -Wno-unused-result -DCARES_STATICLIB -Wno-error=conversion -Wno-sign-compare -Wno-parentheses -Wno-format -DWIN32_LEAN_AND_MEAN" '
   env += 'CFLAGS="-Wno-incompatible-pointer-types" '
-  env += 'CXXFLAGS="-std=c++11" '
+  env += 'CXXFLAGS="-std=c++11 -fno-exceptions" '
   env += 'LDFLAGS=-static '
   env += 'SYSTEM=MINGW32 '
   env += 'EMBED_ZLIB=true '
@@ -142,7 +142,7 @@ task 'gem:native' do
 
         gem update --system --no-document && \
         bundle && \
-        rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
+        rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem \
           RUBY_CC_VERSION=2.7.0:2.6.0:2.5.0:2.4.0:2.3.0 \
           V=#{verbose} \
           GRPC_CONFIG=#{grpc_config}

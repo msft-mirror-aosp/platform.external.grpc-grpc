@@ -1356,10 +1356,8 @@ static void perform_stream_op_locked(void* stream_op,
   s->context = op->payload->context;
   s->traced = op->is_traced;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    char* str = grpc_transport_stream_op_batch_string(op);
-    gpr_log(GPR_INFO, "perform_stream_op_locked: %s; on_complete = %p", str,
-            op->on_complete);
-    gpr_free(str);
+    gpr_log(GPR_INFO, "perform_stream_op_locked: %s; on_complete = %p",
+            grpc_transport_stream_op_batch_string(op).c_str(), op->on_complete);
     if (op->send_initial_metadata) {
       log_metadata(op_payload->send_initial_metadata.send_initial_metadata,
                    s->id, t->is_client, true);
@@ -1654,9 +1652,8 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
   }
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    char* str = grpc_transport_stream_op_batch_string(op);
-    gpr_log(GPR_INFO, "perform_stream_op[s=%p]: %s", s, str);
-    gpr_free(str);
+    gpr_log(GPR_INFO, "perform_stream_op[s=%p]: %s", s,
+            grpc_transport_stream_op_batch_string(op).c_str());
   }
 
   GRPC_CHTTP2_STREAM_REF(s, "perform_stream_op");
@@ -1845,9 +1842,8 @@ static void perform_transport_op_locked(void* stream_op,
 static void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    char* msg = grpc_transport_op_string(op);
-    gpr_log(GPR_INFO, "perform_transport_op[t=%p]: %s", t, msg);
-    gpr_free(msg);
+    gpr_log(GPR_INFO, "perform_transport_op[t=%p]: %s", t,
+            grpc_transport_op_string(op).c_str());
   }
   op->handler_private.extra_arg = gt;
   GRPC_CHTTP2_REF_TRANSPORT(t, "transport_op");
@@ -2401,10 +2397,10 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_CLOSE_FROM_API);
 }
 
-typedef struct {
+struct cancel_stream_cb_args {
   grpc_error* error;
   grpc_chttp2_transport* t;
-} cancel_stream_cb_args;
+};
 
 static void cancel_stream_cb(void* user_data, uint32_t /*key*/, void* stream) {
   cancel_stream_cb_args* args = static_cast<cancel_stream_cb_args*>(user_data);
@@ -2485,7 +2481,8 @@ static grpc_error* try_http_parsing(grpc_chttp2_transport* t) {
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                "Trying to connect an http1.x server"),
                            GRPC_ERROR_INT_HTTP_STATUS, response.status),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+        GRPC_ERROR_INT_GRPC_STATUS,
+        grpc_http2_status_to_grpc_status(response.status));
   }
   GRPC_ERROR_UNREF(parse_error);
 

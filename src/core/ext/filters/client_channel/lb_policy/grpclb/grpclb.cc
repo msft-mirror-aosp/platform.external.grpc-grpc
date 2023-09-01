@@ -74,6 +74,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
@@ -301,6 +302,37 @@ class GrpcLb : public LoadBalancingPolicy {
     RefCountedPtr<GrpcLb> parent_;
   };
 
+  class StateWatcher : public AsyncConnectivityStateWatcherInterface {
+   public:
+    explicit StateWatcher(RefCountedPtr<GrpcLb> parent)
+        : AsyncConnectivityStateWatcherInterface(parent->combiner()),
+          parent_(std::move(parent)) {}
+
+    ~StateWatcher() { parent_.reset(DEBUG_LOCATION, "StateWatcher"); }
+
+   private:
+    void OnConnectivityStateChange(grpc_connectivity_state new_state) override {
+      if (parent_->fallback_at_startup_checks_pending_ &&
+          new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into
+        // fallback mode immediately.
+        gpr_log(GPR_INFO,
+                "[grpclb %p] balancer channel in state TRANSIENT_FAILURE; "
+                "entering fallback mode",
+                parent_.get());
+        parent_->fallback_at_startup_checks_pending_ = false;
+        grpc_timer_cancel(&parent_->lb_fallback_timer_);
+        parent_->fallback_mode_ = true;
+        parent_->CreateOrUpdateChildPolicyLocked();
+        // Cancel the watch, since we don't care about the channel state once we
+        // go into fallback mode.
+        parent_->CancelBalancerChannelConnectivityWatchLocked();
+      }
+    }
+
+    RefCountedPtr<GrpcLb> parent_;
+  };
+
   ~GrpcLb();
 
   void ShutdownLocked() override;
@@ -308,10 +340,6 @@ class GrpcLb : public LoadBalancingPolicy {
   // Helper functions used in UpdateLocked().
   void ProcessAddressesAndChannelArgsLocked(const ServerAddressList& addresses,
                                             const grpc_channel_args& args);
-  static void OnBalancerChannelConnectivityChanged(void* arg,
-                                                   grpc_error* error);
-  static void OnBalancerChannelConnectivityChangedLocked(void* arg,
-                                                         grpc_error* error);
   void CancelBalancerChannelConnectivityWatchLocked();
 
   // Methods for dealing with fallback state.
@@ -343,6 +371,7 @@ class GrpcLb : public LoadBalancingPolicy {
 
   // The channel for communicating with the LB server.
   grpc_channel* lb_channel_ = nullptr;
+  StateWatcher* watcher_ = nullptr;
   // Response generator to inject address updates into lb_channel_.
   RefCountedPtr<FakeResolverResponseGenerator> response_generator_;
 
@@ -375,8 +404,6 @@ class GrpcLb : public LoadBalancingPolicy {
   bool fallback_at_startup_checks_pending_ = false;
   grpc_timer lb_fallback_timer_;
   grpc_closure lb_on_fallback_;
-  grpc_connectivity_state lb_channel_connectivity_ = GRPC_CHANNEL_IDLE;
-  grpc_closure lb_channel_on_connectivity_changed_;
 
   // The child policy to use for the backends.
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
@@ -1215,25 +1242,11 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
 // helper code for creating balancer channel
 //
 
-ServerAddressList ExtractBalancerAddresses(const ServerAddressList& addresses) {
-  ServerAddressList balancer_addresses;
-  for (size_t i = 0; i < addresses.size(); ++i) {
-    if (addresses[i].IsBalancer()) {
-      // Strip out the is_balancer channel arg, since we don't want to
-      // recursively use the grpclb policy in the channel used to talk to
-      // the balancers.  Note that we do NOT strip out the balancer_name
-      // channel arg, since we need that to set the authority correctly
-      // to talk to the balancers.
-      static const char* args_to_remove[] = {
-          GRPC_ARG_ADDRESS_IS_BALANCER,
-      };
-      balancer_addresses.emplace_back(
-          addresses[i].address(),
-          grpc_channel_args_copy_and_remove(addresses[i].args(), args_to_remove,
-                                            GPR_ARRAY_SIZE(args_to_remove)));
-    }
-  }
-  return balancer_addresses;
+ServerAddressList ExtractBalancerAddresses(const grpc_channel_args& args) {
+  const ServerAddressList* addresses =
+      FindGrpclbBalancerAddressesInChannelArgs(args);
+  if (addresses != nullptr) return *addresses;
+  return ServerAddressList();
 }
 
 /* Returns the channel args for the LB channel, used to create a bidirectional
@@ -1353,6 +1366,7 @@ void GrpcLb::ShutdownLocked() {
     grpc_timer_cancel(&lb_call_retry_timer_);
   }
   if (fallback_at_startup_checks_pending_) {
+    fallback_at_startup_checks_pending_ = false;
     grpc_timer_cancel(&lb_fallback_timer_);
     CancelBalancerChannelConnectivityWatchLocked();
   }
@@ -1412,15 +1426,10 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
         grpc_channel_get_channel_stack(lb_channel_));
     GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
     // Ref held by callback.
-    Ref(DEBUG_LOCATION, "watch_lb_channel_connectivity").release();
-    GRPC_CLOSURE_INIT(&lb_channel_on_connectivity_changed_,
-                      &GrpcLb::OnBalancerChannelConnectivityChanged, this,
-                      grpc_schedule_on_exec_ctx);
-    grpc_client_channel_watch_connectivity_state(
-        client_channel_elem,
-        grpc_polling_entity_create_from_pollset_set(interested_parties()),
-        &lb_channel_connectivity_, &lb_channel_on_connectivity_changed_,
-        nullptr);
+    watcher_ = new StateWatcher(Ref(DEBUG_LOCATION, "StateWatcher"));
+    grpc_client_channel_start_connectivity_watch(
+        client_channel_elem, GRPC_CHANNEL_IDLE,
+        OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));
     // Start balancer call.
     StartBalancerCallLocked();
   }
@@ -1430,27 +1439,25 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
 // helpers for UpdateLocked()
 //
 
-// Returns the backend addresses extracted from the given addresses.
-ServerAddressList ExtractBackendAddresses(const ServerAddressList& addresses) {
+ServerAddressList AddNullLbTokenToAddresses(
+    const ServerAddressList& addresses) {
   static const char* lb_token = "";
   grpc_arg arg = grpc_channel_arg_pointer_create(
       const_cast<char*>(GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN),
       const_cast<char*>(lb_token), &lb_token_arg_vtable);
-  ServerAddressList backend_addresses;
+  ServerAddressList addresses_out;
   for (size_t i = 0; i < addresses.size(); ++i) {
-    if (!addresses[i].IsBalancer()) {
-      backend_addresses.emplace_back(
-          addresses[i].address(),
-          grpc_channel_args_copy_and_add(addresses[i].args(), &arg, 1));
-    }
+    addresses_out.emplace_back(
+        addresses[i].address(),
+        grpc_channel_args_copy_and_add(addresses[i].args(), &arg, 1));
   }
-  return backend_addresses;
+  return addresses_out;
 }
 
 void GrpcLb::ProcessAddressesAndChannelArgsLocked(
     const ServerAddressList& addresses, const grpc_channel_args& args) {
   // Update fallback address list.
-  fallback_backend_addresses_ = ExtractBackendAddresses(addresses);
+  fallback_backend_addresses_ = AddNullLbTokenToAddresses(addresses);
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
   // since we use this to trigger the client_load_reporting filter.
   static const char* args_to_remove[] = {GRPC_ARG_LB_POLICY_NAME};
@@ -1460,7 +1467,7 @@ void GrpcLb::ProcessAddressesAndChannelArgsLocked(
   args_ = grpc_channel_args_copy_and_add_and_remove(
       &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &new_arg, 1);
   // Construct args for balancer channel.
-  ServerAddressList balancer_addresses = ExtractBalancerAddresses(addresses);
+  ServerAddressList balancer_addresses = ExtractBalancerAddresses(args);
   grpc_channel_args* lb_channel_args = BuildBalancerChannelArgs(
       balancer_addresses, response_generator_.get(), &args);
   // Create balancer channel if needed.
@@ -1479,60 +1486,11 @@ void GrpcLb::ProcessAddressesAndChannelArgsLocked(
   response_generator_->SetResponse(std::move(result));
 }
 
-void GrpcLb::OnBalancerChannelConnectivityChanged(void* arg,
-                                                  grpc_error* error) {
-  GrpcLb* self = static_cast<GrpcLb*>(arg);
-  self->combiner()->Run(
-      GRPC_CLOSURE_INIT(&self->lb_channel_on_connectivity_changed_,
-                        &GrpcLb::OnBalancerChannelConnectivityChangedLocked,
-                        self, nullptr),
-      GRPC_ERROR_REF(error));
-}
-
-void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
-                                                        grpc_error* /*error*/) {
-  GrpcLb* self = static_cast<GrpcLb*>(arg);
-  if (!self->shutting_down_ && self->fallback_at_startup_checks_pending_) {
-    if (self->lb_channel_connectivity_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      // Not in TRANSIENT_FAILURE.  Renew connectivity watch.
-      grpc_channel_element* client_channel_elem =
-          grpc_channel_stack_last_element(
-              grpc_channel_get_channel_stack(self->lb_channel_));
-      GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-      GRPC_CLOSURE_INIT(&self->lb_channel_on_connectivity_changed_,
-                        &GrpcLb::OnBalancerChannelConnectivityChanged, self,
-                        grpc_schedule_on_exec_ctx);
-      grpc_client_channel_watch_connectivity_state(
-          client_channel_elem,
-          grpc_polling_entity_create_from_pollset_set(
-              self->interested_parties()),
-          &self->lb_channel_connectivity_,
-          &self->lb_channel_on_connectivity_changed_, nullptr);
-      return;  // Early out so we don't drop the ref below.
-    }
-    // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into
-    // fallback mode immediately.
-    gpr_log(GPR_INFO,
-            "[grpclb %p] balancer channel in state TRANSIENT_FAILURE; "
-            "entering fallback mode",
-            self);
-    self->fallback_at_startup_checks_pending_ = false;
-    grpc_timer_cancel(&self->lb_fallback_timer_);
-    self->fallback_mode_ = true;
-    self->CreateOrUpdateChildPolicyLocked();
-  }
-  // Done watching connectivity state, so drop ref.
-  self->Unref(DEBUG_LOCATION, "watch_lb_channel_connectivity");
-}
-
 void GrpcLb::CancelBalancerChannelConnectivityWatchLocked() {
   grpc_channel_element* client_channel_elem = grpc_channel_stack_last_element(
       grpc_channel_get_channel_stack(lb_channel_));
   GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-  grpc_client_channel_watch_connectivity_state(
-      client_channel_elem,
-      grpc_polling_entity_create_from_pollset_set(interested_parties()),
-      nullptr, &lb_channel_on_connectivity_changed_, nullptr);
+  grpc_client_channel_stop_connectivity_watch(client_channel_elem, watcher_);
 }
 
 //

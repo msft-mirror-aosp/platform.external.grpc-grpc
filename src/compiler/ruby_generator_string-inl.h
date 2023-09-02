@@ -116,15 +116,15 @@ inline grpc::string RubyPackage(const grpc::protobuf::FileDescriptor* file) {
 }
 
 // RubyTypeOf updates a proto type to the required ruby equivalent.
-inline grpc::string RubyTypeOf(const grpc::protobuf::Descriptor* descriptor,
-                               const grpc::string& package) {
+inline grpc::string RubyTypeOf(const grpc::protobuf::Descriptor* descriptor) {
   std::string proto_type = descriptor->full_name();
   if (descriptor->file()->options().has_ruby_package()) {
-    proto_type = RubyPackage(descriptor->file()) + "." + descriptor->name();
+    // remove the leading package if present
+    ReplacePrefix(&proto_type, descriptor->file()->package(), "");
+    ReplacePrefix(&proto_type, ".", "");  // remove the leading . (no package)
+    proto_type = RubyPackage(descriptor->file()) + "." + proto_type;
   }
   grpc::string res(proto_type);
-  ReplacePrefix(&res, package, "");  // remove the leading package if present
-  ReplacePrefix(&res, ".", "");      // remove the leading . (no package)
   if (res.find('.') == grpc::string::npos) {
     return res;
   } else {

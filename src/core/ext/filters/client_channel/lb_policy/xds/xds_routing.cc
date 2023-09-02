@@ -34,8 +34,8 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 
 #define GRPC_XDS_ROUTING_CHILD_RETENTION_INTERVAL_MS (15 * 60 * 1000)
 
@@ -161,7 +161,8 @@ class XdsRoutingLb : public LoadBalancingPolicy {
       void UpdateState(grpc_connectivity_state state,
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
-      void AddTraceEvent(TraceSeverity severity, StringView message) override;
+      void AddTraceEvent(TraceSeverity severity,
+                         absl::string_view message) override;
 
      private:
       RefCountedPtr<XdsRoutingChild> xds_routing_child_;
@@ -172,7 +173,7 @@ class XdsRoutingLb : public LoadBalancingPolicy {
         const grpc_channel_args* args);
 
     static void OnDelayedRemovalTimer(void* arg, grpc_error* error);
-    static void OnDelayedRemovalTimerLocked(void* arg, grpc_error* error);
+    void OnDelayedRemovalTimerLocked(grpc_error* error);
 
     // The owning LB policy.
     RefCountedPtr<XdsRoutingLb> xds_routing_policy_;
@@ -400,6 +401,8 @@ XdsRoutingLb::XdsRoutingChild::XdsRoutingChild(
     gpr_log(GPR_INFO, "[xds_routing_lb %p] created XdsRoutingChild %p for %s",
             xds_routing_policy_.get(), this, name_.c_str());
   }
+  GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimer, this,
+                    grpc_schedule_on_exec_ctx);
 }
 
 XdsRoutingLb::XdsRoutingChild::~XdsRoutingChild() {
@@ -436,7 +439,7 @@ OrphanablePtr<LoadBalancingPolicy>
 XdsRoutingLb::XdsRoutingChild::CreateChildPolicyLocked(
     const grpc_channel_args* args) {
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = xds_routing_policy_->combiner();
+  lb_policy_args.work_serializer = xds_routing_policy_->work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
       absl::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
@@ -501,8 +504,6 @@ void XdsRoutingLb::XdsRoutingChild::DeactivateLocked() {
   // Set the child weight to 0 so that future picker won't contain this child.
   // Start a timer to delete the child.
   Ref(DEBUG_LOCATION, "XdsRoutingChild+timer").release();
-  GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimer, this,
-                    grpc_schedule_on_exec_ctx);
   grpc_timer_init(
       &delayed_removal_timer_,
       ExecCtx::Get()->Now() + GRPC_XDS_ROUTING_CHILD_RETENTION_INTERVAL_MS,
@@ -513,20 +514,20 @@ void XdsRoutingLb::XdsRoutingChild::DeactivateLocked() {
 void XdsRoutingLb::XdsRoutingChild::OnDelayedRemovalTimer(void* arg,
                                                           grpc_error* error) {
   XdsRoutingChild* self = static_cast<XdsRoutingChild*>(arg);
-  self->xds_routing_policy_->combiner()->Run(
-      GRPC_CLOSURE_INIT(&self->on_delayed_removal_timer_,
-                        OnDelayedRemovalTimerLocked, self, nullptr),
-      GRPC_ERROR_REF(error));
+  GRPC_ERROR_REF(error);  // Ref owned by the lambda
+  self->xds_routing_policy_->work_serializer()->Run(
+      [self, error]() { self->OnDelayedRemovalTimerLocked(error); },
+      DEBUG_LOCATION);
 }
 
 void XdsRoutingLb::XdsRoutingChild::OnDelayedRemovalTimerLocked(
-    void* arg, grpc_error* error) {
-  XdsRoutingChild* self = static_cast<XdsRoutingChild*>(arg);
-  self->delayed_removal_timer_callback_pending_ = false;
-  if (error == GRPC_ERROR_NONE && !self->shutdown_) {
-    self->xds_routing_policy_->actions_.erase(self->name_);
+    grpc_error* error) {
+  delayed_removal_timer_callback_pending_ = false;
+  if (error == GRPC_ERROR_NONE && !shutdown_) {
+    xds_routing_policy_->actions_.erase(name_);
   }
-  self->Unref(DEBUG_LOCATION, "XdsRoutingChild+timer");
+  Unref(DEBUG_LOCATION, "XdsRoutingChild+timer");
+  GRPC_ERROR_UNREF(error);
 }
 
 //
@@ -579,7 +580,7 @@ void XdsRoutingLb::XdsRoutingChild::Helper::RequestReresolution() {
 }
 
 void XdsRoutingLb::XdsRoutingChild::Helper::AddTraceEvent(
-    TraceSeverity severity, StringView message) {
+    TraceSeverity severity, absl::string_view message) {
   if (xds_routing_child_->xds_routing_policy_->shutting_down_) return;
   xds_routing_child_->xds_routing_policy_->channel_control_helper()
       ->AddTraceEvent(severity, message);
@@ -711,7 +712,7 @@ class XdsRoutingLbFactory : public LoadBalancingPolicyFactory {
           "value should be of type object"));
       return error_list;
     }
-    auto it = json.object_value().find("child_policy");
+    auto it = json.object_value().find("childPolicy");
     if (it == json.object_value().end()) {
       error_list.push_back(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("did not find childPolicy"));

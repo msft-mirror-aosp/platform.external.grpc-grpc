@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/tsi/grpc_shadow_boringssl.h"
-
 #include "src/core/tsi/ssl_transport_security.h"
 
 #include <limits.h>
@@ -34,6 +32,8 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #endif
+
+#include "absl/strings/match.h"
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -1122,7 +1122,8 @@ static void tsi_ssl_handshaker_factory_init(
 tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
                                            tsi_peer_property* property) {
   BIO* bio = BIO_new(BIO_s_mem());
-  for (int i = 0; i < sk_X509_num(peer_chain); i++) {
+  const auto peer_chain_len = sk_X509_num(peer_chain);
+  for (auto i = decltype(peer_chain_len){0}; i < peer_chain_len; i++) {
     if (!PEM_write_bio_X509(bio, sk_X509_value(peer_chain, i))) {
       BIO_free(bio);
       return TSI_INTERNAL_ERROR;
@@ -1657,7 +1658,7 @@ static int does_entry_match_name(grpc_core::StringView entry,
     if (entry.empty()) return 0;
   }
 
-  if (name == entry) {
+  if (absl::EqualsIgnoreCase(name, entry)) {
     return 1; /* Perfect match. */
   }
   if (entry.front() != '*') return 0;
@@ -1684,7 +1685,7 @@ static int does_entry_match_name(grpc_core::StringView entry,
   if (name_subdomain.back() == '.') {
     name_subdomain.remove_suffix(1);
   }
-  return !entry.empty() && name_subdomain == entry;
+  return !entry.empty() && absl::EqualsIgnoreCase(name_subdomain, entry);
 }
 
 static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
@@ -1706,7 +1707,7 @@ static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
     }
   }
   gpr_log(GPR_ERROR, "No match found for server name: %s.", servername);
-  return SSL_TLSEXT_ERR_ALERT_WARNING;
+  return SSL_TLSEXT_ERR_NOACK;
 }
 
 #if TSI_OPENSSL_ALPN_SUPPORT

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 
 class _WatchConnectivityFailed(Exception):
@@ -25,26 +26,31 @@ cdef CallbackFailureHandler _WATCH_CONNECTIVITY_FAILURE_HANDLER = CallbackFailur
 
 
 cdef class AioChannel:
-    def __cinit__(self, bytes target, tuple options, ChannelCredentials credentials):
+    def __cinit__(self, bytes target, tuple options, ChannelCredentials credentials, object loop):
+        init_grpc_aio()
         if options is None:
             options = ()
         cdef _ChannelArgs channel_args = _ChannelArgs(options)
         self._target = target
-        self.cq = CallbackCompletionQueue()
-        self._loop = asyncio.get_event_loop()
+        self.loop = loop
         self._status = AIO_CHANNEL_STATUS_READY
 
         if credentials is None:
+            self._is_secure = False
             self.channel = grpc_insecure_channel_create(
                 <char *>target,
                 channel_args.c_args(),
                 NULL)
         else:
+            self._is_secure = True
             self.channel = grpc_secure_channel_create(
                 <grpc_channel_credentials *> credentials.c(),
                 <char *>target,
                 channel_args.c_args(),
                 NULL)
+
+    def __dealloc__(self):
+        shutdown_grpc_aio()
 
     def __repr__(self):
         class_name = self.__class__.__name__
@@ -53,10 +59,13 @@ cdef class AioChannel:
 
     def check_connectivity_state(self, bint try_to_connect):
         """A Cython wrapper for Core's check connectivity state API."""
-        return grpc_channel_check_connectivity_state(
-            self.channel,
-            try_to_connect,
-        )
+        if self._status == AIO_CHANNEL_STATUS_DESTROYED:
+            return ConnectivityState.shutdown
+        else:
+            return grpc_channel_check_connectivity_state(
+                self.channel,
+                try_to_connect,
+            )
 
     async def watch_connectivity_state(self,
                                        grpc_connectivity_state last_observed_state,
@@ -66,20 +75,21 @@ cdef class AioChannel:
         Keeps mirroring the behavior from Core, so we can easily switch to
         other design of API if necessary.
         """
-        if self._status == AIO_CHANNEL_STATUS_DESTROYED:
-            # TODO(lidiz) switch to UsageError
-            raise RuntimeError('Channel is closed.')
+        if self._status in (AIO_CHANNEL_STATUS_DESTROYED, AIO_CHANNEL_STATUS_CLOSING):
+            raise UsageError('Channel is closed.')
+
         cdef gpr_timespec c_deadline = _timespec_from_time(deadline)
 
-        cdef object future = self._loop.create_future()
+        cdef object future = self.loop.create_future()
         cdef CallbackWrapper wrapper = CallbackWrapper(
             future,
+            self.loop,
             _WATCH_CONNECTIVITY_FAILURE_HANDLER)
         grpc_channel_watch_connectivity_state(
             self.channel,
             last_observed_state,
             c_deadline,
-            self.cq.c_ptr(),
+            global_completion_queue(),
             wrapper.c_functor())
 
         try:
@@ -89,28 +99,36 @@ cdef class AioChannel:
         else:
             return True
 
+    def closing(self):
+        self._status = AIO_CHANNEL_STATUS_CLOSING
+
     def close(self):
-        grpc_channel_destroy(self.channel)
         self._status = AIO_CHANNEL_STATUS_DESTROYED
+        grpc_channel_destroy(self.channel)
+
+    def closed(self):
+        return self._status in (AIO_CHANNEL_STATUS_CLOSING, AIO_CHANNEL_STATUS_DESTROYED)
 
     def call(self,
              bytes method,
              object deadline,
-             object python_call_credentials):
+             object python_call_credentials,
+             object wait_for_ready):
         """Assembles a Cython Call object.
 
         Returns:
-          The _AioCall object.
+          An _AioCall object.
         """
-        if self._status == AIO_CHANNEL_STATUS_DESTROYED:
-            # TODO(lidiz) switch to UsageError
-            raise RuntimeError('Channel is closed.')
+        if self.closed():
+            raise UsageError('Channel is closed.')
 
         cdef CallCredentials cython_call_credentials
         if python_call_credentials is not None:
+            if not self._is_secure:
+                raise UsageError("Call credentials are only valid on secure channels")
+
             cython_call_credentials = python_call_credentials._credentials
         else:
             cython_call_credentials = None
 
-        cdef _AioCall call = _AioCall(self, deadline, method, cython_call_credentials)
-        return call
+        return _AioCall(self, deadline, method, cython_call_credentials, wait_for_ready)

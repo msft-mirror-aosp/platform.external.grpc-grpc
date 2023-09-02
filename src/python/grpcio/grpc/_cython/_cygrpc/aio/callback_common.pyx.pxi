@@ -32,9 +32,10 @@ cdef class CallbackFailureHandler:
 
 cdef class CallbackWrapper:
 
-    def __cinit__(self, object future, CallbackFailureHandler failure_handler):
+    def __cinit__(self, object future, object loop, CallbackFailureHandler failure_handler):
         self.context.functor.functor_run = self.functor_run
         self.context.waiter = <cpython.PyObject*>future
+        self.context.loop = <cpython.PyObject*>loop
         self.context.failure_handler = <cpython.PyObject*>failure_handler
         self.context.callback_wrapper = <cpython.PyObject*>self
         # NOTE(lidiz) Not using a list here, because this class is critical in
@@ -66,31 +67,11 @@ cdef class CallbackWrapper:
 cdef CallbackFailureHandler CQ_SHUTDOWN_FAILURE_HANDLER = CallbackFailureHandler(
     'grpc_completion_queue_shutdown',
     'Unknown',
-    RuntimeError)
+    InternalError)
 
 
-cdef class CallbackCompletionQueue:
-
-    def __cinit__(self):
-        self._shutdown_completed = asyncio.get_event_loop().create_future()
-        self._wrapper = CallbackWrapper(
-            self._shutdown_completed,
-            CQ_SHUTDOWN_FAILURE_HANDLER)
-        self._cq = grpc_completion_queue_create_for_callback(
-            self._wrapper.c_functor(),
-            NULL
-        )
-
-    cdef grpc_completion_queue* c_ptr(self):
-        return self._cq
-
-    async def shutdown(self):
-        grpc_completion_queue_shutdown(self._cq)
-        await self._shutdown_completed
-        grpc_completion_queue_destroy(self._cq)
-
-
-class ExecuteBatchError(Exception): pass
+class ExecuteBatchError(InternalError):
+    """Raised when execute batch returns a failure from Core."""
 
 
 async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
@@ -103,6 +84,7 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
     cdef object future = loop.create_future()
     cdef CallbackWrapper wrapper = CallbackWrapper(
         future,
+        loop,
         CallbackFailureHandler('execute_batch', operations, ExecuteBatchError))
     cdef grpc_call_error error = grpc_call_start_batch(
         grpc_call_wrapper.call,
@@ -147,27 +129,29 @@ async def _receive_message(GrpcCallWrapper grpc_call_wrapper,
         # the callback (e.g. cancelled).
         #
         # Since they all indicates finish, they are better be merged.
-        _LOGGER.debug(e)
+        _LOGGER.debug('Failed to receive any message from Core')
     return receive_op.message()
 
 
 async def _send_message(GrpcCallWrapper grpc_call_wrapper,
                         bytes message,
-                        bint metadata_sent,
+                        Operation send_initial_metadata_op,
+                        int write_flag,
                         object loop):
-    cdef SendMessageOperation op = SendMessageOperation(message, _EMPTY_FLAG)
+    cdef SendMessageOperation op = SendMessageOperation(message, write_flag)
     cdef tuple ops = (op,)
-    if not metadata_sent:
-        ops = prepend_send_initial_metadata_op(ops, None)
+    if send_initial_metadata_op is not None:
+        ops = (send_initial_metadata_op,) + ops
     await execute_batch(grpc_call_wrapper, ops, loop)
 
 
 async def _send_initial_metadata(GrpcCallWrapper grpc_call_wrapper,
                                  tuple metadata,
+                                 int flags,
                                  object loop):
     cdef SendInitialMetadataOperation op = SendInitialMetadataOperation(
         metadata,
-        _EMPTY_FLAG)
+        flags)
     cdef tuple ops = (op,)
     await execute_batch(grpc_call_wrapper, ops, loop)
 
@@ -183,7 +167,7 @@ async def _send_error_status_from_server(GrpcCallWrapper grpc_call_wrapper,
                                          grpc_status_code code,
                                          str details,
                                          tuple trailing_metadata,
-                                         bint metadata_sent,
+                                         Operation send_initial_metadata_op,
                                          object loop):
     assert code != StatusCode.ok, 'Expecting non-ok status code.'
     cdef SendStatusFromServerOperation op = SendStatusFromServerOperation(
@@ -193,6 +177,6 @@ async def _send_error_status_from_server(GrpcCallWrapper grpc_call_wrapper,
         _EMPTY_FLAGS,
     )
     cdef tuple ops = (op,)
-    if not metadata_sent:
-        ops = prepend_send_initial_metadata_op(ops, None)
+    if send_initial_metadata_op is not None:
+        ops = (send_initial_metadata_op,) + ops
     await execute_batch(grpc_call_wrapper, ops, loop)

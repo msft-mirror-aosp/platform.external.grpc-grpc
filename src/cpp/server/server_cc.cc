@@ -1241,6 +1241,12 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
     RegisterCallbackGenericService(unimplemented_service_.get());
   }
 
+#ifndef NDEBUG
+  for (size_t i = 0; i < num_cqs; i++) {
+    cq_list_.push_back(cqs[i]);
+  }
+#endif
+
   grpc_server_start(server_);
 
   if (!has_async_generic_service_ && !has_callback_generic_service_) {
@@ -1360,6 +1366,15 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
 
   shutdown_notified_ = true;
   shutdown_cv_.Broadcast();
+
+#ifndef NDEBUG
+  // Unregister this server with the CQs passed into it by the user so that
+  // those can be checked for properly-ordered shutdown.
+  for (auto* cq : cq_list_) {
+    cq->UnregisterServer(this);
+  }
+  cq_list_.clear();
+#endif
 }
 
 void Server::Wait() {

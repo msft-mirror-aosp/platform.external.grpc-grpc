@@ -15,12 +15,13 @@
 cdef enum AioChannelStatus:
     AIO_CHANNEL_STATUS_UNKNOWN
     AIO_CHANNEL_STATUS_READY
+    AIO_CHANNEL_STATUS_CLOSING
     AIO_CHANNEL_STATUS_DESTROYED
 
 cdef class AioChannel:
     cdef:
         grpc_channel * channel
-        CallbackCompletionQueue cq
+        object loop
         bytes _target
-        object _loop
         AioChannelStatus _status
+        bint _is_secure

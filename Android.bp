@@ -55,9 +55,9 @@ cc_defaults {
     name: "grpc_defaults",
     defaults: ["grpc_deps_defaults"],
     cflags: [
-        "-Wno-unused-parameter",
         "-Wno-implicit-fallthrough",
-        "-Wno-unused-result",
+        "-Wno-missing-field-initializers",
+        "-Wno-unused-parameter",
     ],
     static_libs: [
         "libabsl",
@@ -80,7 +80,7 @@ cc_defaults {
     target: {
         vendor: {
             // Needs to be updated when a new version is imported.
-            suffix: "-1.27.3",
+            suffix: "-1.29.1",
         },
     },
 }
@@ -293,19 +293,6 @@ cc_library_static {
 }
 
 cc_library_static {
-    name: "libgrpc_lb_policy_round_robin",
-    defaults: ["grpc_defaults"],
-    srcs: [
-        "src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc",
-    ],
-    static_libs: [
-        "libgrpc_base",
-        "libgrpc_client_channel",
-        "libgrpc_deadline_filter",
-    ],
-}
-
-cc_library_static {
     name: "libgrpc_lb_policy_pick_first",
     defaults: ["grpc_defaults"],
     srcs: [
@@ -314,7 +301,44 @@ cc_library_static {
     static_libs: [
         "libgrpc_base",
         "libgrpc_client_channel",
-        "libgrpc_deadline_filter",
+    ],
+}
+
+cc_library_static {
+    name: "libgrpc_lb_policy_round_robin",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc",
+    ],
+    static_libs: [
+        "libgrpc_base",
+        "libgrpc_client_channel",
+    ],
+}
+
+cc_library_static {
+    name: "libgrpc_lb_policy_priority",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "src/core/ext/filters/client_channel/lb_policy/priority/priority.cc",
+    ],
+    static_libs: [
+        "libgrpc_base",
+        "libgrpc_client_channel",
+        "libgrpc_lb_address_filtering",
+    ],
+}
+
+cc_library_static {
+    name: "libgrpc_lb_policy_weighted_target",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc",
+    ],
+    static_libs: [
+        "libgrpc_base",
+        "libgrpc_client_channel",
+        "libgrpc_lb_address_filtering",
     ],
 }
 
@@ -475,6 +499,7 @@ cc_library_static {
         "libaddress_sorting",
         "libgrpc_base",
         "libgrpc_client_channel",
+        "libgrpc_grpclb_balancer_addresses",
         "libgrpc_resolver_dns_selection",
     ],
 }
@@ -522,6 +547,7 @@ cc_library_static {
         "src/core/ext/filters/http/client/http_client_filter.cc",
         "src/core/ext/filters/http/http_filters_plugin.cc",
         "src/core/ext/filters/http/message_compress/message_compress_filter.cc",
+        "src/core/ext/filters/http/message_compress/message_decompress_filter.cc",
         "src/core/ext/filters/http/server/http_server_filter.cc",
     ],
     static_libs: [
@@ -727,6 +753,18 @@ cc_library_static {
 }
 
 cc_library_static {
+    name: "libgrpc_grpclb_balancer_addresses",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc",
+    ],
+    static_libs: [
+        "libgrpc_base",
+        "libgrpc_client_channel",
+    ],
+}
+
+cc_library_static {
     name: "libgrpc_lb_policy_grpclb",
     defaults: ["grpc_defaults"],
     srcs: [
@@ -740,6 +778,7 @@ cc_library_static {
         "libgrpc_base",
         "libgrpc_client_channel",
         "libgrpc_deadline_filter",
+        "libgrpc_grpclb_balancer_addresses",
         "libgrpc_resolver_fake",
         "libgrpc_third_party_upb",
         "libgrpc_upb_protos",
@@ -760,6 +799,7 @@ cc_library_static {
         "libgrpc_base",
         "libgrpc_client_channel",
         "libgrpc_deadline_filter",
+        "libgrpc_grpclb_balancer_addresses",
         "libgrpc_resolver_fake",
         "libgrpc_secure",
         "libgrpc_third_party_upb",
@@ -804,16 +844,68 @@ cc_library_static {
     ],
 }
 
+// In the BUILD file, there are separate secure and insecure versions, but
+// Soong dependencies work differently and the split is not required.
 cc_library_static {
-    name: "libgrpc_lb_policy_xds",
+    name: "libgrpc_lb_policy_cds",
     defaults: ["grpc_defaults"],
     srcs: [
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
+        "src/core/ext/filters/client_channel/lb_policy/xds/cds.cc",
     ],
     static_libs: [
         "libgrpc_base",
         "libgrpc_client_channel",
         "libgrpc_xds_client",
+    ],
+}
+
+cc_library_static {
+    name: "libgrpc_lb_policy_eds",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "src/core/ext/filters/client_channel/lb_policy/xds/eds.cc",
+    ],
+    static_libs: [
+        "libgrpc_base",
+        "libgrpc_client_channel",
+        "libgrpc_lb_address_filtering",
+        "libgrpc_xds_client",
+    ],
+}
+
+cc_library_static {
+    name: "libgrpc_lb_policy_lrs",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc",
+    ],
+    static_libs: [
+        "libgrpc_base",
+        "libgrpc_client_channel",
+    ],
+}
+
+cc_library_static {
+    name: "libgrpc_lb_policy_xds_routing",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_routing.cc",
+    ],
+    static_libs: [
+        "libgrpc_base",
+        "libgrpc_client_channel",
+    ],
+}
+
+cc_library_static {
+    name: "libgrpc_lb_address_filtering",
+    defaults: ["grpc_defaults"],
+    srcs: [
+        "src/core/ext/filters/client_channel/lb_policy/address_filtering.cc",
+    ],
+    static_libs: [
+        "libgrpc_base",
+        "libgrpc_client_channel",
     ],
 }
 
@@ -849,6 +941,7 @@ cc_library_static {
         "src/core/lib/gpr/string_util_windows.cc",
         "src/core/lib/gpr/string_windows.cc",
         "src/core/lib/gpr/sync.cc",
+        "src/core/lib/gpr/sync_abseil.cc",
         "src/core/lib/gpr/sync_posix.cc",
         "src/core/lib/gpr/sync_windows.cc",
         "src/core/lib/gpr/time.cc",
@@ -895,6 +988,7 @@ cc_library_static {
         "src/core/ext/filters/client_channel/http_proxy.cc",
         "src/core/ext/filters/client_channel/local_subchannel_pool.cc",
         "src/core/ext/filters/client_channel/lb_policy.cc",
+        "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc",
         "src/core/ext/filters/client_channel/lb_policy_registry.cc",
         "src/core/ext/filters/client_channel/global_subchannel_pool.cc",
         "src/core/ext/filters/client_channel/parse_address.cc",
@@ -963,6 +1057,7 @@ cc_library_static {
         "src/core/lib/iomgr/call_combiner.cc",
         "src/core/lib/iomgr/cfstream_handle.cc",
         "src/core/lib/iomgr/combiner.cc",
+        "src/core/lib/iomgr/dualstack_socket_posix.cc",
         "src/core/lib/iomgr/endpoint.cc",
         "src/core/lib/iomgr/endpoint_cfstream.cc",
         "src/core/lib/iomgr/endpoint_pair_posix.cc",
@@ -970,6 +1065,7 @@ cc_library_static {
         "src/core/lib/iomgr/endpoint_pair_windows.cc",
         "src/core/lib/iomgr/error.cc",
         "src/core/lib/iomgr/error_cfstream.cc",
+        "src/core/lib/iomgr/ev_apple.cc",
         "src/core/lib/iomgr/ev_epoll1_linux.cc",
         "src/core/lib/iomgr/ev_epollex_linux.cc",
         "src/core/lib/iomgr/ev_poll_posix.cc",
@@ -993,11 +1089,11 @@ cc_library_static {
         "src/core/lib/iomgr/iomgr_internal.cc",
         "src/core/lib/iomgr/iomgr_posix.cc",
         "src/core/lib/iomgr/iomgr_posix_cfstream.cc",
+        "src/core/lib/iomgr/iomgr_uv.cc",
         "src/core/lib/iomgr/iomgr_windows.cc",
         "src/core/lib/iomgr/is_epollexclusive_available.cc",
         "src/core/lib/iomgr/load_file.cc",
         "src/core/lib/iomgr/lockfree_event.cc",
-        "src/core/lib/iomgr/logical_thread.cc",
         "src/core/lib/iomgr/polling_entity.cc",
         "src/core/lib/iomgr/pollset.cc",
         "src/core/lib/iomgr/pollset_custom.cc",
@@ -1017,6 +1113,7 @@ cc_library_static {
         "src/core/lib/iomgr/socket_utils_common_posix.cc",
         "src/core/lib/iomgr/socket_utils_linux.cc",
         "src/core/lib/iomgr/socket_utils_posix.cc",
+        "src/core/lib/iomgr/socket_utils_uv.cc",
         "src/core/lib/iomgr/socket_utils_windows.cc",
         "src/core/lib/iomgr/socket_windows.cc",
         "src/core/lib/iomgr/tcp_client.cc",
@@ -1049,7 +1146,7 @@ cc_library_static {
         "src/core/lib/iomgr/wakeup_fd_nospecial.cc",
         "src/core/lib/iomgr/wakeup_fd_pipe.cc",
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
-        "src/core/lib/json/json.cc",
+        "src/core/lib/iomgr/work_serializer.cc",
         "src/core/lib/json/json_reader.cc",
         "src/core/lib/json/json_writer.cc",
         "src/core/lib/slice/b64.cc",
@@ -1109,20 +1206,6 @@ cc_library_static {
     ],
 }
 
-// In the BUILD file, there are separate secure and insecure versions, but
-// Soong dependencies work differently and the split is not required.
-cc_library_static {
-    name: "libgrpc_lb_policy_cds",
-    defaults: ["grpc_defaults"],
-    srcs: [
-        "src/core/ext/filters/client_channel/lb_policy/xds/cds.cc",
-    ],
-    static_libs: [
-        "libgrpc_base",
-        "libgrpc_client_channel",
-    ],
-}
-
 grpc_common_libs = [
     "libgrpc_base",
     "libgrpc_base_c",
@@ -1131,10 +1214,16 @@ grpc_common_libs = [
     "libgrpc_client_authority_filter",
     "libgrpc_client_channel",
     "libgrpc_client_idle_filter",
+    "libgrpc_grpclb_balancer_addresses",
+    "libgrpc_lb_address_filtering",
     "libgrpc_lb_policy_cds",
+    "libgrpc_lb_policy_eds",
+    "libgrpc_lb_policy_lrs",
     "libgrpc_lb_policy_pick_first",
+    "libgrpc_lb_policy_priority",
     "libgrpc_lb_policy_round_robin",
-    "libgrpc_lb_policy_xds",
+    "libgrpc_lb_policy_weighted_target",
+    "libgrpc_lb_policy_xds_routing",
     "libgrpc_max_age_filter",
     "libgrpc_message_size_filter",
     "libgrpc_resolver_dns_ares",
@@ -1209,7 +1298,6 @@ GRPCXX_SRCS = [
     "src/cpp/client/create_channel_internal.cc",
     "src/cpp/client/create_channel_posix.cc",
     "src/cpp/client/credentials_cc.cc",
-    "src/cpp/client/generic_stub.cc",
     "src/cpp/common/alarm.cc",
     "src/cpp/common/channel_arguments.cc",
     "src/cpp/common/channel_filter.cc",

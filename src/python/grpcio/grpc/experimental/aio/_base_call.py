@@ -19,7 +19,7 @@ RPC, e.g. cancellation.
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import AsyncIterable, Awaitable, Generic, Optional, Text, Union
+from typing import AsyncIterable, Awaitable, Generic, Optional, Union
 
 import grpc
 
@@ -110,11 +110,24 @@ class Call(RpcContext, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def details(self) -> Text:
+    async def details(self) -> str:
         """Accesses the details sent by the server.
 
         Returns:
           The details string of the RPC.
+        """
+
+    @abstractmethod
+    async def wait_for_connection(self) -> None:
+        """Waits until connected to peer and raises aio.AioRpcError if failed.
+
+        This is an EXPERIMENTAL method.
+
+        This method ensures the RPC has been successfully connected. Otherwise,
+        an AioRpcError will be raised to explain the reason of the connection
+        failure.
+
+        This method is recommended for building retry mechanisms.
         """
 
 

@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cimport cpython
-
-import grpc
-import threading
-
 
 def _spawn_callback_in_thread(cb_func, args):
-  ForkManagedThread(target=cb_func, args=args).start()
+  t = ForkManagedThread(target=cb_func, args=args)
+  t.setDaemon(True)
+  t.start()
 
 async_callback_func = _spawn_callback_in_thread
 
@@ -37,12 +34,14 @@ cdef class CallCredentials:
     raise NotImplementedError()
 
 
-cdef int _get_metadata(
-    void *state, grpc_auth_metadata_context context,
-    grpc_credentials_plugin_metadata_cb cb, void *user_data,
-    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
-    size_t *num_creds_md, grpc_status_code *status,
-    const char **error_details) except * with gil:
+cdef int _get_metadata(void *state,
+                       grpc_auth_metadata_context context,
+                       grpc_credentials_plugin_metadata_cb cb,
+                       void *user_data,
+                       grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+                       size_t *num_creds_md,
+                       grpc_status_code *status,
+                       const char **error_details) except * with gil:
   cdef size_t metadata_count
   cdef grpc_metadata *c_metadata
   def callback(metadata, grpc_status_code status, bytes error_details):

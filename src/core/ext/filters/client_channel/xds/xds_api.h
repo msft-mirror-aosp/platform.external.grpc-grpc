@@ -25,6 +25,7 @@
 
 #include <set>
 
+#include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
 
 #include <grpc/slice_buffer.h>
@@ -44,18 +45,31 @@ class XdsApi {
   static const char* kCdsTypeUrl;
   static const char* kEdsTypeUrl;
 
-  struct RdsRoute {
-    std::string service;
-    std::string method;
-    std::string cluster_name;
-
-    bool operator==(const RdsRoute& other) const {
-      return (service == other.service && method == other.method &&
-              cluster_name == other.cluster_name);
-    }
-  };
-
   struct RdsUpdate {
+    struct RdsRoute {
+      std::string service;
+      std::string method;
+      // TODO(donnadionne): When we can use absl::variant<>, consider using that
+      // here, to enforce the fact that only one of cluster_name and
+      // weighted_clusters can be set.
+      std::string cluster_name;
+      struct ClusterWeight {
+        std::string name;
+        uint32_t weight;
+
+        bool operator==(const ClusterWeight& other) const {
+          return (name == other.name && weight == other.weight);
+        }
+      };
+      std::vector<ClusterWeight> weighted_clusters;
+
+      bool operator==(const RdsRoute& other) const {
+        return (service == other.service && method == other.method &&
+                cluster_name == other.cluster_name &&
+                weighted_clusters == other.weighted_clusters);
+      }
+    };
+
     std::vector<RdsRoute> routes;
 
     bool operator==(const RdsUpdate& other) const {
@@ -150,7 +164,7 @@ class XdsApi {
     }
 
    private:
-    InlinedVector<LocalityMap, 2> priorities_;
+    absl::InlinedVector<LocalityMap, 2> priorities_;
   };
 
   // There are two phases of accessing this class's content:
@@ -169,7 +183,7 @@ class XdsApi {
       const uint32_t parts_per_million;
     };
 
-    using DropCategoryList = InlinedVector<DropCategory, 2>;
+    using DropCategoryList = absl::InlinedVector<DropCategory, 2>;
 
     void AddCategory(std::string name, uint32_t parts_per_million) {
       drop_category_list_.emplace_back(
@@ -216,36 +230,10 @@ class XdsApi {
 
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node);
 
-  // Creates a request to nack an unsupported resource type.
+  // Creates an ADS request.
   // Takes ownership of \a error.
-  grpc_slice CreateUnsupportedTypeNackRequest(const std::string& type_url,
-                                              const std::string& nonce,
-                                              grpc_error* error);
-
-  // Creates an LDS request querying \a server_name.
-  // Takes ownership of \a error.
-  grpc_slice CreateLdsRequest(const std::string& server_name,
-                              const std::string& version,
-                              const std::string& nonce, grpc_error* error,
-                              bool populate_node);
-
-  // Creates an RDS request querying \a route_config_name.
-  // Takes ownership of \a error.
-  grpc_slice CreateRdsRequest(const std::string& route_config_name,
-                              const std::string& version,
-                              const std::string& nonce, grpc_error* error,
-                              bool populate_node);
-
-  // Creates a CDS request querying \a cluster_names.
-  // Takes ownership of \a error.
-  grpc_slice CreateCdsRequest(const std::set<StringView>& cluster_names,
-                              const std::string& version,
-                              const std::string& nonce, grpc_error* error,
-                              bool populate_node);
-
-  // Creates an EDS request querying \a eds_service_names.
-  // Takes ownership of \a error.
-  grpc_slice CreateEdsRequest(const std::set<StringView>& eds_service_names,
+  grpc_slice CreateAdsRequest(const std::string& type_url,
+                              const std::set<absl::string_view>& resource_names,
                               const std::string& version,
                               const std::string& nonce, grpc_error* error,
                               bool populate_node);
@@ -256,10 +244,9 @@ class XdsApi {
   grpc_error* ParseAdsResponse(
       const grpc_slice& encoded_response,
       const std::string& expected_server_name,
-      const std::string& expected_route_config_name,
-      const bool xds_routing_enabled,
-      const std::set<StringView>& expected_cluster_names,
-      const std::set<StringView>& expected_eds_service_names,
+      const std::set<absl::string_view>& expected_route_configuration_names,
+      const std::set<absl::string_view>& expected_cluster_names,
+      const std::set<absl::string_view>& expected_eds_service_names,
       absl::optional<LdsUpdate>* lds_update,
       absl::optional<RdsUpdate>* rds_update, CdsUpdateMap* cds_update_map,
       EdsUpdateMap* eds_update_map, std::string* version, std::string* nonce,
@@ -275,12 +262,14 @@ class XdsApi {
   // load_reporting_interval for client-side load reporting. If there is any
   // error, the output config is invalid.
   grpc_error* ParseLrsResponse(const grpc_slice& encoded_response,
+                               bool* send_all_clusters,
                                std::set<std::string>* cluster_names,
                                grpc_millis* load_reporting_interval);
 
  private:
   XdsClient* client_;
   TraceFlag* tracer_;
+  const bool xds_routing_enabled_;
   const XdsBootstrap::Node* node_;
   const std::string build_version_;
   const std::string user_agent_name_;

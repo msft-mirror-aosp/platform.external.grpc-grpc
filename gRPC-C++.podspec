@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.28.2'
+  version = '1.29.1'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -193,6 +193,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/config.h',
                       'include/grpcpp/support/interceptor.h',
                       'include/grpcpp/support/message_allocator.h',
+                      'include/grpcpp/support/method_handler.h',
                       'include/grpcpp/support/proto_buffer_reader.h',
                       'include/grpcpp/support/proto_buffer_writer.h',
                       'include/grpcpp/support/server_callback.h',
@@ -213,15 +214,15 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '0.20200225.0'
+    abseil_version = '1.20200225.0'
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
+    ss.dependency 'abseil/time/time', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
 
-    ss.source_files = 'include/grpcpp/impl/codegen/core_codegen.h',
-                      'src/core/ext/filters/client_channel/backend_metric.h',
+    ss.source_files = 'src/core/ext/filters/client_channel/backend_metric.h',
                       'src/core/ext/filters/client_channel/backup_poller.h',
                       'src/core/ext/filters/client_channel/client_channel.h',
                       'src/core/ext/filters/client_channel/client_channel_channelz.h',
@@ -232,9 +233,11 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/http_connect_handshaker.h',
                       'src/core/ext/filters/client_channel/http_proxy.h',
                       'src/core/ext/filters/client_channel/lb_policy.h',
+                      'src/core/ext/filters/client_channel/lb_policy/address_filtering.h',
                       'src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h',
+                      'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
@@ -271,6 +274,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/http/client/http_client_filter.h',
                       'src/core/ext/filters/http/client_authority_filter.h',
                       'src/core/ext/filters/http/message_compress/message_compress_filter.h',
+                      'src/core/ext/filters/http/message_compress/message_decompress_filter.h',
                       'src/core/ext/filters/http/server/http_server_filter.h',
                       'src/core/ext/filters/max_age/max_age_filter.h',
                       'src/core/ext/filters/message_size/message_size_filter.h',
@@ -442,6 +446,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/error.h',
                       'src/core/lib/iomgr/error_cfstream.h',
                       'src/core/lib/iomgr/error_internal.h',
+                      'src/core/lib/iomgr/ev_apple.h',
                       'src/core/lib/iomgr/ev_epoll1_linux.h',
                       'src/core/lib/iomgr/ev_epollex_linux.h',
                       'src/core/lib/iomgr/ev_poll_posix.h',
@@ -469,8 +474,10 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/pollset_set.h',
                       'src/core/lib/iomgr/pollset_set_custom.h',
                       'src/core/lib/iomgr/pollset_set_windows.h',
+                      'src/core/lib/iomgr/pollset_uv.h',
                       'src/core/lib/iomgr/pollset_windows.h',
                       'src/core/lib/iomgr/port.h',
+                      'src/core/lib/iomgr/python_util.h',
                       'src/core/lib/iomgr/resolve_address.h',
                       'src/core/lib/iomgr/resolve_address_custom.h',
                       'src/core/lib/iomgr/resource_quota.h',
@@ -495,6 +502,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/time_averaged_stats.h',
                       'src/core/lib/iomgr/timer.h',
                       'src/core/lib/iomgr/timer_custom.h',
+                      'src/core/lib/iomgr/timer_generic.h',
                       'src/core/lib/iomgr/timer_heap.h',
                       'src/core/lib/iomgr/timer_manager.h',
                       'src/core/lib/iomgr/udp_server.h',
@@ -592,7 +600,6 @@ Pod::Spec.new do |s|
                       'src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h',
                       'src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h',
                       'src/core/tsi/fake_transport_security.h',
-                      'src/core/tsi/grpc_shadow_boringssl.h',
                       'src/core/tsi/local_transport_security.h',
                       'src/core/tsi/ssl/session_cache/ssl_session.h',
                       'src/core/tsi/ssl/session_cache/ssl_session_cache.h',
@@ -667,8 +674,7 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/table.int.h',
                       'third_party/upb/upb/upb.h'
 
-    ss.private_header_files = 'include/grpcpp/impl/codegen/core_codegen.h',
-                              'src/core/ext/filters/client_channel/backend_metric.h',
+    ss.private_header_files = 'src/core/ext/filters/client_channel/backend_metric.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',
                               'src/core/ext/filters/client_channel/client_channel.h',
                               'src/core/ext/filters/client_channel/client_channel_channelz.h',
@@ -679,9 +685,11 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/http_connect_handshaker.h',
                               'src/core/ext/filters/client_channel/http_proxy.h',
                               'src/core/ext/filters/client_channel/lb_policy.h',
+                              'src/core/ext/filters/client_channel/lb_policy/address_filtering.h',
                               'src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h',
+                              'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
@@ -718,6 +726,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/http/client/http_client_filter.h',
                               'src/core/ext/filters/http/client_authority_filter.h',
                               'src/core/ext/filters/http/message_compress/message_compress_filter.h',
+                              'src/core/ext/filters/http/message_compress/message_decompress_filter.h',
                               'src/core/ext/filters/http/server/http_server_filter.h',
                               'src/core/ext/filters/max_age/max_age_filter.h',
                               'src/core/ext/filters/message_size/message_size_filter.h',
@@ -889,6 +898,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/error.h',
                               'src/core/lib/iomgr/error_cfstream.h',
                               'src/core/lib/iomgr/error_internal.h',
+                              'src/core/lib/iomgr/ev_apple.h',
                               'src/core/lib/iomgr/ev_epoll1_linux.h',
                               'src/core/lib/iomgr/ev_epollex_linux.h',
                               'src/core/lib/iomgr/ev_poll_posix.h',
@@ -916,8 +926,10 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/pollset_set.h',
                               'src/core/lib/iomgr/pollset_set_custom.h',
                               'src/core/lib/iomgr/pollset_set_windows.h',
+                              'src/core/lib/iomgr/pollset_uv.h',
                               'src/core/lib/iomgr/pollset_windows.h',
                               'src/core/lib/iomgr/port.h',
+                              'src/core/lib/iomgr/python_util.h',
                               'src/core/lib/iomgr/resolve_address.h',
                               'src/core/lib/iomgr/resolve_address_custom.h',
                               'src/core/lib/iomgr/resource_quota.h',
@@ -942,6 +954,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/time_averaged_stats.h',
                               'src/core/lib/iomgr/timer.h',
                               'src/core/lib/iomgr/timer_custom.h',
+                              'src/core/lib/iomgr/timer_generic.h',
                               'src/core/lib/iomgr/timer_heap.h',
                               'src/core/lib/iomgr/timer_manager.h',
                               'src/core/lib/iomgr/udp_server.h',
@@ -1039,7 +1052,6 @@ Pod::Spec.new do |s|
                               'src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h',
                               'src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h',
                               'src/core/tsi/fake_transport_security.h',
-                              'src/core/tsi/grpc_shadow_boringssl.h',
                               'src/core/tsi/local_transport_security.h',
                               'src/core/tsi/ssl/session_cache/ssl_session.h',
                               'src/core/tsi/ssl/session_cache/ssl_session_cache.h',

@@ -26,7 +26,6 @@
 
 #include <grpc/support/log.h>
 
-#include "test/core/util/debugger_macros.h"
 
 static bool g_pre_init_called = false;
 
@@ -56,6 +55,8 @@ extern void cancel_with_status(grpc_end2end_test_config config);
 extern void cancel_with_status_pre_init(void);
 extern void channelz(grpc_end2end_test_config config);
 extern void channelz_pre_init(void);
+extern void client_streaming(grpc_end2end_test_config config);
+extern void client_streaming_pre_init(void);
 extern void compressed_payload(grpc_end2end_test_config config);
 extern void compressed_payload_pre_init(void);
 extern void connectivity(grpc_end2end_test_config config);
@@ -70,6 +71,8 @@ extern void filter_call_init_fails(grpc_end2end_test_config config);
 extern void filter_call_init_fails_pre_init(void);
 extern void filter_causes_close(grpc_end2end_test_config config);
 extern void filter_causes_close_pre_init(void);
+extern void filter_context(grpc_end2end_test_config config);
+extern void filter_context_pre_init(void);
 extern void filter_latency(grpc_end2end_test_config config);
 extern void filter_latency_pre_init(void);
 extern void filter_status_code(grpc_end2end_test_config config);
@@ -186,7 +189,6 @@ extern void write_buffering_at_end_pre_init(void);
 void grpc_end2end_tests_pre_init(void) {
   GPR_ASSERT(!g_pre_init_called);
   g_pre_init_called = true;
-  grpc_summon_debugger_macros();
   authority_not_supported_pre_init();
   bad_hostname_pre_init();
   bad_ping_pre_init();
@@ -200,6 +202,7 @@ void grpc_end2end_tests_pre_init(void) {
   cancel_in_a_vacuum_pre_init();
   cancel_with_status_pre_init();
   channelz_pre_init();
+  client_streaming_pre_init();
   compressed_payload_pre_init();
   connectivity_pre_init();
   default_host_pre_init();
@@ -207,6 +210,7 @@ void grpc_end2end_tests_pre_init(void) {
   empty_batch_pre_init();
   filter_call_init_fails_pre_init();
   filter_causes_close_pre_init();
+  filter_context_pre_init();
   filter_latency_pre_init();
   filter_status_code_pre_init();
   graceful_server_shutdown_pre_init();
@@ -285,6 +289,7 @@ void grpc_end2end_tests(int argc, char **argv,
     cancel_in_a_vacuum(config);
     cancel_with_status(config);
     channelz(config);
+    client_streaming(config);
     compressed_payload(config);
     connectivity(config);
     default_host(config);
@@ -292,6 +297,7 @@ void grpc_end2end_tests(int argc, char **argv,
     empty_batch(config);
     filter_call_init_fails(config);
     filter_causes_close(config);
+    filter_context(config);
     filter_latency(config);
     filter_status_code(config);
     graceful_server_shutdown(config);
@@ -404,6 +410,10 @@ void grpc_end2end_tests(int argc, char **argv,
       channelz(config);
       continue;
     }
+    if (0 == strcmp("client_streaming", argv[i])) {
+      client_streaming(config);
+      continue;
+    }
     if (0 == strcmp("compressed_payload", argv[i])) {
       compressed_payload(config);
       continue;
@@ -430,6 +440,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("filter_causes_close", argv[i])) {
       filter_causes_close(config);
+      continue;
+    }
+    if (0 == strcmp("filter_context", argv[i])) {
+      filter_context(config);
       continue;
     }
     if (0 == strcmp("filter_latency", argv[i])) {

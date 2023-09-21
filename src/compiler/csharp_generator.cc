@@ -35,11 +35,11 @@ using grpc::protobuf::ServiceDescriptor;
 using grpc::protobuf::io::Printer;
 using grpc::protobuf::io::StringOutputStream;
 using grpc_generator::GetMethodType;
+using grpc_generator::MethodType;
 using grpc_generator::METHODTYPE_BIDI_STREAMING;
 using grpc_generator::METHODTYPE_CLIENT_STREAMING;
 using grpc_generator::METHODTYPE_NO_STREAMING;
 using grpc_generator::METHODTYPE_SERVER_STREAMING;
-using grpc_generator::MethodType;
 using grpc_generator::StringReplace;
 using std::map;
 using std::vector;
@@ -382,6 +382,10 @@ void GenerateServerClass(Printer* out, const ServiceDescriptor* service) {
       "/// <summary>Base class for server-side implementations of "
       "$servicename$</summary>\n",
       "servicename", GetServiceClassName(service));
+  out->Print(
+      "[grpc::BindServiceMethod(typeof($classname$), "
+      "\"BindService\")]\n",
+      "classname", GetServiceClassName(service));
   out->Print("public abstract partial class $name$\n", "name",
              GetServerClassName(service));
   out->Print("{\n");
@@ -424,8 +428,8 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
       "/// <param name=\"channel\">The channel to use to make remote "
       "calls.</param>\n",
       "servicename", GetServiceClassName(service));
-  out->Print("public $name$(grpc::Channel channel) : base(channel)\n", "name",
-             GetClientClassName(service));
+  out->Print("public $name$(grpc::ChannelBase channel) : base(channel)\n",
+             "name", GetClientClassName(service));
   out->Print("{\n");
   out->Print("}\n");
   out->Print(

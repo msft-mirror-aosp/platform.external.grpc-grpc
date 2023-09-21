@@ -62,15 +62,6 @@ class FixtureConfiguration {
 
 class BaseFixture : public TrackCounters {};
 
-// Special tag to be used in Server shutdown. This tag is *NEVER* returned when
-// Cq->Next() API is called (This is because FinalizeResult() function in this
-// class always returns 'false'). This is intentional and makes writing shutdown
-// code easier.
-class ShutdownTag : public internal::CompletionQueueTag {
- public:
-  bool FinalizeResult(void** tag, bool* status) { return false; }
-};
-
 class FullstackFixture : public BaseFixture {
  public:
   FullstackFixture(Service* service, const FixtureConfiguration& config,
@@ -86,19 +77,15 @@ class FullstackFixture : public BaseFixture {
     ChannelArguments args;
     config.ApplyCommonChannelArguments(&args);
     if (address.length() > 0) {
-      channel_ =
-          CreateCustomChannel(address, InsecureChannelCredentials(), args);
+      channel_ = ::grpc::CreateCustomChannel(
+          address, InsecureChannelCredentials(), args);
     } else {
       channel_ = server_->InProcessChannel(args);
     }
   }
 
   virtual ~FullstackFixture() {
-    // Dummy shutdown tag (this tag is swallowed by cq->Next() and is not
-    // returned to the user) see ShutdownTag definition for more details
-    ShutdownTag shutdown_tag;
-    grpc_server_shutdown_and_notify(server_->c_server(), cq_->cq(),
-                                    &shutdown_tag);
+    server_->Shutdown();
     cq_->Shutdown();
     void* tag;
     bool ok;
@@ -218,7 +205,7 @@ class EndpointPairFixture : public BaseFixture {
           "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport_);
       grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr);
 
-      channel_ = CreateChannelInternal(
+      channel_ = ::grpc::CreateChannelInternal(
           "", channel,
           std::vector<std::unique_ptr<
               experimental::ClientInterceptorFactoryInterface>>());
@@ -226,11 +213,7 @@ class EndpointPairFixture : public BaseFixture {
   }
 
   virtual ~EndpointPairFixture() {
-    // Dummy shutdown tag (this tag is swallowed by cq->Next() and is not
-    // returned to the user) see ShutdownTag definition for more details
-    ShutdownTag shutdown_tag;
-    grpc_server_shutdown_and_notify(server_->c_server(), cq_->cq(),
-                                    &shutdown_tag);
+    server_->Shutdown();
     cq_->Shutdown();
     void* tag;
     bool ok;
@@ -299,8 +282,8 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
 
   static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
     grpc_endpoint_pair p;
-    grpc_passthru_endpoint_create(&p.client, &p.server, Library::get().rq(),
-                                  stats);
+    grpc_passthru_endpoint_create(&p.client, &p.server,
+                                  LibraryInitializer::get().rq(), stats);
     return p;
   }
 };

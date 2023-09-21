@@ -106,7 +106,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
 
   // Only implement the one method we will be calling for brevity.
   Status BidiStream(
-      ServerContext* context,
+      ServerContext* /*context*/,
       ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     EchoRequest request;
     gpr_atm should_exit;
@@ -145,8 +145,8 @@ class End2endTest : public ::testing::Test {
   void TearDown() override { server_->Shutdown(); }
 
   void ResetStub() {
-    std::shared_ptr<Channel> channel =
-        CreateChannel(server_address_.str(), InsecureChannelCredentials());
+    std::shared_ptr<Channel> channel = grpc::CreateChannel(
+        server_address_.str(), InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 

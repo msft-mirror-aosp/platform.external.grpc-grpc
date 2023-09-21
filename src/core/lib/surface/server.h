@@ -34,30 +34,21 @@ extern grpc_core::TraceFlag grpc_server_channel_trace;
 
 /* Add a listener to the server: when the server starts, it will call start,
    and when it shuts down, it will call destroy */
-void grpc_server_add_listener(grpc_server* server, void* listener,
-                              void (*start)(grpc_server* server, void* arg,
-                                            grpc_pollset** pollsets,
-                                            size_t npollsets),
-                              void (*destroy)(grpc_server* server, void* arg,
-                                              grpc_closure* on_done),
-                              intptr_t socket_uuid);
+void grpc_server_add_listener(
+    grpc_server* server, void* listener_arg,
+    void (*start)(grpc_server* server, void* arg, grpc_pollset** pollsets,
+                  size_t npollsets),
+    void (*destroy)(grpc_server* server, void* arg, grpc_closure* on_done),
+    grpc_core::RefCountedPtr<grpc_core::channelz::ListenSocketNode> node);
 
 /* Setup a transport - creates a channel stack, binds the transport to the
    server */
 void grpc_server_setup_transport(
     grpc_server* server, grpc_transport* transport,
     grpc_pollset* accepting_pollset, const grpc_channel_args* args,
-    grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> socket_node,
+    const grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode>&
+        socket_node,
     grpc_resource_user* resource_user = nullptr);
-
-/* fills in the uuids of all sockets used for connections on this server */
-void grpc_server_populate_server_sockets(
-    grpc_server* server, grpc_core::channelz::ChildSocketsList* server_sockets,
-    intptr_t start_idx);
-
-/* fills in the uuids of all listen sockets on this server */
-void grpc_server_populate_listen_sockets(
-    grpc_server* server, grpc_core::channelz::ChildRefsList* listen_sockets);
 
 grpc_core::channelz::ServerNode* grpc_server_get_channelz_node(
     grpc_server* server);
@@ -72,5 +63,37 @@ int grpc_server_has_open_connections(grpc_server* server);
  * number of pollsets via 'pollsets' and 'pollset_count'. */
 void grpc_server_get_pollsets(grpc_server* server, grpc_pollset*** pollsets,
                               size_t* pollset_count);
+
+namespace grpc_core {
+
+// An object to represent the most relevant characteristics of a newly-allocated
+// call object when using an AllocatingRequestMatcherBatch
+struct ServerBatchCallAllocation {
+  grpc_experimental_completion_queue_functor* tag;
+  grpc_call** call;
+  grpc_metadata_array* initial_metadata;
+  grpc_call_details* details;
+};
+
+// An object to represent the most relevant characteristics of a newly-allocated
+// call object when using an AllocatingRequestMatcherRegistered
+struct ServerRegisteredCallAllocation {
+  grpc_experimental_completion_queue_functor* tag;
+  grpc_call** call;
+  grpc_metadata_array* initial_metadata;
+  gpr_timespec* deadline;
+  grpc_byte_buffer** optional_payload;
+};
+
+// Functions to specify that a specific registered method or the unregistered
+// collection should use a specific allocator for request matching.
+void SetServerRegisteredMethodAllocator(
+    grpc_server* server, grpc_completion_queue* cq, void* method_tag,
+    std::function<ServerRegisteredCallAllocation()> allocator);
+void SetServerBatchMethodAllocator(
+    grpc_server* server, grpc_completion_queue* cq,
+    std::function<ServerBatchCallAllocation()> allocator);
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_SURFACE_SERVER_H */

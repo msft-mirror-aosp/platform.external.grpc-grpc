@@ -20,6 +20,7 @@
 #define GRPC_INTERNAL_COMPILER_PYTHON_GENERATOR_H
 
 #include <utility>
+#include <vector>
 
 #include "src/compiler/config.h"
 #include "src/compiler/schema_interface.h"
@@ -35,6 +36,7 @@ struct GeneratorConfiguration {
   grpc::string beta_package_root;
   // TODO(https://github.com/google/protobuf/issues/888): Drop this.
   grpc::string import_prefix;
+  std::vector<grpc::string> prefixes_to_filter;
 };
 
 class PythonGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
@@ -42,10 +44,12 @@ class PythonGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   PythonGrpcGenerator(const GeneratorConfiguration& config);
   ~PythonGrpcGenerator();
 
+  uint64_t GetSupportedFeatures() const override;
+
   bool Generate(const grpc::protobuf::FileDescriptor* file,
                 const grpc::string& parameter,
                 grpc::protobuf::compiler::GeneratorContext* context,
-                grpc::string* error) const;
+                grpc::string* error) const override;
 
  private:
   GeneratorConfiguration config_;

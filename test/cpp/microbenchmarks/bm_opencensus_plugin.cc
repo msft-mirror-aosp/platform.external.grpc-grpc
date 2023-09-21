@@ -22,14 +22,20 @@
 
 #include "absl/base/call_once.h"
 #include "absl/strings/str_cat.h"
-#include "include/grpc++/grpc++.h"
+#include "include/grpc/grpc.h"
+#include "include/grpcpp/grpcpp.h"
+#include "include/grpcpp/opencensus.h"
 #include "opencensus/stats/stats.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 
+using ::grpc::RegisterOpenCensusPlugin;
+using ::grpc::RegisterOpenCensusViewsForExport;
+
 absl::once_flag once;
-void RegisterOnce() { absl::call_once(once, grpc::RegisterOpenCensusPlugin); }
+void RegisterOnce() { absl::call_once(once, RegisterOpenCensusPlugin); }
 
 class EchoServer final : public grpc::testing::EchoTestService::Service {
   grpc::Status Echo(grpc::ServerContext* context,
@@ -81,6 +87,8 @@ class EchoServerThread final {
 };
 
 static void BM_E2eLatencyCensusDisabled(benchmark::State& state) {
+  grpc::testing::TestEnvironment env(0, {});
+
   EchoServerThread server;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub =
       grpc::testing::EchoTestService::NewStub(grpc::CreateChannel(
@@ -96,10 +104,13 @@ static void BM_E2eLatencyCensusDisabled(benchmark::State& state) {
 BENCHMARK(BM_E2eLatencyCensusDisabled);
 
 static void BM_E2eLatencyCensusEnabled(benchmark::State& state) {
+  grpc::testing::TestEnvironment env(0, {});
+
+  // Now start the test by registering the plugin (once in the execution)
   RegisterOnce();
   // This we can safely repeat, and doing so clears accumulated data to avoid
   // initialization costs varying between runs.
-  grpc::RegisterOpenCensusViewsForExport();
+  RegisterOpenCensusViewsForExport();
 
   EchoServerThread server;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub =

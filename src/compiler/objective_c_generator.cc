@@ -28,7 +28,6 @@
 
 using ::google::protobuf::compiler::objectivec::ClassName;
 using ::grpc::protobuf::FileDescriptor;
-using ::grpc::protobuf::FileDescriptor;
 using ::grpc::protobuf::MethodDescriptor;
 using ::grpc::protobuf::ServiceDescriptor;
 using ::grpc::protobuf::io::Printer;
@@ -50,7 +49,8 @@ void PrintProtoRpcDeclarationAsPragma(
 }
 
 template <typename DescriptorType>
-static void PrintAllComments(const DescriptorType* desc, Printer* printer) {
+static void PrintAllComments(const DescriptorType* desc, Printer* printer,
+                             bool deprecated = false) {
   std::vector<grpc::string> comments;
   grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_LEADING_DETACHED,
                              &comments);
@@ -70,13 +70,20 @@ static void PrintAllComments(const DescriptorType* desc, Printer* printer) {
     }
     printer->Print("\n");
   }
+  if (deprecated) {
+    printer->Print(" *\n");
+    printer->Print(
+        " * This method belongs to a set of APIs that have been deprecated. "
+        "Using"
+        " the v2 API is recommended.\n");
+  }
   printer->Print(" */\n");
 }
 
 void PrintMethodSignature(Printer* printer, const MethodDescriptor* method,
                           const map< ::grpc::string, ::grpc::string>& vars) {
   // Print comment
-  PrintAllComments(method, printer);
+  PrintAllComments(method, printer, true);
 
   printer->Print(vars, "- ($return_type$)$method_name$With");
   if (method->client_streaming()) {
@@ -230,19 +237,21 @@ void PrintV2Implementation(Printer* printer, const MethodDescriptor* method,
 }
 
 void PrintMethodImplementations(Printer* printer,
-                                const MethodDescriptor* method) {
+                                const MethodDescriptor* method,
+                                const Parameters& generator_params) {
   map< ::grpc::string, ::grpc::string> vars = GetMethodVars(method);
 
   PrintProtoRpcDeclarationAsPragma(printer, method, vars);
 
-  // TODO(jcanizales): Print documentation from the method.
-  printer->Print("// Deprecated methods.\n");
-  PrintSimpleSignature(printer, method, vars);
-  PrintSimpleImplementation(printer, method, vars);
+  if (!generator_params.no_v1_compatibility) {
+    // TODO(jcanizales): Print documentation from the method.
+    PrintSimpleSignature(printer, method, vars);
+    PrintSimpleImplementation(printer, method, vars);
 
-  printer->Print("// Returns a not-yet-started RPC object.\n");
-  PrintAdvancedSignature(printer, method, vars);
-  PrintAdvancedImplementation(printer, method, vars);
+    printer->Print("// Returns a not-yet-started RPC object.\n");
+    PrintAdvancedSignature(printer, method, vars);
+    PrintAdvancedImplementation(printer, method, vars);
+  }
 
   PrintV2Signature(printer, method, vars);
   PrintV2Implementation(printer, method, vars);
@@ -268,8 +277,11 @@ void PrintMethodImplementations(Printer* printer,
   return output;
 }
 
-::grpc::string GetProtocol(const ServiceDescriptor* service) {
+::grpc::string GetProtocol(const ServiceDescriptor* service,
+                           const Parameters& generator_params) {
   ::grpc::string output;
+
+  if (generator_params.no_v1_compatibility) return output;
 
   // Scope the output stream so it closes and finalizes output to the string.
   grpc::protobuf::io::StringOutputStream output_stream(&output);
@@ -278,6 +290,13 @@ void PrintMethodImplementations(Printer* printer,
   map< ::grpc::string, ::grpc::string> vars = {
       {"service_class", ServiceClassName(service)}};
 
+  printer.Print(vars,
+                "/**\n"
+                " * The methods in this protocol belong to a set of old APIs "
+                "that have been deprecated. They do not\n"
+                " * recognize call options provided in the initializer. Using "
+                "the v2 protocol is recommended.\n"
+                " */\n");
   printer.Print(vars, "@protocol $service_class$ <NSObject>\n\n");
   for (int i = 0; i < service->method_count(); i++) {
     PrintMethodDeclarations(&printer, service->method(i));
@@ -306,7 +325,8 @@ void PrintMethodImplementations(Printer* printer,
   return output;
 }
 
-::grpc::string GetInterface(const ServiceDescriptor* service) {
+::grpc::string GetInterface(const ServiceDescriptor* service,
+                            const Parameters& generator_params) {
   ::grpc::string output;
 
   // Scope the output stream so it closes and finalizes output to the string.
@@ -323,23 +343,33 @@ void PrintMethodImplementations(Printer* printer,
                 " */\n");
   printer.Print(vars,
                 "@interface $service_class$ :"
-                " GRPCProtoService<$service_class$, $service_class$2>\n");
+                " GRPCProtoService<$service_class$2");
+  if (!generator_params.no_v1_compatibility) {
+    printer.Print(vars, ", $service_class$");
+  }
+  printer.Print(">\n");
   printer.Print(
       "- (instancetype)initWithHost:(NSString *)host "
       "callOptions:(GRPCCallOptions "
       "*_Nullable)callOptions"
       " NS_DESIGNATED_INITIALIZER;\n");
-  printer.Print("- (instancetype)initWithHost:(NSString *)host;\n");
   printer.Print(
       "+ (instancetype)serviceWithHost:(NSString *)host "
       "callOptions:(GRPCCallOptions *_Nullable)callOptions;\n");
-  printer.Print("+ (instancetype)serviceWithHost:(NSString *)host;\n");
+  if (!generator_params.no_v1_compatibility) {
+    printer.Print(
+        "// The following methods belong to a set of old APIs that have been "
+        "deprecated.\n");
+    printer.Print("- (instancetype)initWithHost:(NSString *)host;\n");
+    printer.Print("+ (instancetype)serviceWithHost:(NSString *)host;\n");
+  }
   printer.Print("@end\n");
 
   return output;
 }
 
-::grpc::string GetSource(const ServiceDescriptor* service) {
+::grpc::string GetSource(const ServiceDescriptor* service,
+                         const Parameters& generator_params) {
   ::grpc::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
@@ -363,22 +393,28 @@ void PrintMethodImplementations(Printer* printer,
                   "                 packageName:@\"$package$\"\n"
                   "                 serviceName:@\"$service_name$\"\n"
                   "                 callOptions:callOptions];\n"
-                  "}\n\n"
-                  "- (instancetype)initWithHost:(NSString *)host {\n"
-                  "  return [super initWithHost:host\n"
-                  "                 packageName:@\"$package$\"\n"
-                  "                 serviceName:@\"$service_name$\"];\n"
-                  "}\n\n"
-                  "#pragma clang diagnostic pop\n\n");
+                  "}\n\n");
+    if (!generator_params.no_v1_compatibility) {
+      printer.Print(vars,
+                    "- (instancetype)initWithHost:(NSString *)host {\n"
+                    "  return [super initWithHost:host\n"
+                    "                 packageName:@\"$package$\"\n"
+                    "                 serviceName:@\"$service_name$\"];\n"
+                    "}\n\n");
+    }
+    printer.Print("#pragma clang diagnostic pop\n\n");
 
+    if (!generator_params.no_v1_compatibility) {
+      printer.Print(
+          "// Override superclass initializer to disallow different"
+          " package and service names.\n"
+          "- (instancetype)initWithHost:(NSString *)host\n"
+          "                 packageName:(NSString *)packageName\n"
+          "                 serviceName:(NSString *)serviceName {\n"
+          "  return [self initWithHost:host];\n"
+          "}\n\n");
+    }
     printer.Print(
-        "// Override superclass initializer to disallow different"
-        " package and service names.\n"
-        "- (instancetype)initWithHost:(NSString *)host\n"
-        "                 packageName:(NSString *)packageName\n"
-        "                 serviceName:(NSString *)serviceName {\n"
-        "  return [self initWithHost:host];\n"
-        "}\n\n"
         "- (instancetype)initWithHost:(NSString *)host\n"
         "                 packageName:(NSString *)packageName\n"
         "                 serviceName:(NSString *)serviceName\n"
@@ -386,11 +422,14 @@ void PrintMethodImplementations(Printer* printer,
         "  return [self initWithHost:host callOptions:callOptions];\n"
         "}\n\n");
 
+    printer.Print("#pragma mark - Class Methods\n\n");
+    if (!generator_params.no_v1_compatibility) {
+      printer.Print(
+          "+ (instancetype)serviceWithHost:(NSString *)host {\n"
+          "  return [[self alloc] initWithHost:host];\n"
+          "}\n\n");
+    }
     printer.Print(
-        "#pragma mark - Class Methods\n\n"
-        "+ (instancetype)serviceWithHost:(NSString *)host {\n"
-        "  return [[self alloc] initWithHost:host];\n"
-        "}\n\n"
         "+ (instancetype)serviceWithHost:(NSString *)host "
         "callOptions:(GRPCCallOptions *_Nullable)callOptions {\n"
         "  return [[self alloc] initWithHost:host callOptions:callOptions];\n"
@@ -399,7 +438,8 @@ void PrintMethodImplementations(Printer* printer,
     printer.Print("#pragma mark - Method Implementations\n\n");
 
     for (int i = 0; i < service->method_count(); i++) {
-      PrintMethodImplementations(&printer, service->method(i));
+      PrintMethodImplementations(&printer, service->method(i),
+                                 generator_params);
     }
 
     printer.Print("@end\n");

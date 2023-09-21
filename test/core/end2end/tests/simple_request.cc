@@ -21,6 +21,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -84,6 +86,14 @@ static void end_test(grpc_end2end_test_fixture* f) {
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
   grpc_completion_queue_destroy(f->shutdown_cq);
+}
+
+static void check_peer(char* peer_name) {
+  // If the peer name is a uds path, then check if it is filled
+  if (strncmp(peer_name, "unix:/", strlen("unix:/")) == 0) {
+    GPR_ASSERT(strncmp(peer_name, "unix:/tmp/grpc_fullstack_test.",
+                       strlen("unix:/tmp/grpc_fullstack_test.")) == 0);
+  }
 }
 
 static void simple_request_body(grpc_end2end_test_config config,
@@ -166,10 +176,12 @@ static void simple_request_body(grpc_end2end_test_config config,
   peer = grpc_call_get_peer(s);
   GPR_ASSERT(peer != nullptr);
   gpr_log(GPR_DEBUG, "server_peer=%s", peer);
+  check_peer(peer);
   gpr_free(peer);
   peer = grpc_call_get_peer(c);
   GPR_ASSERT(peer != nullptr);
   gpr_log(GPR_DEBUG, "client_peer=%s", peer);
+  check_peer(peer);
   gpr_free(peer);
 
   memset(ops, 0, sizeof(ops));
@@ -235,9 +247,7 @@ static void simple_request_body(grpc_end2end_test_config config,
 
   grpc_stats_collect(after);
 
-  char* stats = grpc_stats_data_as_json(after);
-  gpr_log(GPR_DEBUG, "%s", stats);
-  gpr_free(stats);
+  gpr_log(GPR_DEBUG, "%s", grpc_stats_data_as_json(after).c_str());
 
   GPR_ASSERT(after->counters[GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED] -
                  before->counters[GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED] ==

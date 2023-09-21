@@ -109,6 +109,7 @@ static void grpc_rb_call_credentials_callback_with_gil(void* param) {
   params->callback(params->user_data, md_ary.metadata, md_ary.count, status,
                    error_details);
   grpc_rb_metadata_array_destroy_including_entries(&md_ary);
+  grpc_auth_metadata_context_reset(&params->context);
   gpr_free(params);
 }
 
@@ -118,9 +119,9 @@ static int grpc_rb_call_credentials_plugin_get_metadata(
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
     size_t* num_creds_md, grpc_status_code* status,
     const char** error_details) {
-  callback_params* params = gpr_malloc(sizeof(callback_params));
+  callback_params* params = gpr_zalloc(sizeof(callback_params));
   params->get_metadata = (VALUE)state;
-  params->context = context;
+  grpc_auth_metadata_context_copy(&context, &params->context);
   params->user_data = user_data;
   params->callback = cb;
 
@@ -229,7 +230,10 @@ static VALUE grpc_rb_call_credentials_init(VALUE self, VALUE proc) {
   plugin.state = (void*)proc;
   plugin.type = "";
 
-  creds = grpc_metadata_credentials_create_from_plugin(plugin, NULL);
+  // TODO(yihuazhang): Expose min_security_level via the Ruby API so that
+  // applications can decide what minimum security level their plugins require.
+  creds = grpc_metadata_credentials_create_from_plugin(
+      plugin, GRPC_PRIVACY_AND_INTEGRITY, NULL);
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");
     return Qnil;

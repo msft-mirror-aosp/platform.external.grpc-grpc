@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Implementation of the metadata abstraction for gRPC Asyncio Python."""
-from typing import List, Tuple, Iterator, Any, Text, Union
+from typing import List, Tuple, Iterator, Any, Union
 from collections import abc, OrderedDict
 
-MetadataKey = Text
+MetadataKey = str
 MetadataValue = Union[str, bytes]
 
 
@@ -36,6 +36,12 @@ class Metadata(abc.Mapping):
         self._metadata = OrderedDict()
         for md_key, md_value in args:
             self.add(md_key, md_value)
+
+    @classmethod
+    def from_tuple(cls, raw_metadata: tuple):
+        if raw_metadata:
+            return cls(*raw_metadata)
+        return cls()
 
     def add(self, key: MetadataKey, value: MetadataValue) -> None:
         self._metadata.setdefault(key, [])
@@ -95,10 +101,18 @@ class Metadata(abc.Mapping):
         return key in self._metadata
 
     def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, self.__class__):
-            return NotImplemented  # pytype: disable=bad-return-type
+        if isinstance(other, self.__class__):
+            return self._metadata == other._metadata
+        if isinstance(other, tuple):
+            return tuple(self) == other
+        return NotImplemented  # pytype: disable=bad-return-type
 
-        return self._metadata == other._metadata
+    def __add__(self, other: Any) -> 'Metadata':
+        if isinstance(other, self.__class__):
+            return Metadata(*(tuple(self) + tuple(other)))
+        if isinstance(other, tuple):
+            return Metadata(*(tuple(self) + other))
+        return NotImplemented  # pytype: disable=bad-return-type
 
     def __repr__(self) -> str:
         view = tuple(self)

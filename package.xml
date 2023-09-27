@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.30.2</release>
-  <api>1.30.2</api>
+  <release>1.31.1</release>
+  <api>1.31.1</api>
  </version>
  <stability>
   <release>stable</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.30.2 update
+- gRPC Core 1.31.1 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -97,6 +97,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_plugin.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/config_selector.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/config_selector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/global_subchannel_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/global_subchannel_pool.h" role="src" />
@@ -179,6 +181,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config_call_data.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.cc" role="src" />
@@ -1577,11 +1580,59 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/curve25519_64.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_32.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_64.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/bitmap256.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/bitstate.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/compile.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/dfa.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/filtered_re2.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/filtered_re2.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/mimics_pcre.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/nfa.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/onepass.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/parse.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/perl_groups.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/pod_array.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/prefilter.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/prefilter.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/prefilter_tree.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/prefilter_tree.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/prog.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/prog.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/re2.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/re2.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/regexp.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/regexp.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/set.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/set.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/simplify.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/sparse_array.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/sparse_set.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/stringpiece.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/stringpiece.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/tostring.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/unicode_casefold.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/unicode_casefold.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/unicode_groups.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/unicode_groups.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/walker-inl.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/benchmark.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/flags.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/logging.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/malloc_counter.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/mix.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/mutex.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/pcre.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/pcre.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/rune.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/strutil.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/strutil.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/test.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/utf.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/util/util.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/encode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/encode.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/generated_util.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/msg.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/msg.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port.c" role="src" />
@@ -1591,6 +1642,7 @@
     <file baseinstalldir="/" name="third_party/upb/upb/table.int.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/upb.hpp" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/adler32.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/compress.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/crc32.c" role="src" />

@@ -270,26 +270,28 @@ ifeq ($(origin LD), default)
 LD = $(LD_$(CONFIG))
 endif
 LDXX ?= $(LDXX_$(CONFIG))
+ARFLAGS ?= rcs
 ifeq ($(SYSTEM),Linux)
 ifeq ($(origin AR), default)
-AR = ar rcs
+AR = ar
 endif
 STRIP ?= strip --strip-unneeded
 else
 ifeq ($(SYSTEM),Darwin)
 ifeq ($(origin AR), default)
-AR = libtool -no_warning_for_no_symbols -o
+AR = libtool
+ARFLAGS = -no_warning_for_no_symbols -o
 endif
 STRIP ?= strip -x
 else
 ifeq ($(SYSTEM),MINGW32)
 ifeq ($(origin AR), default)
-AR = ar rcs
+AR = ar
 endif
 STRIP ?= strip --strip-unneeded
 else
 ifeq ($(origin AR), default)
-AR = ar rcs
+AR = ar
 endif
 STRIP ?= strip
 endif
@@ -363,7 +365,7 @@ CXXFLAGS += -stdlib=libc++
 LDFLAGS += -framework CoreFoundation
 endif
 CFLAGS += -g
-CPPFLAGS += -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/upb -Isrc/core/ext/upb-generated
+CPPFLAGS += -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/re2 -Ithird_party/upb -Isrc/core/ext/upb-generated
 COREFLAGS += -fno-exceptions
 LDFLAGS += -g
 
@@ -414,28 +416,6 @@ LIBS = m pthread ws2_32 dbghelp
 LDFLAGS += -pthread
 endif
 
-# If we are installing into a non-default prefix, both
-# the libraries we build, and the apps users build,
-# need to know how to find the libraries they depend on.
-# There is much gnashing of teeth about this subject.
-# It's tricky to do that without editing images during install,
-# as you don't want tests during build to find previously installed and
-# now stale libraries, etc.
-ifeq ($(SYSTEM),Linux)
-ifneq ($(prefix),/usr)
-# Linux best practice for rpath on installed files is probably:
-# 1) .pc file provides -Wl,-rpath,$(prefix)/lib
-# 2) binaries we install into $(prefix)/bin use -Wl,-rpath,$ORIGIN/../lib
-# 3) libraries we install into $(prefix)/lib use -Wl,-rpath,$ORIGIN
-# cf. https://www.akkadia.org/drepper/dsohowto.pdf
-# Doing all of that right is hard, but using -Wl,-rpath,$ORIGIN is always
-# safe, and solves problems seen in the wild.  Note that $ORIGIN
-# is a literal string interpreted much later by ld.so.  Escape it
-# here with a dollar sign so Make doesn't expand $O.
-LDFLAGS += '-Wl,-rpath,$$ORIGIN'
-endif
-endif
-
 #
 # The steps for cross-compiling are as follows:
 # First, clone and make install of grpc using the native compilers for the host.
@@ -455,7 +435,7 @@ endif
 #
 ifeq ($(GRPC_CROSS_COMPILE),true)
 LDFLAGS += $(GRPC_CROSS_LDOPTS) # e.g. -L/usr/local/lib -L/usr/local/cross/lib
-AROPTS = $(GRPC_CROSS_AROPTS) # e.g., rc --target=elf32-little
+ARFLAGS += $(GRPC_CROSS_AROPTS) # e.g., rc --target=elf32-little
 USE_BUILT_PROTOC = false
 endif
 
@@ -469,9 +449,9 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 10.0.0
-CPP_VERSION = 1.30.2
-CSHARP_VERSION = 2.30.2
+CORE_VERSION = 11.0.0
+CPP_VERSION = 1.31.1
+CSHARP_VERSION = 2.31.1
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -519,7 +499,7 @@ SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 SHARED_EXT_CSHARP = dll
 SHARED_PREFIX =
-SHARED_VERSION_CORE = -10
+SHARED_VERSION_CORE = -11
 SHARED_VERSION_CPP = -1
 SHARED_VERSION_CSHARP = -2
 else ifeq ($(SYSTEM),Darwin)
@@ -551,7 +531,7 @@ endif
 ifeq ($(HAS_PKG_CONFIG),true)
 OPENSSL_ALPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.2 openssl
 ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
-PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.5.0 protobuf
+PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.12.0 protobuf
 CARES_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.11.0 libcares
 else # HAS_PKG_CONFIG
 
@@ -722,6 +702,10 @@ CPPFLAGS := -Ithird_party/address_sorting/include $(CPPFLAGS)
 
 GRPC_ABSEIL_DEP = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
 GRPC_ABSEIL_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
+
+RE2_DEP = $(LIBDIR)/$(CONFIG)/libre2.a
+RE2_MERGE_OBJS = $(LIBRE2_OBJS)
+RE2_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libre2.a
 
 UPB_DEP = $(LIBDIR)/$(CONFIG)/libupb.a
 UPB_MERGE_OBJS = $(LIBUPB_OBJS)
@@ -957,7 +941,7 @@ openssl_dep_message:
 	@echo "Your system doesn't have one, and either the third_party directory"
 	@echo "doesn't have it, or your compiler can't build BoringSSL."
 	@echo
-	@echo "Please consult INSTALL to get more information."
+	@echo "Please consult BUILDING.md to get more information."
 	@echo
 	@echo "If you need information about why these tests failed, run:"
 	@echo
@@ -968,10 +952,10 @@ protobuf_dep_message:
 	@echo
 	@echo "DEPENDENCY ERROR"
 	@echo
-	@echo "The target you are trying to run requires protobuf 3.5.0+"
+	@echo "The target you are trying to run requires protobuf 3.12.0+"
 	@echo "Your system doesn't have it, and neither does the third_party directory."
 	@echo
-	@echo "Please consult INSTALL to get more information."
+	@echo "Please consult BUILDING.md to get more information."
 	@echo
 	@echo "If you need information about why these tests failed, run:"
 	@echo
@@ -982,10 +966,10 @@ protoc_dep_message:
 	@echo
 	@echo "DEPENDENCY ERROR"
 	@echo
-	@echo "The target you are trying to run requires protobuf-compiler 3.5.0+"
+	@echo "The target you are trying to run requires protobuf-compiler 3.12.0+"
 	@echo "Your system doesn't have it, and neither does the third_party directory."
 	@echo
-	@echo "Please consult INSTALL to get more information."
+	@echo "Please consult BUILDING.md to get more information."
 	@echo
 	@echo "If you need information about why these tests failed, run:"
 	@echo
@@ -1000,8 +984,17 @@ systemtap_dep_error:
 	@echo "to build requires systemtap 2.7+ (on Linux) or dtrace (on other "
 	@echo "platforms such as Solaris and *BSD). "
 	@echo
-	@echo "Please consult INSTALL to get more information."
+	@echo "Please consult BUILDING.md to get more information."
 	@echo
+
+install_not_supported_message:
+	@echo
+	@echo "Installing via 'make' is no longer supported. Use cmake or bazel instead."
+	@echo
+	@echo "Please consult BUILDING.md to get more information."
+	@echo
+
+install_not_supported_error: install_not_supported_message stop
 
 stop:
 	@false
@@ -1112,7 +1105,6 @@ secure_channel_create_test: $(BINDIR)/$(CONFIG)/secure_channel_create_test
 secure_endpoint_test: $(BINDIR)/$(CONFIG)/secure_endpoint_test
 security_connector_test: $(BINDIR)/$(CONFIG)/security_connector_test
 sequential_connectivity_test: $(BINDIR)/$(CONFIG)/sequential_connectivity_test
-server_chttp2_test: $(BINDIR)/$(CONFIG)/server_chttp2_test
 server_ssl_test: $(BINDIR)/$(CONFIG)/server_ssl_test
 server_test: $(BINDIR)/$(CONFIG)/server_test
 slice_buffer_test: $(BINDIR)/$(CONFIG)/slice_buffer_test
@@ -1269,6 +1261,7 @@ secure_auth_context_test: $(BINDIR)/$(CONFIG)/secure_auth_context_test
 server_builder_plugin_test: $(BINDIR)/$(CONFIG)/server_builder_plugin_test
 server_builder_test: $(BINDIR)/$(CONFIG)/server_builder_test
 server_builder_with_socket_mutator_test: $(BINDIR)/$(CONFIG)/server_builder_with_socket_mutator_test
+server_chttp2_test: $(BINDIR)/$(CONFIG)/server_chttp2_test
 server_context_test_spouse_test: $(BINDIR)/$(CONFIG)/server_context_test_spouse_test
 server_early_return_test: $(BINDIR)/$(CONFIG)/server_early_return_test
 server_fuzzer: $(BINDIR)/$(CONFIG)/server_fuzzer
@@ -1287,6 +1280,7 @@ static_metadata_test: $(BINDIR)/$(CONFIG)/static_metadata_test
 stats_test: $(BINDIR)/$(CONFIG)/stats_test
 status_metadata_test: $(BINDIR)/$(CONFIG)/status_metadata_test
 status_util_test: $(BINDIR)/$(CONFIG)/status_util_test
+stranded_event_test: $(BINDIR)/$(CONFIG)/stranded_event_test
 streaming_throughput_test: $(BINDIR)/$(CONFIG)/streaming_throughput_test
 string_ref_test: $(BINDIR)/$(CONFIG)/string_ref_test
 test_cpp_client_credentials_test: $(BINDIR)/$(CONFIG)/test_cpp_client_credentials_test
@@ -1297,6 +1291,7 @@ thread_stress_test: $(BINDIR)/$(CONFIG)/thread_stress_test
 time_jump_test: $(BINDIR)/$(CONFIG)/time_jump_test
 timer_test: $(BINDIR)/$(CONFIG)/timer_test
 tls_security_connector_test: $(BINDIR)/$(CONFIG)/tls_security_connector_test
+too_many_pings_test: $(BINDIR)/$(CONFIG)/too_many_pings_test
 unknown_frame_bad_client_test: $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test
 uri_fuzzer_test: $(BINDIR)/$(CONFIG)/uri_fuzzer_test
 window_overflow_bad_client_test: $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test
@@ -1347,7 +1342,7 @@ $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 
 static: static_c static_cxx
 
-static_c: pc_c pc_c_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libupb.a
+static_c: pc_c pc_c_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libre2.a $(LIBDIR)/$(CONFIG)/libupb.a
 
 static_cxx: pc_cxx pc_cxx_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a
 
@@ -1355,7 +1350,7 @@ static_csharp: static_c
 
 shared: shared_c shared_cxx
 
-shared_c: pc_c pc_c_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+shared_c: pc_c pc_c_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
 shared_cxx: pc_cxx pc_cxx_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
 
 shared_csharp: shared_c 
@@ -1486,7 +1481,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/secure_endpoint_test \
   $(BINDIR)/$(CONFIG)/security_connector_test \
   $(BINDIR)/$(CONFIG)/sequential_connectivity_test \
-  $(BINDIR)/$(CONFIG)/server_chttp2_test \
   $(BINDIR)/$(CONFIG)/server_ssl_test \
   $(BINDIR)/$(CONFIG)/server_test \
   $(BINDIR)/$(CONFIG)/slice_buffer_test \
@@ -1630,6 +1624,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/server_builder_plugin_test \
   $(BINDIR)/$(CONFIG)/server_builder_test \
   $(BINDIR)/$(CONFIG)/server_builder_with_socket_mutator_test \
+  $(BINDIR)/$(CONFIG)/server_chttp2_test \
   $(BINDIR)/$(CONFIG)/server_context_test_spouse_test \
   $(BINDIR)/$(CONFIG)/server_early_return_test \
   $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test \
@@ -1646,6 +1641,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/stats_test \
   $(BINDIR)/$(CONFIG)/status_metadata_test \
   $(BINDIR)/$(CONFIG)/status_util_test \
+  $(BINDIR)/$(CONFIG)/stranded_event_test \
   $(BINDIR)/$(CONFIG)/streaming_throughput_test \
   $(BINDIR)/$(CONFIG)/string_ref_test \
   $(BINDIR)/$(CONFIG)/test_cpp_client_credentials_test \
@@ -1656,6 +1652,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/time_jump_test \
   $(BINDIR)/$(CONFIG)/timer_test \
   $(BINDIR)/$(CONFIG)/tls_security_connector_test \
+  $(BINDIR)/$(CONFIG)/too_many_pings_test \
   $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test \
   $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test \
   $(BINDIR)/$(CONFIG)/work_serializer_test \
@@ -1786,6 +1783,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/server_builder_plugin_test \
   $(BINDIR)/$(CONFIG)/server_builder_test \
   $(BINDIR)/$(CONFIG)/server_builder_with_socket_mutator_test \
+  $(BINDIR)/$(CONFIG)/server_chttp2_test \
   $(BINDIR)/$(CONFIG)/server_context_test_spouse_test \
   $(BINDIR)/$(CONFIG)/server_early_return_test \
   $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test \
@@ -1802,6 +1800,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/stats_test \
   $(BINDIR)/$(CONFIG)/status_metadata_test \
   $(BINDIR)/$(CONFIG)/status_util_test \
+  $(BINDIR)/$(CONFIG)/stranded_event_test \
   $(BINDIR)/$(CONFIG)/streaming_throughput_test \
   $(BINDIR)/$(CONFIG)/string_ref_test \
   $(BINDIR)/$(CONFIG)/test_cpp_client_credentials_test \
@@ -1812,6 +1811,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/time_jump_test \
   $(BINDIR)/$(CONFIG)/timer_test \
   $(BINDIR)/$(CONFIG)/tls_security_connector_test \
+  $(BINDIR)/$(CONFIG)/too_many_pings_test \
   $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test \
   $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test \
   $(BINDIR)/$(CONFIG)/work_serializer_test \
@@ -2040,8 +2040,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/secure_endpoint_test || ( echo test secure_endpoint_test failed ; exit 1 )
 	$(E) "[RUN]     Testing security_connector_test"
 	$(Q) $(BINDIR)/$(CONFIG)/security_connector_test || ( echo test security_connector_test failed ; exit 1 )
-	$(E) "[RUN]     Testing server_chttp2_test"
-	$(Q) $(BINDIR)/$(CONFIG)/server_chttp2_test || ( echo test server_chttp2_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_ssl_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_ssl_test || ( echo test server_ssl_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_test"
@@ -2296,6 +2294,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/server_builder_test || ( echo test server_builder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_builder_with_socket_mutator_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_builder_with_socket_mutator_test || ( echo test server_builder_with_socket_mutator_test failed ; exit 1 )
+	$(E) "[RUN]     Testing server_chttp2_test"
+	$(Q) $(BINDIR)/$(CONFIG)/server_chttp2_test || ( echo test server_chttp2_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_context_test_spouse_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_context_test_spouse_test || ( echo test server_context_test_spouse_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_early_return_test"
@@ -2326,6 +2326,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/status_metadata_test || ( echo test status_metadata_test failed ; exit 1 )
 	$(E) "[RUN]     Testing status_util_test"
 	$(Q) $(BINDIR)/$(CONFIG)/status_util_test || ( echo test status_util_test failed ; exit 1 )
+	$(E) "[RUN]     Testing stranded_event_test"
+	$(Q) $(BINDIR)/$(CONFIG)/stranded_event_test || ( echo test stranded_event_test failed ; exit 1 )
 	$(E) "[RUN]     Testing streaming_throughput_test"
 	$(Q) $(BINDIR)/$(CONFIG)/streaming_throughput_test || ( echo test streaming_throughput_test failed ; exit 1 )
 	$(E) "[RUN]     Testing string_ref_test"
@@ -2344,6 +2346,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/timer_test || ( echo test timer_test failed ; exit 1 )
 	$(E) "[RUN]     Testing tls_security_connector_test"
 	$(Q) $(BINDIR)/$(CONFIG)/tls_security_connector_test || ( echo test tls_security_connector_test failed ; exit 1 )
+	$(E) "[RUN]     Testing too_many_pings_test"
+	$(Q) $(BINDIR)/$(CONFIG)/too_many_pings_test || ( echo test too_many_pings_test failed ; exit 1 )
 	$(E) "[RUN]     Testing unknown_frame_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test || ( echo test unknown_frame_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing window_overflow_bad_client_test"
@@ -2398,6 +2402,8 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a
 	$(E) "[STRIP]   Stripping libgrpc_unsecure.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
+	$(E) "[STRIP]   Stripping libre2.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libre2.a
 	$(E) "[STRIP]   Stripping libupb.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libupb.a
 endif
@@ -2430,6 +2436,8 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
 	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
 	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
 endif
@@ -2841,12 +2849,12 @@ $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc: protoc_dep_error
 $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc: protoc_dep_error
 else
 
-$(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc: src/proto/grpc/testing/xds/lds_rds_for_test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc
+$(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc: src/proto/grpc/testing/xds/lds_rds_for_test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc: src/proto/grpc/testing/xds/lds_rds_for_test.proto $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc
+$(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc: src/proto/grpc/testing/xds/lds_rds_for_test.proto $(GENDIR)/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
@@ -2964,243 +2972,17 @@ $(OBJDIR)/$(CONFIG)/%.o : %.cpp
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
-install: install_c install_cxx install-plugins install-certs
+install: install_not_supported_error
 
-install_c: install-headers_c install-static_c install-shared_c
+install_c: install_not_supported_error
 
-install_cxx: install-headers_cxx install-static_cxx install-shared_cxx
+install_cxx: install_not_supported_error
 
-install_csharp: install-shared_csharp install_c
+install_csharp: install_not_supported_error
 
-install_grpc_csharp_ext: install_csharp
+install-static: install_not_supported_error
 
-install-headers: install-headers_c install-headers_cxx
-
-install-headers_c:
-	$(E) "[INSTALL] Installing public C headers"
-	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
-	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
-
-install-headers_cxx:
-	$(E) "[INSTALL] Installing public C++ headers"
-	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
-	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
-
-install-static: install-static_c install-static_cxx
-
-install-static_c: static_c strip-static_c install-pkg-config_c
-	$(E) "[INSTALL] Installing libaddress_sorting.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(prefix)/lib/libaddress_sorting.a
-	$(E) "[INSTALL] Installing libgpr.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgpr.a $(prefix)/lib/libgpr.a
-	$(E) "[INSTALL] Installing libgrpc.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc.a $(prefix)/lib/libgrpc.a
-	$(E) "[INSTALL] Installing libgrpc_csharp_ext.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a $(prefix)/lib/libgrpc_csharp_ext.a
-	$(E) "[INSTALL] Installing libgrpc_unsecure.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(prefix)/lib/libgrpc_unsecure.a
-	$(E) "[INSTALL] Installing libupb.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libupb.a $(prefix)/lib/libupb.a
-
-install-static_cxx: static_cxx strip-static_cxx install-pkg-config_cxx
-	$(E) "[INSTALL] Installing libgrpc++.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(prefix)/lib/libgrpc++.a
-	$(E) "[INSTALL] Installing libgrpc++_alts.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a $(prefix)/lib/libgrpc++_alts.a
-	$(E) "[INSTALL] Installing libgrpc++_error_details.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a $(prefix)/lib/libgrpc++_error_details.a
-	$(E) "[INSTALL] Installing libgrpc++_reflection.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a $(prefix)/lib/libgrpc++_reflection.a
-	$(E) "[INSTALL] Installing libgrpc++_unsecure.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(prefix)/lib/libgrpc++_unsecure.a
-	$(E) "[INSTALL] Installing libgrpcpp_channelz.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a $(prefix)/lib/libgrpcpp_channelz.a
-
-
-
-install-shared_c: shared_c strip-shared_c install-pkg-config_c
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libaddress_sorting.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libaddress_sorting.so.10
-	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libaddress_sorting.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libgpr.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgpr.so.10
-	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgpr.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libgrpc.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc.so.10
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libgrpc_csharp_ext.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_csharp_ext.so.10
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_csharp_ext.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libgrpc_unsecure.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_unsecure.so.10
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_unsecure.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libupb.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libupb.so.10
-	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libupb.so
-endif
-ifneq ($(SYSTEM),MINGW32)
-ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig || true
-endif
-endif
-
-
-install-shared_cxx: shared_cxx strip-shared_cxx install-shared_c install-pkg-config_cxx
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/$(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/$(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++_alts.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_alts.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_alts.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/$(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++_error_details.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_error_details.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_error_details.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++_reflection.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_reflection.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_reflection.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++_unsecure.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_unsecure.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_unsecure.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/$(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpcpp_channelz.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpcpp_channelz.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpcpp_channelz.so
-endif
-ifneq ($(SYSTEM),MINGW32)
-ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig || true
-endif
-endif
-
-
-install-shared_csharp: shared_csharp strip-shared_csharp
-ifneq ($(SYSTEM),MINGW32)
-ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig || true
-endif
-endif
-
-
-install-plugins: $(PROTOC_PLUGINS)
-	$(E) "[INSTALL] Installing grpc protoc plugins"
-	$(Q) $(INSTALL) -d $(prefix)/bin
-	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_cpp_plugin $(prefix)/bin/grpc_cpp_plugin
-	$(Q) $(INSTALL) -d $(prefix)/bin
-	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_csharp_plugin $(prefix)/bin/grpc_csharp_plugin
-	$(Q) $(INSTALL) -d $(prefix)/bin
-	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_node_plugin $(prefix)/bin/grpc_node_plugin
-	$(Q) $(INSTALL) -d $(prefix)/bin
-	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin $(prefix)/bin/grpc_objective_c_plugin
-	$(Q) $(INSTALL) -d $(prefix)/bin
-	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_php_plugin $(prefix)/bin/grpc_php_plugin
-	$(Q) $(INSTALL) -d $(prefix)/bin
-	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_python_plugin $(prefix)/bin/grpc_python_plugin
-	$(Q) $(INSTALL) -d $(prefix)/bin
-	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_ruby_plugin $(prefix)/bin/grpc_ruby_plugin
-
-install-grpc-cli: grpc_cli
-	$(E) "[INSTALL] Installing grpc cli"
-	$(Q) $(INSTALL) -d $(prefix)/bin
-	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_cli $(prefix)/bin/grpc_cli
-
-install-pkg-config_c: pc_c pc_c_unsecure
-	$(E) "[INSTALL] Installing C pkg-config files"
-	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc $(prefix)/lib/pkgconfig/gpr.pc
-	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
-	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
-
-install-pkg-config_cxx: pc_cxx pc_cxx_unsecure
-	$(E) "[INSTALL] Installing C++ pkg-config files"
-	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc $(prefix)/lib/pkgconfig/grpc++.pc
-	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc $(prefix)/lib/pkgconfig/grpc++_unsecure.pc
-
-install-certs: etc/roots.pem
-	$(E) "[INSTALL] Installing root certificates"
-	$(Q) $(INSTALL) -d $(prefix)/share/grpc
-	$(Q) $(INSTALL) etc/roots.pem $(prefix)/share/grpc/roots.pem
+install-certs: install_not_supported_error
 
 clean:
 	$(E) "[CLEAN]   Cleaning build directories."
@@ -3224,7 +3006,7 @@ $(LIBDIR)/$(CONFIG)/libaddress_sorting.a:  $(LIBADDRESS_SORTING_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBADDRESS_SORTING_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBADDRESS_SORTING_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
 endif
@@ -3232,19 +3014,19 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBADDRESS_SORTING_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)
+$(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBADDRESS_SORTING_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBADDRESS_SORTING_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)
+$(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBADDRESS_SORTING_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libaddress_sorting.so.10 -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so.10
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libaddress_sorting.so.11 -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so.11
 	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -3349,11 +3131,11 @@ PUBLIC_HEADERS_C += \
 LIBEND2END_NOSEC_TESTS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TESTS_SRC))))
 
 
-$(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBEND2END_NOSEC_TESTS_OBJS) 
+$(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBEND2END_NOSEC_TESTS_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBEND2END_NOSEC_TESTS_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBEND2END_NOSEC_TESTS_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
 endif
@@ -3472,11 +3254,11 @@ $(LIBDIR)/$(CONFIG)/libend2end_tests.a: openssl_dep_error
 else
 
 
-$(LIBDIR)/$(CONFIG)/libend2end_tests.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBEND2END_TESTS_OBJS) 
+$(LIBDIR)/$(CONFIG)/libend2end_tests.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBEND2END_TESTS_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_tests.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBEND2END_TESTS_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBEND2END_TESTS_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libend2end_tests.a
 endif
@@ -3582,11 +3364,11 @@ PUBLIC_HEADERS_C += \
 LIBGPR_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGPR_SRC))))
 
 
-$(LIBDIR)/$(CONFIG)/libgpr.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGPR_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgpr.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGPR_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBGPR_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBGPR_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgpr.a
 endif
@@ -3594,19 +3376,19 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGPR_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)
+$(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGPR_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGPR_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)
+$(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGPR_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.10 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so.10
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.11 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so.11
 	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -3625,6 +3407,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/client_channel_channelz.cc \
     src/core/ext/filters/client_channel/client_channel_factory.cc \
     src/core/ext/filters/client_channel/client_channel_plugin.cc \
+    src/core/ext/filters/client_channel/config_selector.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/health/health_check_client.cc \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
@@ -3672,6 +3455,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/server_address.cc \
     src/core/ext/filters/client_channel/service_config.cc \
+    src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
     src/core/ext/filters/client_channel/service_config_parser.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
@@ -4064,11 +3848,11 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE
 else
 
 
-$(LIBDIR)/$(CONFIG)/libgrpc.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(RE2_MERGE_OBJS)  $(UPB_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBGRPC_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBGRPC_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(RE2_MERGE_OBJS)  $(UPB_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc.a
 endif
@@ -4076,19 +3860,19 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.10 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.10
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.11 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.11
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -4121,11 +3905,11 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHAR
 else
 
 
-$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_CSHARP_EXT_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_CSHARP_EXT_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a $(LIBGRPC_CSHARP_EXT_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a $(LIBGRPC_CSHARP_EXT_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a
 endif
@@ -4133,19 +3917,19 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_csharp_ext.so.10 -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).so.10
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_csharp_ext.so.11 -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).so.11
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -4196,11 +3980,11 @@ $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a: openssl_dep_error
 else
 
 
-$(LIBDIR)/$(CONFIG)/libgrpc_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_TEST_UTIL_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_TEST_UTIL_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBGRPC_TEST_UTIL_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBGRPC_TEST_UTIL_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a
 endif
@@ -4244,11 +4028,11 @@ PUBLIC_HEADERS_C += \
 LIBGRPC_TEST_UTIL_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_TEST_UTIL_UNSECURE_SRC))))
 
 
-$(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_TEST_UTIL_UNSECURE_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_TEST_UTIL_UNSECURE_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBGRPC_TEST_UTIL_UNSECURE_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBGRPC_TEST_UTIL_UNSECURE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a
 endif
@@ -4270,6 +4054,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/client_channel_channelz.cc \
     src/core/ext/filters/client_channel/client_channel_factory.cc \
     src/core/ext/filters/client_channel/client_channel_plugin.cc \
+    src/core/ext/filters/client_channel/config_selector.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/health/health_check_client.cc \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
@@ -4317,6 +4102,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/server_address.cc \
     src/core/ext/filters/client_channel/service_config.cc \
+    src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
     src/core/ext/filters/client_channel/service_config_parser.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
@@ -4622,11 +4408,11 @@ PUBLIC_HEADERS_C += \
 LIBGRPC_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_UNSECURE_SRC))))
 
 
-$(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(RE2_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBGRPC_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBGRPC_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(RE2_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 endif
@@ -4634,19 +4420,19 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.10 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.10
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.11 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.11
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -4686,11 +4472,11 @@ $(LIBDIR)/$(CONFIG)/libbenchmark_helpers.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libbenchmark_helpers.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBBENCHMARK_HELPERS_OBJS) 
+$(LIBDIR)/$(CONFIG)/libbenchmark_helpers.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBBENCHMARK_HELPERS_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbenchmark_helpers.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libbenchmark_helpers.a $(LIBBENCHMARK_HELPERS_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libbenchmark_helpers.a $(LIBBENCHMARK_HELPERS_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libbenchmark_helpers.a
 endif
@@ -4712,6 +4498,7 @@ $(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/helpers.o: $(GENDIR)/src/proto/grpc
 
 LIBGRPC++_SRC = \
     src/cpp/client/channel_cc.cc \
+    src/cpp/client/client_callback.cc \
     src/cpp/client/client_context.cc \
     src/cpp/client/client_interceptor.cc \
     src/cpp/client/create_channel.cc \
@@ -4846,14 +4633,11 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/create_channel.h \
     include/grpcpp/create_channel_impl.h \
     include/grpcpp/create_channel_posix.h \
-    include/grpcpp/create_channel_posix_impl.h \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
     include/grpcpp/generic/async_generic_service.h \
     include/grpcpp/generic/generic_stub.h \
-    include/grpcpp/generic/generic_stub_impl.h \
     include/grpcpp/grpcpp.h \
     include/grpcpp/health_check_service_interface.h \
-    include/grpcpp/health_check_service_interface_impl.h \
     include/grpcpp/impl/call.h \
     include/grpcpp/impl/channel_argument_option.h \
     include/grpcpp/impl/client_unary_call.h \
@@ -4928,10 +4712,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/server_initializer_impl.h \
     include/grpcpp/impl/service_type.h \
     include/grpcpp/resource_quota.h \
-    include/grpcpp/resource_quota_impl.h \
     include/grpcpp/security/auth_context.h \
     include/grpcpp/security/auth_metadata_processor.h \
-    include/grpcpp/security/auth_metadata_processor_impl.h \
     include/grpcpp/security/credentials.h \
     include/grpcpp/security/credentials_impl.h \
     include/grpcpp/security/server_credentials.h \
@@ -4939,11 +4721,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/security/tls_credentials_options.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
-    include/grpcpp/server_builder_impl.h \
     include/grpcpp/server_context.h \
     include/grpcpp/server_impl.h \
     include/grpcpp/server_posix.h \
-    include/grpcpp/server_posix_impl.h \
     include/grpcpp/support/async_stream.h \
     include/grpcpp/support/async_stream_impl.h \
     include/grpcpp/support/async_unary_call.h \
@@ -4996,11 +4776,11 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc++.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc++.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(RE2_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBGRPC++_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBGRPC++_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(RE2_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++.a
 endif
@@ -5008,18 +4788,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc$(SHARED_VERSION_CORE)-dll -lgpr$(SHARED_VERSION_CORE)-dll -laddress_sorting$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc$(SHARED_VERSION_CORE)-dll -lgpr$(SHARED_VERSION_CORE)-dll -laddress_sorting$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
 else
-$(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc -lgpr -laddress_sorting -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc -lgpr -laddress_sorting -lupb
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc -lgpr -laddress_sorting -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc -lgpr -laddress_sorting -lupb
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).so.1
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).so
 endif
@@ -5067,11 +4847,11 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EX
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc++_alts.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_ALTS_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc++_alts.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_ALTS_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(RE2_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a $(LIBGRPC++_ALTS_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a $(LIBGRPC++_ALTS_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(RE2_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_alts.a
 endif
@@ -5079,18 +4859,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_ALTS_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_ALTS_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_alts$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ALTS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++$(SHARED_VERSION_CPP)-dll -lgrpc$(SHARED_VERSION_CORE)-dll -lgpr$(SHARED_VERSION_CORE)-dll -laddress_sorting$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_alts$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ALTS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++$(SHARED_VERSION_CPP)-dll -lgrpc$(SHARED_VERSION_CORE)-dll -lgpr$(SHARED_VERSION_CORE)-dll -laddress_sorting$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
 else
-$(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_ALTS_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_ALTS_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ALTS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc -lgpr -laddress_sorting -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ALTS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc -lgpr -laddress_sorting -lupb
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_alts.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ALTS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc -lgpr -laddress_sorting -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_alts.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ALTS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc -lgpr -laddress_sorting -lupb
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).so.1
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_alts$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_alts$(SHARED_VERSION_CPP).so
 endif
@@ -5139,11 +4919,11 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_ERROR_DETAILS_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_ERROR_DETAILS_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a $(LIBGRPC++_ERROR_DETAILS_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a $(LIBGRPC++_ERROR_DETAILS_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a
 endif
@@ -5151,18 +4931,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_ERROR_DETAILS_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_ERROR_DETAILS_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_error_details$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ERROR_DETAILS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++$(SHARED_VERSION_CPP)-dll -lgrpc$(SHARED_VERSION_CORE)-dll -lgpr$(SHARED_VERSION_CORE)-dll -laddress_sorting$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_error_details$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ERROR_DETAILS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++$(SHARED_VERSION_CPP)-dll -lgrpc$(SHARED_VERSION_CORE)-dll -lgpr$(SHARED_VERSION_CORE)-dll -laddress_sorting$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
 else
-$(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_ERROR_DETAILS_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_ERROR_DETAILS_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ERROR_DETAILS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc -lgpr -laddress_sorting -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ERROR_DETAILS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc -lgpr -laddress_sorting -lupb
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_error_details.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ERROR_DETAILS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc -lgpr -laddress_sorting -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_error_details.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_ERROR_DETAILS_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc -lgpr -laddress_sorting -lupb
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP).so.1
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP).so
 endif
@@ -5188,7 +4968,6 @@ LIBGRPC++_REFLECTION_SRC = \
 PUBLIC_HEADERS_CXX += \
     include/grpc++/ext/proto_server_reflection_plugin.h \
     include/grpcpp/ext/proto_server_reflection_plugin.h \
-    include/grpcpp/ext/proto_server_reflection_plugin_impl.h \
 
 LIBGRPC++_REFLECTION_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_REFLECTION_SRC))))
 
@@ -5213,11 +4992,11 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHA
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_REFLECTION_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_REFLECTION_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a $(LIBGRPC++_REFLECTION_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a $(LIBGRPC++_REFLECTION_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a
 endif
@@ -5225,18 +5004,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_REFLECTION_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_REFLECTION_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++$(SHARED_VERSION_CPP)-dll -lgrpc$(SHARED_VERSION_CORE)-dll -lgpr$(SHARED_VERSION_CORE)-dll -laddress_sorting$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++$(SHARED_VERSION_CPP)-dll -lgrpc$(SHARED_VERSION_CORE)-dll -lgpr$(SHARED_VERSION_CORE)-dll -laddress_sorting$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
 else
-$(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_REFLECTION_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_REFLECTION_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc -lgpr -laddress_sorting -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc -lgpr -laddress_sorting -lupb
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_reflection.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc -lgpr -laddress_sorting -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_reflection.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc -lgpr -laddress_sorting -lupb
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).so.1
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).so
 endif
@@ -5287,11 +5066,11 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_test.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc++_test.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_TEST_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc++_test.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_TEST_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_test.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_test.a $(LIBGRPC++_TEST_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc++_test.a $(LIBGRPC++_TEST_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_test.a
 endif
@@ -5336,11 +5115,11 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_TEST_CONFIG_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_TEST_CONFIG_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBGRPC++_TEST_CONFIG_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBGRPC++_TEST_CONFIG_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 endif
@@ -5393,11 +5172,11 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_TEST_UTIL_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_TEST_UTIL_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBGRPC++_TEST_UTIL_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBGRPC++_TEST_UTIL_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a
 endif
@@ -5418,6 +5197,7 @@ endif
 
 LIBGRPC++_UNSECURE_SRC = \
     src/cpp/client/channel_cc.cc \
+    src/cpp/client/client_callback.cc \
     src/cpp/client/client_context.cc \
     src/cpp/client/client_interceptor.cc \
     src/cpp/client/create_channel.cc \
@@ -5545,14 +5325,11 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/create_channel.h \
     include/grpcpp/create_channel_impl.h \
     include/grpcpp/create_channel_posix.h \
-    include/grpcpp/create_channel_posix_impl.h \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
     include/grpcpp/generic/async_generic_service.h \
     include/grpcpp/generic/generic_stub.h \
-    include/grpcpp/generic/generic_stub_impl.h \
     include/grpcpp/grpcpp.h \
     include/grpcpp/health_check_service_interface.h \
-    include/grpcpp/health_check_service_interface_impl.h \
     include/grpcpp/impl/call.h \
     include/grpcpp/impl/channel_argument_option.h \
     include/grpcpp/impl/client_unary_call.h \
@@ -5627,10 +5404,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/server_initializer_impl.h \
     include/grpcpp/impl/service_type.h \
     include/grpcpp/resource_quota.h \
-    include/grpcpp/resource_quota_impl.h \
     include/grpcpp/security/auth_context.h \
     include/grpcpp/security/auth_metadata_processor.h \
-    include/grpcpp/security/auth_metadata_processor_impl.h \
     include/grpcpp/security/credentials.h \
     include/grpcpp/security/credentials_impl.h \
     include/grpcpp/security/server_credentials.h \
@@ -5638,11 +5413,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/security/tls_credentials_options.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
-    include/grpcpp/server_builder_impl.h \
     include/grpcpp/server_context.h \
     include/grpcpp/server_impl.h \
     include/grpcpp/server_posix.h \
-    include/grpcpp/server_posix_impl.h \
     include/grpcpp/support/async_stream.h \
     include/grpcpp/support/async_stream_impl.h \
     include/grpcpp/support/async_unary_call.h \
@@ -5685,11 +5458,11 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARE
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(RE2_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBGRPC++_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBGRPC++_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(LIBGRPC_ABSEIL_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(ADDRESS_SORTING_MERGE_OBJS)  $(RE2_MERGE_OBJS)  $(UPB_MERGE_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
 endif
@@ -5697,18 +5470,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc_unsecure$(SHARED_VERSION_CORE)-dll -lgpr$(SHARED_VERSION_CORE)-dll -laddress_sorting$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc_unsecure$(SHARED_VERSION_CORE)-dll -lgpr$(SHARED_VERSION_CORE)-dll -laddress_sorting$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
 else
-$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE)
+$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc_unsecure -lgpr -laddress_sorting -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc_unsecure -lgpr -laddress_sorting -lupb
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_unsecure.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc_unsecure -lgpr -laddress_sorting -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_unsecure.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc_unsecure -lgpr -laddress_sorting -lupb
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).so.1
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).so
 endif
@@ -5746,11 +5519,11 @@ $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC_PLUGIN_SUPPORT_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC_PLUGIN_SUPPORT_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a $(LIBGRPC_PLUGIN_SUPPORT_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a $(LIBGRPC_PLUGIN_SUPPORT_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a
 endif
@@ -5797,11 +5570,11 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARE
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPCPP_CHANNELZ_OBJS) 
+$(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBGRPCPP_CHANNELZ_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a $(LIBGRPCPP_CHANNELZ_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a $(LIBGRPCPP_CHANNELZ_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz.a
 endif
@@ -5809,18 +5582,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPCPP_CHANNELZ_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPCPP_CHANNELZ_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpcpp_channelz$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPCPP_CHANNELZ_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++$(SHARED_VERSION_CPP)-dll -lgrpc$(SHARED_VERSION_CORE)-dll -lgpr$(SHARED_VERSION_CORE)-dll -laddress_sorting$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpcpp_channelz$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPCPP_CHANNELZ_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++$(SHARED_VERSION_CPP)-dll -lgrpc$(SHARED_VERSION_CORE)-dll -lgpr$(SHARED_VERSION_CORE)-dll -laddress_sorting$(SHARED_VERSION_CORE)-dll -lupb$(SHARED_VERSION_CORE)-dll
 else
-$(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPCPP_CHANNELZ_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPCPP_CHANNELZ_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPCPP_CHANNELZ_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc -lgpr -laddress_sorting -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPCPP_CHANNELZ_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc -lgpr -laddress_sorting -lupb
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpcpp_channelz.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPCPP_CHANNELZ_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc -lgpr -laddress_sorting -lupb
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpcpp_channelz.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPCPP_CHANNELZ_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) -lgrpc++ -lgrpc -lgpr -laddress_sorting -lupb
 	$(Q) ln -sf $(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP).so.1
 	$(Q) ln -sf $(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP).so
 endif
@@ -6116,11 +5889,11 @@ $(LIBBORINGSSL_OBJS): CPPFLAGS += -Ithird_party/boringssl-with-bazel/src/include
 $(LIBBORINGSSL_OBJS): CXXFLAGS += -fno-exceptions
 $(LIBBORINGSSL_OBJS): CFLAGS += -g
 
-$(LIBDIR)/$(CONFIG)/libboringssl.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBBORINGSSL_OBJS) 
+$(LIBDIR)/$(CONFIG)/libboringssl.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBBORINGSSL_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl.a $(LIBBORINGSSL_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libboringssl.a $(LIBBORINGSSL_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl.a
 endif
@@ -6156,11 +5929,11 @@ $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_test_util.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_TEST_UTIL_OBJS) 
+$(LIBDIR)/$(CONFIG)/libboringssl_test_util.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_TEST_UTIL_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBBORINGSSL_TEST_UTIL_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBBORINGSSL_TEST_UTIL_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a
 endif
@@ -6211,11 +5984,11 @@ $(LIBDIR)/$(CONFIG)/libbenchmark.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libbenchmark.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBBENCHMARK_OBJS) 
+$(LIBDIR)/$(CONFIG)/libbenchmark.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(PROTOBUF_DEP) $(LIBBENCHMARK_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbenchmark.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBBENCHMARK_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBBENCHMARK_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libbenchmark.a
 endif
@@ -6227,6 +6000,70 @@ endif
 
 ifneq ($(NO_DEPS),true)
 -include $(LIBBENCHMARK_OBJS:.o=.dep)
+endif
+
+
+LIBRE2_SRC = \
+    third_party/re2/re2/bitstate.cc \
+    third_party/re2/re2/compile.cc \
+    third_party/re2/re2/dfa.cc \
+    third_party/re2/re2/filtered_re2.cc \
+    third_party/re2/re2/mimics_pcre.cc \
+    third_party/re2/re2/nfa.cc \
+    third_party/re2/re2/onepass.cc \
+    third_party/re2/re2/parse.cc \
+    third_party/re2/re2/perl_groups.cc \
+    third_party/re2/re2/prefilter.cc \
+    third_party/re2/re2/prefilter_tree.cc \
+    third_party/re2/re2/prog.cc \
+    third_party/re2/re2/re2.cc \
+    third_party/re2/re2/regexp.cc \
+    third_party/re2/re2/set.cc \
+    third_party/re2/re2/simplify.cc \
+    third_party/re2/re2/stringpiece.cc \
+    third_party/re2/re2/tostring.cc \
+    third_party/re2/re2/unicode_casefold.cc \
+    third_party/re2/re2/unicode_groups.cc \
+    third_party/re2/util/pcre.cc \
+    third_party/re2/util/rune.cc \
+    third_party/re2/util/strutil.cc \
+
+PUBLIC_HEADERS_C += \
+
+LIBRE2_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBRE2_SRC))))
+
+
+$(LIBDIR)/$(CONFIG)/libre2.a:  $(LIBRE2_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libre2.a
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libre2.a $(LIBRE2_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libre2.a
+endif
+
+
+
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBRE2_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/re2$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBRE2_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+else
+$(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBRE2_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBRE2_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+else
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libre2.so.11 -o $(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBRE2_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE).so.11
+	$(Q) ln -sf $(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE).so
+endif
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBRE2_OBJS:.o=.dep)
 endif
 
 
@@ -6247,7 +6084,7 @@ $(LIBDIR)/$(CONFIG)/libupb.a:  $(LIBUPB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libupb.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libupb.a $(LIBUPB_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libupb.a $(LIBUPB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libupb.a
 endif
@@ -6255,19 +6092,19 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)
+$(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)
+$(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb.so.10 -o $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).so.10
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb.so.11 -o $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).so.11
 	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -6304,7 +6141,7 @@ $(LIBDIR)/$(CONFIG)/libz.a:  $(LIBZ_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libz.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libz.a $(LIBZ_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libz.a $(LIBZ_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libz.a
 endif
@@ -6380,7 +6217,7 @@ $(LIBDIR)/$(CONFIG)/libares.a:  $(LIBARES_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libares.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libares.a $(LIBARES_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libares.a $(LIBARES_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libares.a
 endif
@@ -6450,12 +6287,13 @@ LIBGRPC_ABSEIL_SRC = \
 
 LIBGRPC_ABSEIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_ABSEIL_SRC))))
 
+$(LIBGRPC_ABSEIL_OBJS): CPPFLAGS += -g -maes -msse4 -Ithird_party/abseil-cpp
 
 $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a:  $(LIBGRPC_ABSEIL_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a $(LIBGRPC_ABSEIL_OBJS) 
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a $(LIBGRPC_ABSEIL_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
 endif
@@ -6520,7 +6358,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/gen_hpack_tables: protobuf_dep_error
 
@@ -6563,7 +6401,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters: protobuf_dep_error
 
@@ -6606,7 +6444,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables: protobuf_dep_error
 
@@ -10049,38 +9887,6 @@ endif
 endif
 
 
-SERVER_CHTTP2_TEST_SRC = \
-    test/core/surface/server_chttp2_test.cc \
-
-SERVER_CHTTP2_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_CHTTP2_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/server_chttp2_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/server_chttp2_test: $(SERVER_CHTTP2_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(SERVER_CHTTP2_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/server_chttp2_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/surface/server_chttp2_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
-
-deps_server_chttp2_test: $(SERVER_CHTTP2_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(SERVER_CHTTP2_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 SERVER_SSL_TEST_SRC = \
     test/core/handshake/server_ssl.cc \
     test/core/handshake/server_ssl_common.cc \
@@ -11227,7 +11033,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/address_sorting_test: protobuf_dep_error
 
@@ -11273,7 +11079,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/address_sorting_test_unsecure: protobuf_dep_error
 
@@ -11322,7 +11128,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/alarm_test: protobuf_dep_error
 
@@ -11369,7 +11175,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/alts_concurrent_connectivity_test: protobuf_dep_error
 
@@ -11424,7 +11230,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/alts_credentials_fuzzer: protobuf_dep_error
 
@@ -11469,7 +11275,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/alts_util_test: protobuf_dep_error
 
@@ -11517,7 +11323,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/async_end2end_test: protobuf_dep_error
 
@@ -11571,7 +11377,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/auth_property_iterator_test: protobuf_dep_error
 
@@ -11614,7 +11420,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/backoff_test: protobuf_dep_error
 
@@ -11659,7 +11465,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test: protobuf_dep_error
 
@@ -11708,7 +11514,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/badreq_bad_client_test: protobuf_dep_error
 
@@ -11755,7 +11561,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bdp_estimator_test: protobuf_dep_error
 
@@ -11798,7 +11604,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_alarm: protobuf_dep_error
 
@@ -11842,7 +11648,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_arena: protobuf_dep_error
 
@@ -11886,7 +11692,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_byte_buffer: protobuf_dep_error
 
@@ -11930,7 +11736,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_call_create: protobuf_dep_error
 
@@ -11978,7 +11784,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_callback_streaming_ping_pong: protobuf_dep_error
 
@@ -12034,7 +11840,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_callback_unary_ping_pong: protobuf_dep_error
 
@@ -12086,7 +11892,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_channel: protobuf_dep_error
 
@@ -12130,7 +11936,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_chttp2_hpack: protobuf_dep_error
 
@@ -12174,7 +11980,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_chttp2_transport: protobuf_dep_error
 
@@ -12218,7 +12024,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_closure: protobuf_dep_error
 
@@ -12262,7 +12068,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_cq: protobuf_dep_error
 
@@ -12306,7 +12112,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_cq_multiple_threads: protobuf_dep_error
 
@@ -12350,7 +12156,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_error: protobuf_dep_error
 
@@ -12394,7 +12200,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_ping_pong: protobuf_dep_error
 
@@ -12438,7 +12244,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_pump: protobuf_dep_error
 
@@ -12482,7 +12288,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_fullstack_trickle: protobuf_dep_error
 
@@ -12526,7 +12332,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_fullstack_unary_ping_pong: protobuf_dep_error
 
@@ -12570,7 +12376,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_metadata: protobuf_dep_error
 
@@ -12614,7 +12420,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_pollset: protobuf_dep_error
 
@@ -12658,7 +12464,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_threadpool: protobuf_dep_error
 
@@ -12702,7 +12508,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/bm_timer: protobuf_dep_error
 
@@ -12746,7 +12552,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/byte_buffer_test: protobuf_dep_error
 
@@ -12789,7 +12595,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/byte_stream_test: protobuf_dep_error
 
@@ -12834,7 +12640,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/cancel_ares_query_test: protobuf_dep_error
 
@@ -12885,7 +12691,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/cfstream_test: protobuf_dep_error
 
@@ -12938,7 +12744,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/channel_arguments_test: protobuf_dep_error
 
@@ -12981,7 +12787,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/channel_filter_test: protobuf_dep_error
 
@@ -13026,7 +12832,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/channel_trace_test: protobuf_dep_error
 
@@ -13075,7 +12881,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/channelz_registry_test: protobuf_dep_error
 
@@ -13122,7 +12928,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/channelz_service_test: protobuf_dep_error
 
@@ -13177,7 +12983,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/channelz_test: protobuf_dep_error
 
@@ -13236,7 +13042,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/cli_call_test: protobuf_dep_error
 
@@ -13311,7 +13117,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/client_callback_end2end_test: protobuf_dep_error
 
@@ -13373,7 +13179,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/client_channel_stress_test: protobuf_dep_error
 
@@ -13431,7 +13237,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/client_fuzzer: protobuf_dep_error
 
@@ -13481,7 +13287,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/client_interceptors_end2end_test: protobuf_dep_error
 
@@ -13544,7 +13350,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/client_lb_end2end_test: protobuf_dep_error
 
@@ -13604,7 +13410,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/codegen_test_full: protobuf_dep_error
 
@@ -13647,7 +13453,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/codegen_test_minimal: protobuf_dep_error
 
@@ -13692,7 +13498,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test: protobuf_dep_error
 
@@ -13739,7 +13545,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/connectivity_state_test: protobuf_dep_error
 
@@ -13782,7 +13588,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/context_list_test: protobuf_dep_error
 
@@ -13829,7 +13635,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/delegating_channel_test: protobuf_dep_error
 
@@ -13882,7 +13688,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/destroy_grpclb_channel_with_active_connect_stress_test: protobuf_dep_error
 
@@ -13927,7 +13733,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test: protobuf_dep_error
 
@@ -13980,7 +13786,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/end2end_test: protobuf_dep_error
 
@@ -14039,7 +13845,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/error_details_test: protobuf_dep_error
 
@@ -14085,7 +13891,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/eventmanager_libuv_test: protobuf_dep_error
 
@@ -14131,7 +13937,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/exception_test: protobuf_dep_error
 
@@ -14185,7 +13991,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/filter_end2end_test: protobuf_dep_error
 
@@ -14241,7 +14047,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/flaky_network_test: protobuf_dep_error
 
@@ -14298,7 +14104,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/generic_end2end_test: protobuf_dep_error
 
@@ -14350,7 +14156,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/global_config_env_test: protobuf_dep_error
 
@@ -14393,7 +14199,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/global_config_test: protobuf_dep_error
 
@@ -14443,7 +14249,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_cli: protobuf_dep_error
 
@@ -14499,7 +14305,7 @@ GRPC_CPP_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basen
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_cpp_plugin: protobuf_dep_error
 
@@ -14530,7 +14336,7 @@ GRPC_CSHARP_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(ba
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_csharp_plugin: protobuf_dep_error
 
@@ -14561,7 +14367,7 @@ GRPC_NODE_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(base
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_node_plugin: protobuf_dep_error
 
@@ -14592,7 +14398,7 @@ GRPC_OBJECTIVE_C_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o,
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin: protobuf_dep_error
 
@@ -14623,7 +14429,7 @@ GRPC_PHP_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basen
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_php_plugin: protobuf_dep_error
 
@@ -14654,7 +14460,7 @@ GRPC_PYTHON_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(ba
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_python_plugin: protobuf_dep_error
 
@@ -14685,7 +14491,7 @@ GRPC_RUBY_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(base
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_ruby_plugin: protobuf_dep_error
 
@@ -14724,7 +14530,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_tls_credentials_options_test: protobuf_dep_error
 
@@ -14776,7 +14582,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_tool_test: protobuf_dep_error
 
@@ -14845,7 +14651,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpclb_api_test: protobuf_dep_error
 
@@ -14897,7 +14703,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/grpclb_end2end_test: protobuf_dep_error
 
@@ -14954,7 +14760,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test: protobuf_dep_error
 
@@ -14999,7 +14805,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test: protobuf_dep_error
 
@@ -15048,7 +14854,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/headers_bad_client_test: protobuf_dep_error
 
@@ -15102,7 +14908,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/health_service_end2end_test: protobuf_dep_error
 
@@ -15163,7 +14969,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test: protobuf_dep_error
 
@@ -15211,7 +15017,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/http2_client: protobuf_dep_error
 
@@ -15262,7 +15068,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/http_request_fuzzer_test: protobuf_dep_error
 
@@ -15308,7 +15114,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/http_response_fuzzer_test: protobuf_dep_error
 
@@ -15358,7 +15164,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/hybrid_end2end_test: protobuf_dep_error
 
@@ -15415,7 +15221,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test: protobuf_dep_error
 
@@ -15468,7 +15274,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/interop_client: protobuf_dep_error
 
@@ -15532,7 +15338,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/interop_server: protobuf_dep_error
 
@@ -15588,7 +15394,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/interop_test: protobuf_dep_error
 
@@ -15632,7 +15438,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/json_fuzzer_test: protobuf_dep_error
 
@@ -15677,7 +15483,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/json_test: protobuf_dep_error
 
@@ -15722,7 +15528,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/large_metadata_bad_client_test: protobuf_dep_error
 
@@ -15773,7 +15579,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/lb_get_cpu_stats_test: protobuf_dep_error
 
@@ -15825,7 +15631,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/lb_load_data_store_test: protobuf_dep_error
 
@@ -15870,7 +15676,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/linux_system_roots_test: protobuf_dep_error
 
@@ -15917,7 +15723,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/message_allocator_end2end_test: protobuf_dep_error
 
@@ -15974,7 +15780,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/mock_test: protobuf_dep_error
 
@@ -16027,7 +15833,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/nanopb_fuzzer_response_test: protobuf_dep_error
 
@@ -16073,7 +15879,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/nanopb_fuzzer_serverlist_test: protobuf_dep_error
 
@@ -16121,7 +15927,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/nonblocking_test: protobuf_dep_error
 
@@ -16171,7 +15977,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/noop-benchmark: protobuf_dep_error
 
@@ -16215,7 +16021,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/orphanable_test: protobuf_dep_error
 
@@ -16260,7 +16066,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/out_of_bounds_bad_client_test: protobuf_dep_error
 
@@ -16308,7 +16114,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/percent_decode_fuzzer: protobuf_dep_error
 
@@ -16354,7 +16160,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/percent_encode_fuzzer: protobuf_dep_error
 
@@ -16399,7 +16205,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/pid_controller_test: protobuf_dep_error
 
@@ -16446,7 +16252,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/port_sharing_end2end_test: protobuf_dep_error
 
@@ -16505,7 +16311,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/proto_server_reflection_test: protobuf_dep_error
 
@@ -16563,7 +16369,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/proto_utils_test: protobuf_dep_error
 
@@ -16628,7 +16434,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/qps_json_driver: protobuf_dep_error
 
@@ -16747,7 +16553,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/qps_worker: protobuf_dep_error
 
@@ -16840,7 +16646,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/raw_end2end_test: protobuf_dep_error
 
@@ -16895,7 +16701,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/ref_counted_ptr_test: protobuf_dep_error
 
@@ -16938,7 +16744,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/ref_counted_test: protobuf_dep_error
 
@@ -16981,7 +16787,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/retry_throttle_test: protobuf_dep_error
 
@@ -17024,7 +16830,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/secure_auth_context_test: protobuf_dep_error
 
@@ -17072,7 +16878,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_builder_plugin_test: protobuf_dep_error
 
@@ -17130,7 +16936,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_builder_test: protobuf_dep_error
 
@@ -17183,7 +16989,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_builder_with_socket_mutator_test: protobuf_dep_error
 
@@ -17216,6 +17022,49 @@ endif
 $(OBJDIR)/$(CONFIG)/test/cpp/server/server_builder_with_socket_mutator_test.o: $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc
 
 
+SERVER_CHTTP2_TEST_SRC = \
+    test/core/surface/server_chttp2_test.cc \
+
+SERVER_CHTTP2_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_CHTTP2_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/server_chttp2_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
+
+$(BINDIR)/$(CONFIG)/server_chttp2_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/server_chttp2_test: $(PROTOBUF_DEP) $(SERVER_CHTTP2_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(SERVER_CHTTP2_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/server_chttp2_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/surface/server_chttp2_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+deps_server_chttp2_test: $(SERVER_CHTTP2_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SERVER_CHTTP2_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 SERVER_CONTEXT_TEST_SPOUSE_TEST_SRC = \
     test/cpp/test/server_context_test_spouse_test.cc \
 
@@ -17233,7 +17082,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_context_test_spouse_test: protobuf_dep_error
 
@@ -17279,7 +17128,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_early_return_test: protobuf_dep_error
 
@@ -17330,7 +17179,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_fuzzer: protobuf_dep_error
 
@@ -17380,7 +17229,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test: protobuf_dep_error
 
@@ -17438,7 +17287,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test: protobuf_dep_error
 
@@ -17488,7 +17337,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_request_call_test: protobuf_dep_error
 
@@ -17543,7 +17392,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/service_config_end2end_test: protobuf_dep_error
 
@@ -17598,7 +17447,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/service_config_test: protobuf_dep_error
 
@@ -17641,7 +17490,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/settings_timeout_test: protobuf_dep_error
 
@@ -17688,7 +17537,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/shutdown_test: protobuf_dep_error
 
@@ -17742,7 +17591,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/simple_request_bad_client_test: protobuf_dep_error
 
@@ -17789,7 +17638,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/slice_hash_table_test: protobuf_dep_error
 
@@ -17832,7 +17681,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test: protobuf_dep_error
 
@@ -17876,7 +17725,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/ssl_server_fuzzer: protobuf_dep_error
 
@@ -17921,7 +17770,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/static_metadata_test: protobuf_dep_error
 
@@ -17964,7 +17813,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/stats_test: protobuf_dep_error
 
@@ -18007,7 +17856,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/status_metadata_test: protobuf_dep_error
 
@@ -18050,7 +17899,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/status_util_test: protobuf_dep_error
 
@@ -18076,6 +17925,52 @@ endif
 endif
 
 
+STRANDED_EVENT_TEST_SRC = \
+    test/core/end2end/cq_verifier.cc \
+    test/core/iomgr/stranded_event_test.cc \
+
+STRANDED_EVENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(STRANDED_EVENT_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/stranded_event_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
+
+$(BINDIR)/$(CONFIG)/stranded_event_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/stranded_event_test: $(PROTOBUF_DEP) $(STRANDED_EVENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(STRANDED_EVENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/stranded_event_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/cq_verifier.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/stranded_event_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+deps_stranded_event_test: $(STRANDED_EVENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(STRANDED_EVENT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 STREAMING_THROUGHPUT_TEST_SRC = \
     $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc \
@@ -18097,7 +17992,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/streaming_throughput_test: protobuf_dep_error
 
@@ -18149,7 +18044,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/string_ref_test: protobuf_dep_error
 
@@ -18192,7 +18087,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/test_cpp_client_credentials_test: protobuf_dep_error
 
@@ -18235,7 +18130,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/test_cpp_util_slice_test: protobuf_dep_error
 
@@ -18278,7 +18173,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/test_cpp_util_time_test: protobuf_dep_error
 
@@ -18321,7 +18216,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/thread_manager_test: protobuf_dep_error
 
@@ -18368,7 +18263,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/thread_stress_test: protobuf_dep_error
 
@@ -18420,7 +18315,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/time_jump_test: protobuf_dep_error
 
@@ -18463,7 +18358,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/timer_test: protobuf_dep_error
 
@@ -18506,7 +18401,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/tls_security_connector_test: protobuf_dep_error
 
@@ -18532,6 +18427,52 @@ endif
 endif
 
 
+TOO_MANY_PINGS_TEST_SRC = \
+    test/core/end2end/cq_verifier.cc \
+    test/core/transport/chttp2/too_many_pings_test.cc \
+
+TOO_MANY_PINGS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TOO_MANY_PINGS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/too_many_pings_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
+
+$(BINDIR)/$(CONFIG)/too_many_pings_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/too_many_pings_test: $(PROTOBUF_DEP) $(TOO_MANY_PINGS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(TOO_MANY_PINGS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/too_many_pings_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/cq_verifier.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/chttp2/too_many_pings_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a
+
+deps_too_many_pings_test: $(TOO_MANY_PINGS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(TOO_MANY_PINGS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 UNKNOWN_FRAME_BAD_CLIENT_TEST_SRC = \
     test/core/bad_client/bad_client.cc \
     test/core/bad_client/tests/unknown_frame.cc \
@@ -18551,7 +18492,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test: protobuf_dep_error
 
@@ -18599,7 +18540,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/uri_fuzzer_test: protobuf_dep_error
 
@@ -18646,7 +18587,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test: protobuf_dep_error
 
@@ -18693,7 +18634,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/work_serializer_test: protobuf_dep_error
 
@@ -18759,7 +18700,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/writes_per_rpc_test: protobuf_dep_error
 
@@ -18869,7 +18810,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/xds_bootstrap_test: protobuf_dep_error
 
@@ -18922,7 +18863,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/xds_end2end_test: protobuf_dep_error
 
@@ -18990,7 +18931,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/xds_interop_client: protobuf_dep_error
 
@@ -19043,7 +18984,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/xds_interop_server: protobuf_dep_error
 
@@ -19095,7 +19036,7 @@ $(BORINGSSL_SSL_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_ssl_test: protobuf_dep_error
 
@@ -19205,7 +19146,7 @@ $(BORINGSSL_CRYPTO_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_crypto_test: protobuf_dep_error
 
@@ -19372,7 +19313,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/alts_credentials_fuzzer_one_entry: protobuf_dep_error
 
@@ -19418,7 +19359,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/client_fuzzer_one_entry: protobuf_dep_error
 
@@ -19464,7 +19405,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test_one_entry: protobuf_dep_error
 
@@ -19510,7 +19451,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/http_request_fuzzer_test_one_entry: protobuf_dep_error
 
@@ -19556,7 +19497,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/http_response_fuzzer_test_one_entry: protobuf_dep_error
 
@@ -19602,7 +19543,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/json_fuzzer_test_one_entry: protobuf_dep_error
 
@@ -19648,7 +19589,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/nanopb_fuzzer_response_test_one_entry: protobuf_dep_error
 
@@ -19694,7 +19635,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/nanopb_fuzzer_serverlist_test_one_entry: protobuf_dep_error
 
@@ -19740,7 +19681,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/percent_decode_fuzzer_one_entry: protobuf_dep_error
 
@@ -19786,7 +19727,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/percent_encode_fuzzer_one_entry: protobuf_dep_error
 
@@ -19832,7 +19773,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/server_fuzzer_one_entry: protobuf_dep_error
 
@@ -19878,7 +19819,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/ssl_server_fuzzer_one_entry: protobuf_dep_error
 
@@ -19924,7 +19865,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
 
 $(BINDIR)/$(CONFIG)/uri_fuzzer_test_one_entry: protobuf_dep_error
 
@@ -20067,7 +20008,7 @@ test/cpp/util/test_config_cc.cc: $(OPENSSL_DEP)
 test/cpp/util/test_credentials_provider.cc: $(OPENSSL_DEP)
 endif
 
-.PHONY: all strip tools dep_error openssl_dep_error openssl_dep_message git_update stop buildtests buildtests_c buildtests_cxx test test_c test_cxx install install_c install_cxx install-headers install-headers_c install-headers_cxx install-shared install-shared_c install-shared_cxx install-static install-static_c install-static_cxx strip strip-shared strip-static strip_c strip-shared_c strip-static_c strip_cxx strip-shared_cxx strip-static_cxx dep_c dep_cxx bins_dep_c bins_dep_cxx clean
+.PHONY: all strip tools dep_error openssl_dep_error openssl_dep_message git_update stop buildtests buildtests_c buildtests_cxx test test_c test_cxx install install_c install_cxx install_csharp install-static install-certs strip strip-shared strip-static strip_c strip-shared_c strip-static_c strip_cxx strip-shared_cxx strip-static_cxx dep_c dep_cxx bins_dep_c bins_dep_cxx clean
 
 .PHONY: printvars
 printvars:

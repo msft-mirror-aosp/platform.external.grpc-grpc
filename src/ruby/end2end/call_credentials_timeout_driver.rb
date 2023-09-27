@@ -94,7 +94,7 @@ def main
         raise 'test exception thrown purposely from call creds plugin'
       end
     end
-    { 'authorization' => 'fake_val' }
+    { 'authorization' => 'fake_val' }.merge(args)
   end
   channel_creds = create_channel_creds.compose(
     GRPC::Core::CallCredentials.new(times_out_first_time_auth_proc))

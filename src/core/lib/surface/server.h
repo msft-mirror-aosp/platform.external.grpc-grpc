@@ -32,14 +32,36 @@ extern const grpc_channel_filter grpc_server_top_filter;
 /** Lightweight tracing of server channel state */
 extern grpc_core::TraceFlag grpc_server_channel_trace;
 
-/* Add a listener to the server: when the server starts, it will call start,
-   and when it shuts down, it will call destroy */
+namespace grpc_core {
+
+/// Interface for listeners.
+/// Implementations must override the Orphan() method, which should stop
+/// listening and initiate destruction of the listener.
+class ServerListenerInterface : public Orphanable {
+ public:
+  virtual ~ServerListenerInterface() = default;
+
+  /// Starts listening. This listener may refer to the pollset object beyond
+  /// this call, so it is a pointer rather than a reference.
+  virtual void Start(grpc_server* server,
+                     const std::vector<grpc_pollset*>* pollsets) = 0;
+
+  /// Returns the channelz node for the listen socket, or null if not
+  /// supported.
+  virtual channelz::ListenSocketNode* channelz_listen_socket_node() const = 0;
+
+  /// Sets a closure to be invoked by the listener when its destruction
+  /// is complete.
+  virtual void SetOnDestroyDone(grpc_closure* on_destroy_done) = 0;
+};
+
+}  // namespace grpc_core
+
+/* Add a listener to the server: when the server starts, it will call Start(),
+   and when it shuts down, it will orphan the listener. */
 void grpc_server_add_listener(
-    grpc_server* server, void* listener_arg,
-    void (*start)(grpc_server* server, void* arg, grpc_pollset** pollsets,
-                  size_t npollsets),
-    void (*destroy)(grpc_server* server, void* arg, grpc_closure* on_done),
-    grpc_core::RefCountedPtr<grpc_core::channelz::ListenSocketNode> node);
+    grpc_server* server,
+    grpc_core::OrphanablePtr<grpc_core::ServerListenerInterface> listener);
 
 /* Setup a transport - creates a channel stack, binds the transport to the
    server */
@@ -57,12 +79,12 @@ const grpc_channel_args* grpc_server_get_channel_args(grpc_server* server);
 
 grpc_resource_user* grpc_server_get_default_resource_user(grpc_server* server);
 
-int grpc_server_has_open_connections(grpc_server* server);
+bool grpc_server_has_open_connections(grpc_server* server);
 
-/* Do not call this before grpc_server_start. Returns the pollsets and the
- * number of pollsets via 'pollsets' and 'pollset_count'. */
-void grpc_server_get_pollsets(grpc_server* server, grpc_pollset*** pollsets,
-                              size_t* pollset_count);
+// Do not call this before grpc_server_start. Returns the pollsets. The vector
+// itself is immutable, but the pollsets inside are mutable. The result is valid
+// for the lifetime of the server.
+const std::vector<grpc_pollset*>& grpc_server_get_pollsets(grpc_server* server);
 
 namespace grpc_core {
 

@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
 #include "src/core/lib/iomgr/port.h"
 
 #include <grpc/support/string_util.h>
@@ -42,7 +44,7 @@ int grpc_is_vsock(const grpc_resolved_address* resolved_addr);
 void grpc_unlink_if_unix_domain_socket(
     const grpc_resolved_address* resolved_addr);
 
-char* grpc_sockaddr_to_uri_unix_if_possible(
+std::string grpc_sockaddr_to_uri_unix_if_possible(
     const grpc_resolved_address* resolved_addr);
 
 char* grpc_sockaddr_to_uri_vsock_if_possible(

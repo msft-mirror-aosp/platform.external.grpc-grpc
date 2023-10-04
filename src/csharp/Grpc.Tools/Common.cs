@@ -22,8 +22,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
 
-[assembly: InternalsVisibleTo("Grpc.Tools.Tests")]
-
 namespace Grpc.Tools
 {
     // Metadata names (MSBuild item attributes) that we refer to often.
@@ -31,7 +29,7 @@ namespace Grpc.Tools
     {
         // On output dependency lists.
         public static string Source = "Source";
-        // On ProtoBuf items.
+        // On Protobuf items.
         public static string ProtoRoot = "ProtoRoot";
         public static string OutputDir = "OutputDir";
         public static string GrpcServices = "GrpcServices";
@@ -60,7 +58,7 @@ namespace Grpc.Tools
                : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? OsKind.MacOsX
                : OsKind.Unknown;
 
-            switch (RuntimeInformation.OSArchitecture)
+            switch (RuntimeInformation.ProcessArchitecture)
             {
                 case Architecture.X86: Cpu = CpuKind.X86; break;
                 case Architecture.X64: Cpu = CpuKind.X64; break;
@@ -86,7 +84,7 @@ namespace Grpc.Tools
             }
 
             // Hope we are not building on ARM under Xamarin!
-            Cpu = Environment.Is64BitOperatingSystem ? CpuKind.X64 : CpuKind.X86;
+            Cpu = Environment.Is64BitProcess ? CpuKind.X64 : CpuKind.X86;
 #endif
         }
     };

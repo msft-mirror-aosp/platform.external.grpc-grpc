@@ -27,6 +27,7 @@
 #include <grpcpp/client_context.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/test_config.h"
@@ -87,26 +88,122 @@ DEFINE_bool(do_not_abort_on_transient_failures, false,
             "test is retried in case of transient failures (and currently the "
             "interop tests are not retried even if this flag is set to true)");
 DEFINE_int32(soak_iterations, 1000,
-             "number of iterations to use for the two soak tests; rpc_soak and "
-             "channel_soak");
+             "The number of iterations to use for the two soak tests; rpc_soak "
+             "and channel_soak.");
+DEFINE_int32(soak_max_failures, 0,
+             "The number of iterations in soak tests that are allowed to fail "
+             "(either due to non-OK status code or exceeding the "
+             "per-iteration max acceptable latency).");
+DEFINE_int32(soak_per_iteration_max_acceptable_latency_ms, 0,
+             "The number of milliseconds a single iteration in the two soak "
+             "tests (rpc_soak and channel_soak) should take.");
+DEFINE_int32(soak_overall_timeout_seconds, 0,
+             "The overall number of seconds after which a soak test should "
+             "stop and fail, if the desired number of iterations have not yet "
+             "completed.");
 DEFINE_int32(iteration_interval, 10,
              "The interval in seconds between rpcs. This is used by "
              "long_connection test");
+DEFINE_string(additional_metadata, "",
+              "Additional metadata to send in each request, as a "
+              "semicolon-separated list of key:value pairs.");
 
 using grpc::testing::CreateChannelForTestCase;
 using grpc::testing::GetServiceAccountJsonKey;
 using grpc::testing::UpdateActions;
 
+namespace {
+
+// Parse the contents of FLAGS_additional_metadata into a map. Allow
+// alphanumeric characters and dashes in keys, and any character but semicolons
+// in values. Convert keys to lowercase. On failure, log an error and return
+// false.
+bool ParseAdditionalMetadataFlag(
+    const std::string& flag,
+    std::multimap<std::string, std::string>* additional_metadata) {
+  size_t start_pos = 0;
+  while (start_pos < flag.length()) {
+    size_t colon_pos = flag.find(':', start_pos);
+    if (colon_pos == std::string::npos) {
+      gpr_log(GPR_ERROR,
+              "Couldn't parse metadata flag: extra characters at end of flag");
+      return false;
+    }
+    size_t semicolon_pos = flag.find(';', colon_pos);
+
+    std::string key = flag.substr(start_pos, colon_pos - start_pos);
+    std::string value =
+        flag.substr(colon_pos + 1, semicolon_pos - colon_pos - 1);
+
+    constexpr char alphanum_and_hyphen[] =
+        "-0123456789"
+        "abcdefghijklmnopqrstuvwxyz"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    if (key.find_first_not_of(alphanum_and_hyphen) != std::string::npos) {
+      gpr_log(GPR_ERROR,
+              "Couldn't parse metadata flag: key contains characters other "
+              "than alphanumeric and hyphens: %s",
+              key.c_str());
+      return false;
+    }
+
+    // Convert to lowercase.
+    for (char& c : key) {
+      if (c >= 'A' && c <= 'Z') {
+        c += ('a' - 'A');
+      }
+    }
+
+    gpr_log(GPR_INFO, "Adding additional metadata with key %s and value %s",
+            key.c_str(), value.c_str());
+    additional_metadata->insert({key, value});
+
+    if (semicolon_pos == std::string::npos) {
+      break;
+    } else {
+      start_pos = semicolon_pos + 1;
+    }
+  }
+
+  return true;
+}
+
+}  // namespace
+
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   gpr_log(GPR_INFO, "Testing these cases: %s", FLAGS_test_case.c_str());
   int ret = 0;
-  grpc::testing::ChannelCreationFunc channel_creation_func =
-      std::bind(&CreateChannelForTestCase, FLAGS_test_case);
+
+  grpc::testing::ChannelCreationFunc channel_creation_func;
+  std::string test_case = FLAGS_test_case;
+  if (FLAGS_additional_metadata == "") {
+    channel_creation_func = [test_case]() {
+      return CreateChannelForTestCase(test_case);
+    };
+  } else {
+    std::multimap<std::string, std::string> additional_metadata;
+    if (!ParseAdditionalMetadataFlag(FLAGS_additional_metadata,
+                                     &additional_metadata)) {
+      return 1;
+    }
+
+    channel_creation_func = [test_case, additional_metadata]() {
+      std::vector<std::unique_ptr<
+          grpc::experimental::ClientInterceptorFactoryInterface>>
+          factories;
+      factories.emplace_back(
+          new grpc::testing::AdditionalMetadataInterceptorFactory(
+              additional_metadata));
+      return CreateChannelForTestCase(test_case, std::move(factories));
+    };
+  }
+
   grpc::testing::InteropClient client(channel_creation_func, true,
                                       FLAGS_do_not_abort_on_transient_failures);
 
-  std::unordered_map<grpc::string, std::function<bool()>> actions;
+  std::unordered_map<std::string, std::function<bool()>> actions;
   actions["empty_unary"] =
       std::bind(&grpc::testing::InteropClient::DoEmpty, &client);
   actions["large_unary"] =
@@ -138,6 +235,8 @@ int main(int argc, char** argv) {
       &grpc::testing::InteropClient::DoTimeoutOnSleepingServer, &client);
   actions["empty_stream"] =
       std::bind(&grpc::testing::InteropClient::DoEmptyStream, &client);
+  actions["pick_first_unary"] =
+      std::bind(&grpc::testing::InteropClient::DoPickFirstUnary, &client);
   if (FLAGS_use_tls) {
     actions["compute_engine_creds"] =
         std::bind(&grpc::testing::InteropClient::DoComputeEngineCreds, &client,
@@ -169,9 +268,14 @@ int main(int argc, char** argv) {
       std::bind(&grpc::testing::InteropClient::DoCacheableUnary, &client);
   actions["channel_soak"] =
       std::bind(&grpc::testing::InteropClient::DoChannelSoakTest, &client,
-                FLAGS_soak_iterations);
-  actions["rpc_soak"] = std::bind(&grpc::testing::InteropClient::DoRpcSoakTest,
-                                  &client, FLAGS_soak_iterations);
+                FLAGS_soak_iterations, FLAGS_soak_max_failures,
+                FLAGS_soak_per_iteration_max_acceptable_latency_ms,
+                FLAGS_soak_overall_timeout_seconds);
+  actions["rpc_soak"] =
+      std::bind(&grpc::testing::InteropClient::DoRpcSoakTest, &client,
+                FLAGS_soak_iterations, FLAGS_soak_max_failures,
+                FLAGS_soak_per_iteration_max_acceptable_latency_ms,
+                FLAGS_soak_overall_timeout_seconds);
   actions["long_lived_channel"] =
       std::bind(&grpc::testing::InteropClient::DoLongLivedChannelTest, &client,
                 FLAGS_soak_iterations, FLAGS_iteration_interval);
@@ -185,7 +289,7 @@ int main(int argc, char** argv) {
   } else if (actions.find(FLAGS_test_case) != actions.end()) {
     actions.find(FLAGS_test_case)->second();
   } else {
-    grpc::string test_cases;
+    std::string test_cases;
     for (const auto& action : actions) {
       if (!test_cases.empty()) test_cases += "\n";
       test_cases += action.first;

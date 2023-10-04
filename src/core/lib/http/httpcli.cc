@@ -22,12 +22,17 @@
 
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -37,7 +42,7 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-typedef struct {
+struct internal_request {
   grpc_slice request_text;
   grpc_http_parser parser;
   grpc_resolved_addresses* addresses;
@@ -59,13 +64,12 @@ typedef struct {
   grpc_closure connected;
   grpc_error* overall_error;
   grpc_resource_quota* resource_quota;
-} internal_request;
-
+};
 static grpc_httpcli_get_override g_get_override = nullptr;
 static grpc_httpcli_post_override g_post_override = nullptr;
 
 static void plaintext_handshake(void* arg, grpc_endpoint* endpoint,
-                                const char* host, grpc_millis deadline,
+                                const char* /*host*/, grpc_millis /*deadline*/,
                                 void (*on_done)(void* arg,
                                                 grpc_endpoint* endpoint)) {
   on_done(arg, endpoint);
@@ -87,7 +91,7 @@ static void next_address(internal_request* req, grpc_error* due_to_error);
 static void finish(internal_request* req, grpc_error* error) {
   grpc_polling_entity_del_from_pollset_set(req->pollent,
                                            req->context->pollset_set);
-  GRPC_CLOSURE_SCHED(req->on_done, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, req->on_done, error);
   grpc_http_parser_destroy(&req->parser);
   if (req->addresses != nullptr) {
     grpc_resolved_addresses_destroy(req->addresses);
@@ -112,16 +116,15 @@ static void append_error(internal_request* req, grpc_error* error) {
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
   }
   grpc_resolved_address* addr = &req->addresses->addrs[req->next_address - 1];
-  char* addr_text = grpc_sockaddr_to_uri(addr);
+  std::string addr_text = grpc_sockaddr_to_uri(addr);
   req->overall_error = grpc_error_add_child(
       req->overall_error,
       grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
-                         grpc_slice_from_copied_string(addr_text)));
-  gpr_free(addr_text);
+                         grpc_slice_from_cpp_string(std::move(addr_text))));
 }
 
 static void do_read(internal_request* req) {
-  grpc_endpoint_read(req->ep, &req->incoming, &req->on_read);
+  grpc_endpoint_read(req->ep, &req->incoming, &req->on_read, /*urgent=*/true);
 }
 
 static void on_read(void* user_data, grpc_error* error) {
@@ -229,7 +232,8 @@ static void internal_request_begin(grpc_httpcli_context* context,
                                    const grpc_httpcli_request* request,
                                    grpc_millis deadline, grpc_closure* on_done,
                                    grpc_httpcli_response* response,
-                                   const char* name, grpc_slice request_text) {
+                                   const char* name,
+                                   const grpc_slice& request_text) {
   internal_request* req =
       static_cast<internal_request*>(gpr_malloc(sizeof(internal_request)));
   memset(req, 0, sizeof(*req));
@@ -266,15 +270,14 @@ void grpc_httpcli_get(grpc_httpcli_context* context,
                       grpc_resource_quota* resource_quota,
                       const grpc_httpcli_request* request, grpc_millis deadline,
                       grpc_closure* on_done, grpc_httpcli_response* response) {
-  char* name;
   if (g_get_override && g_get_override(request, deadline, on_done, response)) {
     return;
   }
-  gpr_asprintf(&name, "HTTP:GET:%s:%s", request->host, request->http.path);
+  std::string name =
+      absl::StrFormat("HTTP:GET:%s:%s", request->host, request->http.path);
   internal_request_begin(context, pollent, resource_quota, request, deadline,
-                         on_done, response, name,
+                         on_done, response, name.c_str(),
                          grpc_httpcli_format_get_request(request));
-  gpr_free(name);
 }
 
 void grpc_httpcli_post(grpc_httpcli_context* context,
@@ -284,16 +287,16 @@ void grpc_httpcli_post(grpc_httpcli_context* context,
                        const char* body_bytes, size_t body_size,
                        grpc_millis deadline, grpc_closure* on_done,
                        grpc_httpcli_response* response) {
-  char* name;
   if (g_post_override && g_post_override(request, body_bytes, body_size,
                                          deadline, on_done, response)) {
     return;
   }
-  gpr_asprintf(&name, "HTTP:POST:%s:%s", request->host, request->http.path);
+  std::string name =
+      absl::StrFormat("HTTP:POST:%s:%s", request->host, request->http.path);
   internal_request_begin(
       context, pollent, resource_quota, request, deadline, on_done, response,
-      name, grpc_httpcli_format_post_request(request, body_bytes, body_size));
-  gpr_free(name);
+      name.c_str(),
+      grpc_httpcli_format_post_request(request, body_bytes, body_size));
 }
 
 void grpc_httpcli_set_override(grpc_httpcli_get_override get,

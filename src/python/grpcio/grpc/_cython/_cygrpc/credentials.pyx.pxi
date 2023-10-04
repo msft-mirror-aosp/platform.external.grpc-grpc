@@ -12,16 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cimport cpython
-
-import grpc
-import threading
-
-from libc.stdint cimport uintptr_t
-
 
 def _spawn_callback_in_thread(cb_func, args):
-  ForkManagedThread(target=cb_func, args=args).start()
+  t = ForkManagedThread(target=cb_func, args=args)
+  t.setDaemon(True)
+  t.start()
 
 async_callback_func = _spawn_callback_in_thread
 
@@ -39,12 +34,14 @@ cdef class CallCredentials:
     raise NotImplementedError()
 
 
-cdef int _get_metadata(
-    void *state, grpc_auth_metadata_context context,
-    grpc_credentials_plugin_metadata_cb cb, void *user_data,
-    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
-    size_t *num_creds_md, grpc_status_code *status,
-    const char **error_details) with gil:
+cdef int _get_metadata(void *state,
+                       grpc_auth_metadata_context context,
+                       grpc_credentials_plugin_metadata_cb cb,
+                       void *user_data,
+                       grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+                       size_t *num_creds_md,
+                       grpc_status_code *status,
+                       const char **error_details) except * with gil:
   cdef size_t metadata_count
   cdef grpc_metadata *c_metadata
   def callback(metadata, grpc_status_code status, bytes error_details):
@@ -59,9 +56,9 @@ cdef int _get_metadata(
   return 0  # Asynchronous return
 
 
-cdef void _destroy(void *state) with gil:
+cdef void _destroy(void *state) except * with gil:
   cpython.Py_DECREF(<object>state)
-  grpc_shutdown()
+  grpc_shutdown_blocking()
 
 
 cdef class MetadataPluginCallCredentials(CallCredentials):
@@ -78,7 +75,9 @@ cdef class MetadataPluginCallCredentials(CallCredentials):
     c_metadata_plugin.type = self._name
     cpython.Py_INCREF(self._metadata_plugin)
     fork_handlers_and_grpc_init()
-    return grpc_metadata_credentials_create_from_plugin(c_metadata_plugin, NULL)
+    # TODO(yihuazhang): Expose min_security_level via the Python API so that
+    # applications can decide what minimum security level their plugins require.
+    return grpc_metadata_credentials_create_from_plugin(c_metadata_plugin, GRPC_PRIVACY_AND_INTEGRITY, NULL)
 
 
 cdef grpc_call_credentials *_composition(call_credentialses):
@@ -125,7 +124,7 @@ cdef class SSLSessionCacheLRU:
   def __dealloc__(self):
     if self._cache != NULL:
         grpc_ssl_session_cache_destroy(self._cache)
-    grpc_shutdown()
+    grpc_shutdown_blocking()
 
 
 cdef class SSLChannelCredentials(ChannelCredentials):
@@ -191,7 +190,7 @@ cdef class ServerCertificateConfig:
   def __dealloc__(self):
     grpc_ssl_server_certificate_config_destroy(self.c_cert_config)
     gpr_free(self.c_ssl_pem_key_cert_pairs)
-    grpc_shutdown()
+    grpc_shutdown_blocking()
 
 
 cdef class ServerCredentials:
@@ -207,7 +206,7 @@ cdef class ServerCredentials:
   def __dealloc__(self):
     if self.c_credentials != NULL:
       grpc_server_credentials_release(self.c_credentials)
-    grpc_shutdown()
+    grpc_shutdown_blocking()
 
 cdef const char* _get_c_pem_root_certs(pem_root_certs):
   if pem_root_certs is None:
@@ -330,3 +329,54 @@ cdef grpc_ssl_certificate_config_reload_status _server_cert_config_fetcher_wrapp
       cert_config.c_ssl_pem_key_cert_pairs_count)
   return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW
 
+
+class LocalConnectionType:
+  uds = UDS
+  local_tcp = LOCAL_TCP
+
+cdef class LocalChannelCredentials(ChannelCredentials):
+
+  def __cinit__(self, grpc_local_connect_type local_connect_type):
+    self._local_connect_type = local_connect_type
+
+  cdef grpc_channel_credentials *c(self) except *:
+    cdef grpc_local_connect_type local_connect_type
+    local_connect_type = self._local_connect_type
+    return grpc_local_credentials_create(local_connect_type)
+
+def channel_credentials_local(grpc_local_connect_type local_connect_type):
+  return LocalChannelCredentials(local_connect_type)
+
+def server_credentials_local(grpc_local_connect_type local_connect_type):
+  cdef ServerCredentials credentials = ServerCredentials()
+  credentials.c_credentials = grpc_local_server_credentials_create(local_connect_type)
+  return credentials
+
+
+cdef class ALTSChannelCredentials(ChannelCredentials):
+
+  def __cinit__(self, list service_accounts):
+    self.c_options = grpc_alts_credentials_client_options_create()
+    cdef str account
+    for account in service_accounts:
+      grpc_alts_credentials_client_options_add_target_service_account(self.c_options, account)
+ 
+  def __dealloc__(self):
+    if self.c_options != NULL:
+      grpc_alts_credentials_options_destroy(self.c_options)
+
+  cdef grpc_channel_credentials *c(self) except *:
+    return grpc_alts_credentials_create(self.c_options)
+    
+
+def channel_credentials_alts(list service_accounts):
+  return ALTSChannelCredentials(service_accounts)
+
+
+def server_credentials_alts():
+  cdef ServerCredentials credentials = ServerCredentials()
+  cdef grpc_alts_credentials_options* c_options = grpc_alts_credentials_server_options_create()
+  credentials.c_credentials = grpc_alts_server_credentials_create(c_options)
+  # Options can be destroyed as deep copy was performed.
+  grpc_alts_credentials_options_destroy(c_options)
+  return credentials

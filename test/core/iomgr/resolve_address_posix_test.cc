@@ -22,13 +22,17 @@
 #include <string.h>
 #include <sys/un.h>
 
+#include <string>
+
+#include "absl/strings/str_format.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
@@ -52,7 +56,7 @@ typedef struct args_struct {
   grpc_pollset_set* pollset_set;
 } args_struct;
 
-static void do_nothing(void* arg, grpc_error* error) {}
+static void do_nothing(void* /*arg*/, grpc_error* /*error*/) {}
 
 void args_init(args_struct* args) {
   gpr_event_init(&args->ev);
@@ -199,19 +203,15 @@ static void test_named_and_numeric_scope_ids(void) {
   GPR_ASSERT(strlen(arbitrary_interface_name) > 0);
   // Test resolution of an ipv6 address with a named scope ID
   gpr_log(GPR_DEBUG, "test resolution with a named scope ID");
-  char* target_with_named_scope_id = nullptr;
-  gpr_asprintf(&target_with_named_scope_id, "fe80::1234%%%s",
-               arbitrary_interface_name);
-  resolve_address_must_succeed(target_with_named_scope_id);
-  gpr_free(target_with_named_scope_id);
+  std::string target_with_named_scope_id =
+      absl::StrFormat("fe80::1234%%%s", arbitrary_interface_name);
+  resolve_address_must_succeed(target_with_named_scope_id.c_str());
   gpr_free(arbitrary_interface_name);
   // Test resolution of an ipv6 address with a numeric scope ID
   gpr_log(GPR_DEBUG, "test resolution with a numeric scope ID");
-  char* target_with_numeric_scope_id = nullptr;
-  gpr_asprintf(&target_with_numeric_scope_id, "fe80::1234%%%d",
-               interface_index);
-  resolve_address_must_succeed(target_with_numeric_scope_id);
-  gpr_free(target_with_numeric_scope_id);
+  std::string target_with_numeric_scope_id =
+      absl::StrFormat("fe80::1234%%%d", interface_index);
+  resolve_address_must_succeed(target_with_numeric_scope_id.c_str());
 }
 
 int main(int argc, char** argv) {
@@ -224,15 +224,17 @@ int main(int argc, char** argv) {
   // --resolver will always be the first one, so only parse the first argument
   // (other arguments may be unknown to cl)
   gpr_cmdline_parse(cl, argc > 2 ? 2 : argc, argv);
-  const char* cur_resolver = gpr_getenv("GRPC_DNS_RESOLVER");
-  if (cur_resolver != nullptr && strlen(cur_resolver) != 0) {
+  grpc_core::UniquePtr<char> resolver =
+      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+  if (strlen(resolver.get()) != 0) {
     gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
-            cur_resolver);
+            resolver.get());
   }
-  if (gpr_stricmp(resolver_type, "native") == 0) {
-    gpr_setenv("GRPC_DNS_RESOLVER", "native");
-  } else if (gpr_stricmp(resolver_type, "ares") == 0) {
-    gpr_setenv("GRPC_DNS_RESOLVER", "ares");
+  if (resolver_type != nullptr && gpr_stricmp(resolver_type, "native") == 0) {
+    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
+  } else if (resolver_type != nullptr &&
+             gpr_stricmp(resolver_type, "ares") == 0) {
+    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
   } else {
     gpr_log(GPR_ERROR, "--resolver_type was not set to ares or native");
     abort();
@@ -246,12 +248,12 @@ int main(int argc, char** argv) {
     // c-ares resolver doesn't support UDS (ability for native DNS resolver
     // to handle this is only expected to be used by servers, which
     // unconditionally use the native DNS resolver).
-    char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
-    if (resolver_env == nullptr || gpr_stricmp(resolver_env, "native") == 0) {
+    grpc_core::UniquePtr<char> resolver =
+        GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+    if (gpr_stricmp(resolver.get(), "native") == 0) {
       test_unix_socket();
       test_unix_socket_path_name_too_long();
     }
-    gpr_free(resolver_env);
   }
   gpr_cmdline_destroy(cl);
 

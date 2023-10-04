@@ -23,16 +23,20 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
 
 # map of banned function signature to whitelist
 BANNED_EXCEPT = {
+    'grpc_slice_from_static_buffer(': ['src/core/lib/slice/slice.cc'],
     'grpc_resource_quota_ref(': ['src/core/lib/iomgr/resource_quota.cc'],
-    'grpc_resource_quota_unref(':
-    ['src/core/lib/iomgr/resource_quota.cc', 'src/core/lib/surface/server.cc'],
+    'grpc_resource_quota_unref(': [
+        'src/core/lib/iomgr/resource_quota.cc', 'src/core/lib/surface/server.cc'
+    ],
     'grpc_slice_buffer_destroy(': ['src/core/lib/slice/slice_buffer.cc'],
-    'grpc_slice_buffer_reset_and_unref(':
-    ['src/core/lib/slice/slice_buffer.cc'],
+    'grpc_slice_buffer_reset_and_unref(': [
+        'src/core/lib/slice/slice_buffer.cc'
+    ],
     'grpc_slice_ref(': ['src/core/lib/slice/slice.cc'],
     'grpc_slice_unref(': ['src/core/lib/slice/slice.cc'],
-    'grpc_error_create(':
-    ['src/core/lib/iomgr/error.cc', 'src/core/lib/iomgr/error_cfstream.cc'],
+    'grpc_error_create(': [
+        'src/core/lib/iomgr/error.cc', 'src/core/lib/iomgr/error_cfstream.cc'
+    ],
     'grpc_error_ref(': ['src/core/lib/iomgr/error.cc'],
     'grpc_error_unref(': ['src/core/lib/iomgr/error.cc'],
     'grpc_os_error(': ['src/core/lib/iomgr/error.cc'],
@@ -45,10 +49,6 @@ BANNED_EXCEPT = {
     'grpc_closure_sched(': ['src/core/lib/iomgr/closure.cc'],
     'grpc_closure_run(': ['src/core/lib/iomgr/closure.cc'],
     'grpc_closure_list_sched(': ['src/core/lib/iomgr/closure.cc'],
-    'gpr_getenv_silent(': [
-        'src/core/lib/gpr/log.cc', 'src/core/lib/gpr/env_linux.cc',
-        'src/core/lib/gpr/env_posix.cc', 'src/core/lib/gpr/env_windows.cc'
-    ],
 }
 
 errors = 0

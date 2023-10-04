@@ -85,16 +85,16 @@ There are two cases to check here:
     * This is straightforward and nothing really needs to be done here
 * **Case 2:** The `fd `and `pollset` point to different `polling_islands`: In this case we _merge_ both the polling islands i.e:
     * Add all the `fds` from the smaller `polling_island `to the larger `polling_island` and update the `merged_to` pointer on the smaller island to point to the larger island.
-    * Wake up all the threads waiting on the smaller `polling_island`'s `epoll_fd` (by signalling the `event_fd` on that island) and make them now wait on the larger `polling_island`'s `epoll_fd`
+    * Wake up all the threads waiting on the smaller `polling_island`'s `epoll_fd` (by signaling the `event_fd` on that island) and make them now wait on the larger `polling_island`'s `epoll_fd`
     * Update `fd` and `pollset` to now point to the larger `polling_island`
 
 ### 4.3 Directed wakeups:
 
 The new implementation, just like the current implementation, does not provide us any guarantees that the thread that is woken up is the thread that is actually interested in the event.  So the thread that woke up executes the callbacks and finally has to 'kick' the appropriate polling thread interested in the event.
 
-In the current implementation, every polling thread also had a `event_fd` on which it was listening to and hence waking it up was as simple as signalling that `event_fd`. However, using an `event_fd` also meant that every thread has to use a `poll()` (on `event_fd` and `epoll_fd`) instead of doing an `epoll_wait()` and this resulted in the thundering herd problems described above.
+In the current implementation, every polling thread also had a `event_fd` on which it was listening to and hence waking it up was as simple as signaling that `event_fd`. However, using an `event_fd` also meant that every thread has to use a `poll()` (on `event_fd` and `epoll_fd`) instead of doing an `epoll_wait()` and this resulted in the thundering herd problems described above.
 
-The proposal here is to use signals and kicking a thread would just be sending a signal to that thread. Unfortunately there are only a few signals available on posix systems and most of them have pre-determined behavior leaving only a few signals `SIGUSR1`, `SIGUSR2` and `SIGRTx (SIGRTMIN to SIGRTMAX)` for custom use.
+The proposal here is to use signals and kicking a thread would just be sending a signal to that thread. Unfortunately there are only a few signals available on POSIX systems and most of them have pre-determined behavior leaving only a few signals `SIGUSR1`, `SIGUSR2` and `SIGRTx (SIGRTMIN to SIGRTMAX)` for custom use.
 
 The calling application might have registered other signal handlers for these signals. `We will provide a new API where the applications can "give a signal number" to gRPC library to use for this purpose.
 
@@ -104,7 +104,7 @@ void grpc_use_signal(int signal_num)
 
 If the calling application does not provide a signal number, then the gRPC library will relegate to using a model similar to the current implementation (where every thread does a blocking `poll()` on its `wakeup_fd` and the `epoll_fd`).  The function` psi_wait() `in figure 2 implements this logic.
 
-**>> **(**NOTE**: Or alternatively, we can implement a turnstile polling (i.e having only one thread calling `epoll_wait()` on the epoll set at any time - which all other threads call poll on their `wakeup_fds`) 
+**>> **(**NOTE**: Or alternatively, we can implement a turnstile polling (i.e having only one thread calling `epoll_wait()` on the epoll set at any time - which all other threads call poll on their `wakeup_fds`)
 in case of not getting a signal number from the applications.
 
 

@@ -141,7 +141,7 @@ static void test_retry_throttled(grpc_end2end_test_config config) {
       // purposes of this test.)
       "  \"retryThrottling\": {\n"
       "    \"maxTokens\": 2,\n"
-      "    \"tokenRatio\": 1.0,\n"
+      "    \"tokenRatio\": 1.0\n"
       "  }\n"
       "}");
   grpc_channel_args client_args = {1, &arg};
@@ -231,7 +231,7 @@ static void test_retry_throttled(grpc_end2end_test_config config) {
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   GPR_ASSERT(0 == call_details.flags);
-  GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

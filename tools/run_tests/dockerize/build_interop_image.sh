@@ -64,6 +64,14 @@ else
   echo "WARNING: grpc-node not found, it won't be mounted to the docker container."
 fi
 
+echo "GRPC_DOTNET_ROOT: ${GRPC_DOTNET_ROOT:=$(cd ../grpc-dotnet && pwd)}"
+if [ -n "$GRPC_DOTNET_ROOT" ]
+then
+  MOUNT_ARGS+=" -v $GRPC_DOTNET_ROOT:/var/local/jenkins/grpc-dotnet:ro"
+else
+  echo "WARNING: grpc-dotnet not found, it won't be mounted to the docker container."
+fi
+
 # Mount service account dir if available.
 # If service_directory does not contain the service account JSON file,
 # some of the tests will fail.
@@ -74,11 +82,11 @@ fi
 
 # Use image name based on Dockerfile checksum
 # on OSX use md5 instead of sha1sum
-if which sha1sum > /dev/null;
+if command -v sha1sum > /dev/null;
 then
-  BASE_IMAGE=${BASE_NAME}_$(sha1sum "tools/dockerfile/interoptest/$BASE_NAME/Dockerfile" | cut -f1 -d\ )
+  BASE_IMAGE=${BASE_NAME}:$(sha1sum "tools/dockerfile/interoptest/$BASE_NAME/Dockerfile" | cut -f1 -d\ )
 else
-  BASE_IMAGE=${BASE_NAME}_$(md5 -r "tools/dockerfile/interoptest/$BASE_NAME/Dockerfile" | cut -f1 -d\ )
+  BASE_IMAGE=${BASE_NAME}:$(md5 -r "tools/dockerfile/interoptest/$BASE_NAME/Dockerfile" | cut -f1 -d\ )
 fi
 
 if [ "$DOCKERHUB_ORGANIZATION" != "" ]

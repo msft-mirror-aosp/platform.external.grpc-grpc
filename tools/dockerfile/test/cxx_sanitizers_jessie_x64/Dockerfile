@@ -14,6 +14,7 @@
 
 # This is the base Docker image we use for running tests on RBE
 FROM gcr.io/cloud-marketplace/google/rbe-debian8@sha256:1ede2a929b44d629ec5abe86eee6d7ffea1d5a4d247489a8867d46cfde3e38bd
+RUN sed -i '/deb http:\/\/httpredir.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
@@ -50,10 +51,6 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
-# Google Cloud platform API libraries
-RUN apt-get update && apt-get install -y python-pip && apt-get clean
-RUN pip install --upgrade google-api-python-client oauth2client
-
 #====================
 # Python dependencies
 
@@ -62,12 +59,16 @@ RUN pip install --upgrade google-api-python-client oauth2client
 RUN apt-get update && apt-get install -y \
     python-all-dev \
     python3-all-dev \
-    python-pip
+    python-setuptools
 
 # Install Python packages from PyPI
-RUN pip install --upgrade pip==10.0.1
-RUN pip install virtualenv
+RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
+RUN pip install --upgrade pip==19.3.1
+RUN pip install virtualenv==16.7.9
 RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
+
+# Google Cloud platform API libraries
+RUN pip install --upgrade google-api-python-client oauth2client
 
 #=================
 # C++ dependencies (purposely excluding Clang because it's part of the base image)

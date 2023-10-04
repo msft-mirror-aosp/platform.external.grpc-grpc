@@ -28,8 +28,8 @@ namespace Grpc.Testing {
             "c3RpbmciBwoFRW1wdHliBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Empty), global::Grpc.Testing.Empty.Parser, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Empty), global::Grpc.Testing.Empty.Parser, null, null, null, null, null)
           }));
     }
     #endregion
@@ -44,7 +44,6 @@ namespace Grpc.Testing {
   ///   service Foo {
   ///     rpc Bar (grpc.testing.Empty) returns (grpc.testing.Empty) { };
   ///   };
-  ///
   /// </summary>
   public sealed partial class Empty : pb::IMessage<Empty> {
     private static readonly pb::MessageParser<Empty> _parser = new pb::MessageParser<Empty>(() => new Empty());

@@ -122,8 +122,8 @@ class ServerEarlyReturnTest : public ::testing::Test {
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
 
-    channel_ =
-        CreateChannel(server_address_.str(), InsecureChannelCredentials());
+    channel_ = grpc::CreateChannel(server_address_.str(),
+                                   InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -152,7 +152,7 @@ class ServerEarlyReturnTest : public ::testing::Test {
     auto stream = stub_->BidiStream(&context);
 
     for (int i = 0; i < 20; i++) {
-      request.set_message(grpc::string("hello") + grpc::to_string(i));
+      request.set_message(std::string("hello") + std::to_string(i));
       bool write_ok = stream->Write(request);
       bool read_ok = stream->Read(&response);
       if (i < 10) {
@@ -189,7 +189,7 @@ class ServerEarlyReturnTest : public ::testing::Test {
 
     auto stream = stub_->RequestStream(&context, &response);
     for (int i = 0; i < 20; i++) {
-      request.set_message(grpc::string("hello") + grpc::to_string(i));
+      request.set_message(std::string("hello") + std::to_string(i));
       bool written = stream->Write(request);
       if (i < 10) {
         EXPECT_TRUE(written);

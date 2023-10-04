@@ -16,6 +16,11 @@
  *
  */
 
+/**
+ * class Call
+ * @see https://github.com/grpc/grpc/tree/master/src/php/ext/grpc/call.c
+ */
+
 #include "call.h"
 
 #include <ext/spl/spl_exceptions.h>
@@ -193,7 +198,7 @@ zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned TSRMLS_DC) {
  *                             Must not be closed.
  * @param string $method The method to call
  * @param Timeval $deadline_obj The deadline for completing the call
- * @param string $host_override The host is set by user (optional)
+ * @param string $host_override = "" The host is set by user (optional)
  */
 PHP_METHOD(Call, __construct) {
   zval *channel_obj;
@@ -217,6 +222,12 @@ PHP_METHOD(Call, __construct) {
   }
   wrapped_grpc_channel *channel =
     PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_channel, channel_obj);
+  if (channel->wrapper == NULL) {
+    zend_throw_exception(spl_ce_InvalidArgumentException,
+                         "Call cannot be constructed from a closed Channel",
+                         1 TSRMLS_CC);
+    return;
+  }
   gpr_mu_lock(&channel->wrapper->mu);
   if (channel->wrapper == NULL || channel->wrapper->wrapped == NULL) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
@@ -288,8 +299,13 @@ PHP_METHOD(Call, startBatch) {
   grpc_byte_buffer *message;
   int cancelled;
   grpc_call_error error;
+
+  #if PHP_MAJOR_VERSION < 7
   char *message_str;
   size_t message_len;
+  #else
+  zend_string* zmessage = NULL;
+  #endif // PHP_MAJOR_VERSION < 7
 
   grpc_metadata_array_init(&metadata);
   grpc_metadata_array_init(&trailing_metadata);
@@ -477,12 +493,28 @@ PHP_METHOD(Call, startBatch) {
       PHP_GRPC_DELREF(array);
       break;
     case GRPC_OP_RECV_MESSAGE:
+#if PHP_MAJOR_VERSION < 7
       byte_buffer_to_string(message, &message_str, &message_len);
+#else
+      zmessage = byte_buffer_to_zend_string(message);
+#endif // PHP_MAJOR_VERSION < 7
+
+#if PHP_MAJOR_VERSION < 7
       if (message_str == NULL) {
+#else
+      if (zmessage == NULL) {
+#endif // PHP_MAJOR_VERSION < 7
         add_property_null(result, "message");
       } else {
+#if PHP_MAJOR_VERSION < 7
         php_grpc_add_property_stringl(result, "message", message_str,
                                       message_len, false);
+#else
+        zval zmessage_val;
+        ZVAL_NEW_STR(&zmessage_val, zmessage);
+        add_property_zval(result, "message", &zmessage_val);
+        zval_ptr_dtor(&zmessage_val);
+#endif // PHP_MAJOR_VERSION < 7
       }
       break;
     case GRPC_OP_RECV_STATUS_ON_CLIENT:
@@ -531,7 +563,9 @@ cleanup:
     }
     if (ops[i].op == GRPC_OP_RECV_MESSAGE) {
       grpc_byte_buffer_destroy(message);
+      #if PHP_MAJOR_VERSION < 7
       PHP_GRPC_FREE_STD_ZVAL(message_str);
+      #endif // PHP_MAJOR_VERSION < 7
     }
   }
   RETURN_DESTROY_ZVAL(result);

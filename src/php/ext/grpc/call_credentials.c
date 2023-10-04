@@ -16,6 +16,11 @@
  *
  */
 
+/**
+ * class CallCredentials
+ * @see https://github.com/grpc/grpc/tree/master/src/php/ext/grpc/call_credentials.c
+ */
+
 #include "call_credentials.h"
 
 #include <ext/spl/spl_exceptions.h>
@@ -126,9 +131,10 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
   plugin.destroy = plugin_destroy_state;
   plugin.state = (void *)state;
   plugin.type = "";
-
+  // TODO(yihuazhang): Expose min_security_level via the PHP API so that
+  // applications can decide what minimum security level their plugins require.
   grpc_call_credentials *creds =
-    grpc_metadata_credentials_create_from_plugin(plugin, NULL);
+    grpc_metadata_credentials_create_from_plugin(plugin, GRPC_PRIVACY_AND_INTEGRITY, NULL);
   zval *creds_object = grpc_php_wrap_call_credentials(creds TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
 }

@@ -99,8 +99,8 @@ int GetCallCounterValue() {
 
 class ChannelDataImpl : public ChannelData {
  public:
-  grpc_error* Init(grpc_channel_element* elem,
-                   grpc_channel_element_args* args) {
+  grpc_error* Init(grpc_channel_element* /*elem*/,
+                   grpc_channel_element_args* /*args*/) {
     IncrementConnectionCounter();
     return GRPC_ERROR_NONE;
   }
@@ -120,6 +120,17 @@ class CallDataImpl : public CallData {
 class FilterEnd2endTest : public ::testing::Test {
  protected:
   FilterEnd2endTest() : server_host_("localhost") {}
+
+  static void SetUpTestCase() {
+    // Workaround for
+    // https://github.com/google/google-toolbox-for-mac/issues/242
+    static bool setup_done = false;
+    if (!setup_done) {
+      setup_done = true;
+      grpc::RegisterChannelFilter<ChannelDataImpl, CallDataImpl>(
+          "test-filter", GRPC_SERVER_CHANNEL, INT_MAX, nullptr);
+    }
+  }
 
   void SetUp() override {
     int port = grpc_pick_unused_port_or_die();
@@ -146,8 +157,8 @@ class FilterEnd2endTest : public ::testing::Test {
   }
 
   void ResetStub() {
-    std::shared_ptr<Channel> channel =
-        CreateChannel(server_address_.str(), InsecureChannelCredentials());
+    std::shared_ptr<Channel> channel = grpc::CreateChannel(
+        server_address_.str(), InsecureChannelCredentials());
     generic_stub_.reset(new GenericStub(channel));
     ResetConnectionCounter();
     ResetCallCounter();
@@ -159,7 +170,7 @@ class FilterEnd2endTest : public ::testing::Test {
   void client_fail(int i) { verify_ok(&cli_cq_, i, false); }
 
   void SendRpc(int num_rpcs) {
-    const grpc::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
+    const std::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
     for (int i = 0; i < num_rpcs; i++) {
       EchoRequest send_request;
       EchoRequest recv_request;
@@ -226,7 +237,7 @@ class FilterEnd2endTest : public ::testing::Test {
   std::unique_ptr<grpc::GenericStub> generic_stub_;
   std::unique_ptr<Server> server_;
   AsyncGenericService generic_service_;
-  const grpc::string server_host_;
+  const std::string server_host_;
   std::ostringstream server_address_;
 };
 
@@ -254,7 +265,7 @@ TEST_F(FilterEnd2endTest, SimpleBidiStreaming) {
   EXPECT_EQ(0, GetConnectionCounterValue());
   EXPECT_EQ(0, GetCallCounterValue());
 
-  const grpc::string kMethodName(
+  const std::string kMethodName(
       "/grpc.cpp.test.util.EchoTestService/BidiStream");
   EchoRequest send_request;
   EchoRequest recv_request;
@@ -321,11 +332,6 @@ TEST_F(FilterEnd2endTest, SimpleBidiStreaming) {
   EXPECT_EQ(1, GetConnectionCounterValue());
 }
 
-void RegisterFilter() {
-  grpc::RegisterChannelFilter<ChannelDataImpl, CallDataImpl>(
-      "test-filter", GRPC_SERVER_CHANNEL, INT_MAX, nullptr);
-}
-
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
@@ -333,6 +339,5 @@ void RegisterFilter() {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::RegisterFilter();
   return RUN_ALL_TESTS();
 }

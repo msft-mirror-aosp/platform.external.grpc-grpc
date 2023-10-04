@@ -202,11 +202,6 @@ struct inproc_stream {
     }
 
     t->unref();
-
-    if (closure_at_destroy) {
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure_at_destroy,
-                              GRPC_ERROR_NONE);
-    }
   }
 
 #ifndef NDEBUG
@@ -249,7 +244,6 @@ struct inproc_stream {
   bool other_side_closed = false;               // won't talk anymore
   bool write_buffer_other_side_closed = false;  // on hold
   grpc_stream_refcount* refs;
-  grpc_closure* closure_at_destroy = nullptr;
 
   grpc_core::Arena* arena;
 
@@ -1132,7 +1126,8 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
 
 void close_transport_locked(inproc_transport* t) {
   INPROC_LOG(GPR_INFO, "close_transport %p %d", t, t->is_closed);
-  t->state_tracker.SetState(GRPC_CHANNEL_SHUTDOWN, "close transport");
+  t->state_tracker.SetState(GRPC_CHANNEL_SHUTDOWN, absl::Status(),
+                            "close transport");
   if (!t->is_closed) {
     t->is_closed = true;
     /* Also end all streams on this transport */
@@ -1182,12 +1177,17 @@ void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
   gpr_mu_unlock(&t->mu->mu);
 }
 
-void destroy_stream(grpc_transport* /*gt*/, grpc_stream* gs,
+void destroy_stream(grpc_transport* gt, grpc_stream* gs,
                     grpc_closure* then_schedule_closure) {
   INPROC_LOG(GPR_INFO, "destroy_stream %p %p", gs, then_schedule_closure);
+  inproc_transport* t = reinterpret_cast<inproc_transport*>(gt);
   inproc_stream* s = reinterpret_cast<inproc_stream*>(gs);
-  s->closure_at_destroy = then_schedule_closure;
+  gpr_mu_lock(&t->mu->mu);
+  close_stream_locked(s);
+  gpr_mu_unlock(&t->mu->mu);
   s->~inproc_stream();
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure,
+                          GRPC_ERROR_NONE);
 }
 
 void destroy_transport(grpc_transport* gt) {
@@ -1275,7 +1275,7 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   const char* args_to_remove[] = {GRPC_ARG_MAX_CONNECTION_IDLE_MS,
                                   GRPC_ARG_MAX_CONNECTION_AGE_MS};
   const grpc_channel_args* server_args = grpc_channel_args_copy_and_remove(
-      grpc_server_get_channel_args(server), args_to_remove,
+      server->core_server->channel_args(), args_to_remove,
       GPR_ARRAY_SIZE(args_to_remove));
 
   // Add a default authority channel argument for the client
@@ -1292,8 +1292,8 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
                            client_args);
 
   // TODO(ncteisen): design and support channelz GetSocket for inproc.
-  grpc_server_setup_transport(server, server_transport, nullptr, server_args,
-                              nullptr);
+  server->core_server->SetupTransport(server_transport, nullptr, server_args,
+                                      nullptr);
   grpc_channel* channel = grpc_channel_create(
       "inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
 

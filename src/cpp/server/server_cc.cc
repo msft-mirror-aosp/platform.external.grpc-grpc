@@ -295,20 +295,15 @@ class Server::UnimplementedAsyncRequest final
     : private grpc::UnimplementedAsyncRequestContext,
       public GenericAsyncRequest {
  public:
-  UnimplementedAsyncRequest(Server* server, grpc::ServerCompletionQueue* cq)
+  UnimplementedAsyncRequest(ServerInterface* server,
+                            grpc::ServerCompletionQueue* cq)
       : GenericAsyncRequest(server, &server_context_, &generic_stream_, cq, cq,
-                            nullptr, false),
-        server_(server),
-        cq_(cq) {}
+                            nullptr, false) {}
 
   bool FinalizeResult(void** tag, bool* status) override;
 
   grpc::ServerContext* context() { return &server_context_; }
   grpc::GenericServerAsyncReaderWriter* stream() { return &generic_stream_; }
-
- private:
-  Server* const server_;
-  grpc::ServerCompletionQueue* const cq_;
 };
 
 /// UnimplementedAsyncResponse should not post user-visible completions to the
@@ -547,7 +542,7 @@ class Server::CallbackRequest final
   // is nullptr since these services don't have pre-defined methods.
   CallbackRequest(Server* server, grpc::internal::RpcServiceMethod* method,
                   grpc::CompletionQueue* cq,
-                  grpc_core::ServerRegisteredCallAllocation* data)
+                  grpc_core::Server::RegisteredCallAllocation* data)
       : server_(server),
         method_(method),
         has_request_payload_(method->method_type() ==
@@ -568,7 +563,7 @@ class Server::CallbackRequest final
   // For generic services, method is nullptr since these services don't have
   // pre-defined methods.
   CallbackRequest(Server* server, grpc::CompletionQueue* cq,
-                  grpc_core::ServerBatchCallAllocation* data)
+                  grpc_core::Server::BatchCallAllocation* data)
       : server_(server),
         method_(nullptr),
         has_request_payload_(false),
@@ -981,7 +976,10 @@ Server::~Server() {
       }
     }
   }
-
+  // Destroy health check service before we destroy the C server so that
+  // it does not call grpc_server_request_registered_call() after the C
+  // server has been destroyed.
+  health_check_service_.reset();
   grpc_server_destroy(server_);
 }
 
@@ -1063,9 +1061,9 @@ bool Server::RegisterService(const std::string* host, grpc::Service* service) {
       has_callback_methods_ = true;
       grpc::internal::RpcServiceMethod* method_value = method.get();
       grpc::CompletionQueue* cq = CallbackCQ();
-      grpc_core::SetServerRegisteredMethodAllocator(
-          server_, cq->cq(), method_registration_tag, [this, cq, method_value] {
-            grpc_core::ServerRegisteredCallAllocation result;
+      server_->core_server->SetRegisteredMethodAllocator(
+          cq->cq(), method_registration_tag, [this, cq, method_value] {
+            grpc_core::Server::RegisteredCallAllocation result;
             new CallbackRequest<grpc::CallbackServerContext>(this, method_value,
                                                              cq, &result);
             return result;
@@ -1104,8 +1102,8 @@ void Server::RegisterCallbackGenericService(
   generic_handler_.reset(service->Handler());
 
   grpc::CompletionQueue* cq = CallbackCQ();
-  grpc_core::SetServerBatchMethodAllocator(server_, cq->cq(), [this, cq] {
-    grpc_core::ServerBatchCallAllocation result;
+  server_->core_server->SetBatchMethodAllocator(cq->cq(), [this, cq] {
+    grpc_core::Server::BatchCallAllocation result;
     new CallbackRequest<grpc::GenericCallbackServerContext>(this, cq, &result);
     return result;
   });
@@ -1317,7 +1315,9 @@ bool Server::UnimplementedAsyncRequest::FinalizeResult(void** tag,
   if (GenericAsyncRequest::FinalizeResult(tag, status)) {
     // We either had no interceptors run or we are done intercepting
     if (*status) {
-      new UnimplementedAsyncRequest(server_, cq_);
+      // Create a new request/response pair using the server and CQ values
+      // stored in this object's base class.
+      new UnimplementedAsyncRequest(server_, notification_cq_);
       new UnimplementedAsyncResponse(this);
     } else {
       delete this;

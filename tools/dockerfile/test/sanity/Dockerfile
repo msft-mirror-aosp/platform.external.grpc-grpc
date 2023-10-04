@@ -67,7 +67,7 @@ RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev c
 
 #========================
 # Sanity test dependencies
-RUN apt-get update && apt-get -t buster install -y python3.7 python3-all-dev gawk
+RUN apt-get update && apt-get -t buster install -y python3.7 python3-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
 
 # Make Python 3.7 the default Python 3 version
@@ -96,7 +96,7 @@ ENV CLANG_TIDY=clang-tidy-6.0
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 1.0.0
+ENV BAZEL_VERSION 2.2.0
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1

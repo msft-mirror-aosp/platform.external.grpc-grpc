@@ -27,11 +27,9 @@
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 
-namespace grpc_impl {
+namespace grpc {
 
 class ClientContext;
-}  // namespace grpc_impl
-namespace grpc {
 
 namespace testing {
 
@@ -84,9 +82,11 @@ class CliCall final {
   // Finish the RPC.
   Status Finish(IncomingMetadataContainer* server_trailing_metadata);
 
+  std::string peer() const { return ctx_.peer(); }
+
  private:
   std::unique_ptr<grpc::GenericStub> stub_;
-  grpc_impl::ClientContext ctx_;
+  grpc::ClientContext ctx_;
   std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call_;
   grpc::CompletionQueue cq_;
   gpr_mu write_mu_;

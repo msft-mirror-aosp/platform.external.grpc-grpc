@@ -147,8 +147,56 @@ class XdsApi {
       return virtual_hosts == other.virtual_hosts;
     }
     std::string ToString() const;
-    const VirtualHost* FindVirtualHostForDomain(
-        const std::string& domain) const;
+    VirtualHost* FindVirtualHostForDomain(const std::string& domain);
+  };
+
+  struct StringMatcher {
+    enum class StringMatcherType {
+      EXACT,       // value stored in string_matcher_field
+      PREFIX,      // value stored in string_matcher_field
+      SUFFIX,      // value stored in string_matcher_field
+      SAFE_REGEX,  // use regex_match field
+      CONTAINS,    // value stored in string_matcher_field
+    };
+    StringMatcherType type;
+    std::string string_matcher;
+    std::unique_ptr<RE2> regex_match;
+    bool ignore_case;
+
+    StringMatcher() = default;
+    StringMatcher(const StringMatcher& other);
+    StringMatcher& operator=(const StringMatcher& other);
+    bool operator==(const StringMatcher& other) const;
+  };
+
+  struct CommonTlsContext {
+    struct CertificateValidationContext {
+      std::vector<StringMatcher> match_subject_alt_names;
+
+      bool operator==(const CertificateValidationContext& other) const {
+        return match_subject_alt_names == other.match_subject_alt_names;
+      }
+    };
+
+    struct CombinedCertificateValidationContext {
+      CertificateValidationContext default_validation_context;
+      std::string validation_context_certificate_provider_instance;
+
+      bool operator==(const CombinedCertificateValidationContext& other) const {
+        return default_validation_context == other.default_validation_context &&
+               validation_context_certificate_provider_instance ==
+                   other.validation_context_certificate_provider_instance;
+      }
+    };
+
+    std::string tls_certificate_certificate_provider_instance;
+    CombinedCertificateValidationContext combined_validation_context;
+
+    bool operator==(const CommonTlsContext& other) const {
+      return tls_certificate_certificate_provider_instance ==
+                 other.tls_certificate_certificate_provider_instance &&
+             combined_validation_context == other.combined_validation_context;
+    }
   };
 
   // TODO(roth): When we can use absl::variant<>, consider using that
@@ -174,125 +222,114 @@ class XdsApi {
     // The name to use in the EDS request.
     // If empty, the cluster name will be used.
     std::string eds_service_name;
+    // Tls Context used by clients
+    CommonTlsContext common_tls_context;
     // The LRS server to use for load reporting.
     // If not set, load reporting will be disabled.
     // If set to the empty string, will use the same server we obtained the CDS
     // data from.
     absl::optional<std::string> lrs_load_reporting_server_name;
+    // Maximum number of outstanding requests can be made to the upstream
+    // cluster.
+    uint32_t max_concurrent_requests = 1024;
+
+    bool operator==(const CdsUpdate& other) const {
+      return eds_service_name == other.eds_service_name &&
+             common_tls_context == other.common_tls_context &&
+             lrs_load_reporting_server_name ==
+                 other.lrs_load_reporting_server_name &&
+             max_concurrent_requests == other.max_concurrent_requests;
+    }
   };
 
   using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsUpdate>;
 
-  class PriorityListUpdate {
-   public:
-    struct LocalityMap {
+  struct EdsUpdate {
+    struct Priority {
       struct Locality {
-        bool operator==(const Locality& other) const {
-          return *name == *other.name && serverlist == other.serverlist &&
-                 lb_weight == other.lb_weight && priority == other.priority;
-        }
-
-        // This comparator only compares the locality names.
-        struct Less {
-          bool operator()(const Locality& lhs, const Locality& rhs) const {
-            return XdsLocalityName::Less()(lhs.name, rhs.name);
-          }
-        };
-
         RefCountedPtr<XdsLocalityName> name;
-        ServerAddressList serverlist;
         uint32_t lb_weight;
-        uint32_t priority;
+        ServerAddressList endpoints;
+
+        bool operator==(const Locality& other) const {
+          return *name == *other.name && lb_weight == other.lb_weight &&
+                 endpoints == other.endpoints;
+        }
+        bool operator!=(const Locality& other) const {
+          return !(*this == other);
+        }
+        std::string ToString() const;
       };
 
-      bool Contains(const RefCountedPtr<XdsLocalityName>& name) const {
-        return localities.find(name) != localities.end();
+      std::map<XdsLocalityName*, Locality, XdsLocalityName::Less> localities;
+
+      bool operator==(const Priority& other) const;
+      std::string ToString() const;
+    };
+    using PriorityList = absl::InlinedVector<Priority, 2>;
+
+    // There are two phases of accessing this class's content:
+    // 1. to initialize in the control plane combiner;
+    // 2. to use in the data plane combiner.
+    // So no additional synchronization is needed.
+    class DropConfig : public RefCounted<DropConfig> {
+     public:
+      struct DropCategory {
+        bool operator==(const DropCategory& other) const {
+          return name == other.name &&
+                 parts_per_million == other.parts_per_million;
+        }
+
+        std::string name;
+        const uint32_t parts_per_million;
+      };
+
+      using DropCategoryList = absl::InlinedVector<DropCategory, 2>;
+
+      void AddCategory(std::string name, uint32_t parts_per_million) {
+        drop_category_list_.emplace_back(
+            DropCategory{std::move(name), parts_per_million});
+        if (parts_per_million == 1000000) drop_all_ = true;
       }
 
-      size_t size() const { return localities.size(); }
+      // The only method invoked from outside the WorkSerializer (used in
+      // the data plane).
+      bool ShouldDrop(const std::string** category_name) const;
 
-      std::map<RefCountedPtr<XdsLocalityName>, Locality, XdsLocalityName::Less>
-          localities;
-    };
-
-    bool operator==(const PriorityListUpdate& other) const;
-    bool operator!=(const PriorityListUpdate& other) const {
-      return !(*this == other);
-    }
-
-    void Add(LocalityMap::Locality locality);
-
-    const LocalityMap* Find(uint32_t priority) const;
-
-    bool Contains(uint32_t priority) const {
-      return priority < priorities_.size();
-    }
-    bool Contains(const RefCountedPtr<XdsLocalityName>& name);
-
-    bool empty() const { return priorities_.empty(); }
-    size_t size() const { return priorities_.size(); }
-
-    // Callers should make sure the priority list is non-empty.
-    uint32_t LowestPriority() const {
-      return static_cast<uint32_t>(priorities_.size()) - 1;
-    }
-
-   private:
-    absl::InlinedVector<LocalityMap, 2> priorities_;
-  };
-
-  // There are two phases of accessing this class's content:
-  // 1. to initialize in the control plane combiner;
-  // 2. to use in the data plane combiner.
-  // So no additional synchronization is needed.
-  class DropConfig : public RefCounted<DropConfig> {
-   public:
-    struct DropCategory {
-      bool operator==(const DropCategory& other) const {
-        return name == other.name &&
-               parts_per_million == other.parts_per_million;
+      const DropCategoryList& drop_category_list() const {
+        return drop_category_list_;
       }
 
-      std::string name;
-      const uint32_t parts_per_million;
+      bool drop_all() const { return drop_all_; }
+
+      bool operator==(const DropConfig& other) const {
+        return drop_category_list_ == other.drop_category_list_;
+      }
+      bool operator!=(const DropConfig& other) const {
+        return !(*this == other);
+      }
+
+      std::string ToString() const;
+
+     private:
+      DropCategoryList drop_category_list_;
+      bool drop_all_ = false;
     };
 
-    using DropCategoryList = absl::InlinedVector<DropCategory, 2>;
-
-    void AddCategory(std::string name, uint32_t parts_per_million) {
-      drop_category_list_.emplace_back(
-          DropCategory{std::move(name), parts_per_million});
-      if (parts_per_million == 1000000) drop_all_ = true;
-    }
-
-    // The only method invoked from the data plane combiner.
-    bool ShouldDrop(const std::string** category_name) const;
-
-    const DropCategoryList& drop_category_list() const {
-      return drop_category_list_;
-    }
-
-    bool drop_all() const { return drop_all_; }
-
-    bool operator==(const DropConfig& other) const {
-      return drop_category_list_ == other.drop_category_list_;
-    }
-    bool operator!=(const DropConfig& other) const { return !(*this == other); }
-
-   private:
-    DropCategoryList drop_category_list_;
-    bool drop_all_ = false;
-  };
-
-  struct EdsUpdate {
-    PriorityListUpdate priority_list_update;
+    PriorityList priorities;
     RefCountedPtr<DropConfig> drop_config;
+
+    bool operator==(const EdsUpdate& other) const {
+      return priorities == other.priorities &&
+             *drop_config == *other.drop_config;
+    }
+    std::string ToString() const;
   };
 
   using EdsUpdateMap = std::map<std::string /*eds_service_name*/, EdsUpdate>;
 
   struct ClusterLoadReport {
-    XdsClusterDropStats::DroppedRequestsMap dropped_requests;
+    XdsClusterDropStats::Snapshot dropped_requests;
     std::map<RefCountedPtr<XdsLocalityName>, XdsClusterLocalityStats::Snapshot,
              XdsLocalityName::Less>
         locality_stats;
@@ -320,20 +357,20 @@ class XdsApi {
     std::string version;
     std::string nonce;
     std::string type_url;
-    absl::optional<LdsUpdate> lds_update;
-    absl::optional<RdsUpdate> rds_update;
+    LdsUpdateMap lds_update_map;
+    RdsUpdateMap rds_update_map;
     CdsUpdateMap cds_update_map;
     EdsUpdateMap eds_update_map;
   };
   AdsParseResult ParseAdsResponse(
       const grpc_slice& encoded_response,
-      const std::string& expected_server_name,
+      const std::set<absl::string_view>& expected_listener_names,
       const std::set<absl::string_view>& expected_route_configuration_names,
       const std::set<absl::string_view>& expected_cluster_names,
       const std::set<absl::string_view>& expected_eds_service_names);
 
-  // Creates an LRS request querying \a server_name.
-  grpc_slice CreateLrsInitialRequest(const std::string& server_name);
+  // Creates an initial LRS request.
+  grpc_slice CreateLrsInitialRequest();
 
   // Creates an LRS request sending a client-side load report.
   grpc_slice CreateLrsRequest(ClusterLoadReportMap cluster_load_report_map);

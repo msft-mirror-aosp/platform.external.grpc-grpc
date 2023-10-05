@@ -283,10 +283,6 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
 };
 }  // namespace
 
-}  // namespace grpc
-
-namespace grpc_impl {
-
 /// Use private inheritance rather than composition only to establish order
 /// of construction, since the public base class should be constructed after the
 /// elements belonging to the private base class are constructed. This is not
@@ -551,11 +547,7 @@ class Server::CallbackRequest final
                                  grpc::internal::RpcMethod::SERVER_STREAMING),
         cq_(cq),
         tag_(this) {
-    server->Ref();
-    Setup();
-    data->tag = &tag_;
-    data->call = &call_;
-    data->initial_metadata = &request_metadata_;
+    CommonSetup(server, data);
     data->deadline = &deadline_;
     data->optional_payload = has_request_payload_ ? &request_payload_ : nullptr;
   }
@@ -567,22 +559,20 @@ class Server::CallbackRequest final
       : server_(server),
         method_(nullptr),
         has_request_payload_(false),
+        call_details_(new grpc_call_details),
         cq_(cq),
         tag_(this) {
-    server->Ref();
-    Setup();
-    data->tag = &tag_;
-    data->call = &call_;
-    data->initial_metadata = &request_metadata_;
-    if (!call_details_) {
-      call_details_ = new grpc_call_details;
-      grpc_call_details_init(call_details_);
-    }
+    CommonSetup(server, data);
+    grpc_call_details_init(call_details_);
     data->details = call_details_;
   }
 
   ~CallbackRequest() {
-    Clear();
+    delete call_details_;
+    grpc_metadata_array_destroy(&request_metadata_);
+    if (has_request_payload_ && request_payload_) {
+      grpc_byte_buffer_destroy(request_payload_);
+    }
     server_->UnrefWithPossibleNotify();
   }
 
@@ -692,40 +682,27 @@ class Server::CallbackRequest final
     }
   };
 
-  void Clear() {
-    if (call_details_) {
-      delete call_details_;
-      call_details_ = nullptr;
-    }
-    grpc_metadata_array_destroy(&request_metadata_);
-    if (has_request_payload_ && request_payload_) {
-      grpc_byte_buffer_destroy(request_payload_);
-    }
-    ctx_.Clear();
-    interceptor_methods_.ClearState();
-  }
-
-  void Setup() {
+  template <class CallAllocation>
+  void CommonSetup(Server* server, CallAllocation* data) {
+    server->Ref();
     grpc_metadata_array_init(&request_metadata_);
-    ctx_.Setup(gpr_inf_future(GPR_CLOCK_REALTIME));
-    request_payload_ = nullptr;
-    request_ = nullptr;
-    handler_data_ = nullptr;
-    request_status_ = grpc::Status();
+    data->tag = &tag_;
+    data->call = &call_;
+    data->initial_metadata = &request_metadata_;
   }
 
   Server* const server_;
   grpc::internal::RpcServiceMethod* const method_;
   const bool has_request_payload_;
-  grpc_byte_buffer* request_payload_;
-  void* request_;
-  void* handler_data_;
+  grpc_byte_buffer* request_payload_ = nullptr;
+  void* request_ = nullptr;
+  void* handler_data_ = nullptr;
   grpc::Status request_status_;
-  grpc_call_details* call_details_ = nullptr;
+  grpc_call_details* const call_details_ = nullptr;
   grpc_call* call_;
   gpr_timespec deadline_;
   grpc_metadata_array request_metadata_;
-  grpc::CompletionQueue* cq_;
+  grpc::CompletionQueue* const cq_;
   CallbackCallTag tag_;
   ServerContextType ctx_;
   grpc::internal::InterceptorBatchMethodsImpl interceptor_methods_;
@@ -906,7 +883,7 @@ Server::Server(
       shutdown_(false),
       shutdown_notified_(false),
       server_(nullptr),
-      server_initializer_(new grpc_impl::ServerInitializer(this)),
+      server_initializer_(new ServerInitializer(this)),
       health_check_service_disabled_(false) {
   g_gli_initializer.summon();
   gpr_once_init(&grpc::g_once_init_callbacks, grpc::InitGlobalCallbacks);
@@ -1358,4 +1335,4 @@ grpc::CompletionQueue* Server::CallbackCQ() {
   return callback_cq_;
 }
 
-}  // namespace grpc_impl
+}  // namespace grpc

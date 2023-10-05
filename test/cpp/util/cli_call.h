@@ -19,19 +19,21 @@
 #ifndef GRPC_TEST_CPP_UTIL_CLI_CALL_H
 #define GRPC_TEST_CPP_UTIL_CLI_CALL_H
 
-#include <map>
-
 #include <grpcpp/channel.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/generic/generic_stub.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 
-namespace grpc_impl {
+#include <map>
+
+namespace grpc {
 
 class ClientContext;
-}  // namespace grpc_impl
-namespace grpc {
+
+struct CliArgs {
+  double timeout = -1;
+};
 
 namespace testing {
 
@@ -45,7 +47,12 @@ class CliCall final {
       IncomingMetadataContainer;
 
   CliCall(const std::shared_ptr<grpc::Channel>& channel,
-          const std::string& method, const OutgoingMetadataContainer& metadata);
+          const std::string& method, const OutgoingMetadataContainer& metadata,
+          CliArgs args);
+  CliCall(const std::shared_ptr<grpc::Channel>& channel,
+          const std::string& method, const OutgoingMetadataContainer& metadata)
+      : CliCall(channel, method, metadata, CliArgs{}) {}
+
   ~CliCall();
 
   // Perform an unary generic RPC.
@@ -84,9 +91,11 @@ class CliCall final {
   // Finish the RPC.
   Status Finish(IncomingMetadataContainer* server_trailing_metadata);
 
+  std::string peer() const { return ctx_.peer(); }
+
  private:
   std::unique_ptr<grpc::GenericStub> stub_;
-  grpc_impl::ClientContext ctx_;
+  grpc::ClientContext ctx_;
   std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call_;
   grpc::CompletionQueue cq_;
   gpr_mu write_mu_;

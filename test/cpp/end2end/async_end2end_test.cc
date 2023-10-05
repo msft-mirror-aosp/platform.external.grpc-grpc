@@ -120,6 +120,7 @@ class Verifier {
     while (!expectations_.empty()) {
       Next(cq, ignore_ok);
     }
+    maybe_expectations_.clear();
   }
 
   // This version of Verify stops after a certain deadline
@@ -139,6 +140,7 @@ class Verifier {
         GotTag(got_tag, ok, false);
       }
     }
+    maybe_expectations_.clear();
   }
 
   // This version of Verify stops after a certain deadline, and uses the
@@ -161,6 +163,7 @@ class Verifier {
         GotTag(got_tag, ok, false);
       }
     }
+    maybe_expectations_.clear();
   }
 
  private:
@@ -181,6 +184,7 @@ class Verifier {
         if (!ignore_ok) {
           EXPECT_EQ(it2->second.ok, ok);
         }
+        maybe_expectations_.erase(it2);
       } else {
         gpr_log(GPR_ERROR, "Unexpected tag: %p", got_tag);
         abort();
@@ -1900,13 +1904,13 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
       }
       messages.push_back(big_msg);
     }
-#ifndef MEMORY_SANITIZER
-    // 4MB message processing with SSL is very slow under msan
-    // (causes timeouts) and doesn't really increase the signal from tests.
-    // Reserve 100 bytes for other fields of the message proto.
-    messages.push_back(
-        std::string(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH - 100, 'a'));
-#endif
+    if (!BuiltUnderMsan()) {
+      // 4MB message processing with SSL is very slow under msan
+      // (causes timeouts) and doesn't really increase the signal from tests.
+      // Reserve 100 bytes for other fields of the message proto.
+      messages.push_back(
+          std::string(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH - 100, 'a'));
+    }
   }
 
   // TODO (sreek) Renable tests with health check service after the issue

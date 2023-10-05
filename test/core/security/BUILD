@@ -73,6 +73,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "authorization_engine_test",
+    srcs = ["authorization_engine_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "credentials_test",
     srcs = ["credentials_test.cc"],
     language = "C++",
@@ -80,6 +92,19 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "evaluate_args_test",
+    srcs = ["evaluate_args_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -279,6 +304,19 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_secure",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "grpc_tls_certificate_distributor_test",
+    srcs = ["grpc_tls_certificate_distributor_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
     deps = [

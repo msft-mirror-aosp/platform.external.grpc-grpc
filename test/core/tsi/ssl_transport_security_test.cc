@@ -689,19 +689,26 @@ void ssl_tsi_test_do_round_trip_for_all_configs() {
   gpr_free(bit_array);
 }
 
+static bool is_slow_build() {
+#if defined(GPR_ARCH_32) || defined(__APPLE__)
+  return true;
+#else
+  return BuiltUnderMsan();
+#endif
+}
+
 void ssl_tsi_test_do_round_trip_odd_buffer_size() {
   gpr_log(GPR_INFO, "ssl_tsi_test_do_round_trip_odd_buffer_size");
-#if !defined(MEMORY_SANITIZER) && !defined(GPR_ARCH_32) && !defined(__APPLE__)
   const size_t odd_sizes[] = {1025, 2051, 4103, 8207, 16409};
-#else
+  size_t size = sizeof(odd_sizes) / sizeof(size_t);
   // 1. avoid test being extremely slow under MSAN
   // 2. on 32-bit, the test is much slower (probably due to lack of boringssl
   // asm optimizations) so we only run a subset of tests to avoid timeout
   // 3. on Mac OS, we have slower testing machines so we only run a subset
   // of tests to avoid timeout
-  const size_t odd_sizes[] = {1025};
-#endif
-  const size_t size = sizeof(odd_sizes) / sizeof(size_t);
+  if (is_slow_build()) {
+    size = 1;
+  }
   for (size_t ind1 = 0; ind1 < size; ind1++) {
     for (size_t ind2 = 0; ind2 < size; ind2++) {
       for (size_t ind3 = 0; ind3 < size; ind3++) {
@@ -969,8 +976,9 @@ void ssl_tsi_test_extract_cert_chain() {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  const size_t number_tls_versions = 1;
-  const tsi_tls_version tls_versions[] = {tsi_tls_version::TSI_TLS1_2};
+  const size_t number_tls_versions = 2;
+  const tsi_tls_version tls_versions[] = {tsi_tls_version::TSI_TLS1_2,
+                                          tsi_tls_version::TSI_TLS1_3};
   for (size_t i = 0; i < number_tls_versions; i++) {
     // Set the TLS version to be used in the tests.
     test_tls_version = tls_versions[i];

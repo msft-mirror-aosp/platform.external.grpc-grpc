@@ -33,7 +33,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_millis
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/slice/slice_hash_table.h"
 
 namespace grpc_core {
 namespace internal {
@@ -112,10 +111,12 @@ class ClientChannelMethodParsedConfig
 class ClientChannelServiceConfigParser : public ServiceConfigParser::Parser {
  public:
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
-      const Json& json, grpc_error** error) override;
+      const grpc_channel_args* /*args*/, const Json& json,
+      grpc_error** error) override;
 
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const Json& json, grpc_error** error) override;
+      const grpc_channel_args* /*args*/, const Json& json,
+      grpc_error** error) override;
 
   static size_t ParserIndex();
   static void Register();

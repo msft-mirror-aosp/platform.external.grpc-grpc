@@ -12,6 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """A setup module for the GRPC Python package."""
+
+# setuptools need to be imported before distutils. Otherwise it might lead to
+# undesirable behaviors or errors.
+import setuptools
+
+# Monkey Patch the unix compiler to accept ASM
+# files used by boring SSL.
+from distutils.unixccompiler import UnixCCompiler
+UnixCCompiler.src_extensions.append('.S')
+del UnixCCompiler
+
 from distutils import cygwinccompiler
 from distutils import extension as _extension
 from distutils import util
@@ -25,7 +36,6 @@ import shutil
 import sys
 import sysconfig
 
-import setuptools
 from setuptools.command import egg_info
 
 import subprocess
@@ -61,6 +71,8 @@ SSL_INCLUDE = (os.path.join('third_party', 'boringssl-with-bazel', 'src',
 UPB_INCLUDE = (os.path.join('third_party', 'upb'),)
 UPB_GRPC_GENERATED_INCLUDE = (os.path.join('src', 'core', 'ext',
                                            'upb-generated'),)
+UPBDEFS_GRPC_GENERATED_INCLUDE = (os.path.join('src', 'core', 'ext',
+                                               'upbdefs-generated'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
 README = os.path.join(PYTHON_STEM, 'README.rst')
 
@@ -90,8 +102,12 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3.6',
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
     'License :: OSI Approved :: Apache Software License',
 ]
+
+BUILD_WITH_BORING_SSL_ASM = os.environ.get('GRPC_BUILD_WITH_BORING_SSL_ASM',
+                                           True)
 
 # Environment variable to determine whether or not the Cython extension should
 # *use* Cython or use the generated C files. Note that this requires the C files
@@ -151,12 +167,23 @@ def check_linker_need_libatomic():
     """Test if linker on system needs libatomic."""
     code_test = (b'#include <atomic>\n' +
                  b'int main() { return std::atomic<int64_t>{}; }')
-    cc_test = subprocess.Popen(['cc', '-x', 'c++', '-std=c++11', '-'],
-                               stdin=PIPE,
-                               stdout=PIPE,
-                               stderr=PIPE)
-    cc_test.communicate(input=code_test)
-    return cc_test.returncode != 0
+    cxx = os.environ.get('CXX', 'c++')
+    cpp_test = subprocess.Popen([cxx, '-x', 'c++', '-std=c++11', '-'],
+                                stdin=PIPE,
+                                stdout=PIPE,
+                                stderr=PIPE)
+    cpp_test.communicate(input=code_test)
+    if cpp_test.returncode == 0:
+        return False
+    # Double-check to see if -latomic actually can solve the problem.
+    # https://github.com/grpc/grpc/issues/22491
+    cpp_test = subprocess.Popen(
+        [cxx, '-x', 'c++', '-std=c++11', '-latomic', '-'],
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=PIPE)
+    cpp_test.communicate(input=code_test)
+    return cpp_test.returncode == 0
 
 
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
@@ -234,7 +261,8 @@ if BUILD_WITH_SYSTEM_CARES:
 EXTENSION_INCLUDE_DIRECTORIES = ((PYTHON_STEM,) + CORE_INCLUDE + ABSL_INCLUDE +
                                  ADDRESS_SORTING_INCLUDE + CARES_INCLUDE +
                                  RE2_INCLUDE + SSL_INCLUDE + UPB_INCLUDE +
-                                 UPB_GRPC_GENERATED_INCLUDE + ZLIB_INCLUDE)
+                                 UPB_GRPC_GENERATED_INCLUDE +
+                                 UPBDEFS_GRPC_GENERATED_INCLUDE + ZLIB_INCLUDE)
 
 EXTENSION_LIBRARIES = ()
 if "linux" in sys.platform:
@@ -257,9 +285,30 @@ if BUILD_WITH_SYSTEM_ZLIB:
 if BUILD_WITH_SYSTEM_CARES:
     EXTENSION_LIBRARIES += ('cares',)
 
-DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600))
+DEFINE_MACROS = (('_WIN32_WINNT', 0x600),)
+asm_files = []
+
+asm_key = ''
+if BUILD_WITH_BORING_SSL_ASM:
+    LINUX_X86_64 = 'linux-x86_64'
+    LINUX_ARM = 'linux-arm'
+    if LINUX_X86_64 == util.get_platform():
+        asm_key = 'crypto_linux_x86_64'
+    elif LINUX_ARM == util.get_platform():
+        asm_key = 'crypto_linux_arm'
+    elif "mac" in util.get_platform() and "x86_64" in util.get_platform():
+        asm_key = 'crypto_mac_x86_64'
+    else:
+        print("ASM Builds for BoringSSL currently not supported on:",
+              util.get_platform())
+if asm_key:
+    asm_files = grpc_core_dependencies.ASM_SOURCE_FILES[asm_key]
+else:
+    DEFINE_MACROS += (('OPENSSL_NO_ASM', 1),)
+
 if not DISABLE_LIBC_COMPATIBILITY:
     DEFINE_MACROS += (('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
+
 if "win32" in sys.platform:
     # TODO(zyc): Re-enable c-ares on x64 and x86 windows after fixing the
     # ares_library_init compilation issue
@@ -324,7 +373,8 @@ def cython_extensions_and_necessity():
     extensions = [
         _extension.Extension(
             name=module_name,
-            sources=[module_file] + list(CYTHON_HELPER_C_FILES) + core_c_files,
+            sources=([module_file] + list(CYTHON_HELPER_C_FILES) +
+                     core_c_files + asm_files),
             include_dirs=list(EXTENSION_INCLUDE_DIRECTORIES),
             libraries=list(EXTENSION_LIBRARIES),
             define_macros=list(DEFINE_MACROS),

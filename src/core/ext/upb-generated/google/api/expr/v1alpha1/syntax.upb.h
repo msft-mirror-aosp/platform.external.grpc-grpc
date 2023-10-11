@@ -13,8 +13,6 @@
 #include "upb/decode.h"
 #include "upb/encode.h"
 
-#include "google/protobuf/struct.upb.h"
-
 #include "upb/port_def.inc"
 
 #ifdef __cplusplus

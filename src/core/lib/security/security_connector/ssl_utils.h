@@ -154,11 +154,11 @@ class PemKeyCertPair {
   }
 
   // Movable.
-  PemKeyCertPair(PemKeyCertPair&& other) {
+  PemKeyCertPair(PemKeyCertPair&& other) noexcept {
     private_key_ = std::move(other.private_key_);
     cert_chain_ = std::move(other.cert_chain_);
   }
-  PemKeyCertPair& operator=(PemKeyCertPair&& other) {
+  PemKeyCertPair& operator=(PemKeyCertPair&& other) noexcept {
     private_key_ = std::move(other.private_key_);
     cert_chain_ = std::move(other.cert_chain_);
     return *this;
@@ -186,6 +186,8 @@ class PemKeyCertPair {
   grpc_core::UniquePtr<char> private_key_;
   grpc_core::UniquePtr<char> cert_chain_;
 };
+
+typedef absl::InlinedVector<grpc_core::PemKeyCertPair, 1> PemKeyCertPairList;
 
 }  // namespace grpc_core
 

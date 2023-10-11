@@ -84,7 +84,7 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
             : &resolved_addr;
     grpc_sockaddr* sock_addr = reinterpret_cast<grpc_sockaddr*>(&addr->addr);
     // UDS
-    if (type == UDS && grpc_is_unix_socket(addr)) {
+    if (type == UDS && (grpc_is_unix_socket(addr) || grpc_is_vsock(addr))) {
       is_endpoint_local = true;
       // IPV4
     } else if (type == LOCAL_TCP && sock_addr->sa_family == GRPC_AF_INET) {
@@ -157,7 +157,7 @@ class grpc_local_channel_security_connector final
       const grpc_channel_args* args, grpc_pollset_set* /*interested_parties*/,
       grpc_core::HandshakeManager* handshake_manager) override {
     tsi_handshaker* handshaker = nullptr;
-    GPR_ASSERT(local_tsi_handshaker_create(true /* is_client */, &handshaker) ==
+    GPR_ASSERT(tsi_local_handshaker_create(true /* is_client */, &handshaker) ==
                TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
@@ -215,7 +215,7 @@ class grpc_local_server_security_connector final
       const grpc_channel_args* args, grpc_pollset_set* /*interested_parties*/,
       grpc_core::HandshakeManager* handshake_manager) override {
     tsi_handshaker* handshaker = nullptr;
-    GPR_ASSERT(local_tsi_handshaker_create(false /* is_client */,
+    GPR_ASSERT(tsi_local_handshaker_create(false /* is_client */,
                                            &handshaker) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));

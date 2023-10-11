@@ -42,7 +42,7 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
           factory->scheme());
   grpc_core::ExecCtx exec_ctx;
-  grpc_uri* uri = grpc_uri_parse(string, 0);
+  grpc_uri* uri = grpc_uri_parse(string, false);
   GPR_ASSERT(uri);
   grpc_core::ResolverArgs args;
   args.uri = uri;
@@ -63,7 +63,7 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
           factory->scheme());
   grpc_core::ExecCtx exec_ctx;
-  grpc_uri* uri = grpc_uri_parse(string, 0);
+  grpc_uri* uri = grpc_uri_parse(string, false);
   GPR_ASSERT(uri);
   grpc_core::ResolverArgs args;
   args.uri = uri;
@@ -100,6 +100,16 @@ int main(int argc, char** argv) {
   test_succeeds(ipv6, "ipv6:[::]:1234");
   test_fails(ipv6, "ipv6:[::]:123456");
   test_fails(ipv6, "ipv6:www.google.com");
+
+#ifdef GRPC_HAVE_UNIX_SOCKET
+  grpc_core::ResolverFactory* uds =
+      grpc_core::ResolverRegistry::LookupResolverFactory("unix");
+  grpc_core::ResolverFactory* uds_abstract =
+      grpc_core::ResolverRegistry::LookupResolverFactory("unix-abstract");
+
+  test_succeeds(uds, "unix:///tmp/sockaddr_resolver_test");
+  test_succeeds(uds_abstract, "unix-abstract:sockaddr_resolver_test");
+#endif  // GRPC_HAVE_UNIX_SOCKET
 
   grpc_shutdown();
 

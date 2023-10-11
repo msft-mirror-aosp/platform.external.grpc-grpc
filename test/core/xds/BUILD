@@ -14,13 +14,63 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-grpc_package(name = "test/core/client_channel")
+grpc_package(name = "test/core/xds")
 
 licenses(["notice"])
 
 grpc_cc_test(
+    name = "xds_bootstrap_test",
+    srcs = ["xds_bootstrap_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "certificate_provider_store_test",
+    srcs = ["certificate_provider_store_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "file_watcher_certificate_provider_factory_test",
+    srcs = ["file_watcher_certificate_provider_factory_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "google_mesh_ca_certificate_provider_factory_test",
     srcs = ["google_mesh_ca_certificate_provider_factory_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_certificate_provider_test",
+    srcs = ["xds_certificate_provider_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
     deps = [

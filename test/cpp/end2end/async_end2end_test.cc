@@ -32,6 +32,8 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include "absl/memory/memory.h"
+
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/iomgr/port.h"
@@ -51,7 +53,6 @@
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
-using grpc::testing::kTlsCredentialsType;
 using std::chrono::system_clock;
 
 namespace grpc {
@@ -271,8 +272,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     void* ignored_tag;
     bool ignored_ok;
     cq_->Shutdown();
-    while (cq_->Next(&ignored_tag, &ignored_ok))
-      ;
+    while (cq_->Next(&ignored_tag, &ignored_ok)) {
+    }
     stub_.reset();
     grpc_recycle_unused_port(port_);
   }
@@ -282,7 +283,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
         GetParam().credentials_type);
     builder.AddListeningPort(server_address_.str(), server_creds);
-    service_.reset(new grpc::testing::EchoTestService::AsyncService());
+    service_ =
+        absl::make_unique<grpc::testing::EchoTestService::AsyncService>();
     builder.RegisterService(service_.get());
     if (GetParam().health_check_service) {
       builder.RegisterService(&health_check_);
@@ -426,8 +428,8 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
   void* ignored_tag;
   bool ignored_ok;
   cq_->Shutdown();
-  while (cq_->Next(&ignored_tag, &ignored_ok))
-    ;
+  while (cq_->Next(&ignored_tag, &ignored_ok)) {
+  }
   BuildAndStartServer();
   // It needs more than GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS time to
   // reconnect the channel.

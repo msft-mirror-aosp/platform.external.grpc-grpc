@@ -28,11 +28,14 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmodule-import-in-extern-c"
 extern "C" {
 #include <openssl/bn.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 }
+#pragma clang diagnostic pop
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -149,7 +152,8 @@ static jose_header* jose_header_from_json(Json json) {
      https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
    */
   alg_value = it->second.string_value().c_str();
-  if (it->second.type() != Json::Type::STRING || strncmp(alg_value, "RS", 2) ||
+  if (it->second.type() != Json::Type::STRING ||
+      strncmp(alg_value, "RS", 2) != 0 ||
       evp_md_from_alg(alg_value) == nullptr) {
     gpr_log(GPR_ERROR, "Invalid alg field");
     goto error;

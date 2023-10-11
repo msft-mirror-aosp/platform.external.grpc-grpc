@@ -116,8 +116,8 @@
       :tag => "v#{version}",
     }
 
-    s.ios.deployment_target = '7.0'
-    s.osx.deployment_target = '10.9'
+    s.ios.deployment_target = '9.0'
+    s.osx.deployment_target = '10.10'
     s.tvos.deployment_target = '10.0'
 
     s.requires_arc = false
@@ -165,7 +165,7 @@
       ss.header_mappings_dir = '.'
       ss.dependency "#{s.name}/Interface", version
       ss.dependency 'gRPC-Core', version
-      abseil_version = '1.20200225.0'
+      abseil_version = '1.20200923.2'
       % for abseil_spec in grpcpp_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version
       % endfor

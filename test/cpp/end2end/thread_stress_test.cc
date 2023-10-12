@@ -42,7 +42,6 @@
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
-using std::chrono::system_clock;
 
 const int kNumThreads = 100;  // Number of threads
 const int kNumAsyncSendThreads = 2;
@@ -207,8 +206,8 @@ class CommonStressTestAsyncServer : public BaseClass {
 
     void* ignored_tag;
     bool ignored_ok;
-    while (cq_->Next(&ignored_tag, &ignored_ok))
-      ;
+    while (cq_->Next(&ignored_tag, &ignored_ok)) {
+    }
     this->TearDownEnd();
   }
 
@@ -342,8 +341,8 @@ class AsyncClientEnd2endTest : public ::testing::Test {
   void TearDown() override {
     void* ignored_tag;
     bool ignored_ok;
-    while (cq_.Next(&ignored_tag, &ignored_ok))
-      ;
+    while (cq_.Next(&ignored_tag, &ignored_ok)) {
+    }
     common_.TearDown();
   }
 

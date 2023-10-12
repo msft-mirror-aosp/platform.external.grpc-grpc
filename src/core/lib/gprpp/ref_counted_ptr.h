@@ -39,29 +39,27 @@ class RefCountedPtr {
 
   // If value is non-null, we take ownership of a ref to it.
   template <typename Y>
-  explicit RefCountedPtr(Y* value) {
-    value_ = value;
-  }
+  RefCountedPtr(Y* value) : value_(value) {}
 
   // Move ctors.
-  RefCountedPtr(RefCountedPtr&& other) {
+  RefCountedPtr(RefCountedPtr&& other) noexcept {
     value_ = other.value_;
     other.value_ = nullptr;
   }
   template <typename Y>
-  RefCountedPtr(RefCountedPtr<Y>&& other) {
+  RefCountedPtr(RefCountedPtr<Y>&& other) noexcept {
     value_ = static_cast<T*>(other.value_);
     other.value_ = nullptr;
   }
 
   // Move assignment.
-  RefCountedPtr& operator=(RefCountedPtr&& other) {
+  RefCountedPtr& operator=(RefCountedPtr&& other) noexcept {
     reset(other.value_);
     other.value_ = nullptr;
     return *this;
   }
   template <typename Y>
-  RefCountedPtr& operator=(RefCountedPtr<Y>&& other) {
+  RefCountedPtr& operator=(RefCountedPtr<Y>&& other) noexcept {
     reset(other.value_);
     other.value_ = nullptr;
     return *this;
@@ -192,24 +190,24 @@ class WeakRefCountedPtr {
   }
 
   // Move ctors.
-  WeakRefCountedPtr(WeakRefCountedPtr&& other) {
+  WeakRefCountedPtr(WeakRefCountedPtr&& other) noexcept {
     value_ = other.value_;
     other.value_ = nullptr;
   }
   template <typename Y>
-  WeakRefCountedPtr(WeakRefCountedPtr<Y>&& other) {
+  WeakRefCountedPtr(WeakRefCountedPtr<Y>&& other) noexcept {
     value_ = static_cast<T*>(other.value_);
     other.value_ = nullptr;
   }
 
   // Move assignment.
-  WeakRefCountedPtr& operator=(WeakRefCountedPtr&& other) {
+  WeakRefCountedPtr& operator=(WeakRefCountedPtr&& other) noexcept {
     reset(other.value_);
     other.value_ = nullptr;
     return *this;
   }
   template <typename Y>
-  WeakRefCountedPtr& operator=(WeakRefCountedPtr<Y>&& other) {
+  WeakRefCountedPtr& operator=(WeakRefCountedPtr<Y>&& other) noexcept {
     reset(other.value_);
     other.value_ = nullptr;
     return *this;

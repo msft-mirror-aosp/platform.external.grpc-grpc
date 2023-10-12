@@ -115,15 +115,15 @@
     # which was released in Cocoapods v1.2.0.
     s.cocoapods_version = '>= 1.2.0'
 
-    s.ios.deployment_target = '7.0'
-    s.osx.deployment_target = '10.9'
+    s.ios.deployment_target = '9.0'
+    s.osx.deployment_target = '10.10'
     s.tvos.deployment_target = '10.0'
     s.watchos.deployment_target = '4.0'
 
     s.requires_arc = false
 
     name = 'grpc'
-    abseil_version = '1.20200225.0'
+    abseil_version = '1.20200923.2'
 
     # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
     # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -196,7 +196,7 @@
       ss.header_mappings_dir = '.'
       ss.libraries = 'z'
       ss.dependency "#{s.name}/Interface", version
-      ss.dependency 'BoringSSL-GRPC', '0.0.13'
+      ss.dependency 'BoringSSL-GRPC', '0.0.14'
       % for abseil_spec in grpc_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version
       % endfor

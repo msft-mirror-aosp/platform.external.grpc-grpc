@@ -126,8 +126,8 @@ grpc_error* non_polling_poller_work(grpc_pollset* pollset,
   gpr_timespec deadline_ts =
       grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC);
   while (!npp->shutdown && !w.kicked &&
-         !gpr_cv_wait(&w.cv, &npp->mu, deadline_ts))
-    ;
+         !gpr_cv_wait(&w.cv, &npp->mu, deadline_ts)) {
+  }
   grpc_core::ExecCtx::Get()->InvalidateNow();
   if (&w == npp->root) {
     npp->root = w.next;
@@ -148,8 +148,9 @@ grpc_error* non_polling_poller_work(grpc_pollset* pollset,
 grpc_error* non_polling_poller_kick(grpc_pollset* pollset,
                                     grpc_pollset_worker* specific_worker) {
   non_polling_poller* p = reinterpret_cast<non_polling_poller*>(pollset);
-  if (specific_worker == nullptr)
+  if (specific_worker == nullptr) {
     specific_worker = reinterpret_cast<grpc_pollset_worker*>(p->root);
+  }
   if (specific_worker != nullptr) {
     non_polling_worker* w =
         reinterpret_cast<non_polling_worker*>(specific_worker);
@@ -422,9 +423,9 @@ static const cq_vtable g_cq_vtable[] = {
      cq_end_op_for_callback, nullptr, nullptr},
 };
 
-#define DATA_FROM_CQ(cq) ((void*)(cq + 1))
+#define DATA_FROM_CQ(cq) ((void*)((cq) + 1))
 #define POLLSET_FROM_CQ(cq) \
-  ((grpc_pollset*)(cq->vtable->data_size + (char*)DATA_FROM_CQ(cq)))
+  ((grpc_pollset*)((cq)->vtable->data_size + (char*)DATA_FROM_CQ(cq)))
 
 grpc_core::TraceFlag grpc_cq_pluck_trace(false, "queue_pluck");
 
@@ -1329,7 +1330,7 @@ static void cq_finish_shutdown_pluck(grpc_completion_queue* cq) {
 
   GPR_ASSERT(cqd->shutdown_called);
   GPR_ASSERT(!cqd->shutdown.Load(grpc_core::MemoryOrder::RELAXED));
-  cqd->shutdown.Store(1, grpc_core::MemoryOrder::RELAXED);
+  cqd->shutdown.Store(true, grpc_core::MemoryOrder::RELAXED);
 
   cq->poller_vtable->shutdown(POLLSET_FROM_CQ(cq), &cq->pollset_shutdown_done);
 }

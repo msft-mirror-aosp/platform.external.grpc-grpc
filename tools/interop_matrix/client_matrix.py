@@ -111,6 +111,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.33.2', ReleaseInfo()),
             ('v1.34.0', ReleaseInfo()),
             ('v1.35.0', ReleaseInfo()),
+            ('v1.36.3', ReleaseInfo()),
         ]),
     'go':
         OrderedDict([
@@ -182,6 +183,7 @@ LANG_RELEASE_MATRIX = {
              ReleaseInfo(runtimes=['go1.11'], testcases_file='go__v1.20.0')),
             ('v1.34.0', ReleaseInfo(runtimes=['go1.11'])),
             ('v1.35.0', ReleaseInfo(runtimes=['go1.11'])),
+            ('v1.36.0', ReleaseInfo(runtimes=['go1.11'])),
         ]),
     'java':
         OrderedDict([
@@ -246,11 +248,12 @@ LANG_RELEASE_MATRIX = {
             ('v1.28.1', ReleaseInfo()),
             ('v1.29.0', ReleaseInfo()),
             ('v1.30.2', ReleaseInfo()),
-            ('v1.31.1', ReleaseInfo()),
-            ('v1.32.2', ReleaseInfo()),
+            ('v1.31.2', ReleaseInfo()),
+            ('v1.32.3', ReleaseInfo()),
             ('v1.33.1', ReleaseInfo()),
             ('v1.34.1', ReleaseInfo()),
             ('v1.35.0', ReleaseInfo()),
+            ('v1.36.0', ReleaseInfo()),
         ]),
     'python':
         OrderedDict([
@@ -312,6 +315,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.33.2', ReleaseInfo(runtimes=['python'])),
             ('v1.34.0', ReleaseInfo(runtimes=['python'])),
             ('v1.35.0', ReleaseInfo(runtimes=['python'])),
+            ('v1.36.3', ReleaseInfo(runtimes=['python'])),
         ]),
     'node':
         OrderedDict([
@@ -376,6 +380,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.33.2', ReleaseInfo()),
             ('v1.34.0', ReleaseInfo()),
             ('v1.35.0', ReleaseInfo()),
+            ('v1.36.3', ReleaseInfo()),
         ]),
     'php':
         OrderedDict([
@@ -413,6 +418,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.33.2', ReleaseInfo()),
             ('v1.34.0', ReleaseInfo()),
             ('v1.35.0', ReleaseInfo()),
+            ('v1.36.3', ReleaseInfo()),
         ]),
     'csharp':
         OrderedDict([
@@ -455,5 +461,6 @@ LANG_RELEASE_MATRIX = {
             ('v1.33.2', ReleaseInfo()),
             ('v1.34.0', ReleaseInfo()),
             ('v1.35.0', ReleaseInfo()),
+            ('v1.36.3', ReleaseInfo()),
         ]),
 }

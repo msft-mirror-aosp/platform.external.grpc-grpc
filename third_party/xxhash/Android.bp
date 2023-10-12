@@ -1,0 +1,41 @@
+package {
+    default_applicable_licenses: ["external_grpc-grpc_third_party_xxhash_license"],
+}
+
+license {
+    name: "external_grpc-grpc_third_party_xxhash_license",
+    visibility: [":__subpackages__"],
+    license_kinds: [
+        "SPDX-license-identifier-BSD-3-Clause",
+    ],
+    license_text: [
+        "LICENSE",
+    ],
+}
+
+cc_library_static {
+    name: "libgrpc_third_party_xxhash",
+    defaults: ["grpc_deps_defaults"],
+    srcs: [
+        "xxhash.c",
+    ],
+    export_include_dirs: ["."],
+}
+
+filegroup {
+    name: "libgrpc_xxhsum_files",
+    srcs: [
+        "cli/xsum_arch.h",
+        "cli/xsum_config.h",
+        "cli/xsum_os_specific.c",
+        "cli/xsum_os_specific.h",
+        "cli/xsum_output.c",
+        "cli/xsum_output.h",
+        "cli/xsum_sanity_check.c",
+        "cli/xsum_sanity_check.h",
+        "xxhsum.c",
+        "xxhsum.1",
+        "xxhsum.1.md",
+    ],
+    visibility: ["//visibility:private"],
+}

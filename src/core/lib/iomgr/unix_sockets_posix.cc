@@ -30,6 +30,7 @@
 #include <sys/un.h>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
@@ -146,22 +147,19 @@ std::string grpc_sockaddr_to_uri_unix_if_possible(
   return absl::StrCat("unix:", ((struct sockaddr_un*)addr)->sun_path);
 }
 
-char* grpc_sockaddr_to_uri_vsock_if_possible(
+std::string grpc_sockaddr_to_uri_vsock_if_possible(
     const grpc_resolved_address* resolved_addr) {
 #ifdef GRPC_HAVE_LINUX_VSOCK
   const grpc_sockaddr* addr =
       reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
-
   if (addr->sa_family != AF_VSOCK) {
-      return nullptr;
+      return "";
   }
 
-  char *result;
-  struct sockaddr_vm *vm = (struct sockaddr_vm*)addr;
-  gpr_asprintf(&result, "vsock:%u:%u", vm->svm_cid, vm->svm_port);
-  return result;
+  const auto* vm = reinterpret_cast<const struct sockaddr_vm*>(addr);
+  return absl::StrFormat("vsock:%u:%u", vm->svm_cid, vm->svm_port);
 #else /* GRPC_HAVE_LINUX_VSOCK */
-  return nullptr;
+  return "";
 #endif /* GRPC_HAVE_LINUX_VSOCK */
 }
 

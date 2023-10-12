@@ -203,7 +203,7 @@ class RubyArtifact:
         return create_jobspec(
             self.name, ['tools/run_tests/artifacts/build_artifact_ruby.sh'],
             use_workspace=True,
-            timeout_seconds=45 * 60)
+            timeout_seconds=60 * 60)
 
 
 class CSharpExtArtifact:
@@ -233,6 +233,7 @@ class CSharpExtArtifact:
             return create_jobspec(
                 self.name,
                 ['tools/run_tests/artifacts/build_artifact_csharp_ios.sh'],
+                timeout_seconds=45 * 60,
                 use_workspace=True)
         elif self.platform == 'windows':
             return create_jobspec(self.name, [
@@ -304,17 +305,9 @@ class ProtocArtifact:
 
     def build_jobspec(self):
         if self.platform != 'windows':
-            cxxflags = '-DNDEBUG %s' % _ARCH_FLAG_MAP[self.arch]
-            ldflags = '%s' % _ARCH_FLAG_MAP[self.arch]
-            if self.platform != 'macos':
-                ldflags += '  -static-libgcc -static-libstdc++ -s'
-            environ = {
-                'CONFIG': 'opt',
-                'CXXFLAGS': cxxflags,
-                'LDFLAGS': ldflags,
-                'PROTOBUF_LDFLAGS_EXTRA': ldflags
-            }
+            environ = {'CXXFLAGS': '', 'LDFLAGS': ''}
             if self.platform == 'linux':
+                environ['LDFLAGS'] += ' -static-libgcc -static-libstdc++ -s'
                 return create_docker_jobspec(
                     self.name,
                     'tools/dockerfile/grpc_artifact_centos6_{}'.format(

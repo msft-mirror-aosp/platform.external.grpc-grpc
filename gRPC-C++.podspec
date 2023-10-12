@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.35.0'
+  version = '1.36.4'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -185,7 +185,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '1.20200923.2'
+    abseil_version = '1.20200923.3'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
@@ -314,6 +314,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.h',
                       'src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.h',
                       'src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.h',
+                      'src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.h',
@@ -361,14 +362,14 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h',
                       'src/core/ext/upb-generated/udpa/annotations/status.upb.h',
                       'src/core/ext/upb-generated/udpa/annotations/versioning.upb.h',
-                      'src/core/ext/upb-generated/udpa/core/v1/authority.upb.h',
-                      'src/core/ext/upb-generated/udpa/core/v1/collection_entry.upb.h',
-                      'src/core/ext/upb-generated/udpa/core/v1/context_params.upb.h',
-                      'src/core/ext/upb-generated/udpa/core/v1/resource.upb.h',
-                      'src/core/ext/upb-generated/udpa/core/v1/resource_locator.upb.h',
-                      'src/core/ext/upb-generated/udpa/core/v1/resource_name.upb.h',
                       'src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h',
                       'src/core/ext/upb-generated/validate/validate.upb.h',
+                      'src/core/ext/upb-generated/xds/core/v3/authority.upb.h',
+                      'src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.h',
+                      'src/core/ext/upb-generated/xds/core/v3/context_params.upb.h',
+                      'src/core/ext/upb-generated/xds/core/v3/resource.upb.h',
+                      'src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.h',
+                      'src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h',
                       'src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/annotations/resource.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/accesslog/v3/accesslog.upbdefs.h',
@@ -400,6 +401,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.h',
+                      'src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.h',
@@ -440,13 +442,13 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.h',
                       'src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.h',
                       'src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.h',
-                      'src/core/ext/upbdefs-generated/udpa/core/v1/authority.upbdefs.h',
-                      'src/core/ext/upbdefs-generated/udpa/core/v1/collection_entry.upbdefs.h',
-                      'src/core/ext/upbdefs-generated/udpa/core/v1/context_params.upbdefs.h',
-                      'src/core/ext/upbdefs-generated/udpa/core/v1/resource.upbdefs.h',
-                      'src/core/ext/upbdefs-generated/udpa/core/v1/resource_locator.upbdefs.h',
-                      'src/core/ext/upbdefs-generated/udpa/core/v1/resource_name.upbdefs.h',
                       'src/core/ext/upbdefs-generated/validate/validate.upbdefs.h',
+                      'src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.h',
+                      'src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.h',
+                      'src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.h',
+                      'src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.h',
+                      'src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.h',
+                      'src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.h',
                       'src/core/ext/xds/certificate_provider_factory.h',
                       'src/core/ext/xds/certificate_provider_registry.h',
                       'src/core/ext/xds/certificate_provider_store.h',
@@ -516,6 +518,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/stat.h',
                       'src/core/lib/gprpp/sync.h',
                       'src/core/lib/gprpp/thd.h',
+                      'src/core/lib/gprpp/time_util.h',
                       'src/core/lib/http/format_request.h',
                       'src/core/lib/http/httpcli.h',
                       'src/core/lib/http/parser.h',
@@ -548,7 +551,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/iomgr.h',
                       'src/core/lib/iomgr/iomgr_custom.h',
                       'src/core/lib/iomgr/iomgr_internal.h',
-                      'src/core/lib/iomgr/iomgr_posix.h',
                       'src/core/lib/iomgr/is_epollexclusive_available.h',
                       'src/core/lib/iomgr/load_file.h',
                       'src/core/lib/iomgr/lockfree_event.h',
@@ -602,6 +604,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/profiling/timers.h',
                       'src/core/lib/security/authorization/authorization_engine.h',
                       'src/core/lib/security/authorization/evaluate_args.h',
+                      'src/core/lib/security/authorization/matchers.h',
                       'src/core/lib/security/authorization/mock_cel/activation.h',
                       'src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h',
                       'src/core/lib/security/authorization/mock_cel/cel_expression.h',
@@ -932,6 +935,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.h',
                               'src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.h',
                               'src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.h',
+                              'src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.h',
@@ -979,14 +983,14 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h',
                               'src/core/ext/upb-generated/udpa/annotations/status.upb.h',
                               'src/core/ext/upb-generated/udpa/annotations/versioning.upb.h',
-                              'src/core/ext/upb-generated/udpa/core/v1/authority.upb.h',
-                              'src/core/ext/upb-generated/udpa/core/v1/collection_entry.upb.h',
-                              'src/core/ext/upb-generated/udpa/core/v1/context_params.upb.h',
-                              'src/core/ext/upb-generated/udpa/core/v1/resource.upb.h',
-                              'src/core/ext/upb-generated/udpa/core/v1/resource_locator.upb.h',
-                              'src/core/ext/upb-generated/udpa/core/v1/resource_name.upb.h',
                               'src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h',
                               'src/core/ext/upb-generated/validate/validate.upb.h',
+                              'src/core/ext/upb-generated/xds/core/v3/authority.upb.h',
+                              'src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.h',
+                              'src/core/ext/upb-generated/xds/core/v3/context_params.upb.h',
+                              'src/core/ext/upb-generated/xds/core/v3/resource.upb.h',
+                              'src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.h',
+                              'src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h',
                               'src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/annotations/resource.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/accesslog/v3/accesslog.upbdefs.h',
@@ -1018,6 +1022,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.h',
+                              'src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.h',
@@ -1058,13 +1063,13 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.h',
                               'src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.h',
                               'src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.h',
-                              'src/core/ext/upbdefs-generated/udpa/core/v1/authority.upbdefs.h',
-                              'src/core/ext/upbdefs-generated/udpa/core/v1/collection_entry.upbdefs.h',
-                              'src/core/ext/upbdefs-generated/udpa/core/v1/context_params.upbdefs.h',
-                              'src/core/ext/upbdefs-generated/udpa/core/v1/resource.upbdefs.h',
-                              'src/core/ext/upbdefs-generated/udpa/core/v1/resource_locator.upbdefs.h',
-                              'src/core/ext/upbdefs-generated/udpa/core/v1/resource_name.upbdefs.h',
                               'src/core/ext/upbdefs-generated/validate/validate.upbdefs.h',
+                              'src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.h',
+                              'src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.h',
+                              'src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.h',
+                              'src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.h',
+                              'src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.h',
+                              'src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.h',
                               'src/core/ext/xds/certificate_provider_factory.h',
                               'src/core/ext/xds/certificate_provider_registry.h',
                               'src/core/ext/xds/certificate_provider_store.h',
@@ -1134,6 +1139,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/stat.h',
                               'src/core/lib/gprpp/sync.h',
                               'src/core/lib/gprpp/thd.h',
+                              'src/core/lib/gprpp/time_util.h',
                               'src/core/lib/http/format_request.h',
                               'src/core/lib/http/httpcli.h',
                               'src/core/lib/http/parser.h',
@@ -1166,7 +1172,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/iomgr.h',
                               'src/core/lib/iomgr/iomgr_custom.h',
                               'src/core/lib/iomgr/iomgr_internal.h',
-                              'src/core/lib/iomgr/iomgr_posix.h',
                               'src/core/lib/iomgr/is_epollexclusive_available.h',
                               'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
@@ -1220,6 +1225,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/profiling/timers.h',
                               'src/core/lib/security/authorization/authorization_engine.h',
                               'src/core/lib/security/authorization/evaluate_args.h',
+                              'src/core/lib/security/authorization/matchers.h',
                               'src/core/lib/security/authorization/mock_cel/activation.h',
                               'src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h',
                               'src/core/lib/security/authorization/mock_cel/cel_expression.h',
@@ -1416,7 +1422,7 @@ Pod::Spec.new do |s|
   end
 
   s.prepare_command = <<-END_OF_COMMAND
-    sed -E -i '' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g' $(find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print | xargs grep -H -c '#include <openssl_grpc/' | grep 0$ | cut -d':' -f1)
+    find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
     find third_party/upb/ -type f \\( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "third_party/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/third_party/\\1"\\\n#else\\\n  #include  "third_party/\\1"\\\n#endif;g'
     find src/core/ src/cpp/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'
     find src/core/ src/cpp/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm

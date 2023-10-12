@@ -36,8 +36,10 @@ cc_library_static {
     name: "libgrpc_third_party_upb",
     defaults: ["grpc_deps_defaults"],
     srcs: [
-        "generated_for_cmake/google/protobuf/descriptor.upb.c",
+        "cmake/google/protobuf/descriptor.upb.c",
+        "cmake/upb/json/parser.c",
         "upb/decode.c",
+        "upb/decode_fast.c",
         "upb/def.c",
         "upb/encode.c",
         "upb/handlers.c",
@@ -50,7 +52,6 @@ cc_library_static {
         "upb/pb/encoder.c",
         "upb/pb/textprinter.c",
         "upb/pb/varint.c",
-        "upb/port.c",
         "upb/reflection.c",
         "upb/sink.c",
         "upb/table.c",
@@ -62,6 +63,6 @@ cc_library_static {
     ],
     export_include_dirs: [
         ".",
-        "generated_for_cmake",
+        "cmake",
     ],
 }

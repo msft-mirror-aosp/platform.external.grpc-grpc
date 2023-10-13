@@ -15,6 +15,7 @@
 """Run xDS integration tests on GCP using Traffic Director."""
 
 import argparse
+import datetime
 import googleapiclient.discovery
 import grpc
 import json
@@ -29,6 +30,7 @@ import tempfile
 import time
 import uuid
 
+from google.protobuf import json_format
 from oauth2client.client import GoogleCredentials
 
 import python_utils.jobset as jobset
@@ -39,6 +41,20 @@ from src.proto.grpc.health.v1 import health_pb2_grpc
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
+
+# Envoy protos provided by PyPI package xds-protos
+# Needs to import the generated Python file to load descriptors
+try:
+    from envoy.service.status.v3 import csds_pb2
+    from envoy.service.status.v3 import csds_pb2_grpc
+    from envoy.extensions.filters.network.http_connection_manager.v3 import http_connection_manager_pb2
+    from envoy.extensions.filters.common.fault.v3 import fault_pb2
+    from envoy.extensions.filters.http.fault.v3 import fault_pb2
+    from envoy.extensions.filters.http.router.v3 import router_pb2
+except ImportError:
+    # These protos are required by CSDS test. We should not fail the entire
+    # script for one test case.
+    pass
 
 logger = logging.getLogger()
 console_handler = logging.StreamHandler()
@@ -59,17 +75,26 @@ _TEST_CASES = [
     'secondary_locality_gets_no_requests_on_partial_primary_failure',
     'secondary_locality_gets_requests_on_primary_failure',
     'traffic_splitting',
+    'path_matching',
+    'header_matching',
 ]
+
 # Valid test cases, but not in all. So the tests can only run manually, and
 # aren't enabled automatically for all languages.
 #
 # TODO: Move them into _TEST_CASES when support is ready in all languages.
 _ADDITIONAL_TEST_CASES = [
-    'path_matching',
-    'header_matching',
     'circuit_breaking',
     'timeout',
+    'fault_injection',
+    'csds',
 ]
+
+# Test cases that require the V3 API.  Skipped in older runs.
+_V3_TEST_CASES = frozenset(['timeout', 'fault_injection', 'csds'])
+
+# Test cases that require the alpha API.  Skipped for stable API runs.
+_ALPHA_TEST_CASES = frozenset(['timeout'])
 
 
 def parse_test_cases(arg):
@@ -183,7 +208,7 @@ argp.add_argument('--network',
                   default='global/networks/default',
                   help='GCP network to use')
 argp.add_argument('--service_port_range',
-                  default='8080:8110',
+                  default='8080:8280',
                   type=parse_port_range,
                   help='Listening port for created gRPC backends. Specified as '
                   'either a single int or as a range in the format min:max, in '
@@ -344,6 +369,32 @@ def get_client_accumulated_stats():
             logger.debug('Invoked GetClientAccumulatedStats RPC to %s: %s',
                          host, response)
             return response
+
+
+def get_client_xds_config_dump():
+    if CLIENT_HOSTS:
+        hosts = CLIENT_HOSTS
+    else:
+        hosts = ['localhost']
+    for host in hosts:
+        server_address = '%s:%d' % (host, args.stats_port)
+        with grpc.insecure_channel(server_address) as channel:
+            stub = csds_pb2_grpc.ClientStatusDiscoveryServiceStub(channel)
+            logger.debug('Fetching xDS config dump from %s', server_address)
+            response = stub.FetchClientStatus(csds_pb2.ClientStatusRequest(),
+                                              wait_for_ready=True,
+                                              timeout=_CONNECTION_TIMEOUT_SEC)
+            logger.debug('Fetched xDS config dump from %s', server_address)
+            if len(response.config) != 1:
+                logger.error('Unexpected number of ClientConfigs %d: %s',
+                             len(response.config), response)
+                return None
+            else:
+                # Converting the ClientStatusResponse into JSON, because many
+                # fields are packed in google.protobuf.Any. It will require many
+                # duplicated code to unpack proto message and inspect values.
+                return json_format.MessageToDict(
+                    response.config[0], preserving_proto_field_name=True)
 
 
 def configure_client(rpc_types, metadata=[], timeout_sec=None):
@@ -1568,6 +1619,7 @@ def test_timeout(gcp, original_backend_service, instance_group):
                                     testcase_name, rpc, status, qty, want)
                         success = False
                 if success:
+                    logger.info('success')
                     break
                 logger.info('%s attempt %d failed', testcase_name, i)
                 before_stats = after_stats
@@ -1578,6 +1630,273 @@ def test_timeout(gcp, original_backend_service, instance_group):
                      after_stats.stats_per_method))
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
+
+
+def test_fault_injection(gcp, original_backend_service, instance_group):
+    logger.info('Running test_fault_injection')
+
+    logger.info('waiting for original backends to become healthy')
+    wait_for_healthy_backends(gcp, original_backend_service, instance_group)
+
+    testcase_header = 'fi_testcase'
+
+    def _route(pri, name, fi_policy):
+        return {
+            'priority': pri,
+            'matchRules': [{
+                'prefixMatch':
+                    '/',
+                'headerMatches': [{
+                    'headerName': testcase_header,
+                    'exactMatch': name,
+                }],
+            }],
+            'service': original_backend_service.url,
+            'routeAction': {
+                'faultInjectionPolicy': fi_policy
+            },
+        }
+
+    def _abort(pct):
+        return {
+            'abort': {
+                'httpStatus': 401,
+                'percentage': pct,
+            }
+        }
+
+    def _delay(pct):
+        return {
+            'delay': {
+                'fixedDelay': {
+                    'seconds': '20'
+                },
+                'percentage': pct,
+            }
+        }
+
+    zero_route = _abort(0)
+    zero_route.update(_delay(0))
+    route_rules = [
+        _route(0, 'zero_percent_fault_injection', zero_route),
+        _route(1, 'always_delay', _delay(100)),
+        _route(2, 'always_abort', _abort(100)),
+        _route(3, 'delay_half', _delay(50)),
+        _route(4, 'abort_half', _abort(50)),
+        {
+            'priority': 5,
+            'matchRules': [{
+                'prefixMatch': '/'
+            }],
+            'service': original_backend_service.url,
+        },
+    ]
+    set_validate_for_proxyless(gcp, False)
+    patch_url_map_backend_service(gcp,
+                                  original_backend_service,
+                                  route_rules=route_rules)
+    # A list of tuples (testcase_name, {client_config}, {code: percent}).  Each
+    # test case will set the testcase_header with the testcase_name for routing
+    # to the appropriate config for the case, defined above.
+    test_cases = [
+        (
+            'zero_percent_fault_injection',
+            {},
+            {
+                0: 1
+            },  # OK
+        ),
+        (
+            'non_matching_fault_injection',  # Not in route_rules, above.
+            {},
+            {
+                0: 1
+            },  # OK
+        ),
+        (
+            'always_delay',
+            {
+                'timeout_sec': 2
+            },
+            {
+                4: 1
+            },  # DEADLINE_EXCEEDED
+        ),
+        (
+            'always_abort',
+            {},
+            {
+                16: 1
+            },  # UNAUTHENTICATED
+        ),
+        (
+            'delay_half',
+            {
+                'timeout_sec': 2
+            },
+            {
+                4: .5,
+                0: .5
+            },  # DEADLINE_EXCEEDED / OK: 50% / 50%
+        ),
+        (
+            'abort_half',
+            {},
+            {
+                16: .5,
+                0: .5
+            },  # UNAUTHENTICATED / OK: 50% / 50%
+        )
+    ]
+
+    try:
+        first_case = True
+        for (testcase_name, client_config, expected_results) in test_cases:
+            logger.info('starting case %s', testcase_name)
+
+            client_config['metadata'] = [
+                (messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
+                 testcase_header, testcase_name)
+            ]
+            client_config['rpc_types'] = [
+                messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
+            ]
+            configure_client(**client_config)
+            # wait a second to help ensure the client stops sending RPCs with
+            # the old config.  We will make multiple attempts if it is failing,
+            # but this improves confidence that the test is valid if the
+            # previous client_config would lead to the same results.
+            time.sleep(1)
+            # Each attempt takes 10 seconds; 20 attempts is equivalent to 200
+            # second timeout.
+            attempt_count = 20
+            if first_case:
+                attempt_count = 120
+                first_case = False
+            before_stats = get_client_accumulated_stats()
+            if not before_stats.stats_per_method:
+                raise ValueError(
+                    'stats.stats_per_method is None, the interop client stats service does not support this test case'
+                )
+            for i in range(attempt_count):
+                logger.info('%s: attempt %d', testcase_name, i)
+
+                test_runtime_secs = 10
+                time.sleep(test_runtime_secs)
+                after_stats = get_client_accumulated_stats()
+
+                success = True
+                for status, pct in expected_results.items():
+                    rpc = 'UNARY_CALL'
+                    qty = (after_stats.stats_per_method[rpc].result[status] -
+                           before_stats.stats_per_method[rpc].result[status])
+                    want = pct * args.qps * test_runtime_secs
+                    # Allow 10% deviation from expectation to reduce flakiness
+                    VARIANCE_ALLOWED = 0.1
+                    if abs(qty - want) > want * VARIANCE_ALLOWED:
+                        logger.info('%s: failed due to %s[%s]: got %d want ~%d',
+                                    testcase_name, rpc, status, qty, want)
+                        success = False
+                if success:
+                    logger.info('success')
+                    break
+                logger.info('%s attempt %d failed', testcase_name, i)
+                before_stats = after_stats
+            else:
+                raise Exception(
+                    '%s: timeout waiting for expected results: %s; got %s' %
+                    (testcase_name, expected_results,
+                     after_stats.stats_per_method))
+    finally:
+        patch_url_map_backend_service(gcp, original_backend_service)
+        set_validate_for_proxyless(gcp, True)
+
+
+def test_csds(gcp, original_backend_service, instance_group, server_uri):
+    test_csds_timeout_s = datetime.timedelta(minutes=5).total_seconds()
+    sleep_interval_between_attempts_s = datetime.timedelta(
+        seconds=2).total_seconds()
+    logger.info('Running test_csds')
+
+    logger.info('waiting for original backends to become healthy')
+    wait_for_healthy_backends(gcp, original_backend_service, instance_group)
+
+    # Test case timeout: 5 minutes
+    deadline = time.time() + test_csds_timeout_s
+    cnt = 0
+    while time.time() <= deadline:
+        client_config = get_client_xds_config_dump()
+        logger.info('test_csds attempt %d: received xDS config %s', cnt,
+                    json.dumps(client_config, indent=2))
+        if client_config is not None:
+            # Got the xDS config dump, now validate it
+            ok = True
+            try:
+                if client_config['node']['locality']['zone'] != args.zone:
+                    logger.info('Invalid zone %s != %s',
+                                client_config['node']['locality']['zone'],
+                                args.zone)
+                    ok = False
+                seen = set()
+                for xds_config in client_config['xds_config']:
+                    if 'listener_config' in xds_config:
+                        listener_name = xds_config['listener_config'][
+                            'dynamic_listeners'][0]['active_state']['listener'][
+                                'name']
+                        if listener_name != server_uri:
+                            logger.info('Invalid Listener name %s != %s',
+                                        listener_name, server_uri)
+                            ok = False
+                        else:
+                            seen.add('lds')
+                    elif 'route_config' in xds_config:
+                        num_vh = len(
+                            xds_config['route_config']['dynamic_route_configs']
+                            [0]['route_config']['virtual_hosts'])
+                        if num_vh <= 0:
+                            logger.info('Invalid number of VirtualHosts %s',
+                                        num_vh)
+                            ok = False
+                        else:
+                            seen.add('rds')
+                    elif 'cluster_config' in xds_config:
+                        cluster_type = xds_config['cluster_config'][
+                            'dynamic_active_clusters'][0]['cluster']['type']
+                        if cluster_type != 'EDS':
+                            logger.info('Invalid cluster type %s != EDS',
+                                        cluster_type)
+                            ok = False
+                        else:
+                            seen.add('cds')
+                    elif 'endpoint_config' in xds_config:
+                        sub_zone = xds_config["endpoint_config"][
+                            "dynamic_endpoint_configs"][0]["endpoint_config"][
+                                "endpoints"][0]["locality"]["sub_zone"]
+                        if args.zone not in sub_zone:
+                            logger.info('Invalid endpoint sub_zone %s',
+                                        sub_zone)
+                            ok = False
+                        else:
+                            seen.add('eds')
+                want = {'lds', 'rds', 'cds', 'eds'}
+                if seen != want:
+                    logger.info('Incomplete xDS config dump, seen=%s', seen)
+                    ok = False
+            except:
+                logger.exception('Error in xDS config dump:')
+                ok = False
+            finally:
+                if ok:
+                    # Successfully fetched xDS config, and they looks good.
+                    logger.info('success')
+                    return
+        logger.info('test_csds attempt %d failed', cnt)
+        # Give the client some time to fetch xDS resources
+        time.sleep(sleep_interval_between_attempts_s)
+        cnt += 1
+
+    raise RuntimeError('failed to receive a valid xDS config in %s seconds' %
+                       test_csds_timeout_s)
 
 
 def set_validate_for_proxyless(gcp, validate_for_proxyless):
@@ -1636,7 +1955,7 @@ def is_primary_instance_group(gcp, instance_group):
 
 def get_startup_script(path_to_server_binary, service_port):
     if path_to_server_binary:
-        return "nohup %s --port=%d 1>/dev/null &" % (path_to_server_binary,
+        return 'nohup %s --port=%d 1>/dev/null &' % (path_to_server_binary,
                                                      service_port)
     else:
         return """#!/bin/bash
@@ -2091,6 +2410,11 @@ def patch_url_map_backend_service(gcp,
 
     Only one of backend_service and service_with_weights can be not None.
     '''
+    if gcp.alpha_compute:
+        compute_to_use = gcp.alpha_compute
+    else:
+        compute_to_use = gcp.compute
+
     if backend_service and services_with_weights:
         raise ValueError(
             'both backend_service and service_with_weights are not None.')
@@ -2112,7 +2436,7 @@ def patch_url_map_backend_service(gcp,
         }]
     }
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.urlMaps().patch(
+    result = compute_to_use.urlMaps().patch(
         project=gcp.project, urlMap=gcp.url_map.name,
         body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
@@ -2406,9 +2730,18 @@ try:
         client_env['GRPC_XDS_BOOTSTRAP'] = bootstrap_path
         client_env['GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING'] = 'true'
         client_env['GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT'] = 'true'
+        client_env['GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION'] = 'true'
         test_results = {}
         failed_tests = []
         for test_case in args.test_case:
+            if test_case in _V3_TEST_CASES and not args.xds_v3_support:
+                logger.info('skipping test %s due to missing v3 support',
+                            test_case)
+                continue
+            if test_case in _ALPHA_TEST_CASES and not gcp.alpha_compute:
+                logger.info('skipping test %s due to missing alpha support',
+                            test_case)
+                continue
             result = jobset.JobResult()
             log_dir = os.path.join(_TEST_LOG_BASE_DIR, test_case)
             if not os.path.exists(log_dir):
@@ -2515,6 +2848,10 @@ try:
                                           same_zone_instance_group)
                 elif test_case == 'timeout':
                     test_timeout(gcp, backend_service, instance_group)
+                elif test_case == 'fault_injection':
+                    test_fault_injection(gcp, backend_service, instance_group)
+                elif test_case == 'csds':
+                    test_csds(gcp, backend_service, instance_group, server_uri)
                 else:
                     logger.error('Unknown test case: %s', test_case)
                     sys.exit(1)

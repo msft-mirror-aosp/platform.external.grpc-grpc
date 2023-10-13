@@ -49,6 +49,8 @@ def _get_external_deps(external_deps):
     for dep in external_deps:
         if dep == "address_sorting":
             ret += ["//third_party/address_sorting"]
+        elif dep == "xxhash":
+            ret += ["//third_party/xxhash"]
         elif dep == "cares":
             ret += select({
                 "//:grpc_no_ares": [],
@@ -78,7 +80,8 @@ def grpc_cc_library(
         alwayslink = 0,
         data = [],
         use_cfstream = False,
-        tags = []):
+        tags = [],
+        linkstatic = False):
     copts = []
     if use_cfstream:
         copts = if_mac(["-DGRPC_CFSTREAM"])
@@ -122,7 +125,14 @@ def grpc_cc_library(
         alwayslink = alwayslink,
         data = data,
         tags = tags,
+        linkstatic = linkstatic,
     )
+
+# TODO(lidiz) remove this rule once we can depend on the xDS protos internally
+def grpc_cc_library_xds(
+        *args,
+        **kwargs):
+    grpc_cc_library(*args, **kwargs)
 
 def grpc_proto_plugin(name, srcs = [], deps = []):
     native.cc_binary(
@@ -176,8 +186,8 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None):
-    copts = if_mac(["-DGRPC_CFSTREAM"])
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = []):
+    copts = copts + if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
 
@@ -237,6 +247,10 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         tags = tags,
         **args
     )
+
+# TODO(lidiz) remove this rule once we can depend on the xDS protos internally
+def grpc_cc_test_xds(*args, **kwargs):
+    grpc_cc_test(*args, **kwargs)
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = [], features = []):
     copts = []

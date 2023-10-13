@@ -389,7 +389,7 @@ class ChannelData {
   // Fields guarded by a mutex, since they need to be accessed
   // synchronously via get_channel_info().
   //
-  gpr_mu info_mu_;
+  Mutex info_mu_;
   UniquePtr<char> info_lb_policy_name_;
   UniquePtr<char> info_service_config_json_;
 
@@ -1047,7 +1047,7 @@ class LoadBalancedCall {
 
 // Channel arg pointer vtable for GRPC_ARG_CLIENT_CHANNEL_DATA.
 void* ChannelDataArgCopy(void* p) { return p; }
-void ChannelDataArgDestroy(void* p) {}
+void ChannelDataArgDestroy(void* /*p*/) {}
 int ChannelDataArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
 const grpc_arg_pointer_vtable kChannelDataArgPointerVtable = {
     ChannelDataArgCopy, ChannelDataArgDestroy, ChannelDataArgCmp};
@@ -1079,10 +1079,10 @@ class DynamicTerminationFilterChannelData {
   }
 
   // Will never be called.
-  static void StartTransportOp(grpc_channel_element* elem,
-                               grpc_transport_op* op) {}
-  static void GetChannelInfo(grpc_channel_element* elem,
-                             const grpc_channel_info* info) {}
+  static void StartTransportOp(grpc_channel_element* /*elem*/,
+                               grpc_transport_op* /*op*/) {}
+  static void GetChannelInfo(grpc_channel_element* /*elem*/,
+                             const grpc_channel_info* /*info*/) {}
 
   ChannelData* chand() const { return chand_; }
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data() const {
@@ -1117,7 +1117,7 @@ class DynamicTerminationFilterCallData {
   }
 
   static void Destroy(grpc_call_element* elem,
-                      const grpc_call_final_info* final_info,
+                      const grpc_call_final_info* /*final_info*/,
                       grpc_closure* then_schedule_closure) {
     auto* calld =
         static_cast<DynamicTerminationFilterCallData*>(elem->call_data);
@@ -1885,8 +1885,6 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
     gpr_log(GPR_INFO, "chand=%p: creating client_channel for channel stack %p",
             this, owning_stack_);
   }
-  // Initialize data members.
-  gpr_mu_init(&info_mu_);
   // Start backup polling.
   grpc_client_channel_start_backup_polling(interested_parties_);
   // Check client channel factory.
@@ -1955,7 +1953,6 @@ ChannelData::~ChannelData() {
   grpc_client_channel_stop_backup_polling(interested_parties_);
   grpc_pollset_set_destroy(interested_parties_);
   GRPC_ERROR_UNREF(disconnect_error_.Load(MemoryOrder::RELAXED));
-  gpr_mu_destroy(&info_mu_);
 }
 
 RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
@@ -2391,10 +2388,23 @@ void ChannelData::UpdateStateAndPickerLocked(
     grpc_connectivity_state state, const absl::Status& status,
     const char* reason,
     std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker) {
-  // Clean the control plane when entering IDLE.
+  // Special case for IDLE and SHUTDOWN states.
   if (picker == nullptr || state == GRPC_CHANNEL_SHUTDOWN) {
     saved_service_config_.reset();
     saved_config_selector_.reset();
+    // Acquire resolution lock to update config selector and associated state.
+    // To minimize lock contention, we wait to unref these objects until
+    // after we release the lock.
+    RefCountedPtr<ServiceConfig> service_config_to_unref;
+    RefCountedPtr<ConfigSelector> config_selector_to_unref;
+    RefCountedPtr<DynamicFilters> dynamic_filters_to_unref;
+    {
+      MutexLock lock(&resolution_mu_);
+      received_service_config_data_ = false;
+      service_config_to_unref = std::move(service_config_);
+      config_selector_to_unref = std::move(config_selector_);
+      dynamic_filters_to_unref = std::move(dynamic_filters_);
+    }
   }
   // Update connectivity state.
   state_tracker_.SetState(state, status, reason);
@@ -2414,13 +2424,7 @@ void ChannelData::UpdateStateAndPickerLocked(
   // the refs until after we release the lock, and then unref them at
   // that point.  This includes the following:
   // - refs to subchannel wrappers in the keys of pending_subchannel_updates_
-  // - ref stored in service_config_
-  // - ref stored in config_selector_
-  // - ref stored in dynamic_filters_
   // - ownership of the existing picker in picker_
-  RefCountedPtr<ServiceConfig> service_config_to_unref;
-  RefCountedPtr<ConfigSelector> config_selector_to_unref;
-  RefCountedPtr<DynamicFilters> dynamic_filters_to_unref;
   {
     MutexLock lock(&data_plane_mu_);
     // Handle subchannel updates.
@@ -2439,14 +2443,6 @@ void ChannelData::UpdateStateAndPickerLocked(
     // Swap out the picker.
     // Note: Original value will be destroyed after the lock is released.
     picker_.swap(picker);
-    // Clean the data plane if the updated picker is nullptr.
-    if (picker_ == nullptr || state == GRPC_CHANNEL_SHUTDOWN) {
-      received_service_config_data_ = false;
-      // Note: We save the objects to unref until after the lock is released.
-      service_config_to_unref = std::move(service_config_);
-      config_selector_to_unref = std::move(config_selector_);
-      dynamic_filters_to_unref = std::move(dynamic_filters_);
-    }
     // Re-process queued picks.
     for (LbQueuedCall* call = lb_queued_calls_; call != nullptr;
          call = call->next) {
@@ -2651,7 +2647,11 @@ CallData::CallData(grpc_call_element* elem, const ChannelData& chand,
       arena_(args.arena),
       owning_call_(args.call_stack),
       call_combiner_(args.call_combiner),
-      call_context_(args.context) {}
+      call_context_(args.context) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
+    gpr_log(GPR_INFO, "chand=%p calld=%p: created call", &chand, this);
+  }
+}
 
 CallData::~CallData() {
   grpc_slice_unref_internal(path_);
@@ -3166,6 +3166,12 @@ void CallData::CreateDynamicCall(grpc_call_element* elem) {
                                      call_combiner_};
   grpc_error* error = GRPC_ERROR_NONE;
   DynamicFilters* channel_stack = args.channel_stack.get();
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+    gpr_log(
+        GPR_INFO,
+        "chand=%p calld=%p: creating dynamic call stack on channel_stack=%p",
+        chand, this, channel_stack);
+  }
   dynamic_call_ = channel_stack->CreateCall(std::move(args), &error);
   if (error != GRPC_ERROR_NONE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {

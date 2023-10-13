@@ -513,7 +513,7 @@ grpc_resource_user* CreateDefaultResourceUser(const grpc_channel_args* args) {
 }
 
 RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
-    Server* server, const grpc_channel_args* args) {
+    const grpc_channel_args* args) {
   RefCountedPtr<channelz::ServerNode> channelz_node;
   if (grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_CHANNELZ,
                                   GRPC_ENABLE_CHANNELZ_DEFAULT)) {
@@ -534,7 +534,7 @@ RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
 Server::Server(const grpc_channel_args* args)
     : channel_args_(grpc_channel_args_copy(args)),
       default_resource_user_(CreateDefaultResourceUser(args)),
-      channelz_node_(CreateChannelzNode(this, args)) {}
+      channelz_node_(CreateChannelzNode(args)) {}
 
 Server::~Server() {
   grpc_channel_args_destroy(channel_args_);
@@ -796,7 +796,7 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
   {
     // Wait for startup to be finished.  Locks mu_global.
     MutexLock lock(&mu_global_);
-    starting_cv_.WaitUntil(&mu_global_, [this] { return !starting_; });
+    WaitUntil(&starting_cv_, &mu_global_, [this] { return !starting_; });
     // Stay locked, and gather up some stuff to do.
     GPR_ASSERT(grpc_cq_begin_op(cq, tag));
     if (shutdown_published_) {

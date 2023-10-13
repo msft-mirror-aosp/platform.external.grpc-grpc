@@ -24,8 +24,7 @@
 
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/slice.h>
+#include <grpc/grpc.h>
 
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/service_config_parser.h"
@@ -66,7 +65,7 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
     std::function<void()> on_call_committed;
   };
 
-  virtual ~ConfigSelector() = default;
+  ~ConfigSelector() override = default;
 
   virtual const char* name() const = 0;
 

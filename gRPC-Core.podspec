@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.37.1'
+  version = '1.38.1'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -46,7 +46,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '1.20200923.3'
+  abseil_version = '1.20210324.0'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -117,6 +117,7 @@ Pod::Spec.new do |s|
                       'include/grpc/byte_buffer_reader.h',
                       'include/grpc/census.h',
                       'include/grpc/compression.h',
+                      'include/grpc/event_engine/port.h',
                       'include/grpc/fork.h',
                       'include/grpc/grpc.h',
                       'include/grpc/grpc_posix.h',
@@ -173,7 +174,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.17'
+    ss.dependency 'BoringSSL-GRPC', '0.0.18'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
@@ -279,6 +280,10 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver_registry.h',
                       'src/core/ext/filters/client_channel/resolver_result_parsing.cc',
                       'src/core/ext/filters/client_channel/resolver_result_parsing.h',
+                      'src/core/ext/filters/client_channel/retry_filter.cc',
+                      'src/core/ext/filters/client_channel/retry_filter.h',
+                      'src/core/ext/filters/client_channel/retry_service_config.cc',
+                      'src/core/ext/filters/client_channel/retry_service_config.h',
                       'src/core/ext/filters/client_channel/retry_throttle.cc',
                       'src/core/ext/filters/client_channel/retry_throttle.h',
                       'src/core/ext/filters/client_channel/server_address.cc',
@@ -782,6 +787,10 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_http_filters.cc',
                       'src/core/ext/xds/xds_http_filters.h',
                       'src/core/ext/xds/xds_server_config_fetcher.cc',
+                      'src/core/lib/address_utils/parse_address.cc',
+                      'src/core/lib/address_utils/parse_address.h',
+                      'src/core/lib/address_utils/sockaddr_utils.cc',
+                      'src/core/lib/address_utils/sockaddr_utils.h',
                       'src/core/lib/avl/avl.cc',
                       'src/core/lib/avl/avl.h',
                       'src/core/lib/backoff/backoff.cc',
@@ -901,6 +910,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/stat.h',
                       'src/core/lib/gprpp/stat_posix.cc',
                       'src/core/lib/gprpp/stat_windows.cc',
+                      'src/core/lib/gprpp/status_helper.cc',
+                      'src/core/lib/gprpp/status_helper.h',
                       'src/core/lib/gprpp/sync.h',
                       'src/core/lib/gprpp/thd.h',
                       'src/core/lib/gprpp/thd_posix.cc',
@@ -988,10 +999,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/lockfree_event.cc',
                       'src/core/lib/iomgr/lockfree_event.h',
                       'src/core/lib/iomgr/nameser.h',
-                      'src/core/lib/iomgr/parse_address.cc',
-                      'src/core/lib/iomgr/parse_address.h',
-                      'src/core/lib/iomgr/poller/eventmanager_libuv.cc',
-                      'src/core/lib/iomgr/poller/eventmanager_libuv.h',
                       'src/core/lib/iomgr/polling_entity.cc',
                       'src/core/lib/iomgr/polling_entity.h',
                       'src/core/lib/iomgr/pollset.cc',
@@ -1021,8 +1028,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/sockaddr.h',
                       'src/core/lib/iomgr/sockaddr_custom.h',
                       'src/core/lib/iomgr/sockaddr_posix.h',
-                      'src/core/lib/iomgr/sockaddr_utils.cc',
-                      'src/core/lib/iomgr/sockaddr_utils.h',
                       'src/core/lib/iomgr/sockaddr_windows.h',
                       'src/core/lib/iomgr/socket_factory_posix.cc',
                       'src/core/lib/iomgr/socket_factory_posix.h',
@@ -1436,6 +1441,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/resolver_factory.h',
                               'src/core/ext/filters/client_channel/resolver_registry.h',
                               'src/core/ext/filters/client_channel/resolver_result_parsing.h',
+                              'src/core/ext/filters/client_channel/retry_filter.h',
+                              'src/core/ext/filters/client_channel/retry_service_config.h',
                               'src/core/ext/filters/client_channel/retry_throttle.h',
                               'src/core/ext/filters/client_channel/server_address.h',
                               'src/core/ext/filters/client_channel/service_config.h',
@@ -1683,6 +1690,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_client_stats.h',
                               'src/core/ext/xds/xds_http_fault_filter.h',
                               'src/core/ext/xds/xds_http_filters.h',
+                              'src/core/lib/address_utils/parse_address.h',
+                              'src/core/lib/address_utils/sockaddr_utils.h',
                               'src/core/lib/avl/avl.h',
                               'src/core/lib/backoff/backoff.h',
                               'src/core/lib/channel/channel_args.h',
@@ -1740,6 +1749,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/ref_counted.h',
                               'src/core/lib/gprpp/ref_counted_ptr.h',
                               'src/core/lib/gprpp/stat.h',
+                              'src/core/lib/gprpp/status_helper.h',
                               'src/core/lib/gprpp/sync.h',
                               'src/core/lib/gprpp/thd.h',
                               'src/core/lib/gprpp/time_util.h',
@@ -1779,8 +1789,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
                               'src/core/lib/iomgr/nameser.h',
-                              'src/core/lib/iomgr/parse_address.h',
-                              'src/core/lib/iomgr/poller/eventmanager_libuv.h',
                               'src/core/lib/iomgr/polling_entity.h',
                               'src/core/lib/iomgr/pollset.h',
                               'src/core/lib/iomgr/pollset_custom.h',
@@ -1797,7 +1805,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/sockaddr.h',
                               'src/core/lib/iomgr/sockaddr_custom.h',
                               'src/core/lib/iomgr/sockaddr_posix.h',
-                              'src/core/lib/iomgr/sockaddr_utils.h',
                               'src/core/lib/iomgr/sockaddr_windows.h',
                               'src/core/lib/iomgr/socket_factory_posix.h',
                               'src/core/lib/iomgr/socket_mutator.h',
@@ -2077,10 +2084,12 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/request_with_payload.cc',
                       'test/core/end2end/tests/resource_quota_server.cc',
                       'test/core/end2end/tests/retry.cc',
+                      'test/core/end2end/tests/retry_cancel_during_delay.cc',
                       'test/core/end2end/tests/retry_cancellation.cc',
                       'test/core/end2end/tests/retry_disabled.cc',
                       'test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc',
                       'test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc',
+                      'test/core/end2end/tests/retry_lb_drop.cc',
                       'test/core/end2end/tests/retry_non_retriable_status.cc',
                       'test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc',
                       'test/core/end2end/tests/retry_recv_initial_metadata.cc',
@@ -2110,8 +2119,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/write_buffering_at_end.cc',
                       'test/core/util/cmdline.cc',
                       'test/core/util/cmdline.h',
-                      'test/core/util/eval_args_mock_endpoint.cc',
-                      'test/core/util/eval_args_mock_endpoint.h',
+                      'test/core/util/evaluate_args_test_util.h',
                       'test/core/util/fuzzer_util.cc',
                       'test/core/util/fuzzer_util.h',
                       'test/core/util/grpc_profiler.cc',
@@ -2120,6 +2128,7 @@ Pod::Spec.new do |s|
                       'test/core/util/histogram.h',
                       'test/core/util/memory_counters.cc',
                       'test/core/util/memory_counters.h',
+                      'test/core/util/mock_authorization_endpoint.h',
                       'test/core/util/mock_endpoint.cc',
                       'test/core/util/mock_endpoint.h',
                       'test/core/util/parse_hexstring.cc',
@@ -2143,6 +2152,8 @@ Pod::Spec.new do |s|
                       'test/core/util/subprocess_windows.cc',
                       'test/core/util/test_config.cc',
                       'test/core/util/test_config.h',
+                      'test/core/util/test_lb_policies.cc',
+                      'test/core/util/test_lb_policies.h',
                       'test/core/util/test_tcp_server.cc',
                       'test/core/util/test_tcp_server.h',
                       'test/core/util/tls_utils.cc',

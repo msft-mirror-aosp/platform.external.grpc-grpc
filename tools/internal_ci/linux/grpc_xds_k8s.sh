@@ -18,15 +18,13 @@ set -ex -o igncr || set -ex
 # Constants
 readonly GITHUB_REPOSITORY_NAME="grpc"
 # GKE Cluster
-readonly GKE_CLUSTER_NAME="interop-test-psm-sec-testing-api"
-readonly GKE_CLUSTER_ZONE="us-west1-b"
-export CLOUDSDK_API_ENDPOINT_OVERRIDES_CONTAINER="https://test-container.sandbox.googleapis.com/"
+readonly GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-central1-a"
+readonly GKE_CLUSTER_ZONE="us-central1-a"
 ## xDS test server/client Docker images
 readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-server"
 readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-client"
 readonly FORCE_IMAGE_BUILD="${FORCE_IMAGE_BUILD:-0}"
 readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
-readonly TEST_DRIVER_REPO_DIR_USE_EXISTING=1
 
 #######################################
 # Builds test app Docker images and pushes them to GCR

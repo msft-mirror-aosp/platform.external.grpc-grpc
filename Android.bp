@@ -193,6 +193,7 @@ GRPC_COMMON_SRCS = [
     "src/core/lib/gprpp/stat_windows.cc",
     "src/core/lib/gprpp/thd_posix.cc",
     "src/core/lib/gprpp/thd_windows.cc",
+    "src/core/lib/gprpp/time_util.cc",
     "src/core/lib/gpr/string.cc",
     "src/core/lib/gpr/string_posix.cc",
     "src/core/lib/gpr/string_util_windows.cc",
@@ -401,6 +402,7 @@ GRPC_SECURE_SRCS = [
     "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc",
     "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc",
     "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc",
+    "src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc",
     "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
     "src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc",
     "src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc",
@@ -416,6 +418,7 @@ GRPC_SECURE_SRCS = [
     "src/core/lib/http/httpcli_security_connector.cc",
     "src/core/lib/security/authorization/authorization_engine.cc",
     "src/core/lib/security/authorization/evaluate_args.cc",
+    "src/core/lib/security/authorization/matchers.cc",
     "src/core/lib/security/context/security_context.cc",
     "src/core/lib/security/credentials/alts/alts_credentials.cc",
     "src/core/lib/security/credentials/alts/check_gcp_environment.cc",
@@ -560,7 +563,7 @@ cc_defaults {
     target: {
         vendor: {
             // Needs to be updated when a new version is imported.
-            suffix: "-1.35.0",
+            suffix: "-1.36.4",
         },
     },
 }

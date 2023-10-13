@@ -32,7 +32,6 @@ package(
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
-    "grpc_cc_library_xds",
     "grpc_generate_one_off_targets",
     "grpc_upb_proto_library",
     "python_config_settings",
@@ -86,11 +85,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gilded"  # @unused
+g_stands_for = "guadalupe_river_park_conservancy"  # @unused
 
-core_version = "15.0.0"  # @unused
+core_version = "16.0.0"  # @unused
 
-version = "1.37.1"  # @unused
+version = "1.38.1"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -126,6 +125,13 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/status.h",
     "include/grpc/load_reporting.h",
     "include/grpc/support/workaround_list.h",
+]
+
+GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
+    "include/grpc/event_engine/channel_args.h",
+    "include/grpc/event_engine/event_engine.h",
+    "include/grpc/event_engine/port.h",
+    "include/grpc/event_engine/slice_allocator.h",
 ]
 
 GRPC_SECURE_PUBLIC_HDRS = [
@@ -585,6 +591,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/mpscq.cc",
         "src/core/lib/gprpp/stat_posix.cc",
         "src/core/lib/gprpp/stat_windows.cc",
+        "src/core/lib/gprpp/status_helper.cc",
         "src/core/lib/gprpp/thd_posix.cc",
         "src/core/lib/gprpp/thd_windows.cc",
         "src/core/lib/gprpp/time_util.cc",
@@ -620,6 +627,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/mpscq.h",
         "src/core/lib/gprpp/stat.h",
+        "src/core/lib/gprpp/status_helper.h",
         "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
         "src/core/lib/gprpp/time_util.h",
@@ -638,6 +646,8 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
     deps = [
+        "debug_location",
+        "google_api_upb",
         "gpr_codegen",
         "grpc_codegen",
     ],
@@ -746,6 +756,8 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_base_c",
     srcs = [
+        "src/core/lib/address_utils/parse_address.cc",
+        "src/core/lib/address_utils/sockaddr_utils.cc",
         "src/core/lib/avl/avl.cc",
         "src/core/lib/backoff/backoff.cc",
         "src/core/lib/channel/channel_args.cc",
@@ -767,6 +779,8 @@ grpc_cc_library(
         "src/core/lib/compression/stream_compression_identity.cc",
         "src/core/lib/debug/stats.cc",
         "src/core/lib/debug/stats_data.cc",
+        "src/core/lib/event_engine/slice_allocator.cc",
+        "src/core/lib/event_engine/sockaddr.cc",
         "src/core/lib/http/format_request.cc",
         "src/core/lib/http/httpcli.cc",
         "src/core/lib/http/parser.cc",
@@ -811,7 +825,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/is_epollexclusive_available.cc",
         "src/core/lib/iomgr/load_file.cc",
         "src/core/lib/iomgr/lockfree_event.cc",
-        "src/core/lib/iomgr/parse_address.cc",
         "src/core/lib/iomgr/polling_entity.cc",
         "src/core/lib/iomgr/pollset.cc",
         "src/core/lib/iomgr/pollset_custom.cc",
@@ -825,7 +838,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/resolve_address_posix.cc",
         "src/core/lib/iomgr/resolve_address_windows.cc",
         "src/core/lib/iomgr/resource_quota.cc",
-        "src/core/lib/iomgr/sockaddr_utils.cc",
         "src/core/lib/iomgr/socket_factory_posix.cc",
         "src/core/lib/iomgr/socket_mutator.cc",
         "src/core/lib/iomgr/socket_utils_common_posix.cc",
@@ -908,6 +920,8 @@ grpc_cc_library(
         "src/core/lib/uri/uri_parser.cc",
     ],
     hdrs = [
+        "src/core/lib/address_utils/parse_address.h",
+        "src/core/lib/address_utils/sockaddr_utils.h",
         "src/core/lib/avl/avl.h",
         "src/core/lib/backoff/backoff.h",
         "src/core/lib/channel/channel_args.h",
@@ -967,7 +981,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/load_file.h",
         "src/core/lib/iomgr/lockfree_event.h",
         "src/core/lib/iomgr/nameser.h",
-        "src/core/lib/iomgr/parse_address.h",
         "src/core/lib/iomgr/polling_entity.h",
         "src/core/lib/iomgr/pollset.h",
         "src/core/lib/iomgr/pollset_custom.h",
@@ -984,7 +997,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/sockaddr.h",
         "src/core/lib/iomgr/sockaddr_custom.h",
         "src/core/lib/iomgr/sockaddr_posix.h",
-        "src/core/lib/iomgr/sockaddr_utils.h",
         "src/core/lib/iomgr/sockaddr_windows.h",
         "src/core/lib/iomgr/socket_factory_posix.h",
         "src/core/lib/iomgr/socket_mutator.h",
@@ -1057,10 +1069,9 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
     ],
     language = "c++",
-    public_hdrs = GRPC_PUBLIC_HDRS,
+    public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     deps = [
         "dual_ref_counted",
-        "eventmanager_libuv",
         "gpr_base",
         "grpc_codegen",
         "grpc_trace",
@@ -1135,6 +1146,8 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver.cc",
         "src/core/ext/filters/client_channel/resolver_registry.cc",
         "src/core/ext/filters/client_channel/resolver_result_parsing.cc",
+        "src/core/ext/filters/client_channel/retry_filter.cc",
+        "src/core/ext/filters/client_channel/retry_service_config.cc",
         "src/core/ext/filters/client_channel/retry_throttle.cc",
         "src/core/ext/filters/client_channel/server_address.cc",
         "src/core/ext/filters/client_channel/service_config.cc",
@@ -1167,6 +1180,8 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver_factory.h",
         "src/core/ext/filters/client_channel/resolver_registry.h",
         "src/core/ext/filters/client_channel/resolver_result_parsing.h",
+        "src/core/ext/filters/client_channel/retry_filter.h",
+        "src/core/ext/filters/client_channel/retry_service_config.h",
         "src/core/ext/filters/client_channel/retry_throttle.h",
         "src/core/ext/filters/client_channel/server_address.h",
         "src/core/ext/filters/client_channel/service_config.h",
@@ -2050,10 +2065,15 @@ grpc_cc_library(
     name = "grpc_rbac_engine",
     srcs = [
         "src/core/lib/security/authorization/evaluate_args.cc",
+        "src/core/lib/security/authorization/grpc_authorization_engine.cc",
+        "src/core/lib/security/authorization/matchers.cc",
         "src/core/lib/security/authorization/rbac_policy.cc",
     ],
     hdrs = [
+        "src/core/lib/security/authorization/authorization_engine.h",
         "src/core/lib/security/authorization/evaluate_args.h",
+        "src/core/lib/security/authorization/grpc_authorization_engine.h",
+        "src/core/lib/security/authorization/matchers.h",
         "src/core/lib/security/authorization/rbac_policy.h",
     ],
     language = "c++",
@@ -2084,10 +2104,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_cel_engine",
     srcs = [
-        "src/core/lib/security/authorization/authorization_engine.cc",
+        "src/core/lib/security/authorization/cel_authorization_engine.cc",
     ],
     hdrs = [
-        "src/core/lib/security/authorization/authorization_engine.h",
+        "src/core/lib/security/authorization/cel_authorization_engine.h",
     ],
     external_deps = [
         "absl/container:flat_hash_set",
@@ -2614,7 +2634,7 @@ grpc_cc_library(
     alwayslink = 1,
 )
 
-grpc_cc_library_xds(
+grpc_cc_library(
     name = "grpcpp_csds",
     srcs = [
         "src/cpp/server/csds/csds.cc",
@@ -2630,7 +2650,7 @@ grpc_cc_library_xds(
     alwayslink = 1,
 )
 
-grpc_cc_library_xds(
+grpc_cc_library(
     name = "grpcpp_admin",
     srcs = [
         "src/cpp/server/admin/admin_services.cc",
@@ -2735,6 +2755,7 @@ grpc_cc_library(
         "absl-time",
         "opencensus-trace",
         "opencensus-trace-context_util",
+        "opencensus-trace-propagation",
         "opencensus-stats",
         "opencensus-context",
     ],
@@ -3604,26 +3625,4 @@ filegroup(
         "etc/roots.pem",
     ],
     visibility = ["//visibility:public"],
-)
-
-# Base classes of EventManagerInterface
-grpc_cc_library(
-    name = "eventmanager_interface",
-    hdrs = [
-        "src/core/lib/iomgr/poller/eventmanager_interface.h",
-    ],
-)
-
-# Libuv-based EventManager implementation
-grpc_cc_library(
-    name = "eventmanager_libuv",
-    srcs = [
-        "src/core/lib/iomgr/poller/eventmanager_libuv.cc",
-    ],
-    hdrs = [
-        "src/core/lib/iomgr/poller/eventmanager_libuv.h",
-    ],
-    deps = [
-        "gpr_base",
-    ],
 )

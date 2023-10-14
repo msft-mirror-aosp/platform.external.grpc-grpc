@@ -131,6 +131,7 @@ GRPC_COMMON_SRCS = [
     "src/core/ext/transport/chttp2/transport/bin_decoder.cc",
     "src/core/ext/transport/chttp2/transport/bin_encoder.cc",
     "src/core/ext/transport/chttp2/transport/chttp2_plugin.cc",
+    "src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc",
     "src/core/ext/transport/chttp2/transport/chttp2_transport.cc",
     "src/core/ext/transport/chttp2/transport/context_list.cc",
     "src/core/ext/transport/chttp2/transport/flow_control.cc",
@@ -179,7 +180,6 @@ GRPC_COMMON_SRCS = [
     "src/core/lib/debug/trace.cc",
     "src/core/lib/event_engine/endpoint_config.cc",
     "src/core/lib/event_engine/event_engine.cc",
-    "src/core/lib/event_engine/slice_allocator.cc",
     "src/core/lib/event_engine/sockaddr.cc",
     "src/core/lib/gpr/alloc.cc",
     "src/core/lib/gpr/atm.cc",
@@ -587,7 +587,7 @@ cc_defaults {
     target: {
         vendor: {
             // Needs to be updated when a new version is imported.
-            suffix: "-1.39.1",
+            suffix: "-1.40.0",
         },
     },
 }

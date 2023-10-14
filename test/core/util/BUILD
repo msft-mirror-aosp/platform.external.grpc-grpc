@@ -22,23 +22,9 @@ grpc_package(
 )
 
 grpc_cc_library(
-    name = "grpc_debugger_macros",
-    srcs = [
-        "debugger_macros.cc",
-    ],
-    hdrs = [
-        "debugger_macros.h",
-    ],
-    deps = [
-        "//:grpc_common",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
         "cmdline.cc",
-        "eval_args_mock_endpoint.cc",
         "fuzzer_util.cc",
         "grpc_profiler.cc",
         "histogram.cc",
@@ -61,11 +47,12 @@ grpc_cc_library(
     ],
     hdrs = [
         "cmdline.h",
-        "eval_args_mock_endpoint.h",
+        "evaluate_args_test_util.h",
         "fuzzer_util.h",
         "grpc_profiler.h",
         "histogram.h",
         "memory_counters.h",
+        "mock_authorization_endpoint.h",
         "mock_endpoint.h",
         "parse_hexstring.h",
         "passthru_endpoint.h",
@@ -91,7 +78,6 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
-        ":grpc_debugger_macros",
         ":stack_tracer",
         "//:gpr",
         "//:grpc_base_c",
@@ -101,8 +87,8 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_test_util",
-    srcs = [],
-    hdrs = [],
+    srcs = ["tls_utils.cc"],
+    hdrs = ["tls_utils.h"],
     language = "C++",
     deps = [
         ":grpc_test_util_base",
@@ -140,6 +126,7 @@ grpc_cc_library(
         "absl/flags:flag",
         "gtest",
     ],
+    linkstatic = True,
     tags = ["no_windows"],
     deps = [
         ":grpc_test_util",

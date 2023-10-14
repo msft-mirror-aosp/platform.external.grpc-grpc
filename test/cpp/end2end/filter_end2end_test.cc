@@ -51,7 +51,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
-void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
+void* tag(int i) { return reinterpret_cast<void*>(i); }
 
 void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
   bool ok;
@@ -101,8 +101,8 @@ int GetCallCounterValue() {
 
 class ChannelDataImpl : public ChannelData {
  public:
-  grpc_error* Init(grpc_channel_element* /*elem*/,
-                   grpc_channel_element_args* /*args*/) override {
+  grpc_error_handle Init(grpc_channel_element* /*elem*/,
+                         grpc_channel_element_args* /*args*/) override {
     IncrementConnectionCounter();
     return GRPC_ERROR_NONE;
   }

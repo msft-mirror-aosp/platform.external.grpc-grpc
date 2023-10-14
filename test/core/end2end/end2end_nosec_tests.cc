@@ -67,12 +67,12 @@ extern void disappearing_server(grpc_end2end_test_config config);
 extern void disappearing_server_pre_init(void);
 extern void empty_batch(grpc_end2end_test_config config);
 extern void empty_batch_pre_init(void);
-extern void filter_call_init_fails(grpc_end2end_test_config config);
-extern void filter_call_init_fails_pre_init(void);
 extern void filter_causes_close(grpc_end2end_test_config config);
 extern void filter_causes_close_pre_init(void);
 extern void filter_context(grpc_end2end_test_config config);
 extern void filter_context_pre_init(void);
+extern void filter_init_fails(grpc_end2end_test_config config);
+extern void filter_init_fails_pre_init(void);
 extern void filter_latency(grpc_end2end_test_config config);
 extern void filter_latency_pre_init(void);
 extern void filter_status_code(grpc_end2end_test_config config);
@@ -125,6 +125,8 @@ extern void resource_quota_server(grpc_end2end_test_config config);
 extern void resource_quota_server_pre_init(void);
 extern void retry(grpc_end2end_test_config config);
 extern void retry_pre_init(void);
+extern void retry_cancel_during_delay(grpc_end2end_test_config config);
+extern void retry_cancel_during_delay_pre_init(void);
 extern void retry_cancellation(grpc_end2end_test_config config);
 extern void retry_cancellation_pre_init(void);
 extern void retry_disabled(grpc_end2end_test_config config);
@@ -133,6 +135,8 @@ extern void retry_exceeds_buffer_size_in_initial_batch(grpc_end2end_test_config 
 extern void retry_exceeds_buffer_size_in_initial_batch_pre_init(void);
 extern void retry_exceeds_buffer_size_in_subsequent_batch(grpc_end2end_test_config config);
 extern void retry_exceeds_buffer_size_in_subsequent_batch_pre_init(void);
+extern void retry_lb_drop(grpc_end2end_test_config config);
+extern void retry_lb_drop_pre_init(void);
 extern void retry_non_retriable_status(grpc_end2end_test_config config);
 extern void retry_non_retriable_status_pre_init(void);
 extern void retry_non_retriable_status_before_recv_trailing_metadata_started(grpc_end2end_test_config config);
@@ -210,9 +214,9 @@ void grpc_end2end_tests_pre_init(void) {
   default_host_pre_init();
   disappearing_server_pre_init();
   empty_batch_pre_init();
-  filter_call_init_fails_pre_init();
   filter_causes_close_pre_init();
   filter_context_pre_init();
+  filter_init_fails_pre_init();
   filter_latency_pre_init();
   filter_status_code_pre_init();
   graceful_server_shutdown_pre_init();
@@ -239,10 +243,12 @@ void grpc_end2end_tests_pre_init(void) {
   request_with_payload_pre_init();
   resource_quota_server_pre_init();
   retry_pre_init();
+  retry_cancel_during_delay_pre_init();
   retry_cancellation_pre_init();
   retry_disabled_pre_init();
   retry_exceeds_buffer_size_in_initial_batch_pre_init();
   retry_exceeds_buffer_size_in_subsequent_batch_pre_init();
+  retry_lb_drop_pre_init();
   retry_non_retriable_status_pre_init();
   retry_non_retriable_status_before_recv_trailing_metadata_started_pre_init();
   retry_recv_initial_metadata_pre_init();
@@ -298,9 +304,9 @@ void grpc_end2end_tests(int argc, char **argv,
     default_host(config);
     disappearing_server(config);
     empty_batch(config);
-    filter_call_init_fails(config);
     filter_causes_close(config);
     filter_context(config);
+    filter_init_fails(config);
     filter_latency(config);
     filter_status_code(config);
     graceful_server_shutdown(config);
@@ -327,10 +333,12 @@ void grpc_end2end_tests(int argc, char **argv,
     request_with_payload(config);
     resource_quota_server(config);
     retry(config);
+    retry_cancel_during_delay(config);
     retry_cancellation(config);
     retry_disabled(config);
     retry_exceeds_buffer_size_in_initial_batch(config);
     retry_exceeds_buffer_size_in_subsequent_batch(config);
+    retry_lb_drop(config);
     retry_non_retriable_status(config);
     retry_non_retriable_status_before_recv_trailing_metadata_started(config);
     retry_recv_initial_metadata(config);
@@ -438,16 +446,16 @@ void grpc_end2end_tests(int argc, char **argv,
       empty_batch(config);
       continue;
     }
-    if (0 == strcmp("filter_call_init_fails", argv[i])) {
-      filter_call_init_fails(config);
-      continue;
-    }
     if (0 == strcmp("filter_causes_close", argv[i])) {
       filter_causes_close(config);
       continue;
     }
     if (0 == strcmp("filter_context", argv[i])) {
       filter_context(config);
+      continue;
+    }
+    if (0 == strcmp("filter_init_fails", argv[i])) {
+      filter_init_fails(config);
       continue;
     }
     if (0 == strcmp("filter_latency", argv[i])) {
@@ -554,6 +562,10 @@ void grpc_end2end_tests(int argc, char **argv,
       retry(config);
       continue;
     }
+    if (0 == strcmp("retry_cancel_during_delay", argv[i])) {
+      retry_cancel_during_delay(config);
+      continue;
+    }
     if (0 == strcmp("retry_cancellation", argv[i])) {
       retry_cancellation(config);
       continue;
@@ -568,6 +580,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("retry_exceeds_buffer_size_in_subsequent_batch", argv[i])) {
       retry_exceeds_buffer_size_in_subsequent_batch(config);
+      continue;
+    }
+    if (0 == strcmp("retry_lb_drop", argv[i])) {
+      retry_lb_drop(config);
       continue;
     }
     if (0 == strcmp("retry_non_retriable_status", argv[i])) {

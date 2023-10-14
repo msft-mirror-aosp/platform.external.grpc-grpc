@@ -111,8 +111,9 @@ class FullstackFixture : public BaseFixture {
 
 class TCP : public FullstackFixture {
  public:
-  TCP(Service* service, const FixtureConfiguration& fixture_configuration =
-                            FixtureConfiguration())
+  explicit TCP(Service* service,
+               const FixtureConfiguration& fixture_configuration =
+                   FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
 
   ~TCP() override { grpc_recycle_unused_port(port_); }
@@ -130,8 +131,9 @@ class TCP : public FullstackFixture {
 
 class UDS : public FullstackFixture {
  public:
-  UDS(Service* service, const FixtureConfiguration& fixture_configuration =
-                            FixtureConfiguration())
+  explicit UDS(Service* service,
+               const FixtureConfiguration& fixture_configuration =
+                   FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
 
   ~UDS() override { grpc_recycle_unused_port(port_); }
@@ -150,9 +152,9 @@ class UDS : public FullstackFixture {
 
 class InProcess : public FullstackFixture {
  public:
-  InProcess(Service* service,
-            const FixtureConfiguration& fixture_configuration =
-                FixtureConfiguration())
+  explicit InProcess(Service* service,
+                     const FixtureConfiguration& fixture_configuration =
+                         FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, "") {}
   ~InProcess() override {}
 };
@@ -185,7 +187,8 @@ class EndpointPairFixture : public BaseFixture {
 
       server_->c_server()->core_server->SetupTransport(
           server_transport_, nullptr, server_args, nullptr);
-      grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr);
+      grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr,
+                                          nullptr);
     }
 
     /* create channel */
@@ -200,7 +203,8 @@ class EndpointPairFixture : public BaseFixture {
       GPR_ASSERT(client_transport_);
       grpc_channel* channel = grpc_channel_create(
           "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport_);
-      grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr);
+      grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr,
+                                          nullptr);
 
       channel_ = ::grpc::CreateChannelInternal(
           "", channel,
@@ -241,8 +245,9 @@ class EndpointPairFixture : public BaseFixture {
 
 class SockPair : public EndpointPairFixture {
  public:
-  SockPair(Service* service, const FixtureConfiguration& fixture_configuration =
-                                 FixtureConfiguration())
+  explicit SockPair(Service* service,
+                    const FixtureConfiguration& fixture_configuration =
+                        FixtureConfiguration())
       : EndpointPairFixture(service,
                             grpc_iomgr_create_endpoint_pair("test", nullptr),
                             fixture_configuration) {}
@@ -287,9 +292,9 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
 
 class InProcessCHTTP2 : public InProcessCHTTP2WithExplicitStats {
  public:
-  InProcessCHTTP2(Service* service,
-                  const FixtureConfiguration& fixture_configuration =
-                      FixtureConfiguration())
+  explicit InProcessCHTTP2(Service* service,
+                           const FixtureConfiguration& fixture_configuration =
+                               FixtureConfiguration())
       : InProcessCHTTP2WithExplicitStats(service,
                                          grpc_passthru_endpoint_stats_create(),
                                          fixture_configuration) {}
@@ -313,7 +318,8 @@ class MinStackConfiguration : public FixtureConfiguration {
 template <class Base>
 class MinStackize : public Base {
  public:
-  MinStackize(Service* service) : Base(service, MinStackConfiguration()) {}
+  explicit MinStackize(Service* service)
+      : Base(service, MinStackConfiguration()) {}
 };
 
 typedef MinStackize<TCP> MinTCP;

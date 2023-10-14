@@ -70,6 +70,7 @@ END2END_FIXTURES = {
     "h2_full+trace": _fixture_options(tracing = True),
     "h2_full+workarounds": _fixture_options(),
     "h2_http_proxy": _fixture_options(supports_proxy_auth = True),
+    "h2_insecure": _fixture_options(secure = True),
     "h2_oauth2": _fixture_options(),
     "h2_proxy": _fixture_options(includes_proxy = True),
     "h2_sockpair_1byte": _fixture_options(
@@ -236,7 +237,7 @@ END2END_TESTS = {
     "disappearing_server": _test_options(needs_fullstack = True, needs_names = True),
     "empty_batch": _test_options(),
     "filter_causes_close": _test_options(),
-    "filter_call_init_fails": _test_options(),
+    "filter_init_fails": _test_options(),
     "filter_context": _test_options(),
     "graceful_server_shutdown": _test_options(exclude_inproc = True),
     "hpack_size": _test_options(
@@ -280,6 +281,10 @@ END2END_TESTS = {
         needs_client_channel = True,
         proxyable = False,
     ),
+    "retry_cancel_during_delay": _test_options(
+        needs_client_channel = True,
+        proxyable = False,
+    ),
     "retry_disabled": _test_options(needs_client_channel = True, proxyable = False),
     "retry_exceeds_buffer_size_in_initial_batch": _test_options(
         needs_client_channel = True,
@@ -294,6 +299,10 @@ END2END_TESTS = {
         # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
         # See b/151617965
         short_name = "retry_exceeds_buffer_size_in_subseq",
+    ),
+    "retry_lb_drop": _test_options(
+        needs_client_channel = True,
+        proxyable = False,
     ),
     "retry_non_retriable_status": _test_options(
         needs_client_channel = True,
@@ -421,12 +430,14 @@ def grpc_end2end_tests():
             "end2end_tests.h",
         ],
         language = "C++",
+        testonly = 1,
         deps = [
             ":cq_verifier",
             ":ssl_test_data",
             ":http_proxy",
             ":proxy",
             ":local_util",
+            "//test/core/util:test_lb_policies",
         ],
     )
 
@@ -435,6 +446,7 @@ def grpc_end2end_tests():
             name = "%s_test" % f,
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
+            testonly = 1,
             data = [
                 "//src/core/tsi/test_creds:ca.pem",
                 "//src/core/tsi/test_creds:server1.key",
@@ -496,12 +508,14 @@ def grpc_end2end_nosec_tests():
             "end2end_tests.h",
         ],
         language = "C++",
+        testonly = 1,
         deps = [
             ":cq_verifier",
             ":ssl_test_data",
             ":http_proxy",
             ":proxy",
             ":local_util",
+            "//test/core/util:test_lb_policies",
         ],
     )
 
@@ -512,6 +526,7 @@ def grpc_end2end_nosec_tests():
             name = "%s_nosec_test" % f,
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
+            testonly = 1,
             data = [
                 "//src/core/tsi/test_creds:ca.pem",
                 "//src/core/tsi/test_creds:server1.key",

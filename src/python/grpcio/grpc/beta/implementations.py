@@ -25,7 +25,8 @@ from grpc.beta import _metadata
 from grpc.beta import _server_adaptations
 from grpc.beta import interfaces  # pylint: disable=unused-import
 from grpc.framework.common import cardinality  # pylint: disable=unused-import
-from grpc.framework.interfaces.face import face  # pylint: disable=unused-import
+from grpc.framework.interfaces.face import \
+    face  # pylint: disable=unused-import
 
 # pylint: disable=too-many-arguments
 
@@ -110,8 +111,8 @@ def insecure_channel(host, port):
   Returns:
     A Channel to the remote host through which RPCs may be conducted.
   """
-    channel = grpc.insecure_channel(host if port is None else '%s:%d' % (host,
-                                                                         port))
+    channel = grpc.insecure_channel(host if port is None else '%s:%d' %
+                                    (host, port))
     return Channel(channel)
 
 
@@ -127,8 +128,8 @@ def secure_channel(host, port, channel_credentials):
   Returns:
     A secure Channel to the remote host through which RPCs may be conducted.
   """
-    channel = grpc.secure_channel(host if port is None else
-                                  '%s:%d' % (host, port), channel_credentials)
+    channel = grpc.secure_channel(
+        host if port is None else '%s:%d' % (host, port), channel_credentials)
     return Channel(channel)
 
 

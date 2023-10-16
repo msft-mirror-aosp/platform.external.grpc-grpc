@@ -27,8 +27,10 @@
 
 #include <string.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
+#include "src/core/lib/event_engine/sockaddr.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/cmdline.h"
@@ -41,13 +43,13 @@ static gpr_timespec test_deadline(void) {
 typedef struct args_struct {
   gpr_event ev;
   grpc_resolved_addresses* addrs;
-  gpr_atm done_atm;
   gpr_mu* mu;
-  grpc_pollset* pollset;
+  bool done;              // guarded by mu
+  grpc_pollset* pollset;  // guarded by mu
   grpc_pollset_set* pollset_set;
 } args_struct;
 
-static void do_nothing(void* arg, grpc_error* error) {}
+static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 void args_init(args_struct* args) {
   gpr_event_init(&args->ev);
@@ -56,7 +58,7 @@ void args_init(args_struct* args) {
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
   args->addrs = nullptr;
-  gpr_atm_rel_store(&args->done_atm, 0);
+  args->done = false;
 }
 
 void args_finish(args_struct* args) {
@@ -82,48 +84,48 @@ static grpc_millis n_sec_deadline(int seconds) {
 }
 
 static void poll_pollset_until_request_done(args_struct* args) {
-  grpc_core::ExecCtx exec_ctx;
-  grpc_millis deadline = n_sec_deadline(10);
+  // Try to give enough time for c-ares to run through its retries
+  // a few times if needed.
+  grpc_millis deadline = n_sec_deadline(90);
   while (true) {
-    bool done = gpr_atm_acq_load(&args->done_atm) != 0;
-    if (done) {
-      break;
+    grpc_core::ExecCtx exec_ctx;
+    {
+      grpc_core::MutexLockForGprMu lock(args->mu);
+      if (args->done) {
+        break;
+      }
+      grpc_millis time_left = deadline - grpc_core::ExecCtx::Get()->Now();
+      gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, args->done, time_left);
+      GPR_ASSERT(time_left >= 0);
+      grpc_pollset_worker* worker = nullptr;
+      GRPC_LOG_IF_ERROR(
+          "pollset_work",
+          grpc_pollset_work(args->pollset, &worker, n_sec_deadline(1)));
     }
-    grpc_millis time_left = deadline - grpc_core::ExecCtx::Get()->Now();
-    gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done, time_left);
-    GPR_ASSERT(time_left >= 0);
-    grpc_pollset_worker* worker = nullptr;
-    gpr_mu_lock(args->mu);
-    GRPC_LOG_IF_ERROR("pollset_work", grpc_pollset_work(args->pollset, &worker,
-                                                        n_sec_deadline(1)));
-    gpr_mu_unlock(args->mu);
-    grpc_core::ExecCtx::Get()->Flush();
   }
-  gpr_event_set(&args->ev, (void*)1);
+  gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
 }
 
-static void must_succeed(void* argsp, grpc_error* err) {
+static void must_succeed(void* argsp, grpc_error_handle err) {
   args_struct* args = static_cast<args_struct*>(argsp);
   GPR_ASSERT(err == GRPC_ERROR_NONE);
   GPR_ASSERT(args->addrs != nullptr);
   GPR_ASSERT(args->addrs->naddrs > 0);
-  gpr_atm_rel_store(&args->done_atm, 1);
-  gpr_mu_lock(args->mu);
+  grpc_core::MutexLockForGprMu lock(args->mu);
+  args->done = true;
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
-  gpr_mu_unlock(args->mu);
 }
 
-static void must_fail(void* argsp, grpc_error* err) {
+static void must_fail(void* argsp, grpc_error_handle err) {
   args_struct* args = static_cast<args_struct*>(argsp);
   GPR_ASSERT(err != GRPC_ERROR_NONE);
-  gpr_atm_rel_store(&args->done_atm, 1);
-  gpr_mu_lock(args->mu);
+  grpc_core::MutexLockForGprMu lock(args->mu);
+  args->done = true;
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
-  gpr_mu_unlock(args->mu);
 }
 
 // This test assumes the environment has an ipv6 loopback
-static void must_succeed_with_ipv6_first(void* argsp, grpc_error* err) {
+static void must_succeed_with_ipv6_first(void* argsp, grpc_error_handle err) {
   args_struct* args = static_cast<args_struct*>(argsp);
   GPR_ASSERT(err == GRPC_ERROR_NONE);
   GPR_ASSERT(args->addrs != nullptr);
@@ -131,13 +133,12 @@ static void must_succeed_with_ipv6_first(void* argsp, grpc_error* err) {
   const struct sockaddr* first_address =
       reinterpret_cast<const struct sockaddr*>(args->addrs->addrs[0].addr);
   GPR_ASSERT(first_address->sa_family == AF_INET6);
-  gpr_atm_rel_store(&args->done_atm, 1);
-  gpr_mu_lock(args->mu);
+  grpc_core::MutexLockForGprMu lock(args->mu);
+  args->done = true;
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
-  gpr_mu_unlock(args->mu);
 }
 
-static void must_succeed_with_ipv4_first(void* argsp, grpc_error* err) {
+static void must_succeed_with_ipv4_first(void* argsp, grpc_error_handle err) {
   args_struct* args = static_cast<args_struct*>(argsp);
   GPR_ASSERT(err == GRPC_ERROR_NONE);
   GPR_ASSERT(args->addrs != nullptr);
@@ -145,10 +146,9 @@ static void must_succeed_with_ipv4_first(void* argsp, grpc_error* err) {
   const struct sockaddr* first_address =
       reinterpret_cast<const struct sockaddr*>(args->addrs->addrs[0].addr);
   GPR_ASSERT(first_address->sa_family == AF_INET);
-  gpr_atm_rel_store(&args->done_atm, 1);
-  gpr_mu_lock(args->mu);
+  grpc_core::MutexLockForGprMu lock(args->mu);
+  args->done = true;
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
-  gpr_mu_unlock(args->mu);
 }
 
 static void test_localhost(void) {
@@ -308,7 +308,7 @@ typedef struct mock_ipv6_disabled_source_addr_factory {
 } mock_ipv6_disabled_source_addr_factory;
 
 static bool mock_ipv6_disabled_source_addr_factory_get_source_addr(
-    address_sorting_source_addr_factory* factory,
+    address_sorting_source_addr_factory* /*factory*/,
     const address_sorting_address* dest_addr,
     address_sorting_address* source_addr) {
   // Mock lack of IPv6. For IPv4, set the source addr to be the same
@@ -323,7 +323,11 @@ static bool mock_ipv6_disabled_source_addr_factory_get_source_addr(
 }
 
 void mock_ipv6_disabled_source_addr_factory_destroy(
-    address_sorting_source_addr_factory* factory) {}
+    address_sorting_source_addr_factory* factory) {
+  mock_ipv6_disabled_source_addr_factory* f =
+      reinterpret_cast<mock_ipv6_disabled_source_addr_factory*>(factory);
+  gpr_free(f);
+}
 
 const address_sorting_source_addr_factory_vtable
     kMockIpv6DisabledSourceAddrFactoryVtable = {
@@ -341,16 +345,18 @@ int main(int argc, char** argv) {
   // --resolver will always be the first one, so only parse the first argument
   // (other arguments may be unknown to cl)
   gpr_cmdline_parse(cl, argc > 2 ? 2 : argc, argv);
-  const char* cur_resolver = gpr_getenv("GRPC_DNS_RESOLVER");
-  if (cur_resolver != nullptr && strlen(cur_resolver) != 0) {
+  grpc_core::UniquePtr<char> resolver =
+      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+  if (strlen(resolver.get()) != 0) {
     gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
-            cur_resolver);
+            resolver.get());
   }
-  if (gpr_stricmp(resolver_type, "native") == 0) {
-    gpr_setenv("GRPC_DNS_RESOLVER", "native");
-  } else if (gpr_stricmp(resolver_type, "ares") == 0) {
+  if (resolver_type != nullptr && gpr_stricmp(resolver_type, "native") == 0) {
+    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
+  } else if (resolver_type != nullptr &&
+             gpr_stricmp(resolver_type, "ares") == 0) {
 #ifndef GRPC_UV
-    gpr_setenv("GRPC_DNS_RESOLVER", "ares");
+    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
 #endif
   } else {
     gpr_log(GPR_ERROR, "--resolver_type was not set to ares or native");
@@ -367,15 +373,10 @@ int main(int argc, char** argv) {
     test_missing_default_port();
     test_ipv6_with_port();
     test_ipv6_without_port();
-    if (gpr_stricmp(resolver_type, "ares") != 0) {
-      // These tests can trigger DNS queries to the nearby nameserver
-      // that need to come back in order for the test to succeed.
-      // c-ares is prone to not using the local system caches that the
-      // native getaddrinfo implementations take advantage of, so running
-      // these unit tests under c-ares risks flakiness.
-      test_invalid_ip_addresses();
-      test_unparseable_hostports();
-    } else {
+    test_invalid_ip_addresses();
+    test_unparseable_hostports();
+    if (gpr_stricmp(resolver_type, "ares") == 0) {
+      // This behavior expectation is specific to c-ares.
       test_localhost_result_has_ipv6_first();
     }
     grpc_core::Executor::ShutdownAll();
@@ -390,9 +391,11 @@ int main(int argc, char** argv) {
     // Run a test case in which c-ares's address sorter
     // thinks that IPv4 is available and IPv6 isn't.
     grpc_init();
-    mock_ipv6_disabled_source_addr_factory factory;
-    factory.base.vtable = &kMockIpv6DisabledSourceAddrFactoryVtable;
-    address_sorting_override_source_addr_factory_for_testing(&factory.base);
+    mock_ipv6_disabled_source_addr_factory* factory =
+        static_cast<mock_ipv6_disabled_source_addr_factory*>(
+            gpr_malloc(sizeof(mock_ipv6_disabled_source_addr_factory)));
+    factory->base.vtable = &kMockIpv6DisabledSourceAddrFactoryVtable;
+    address_sorting_override_source_addr_factory_for_testing(&factory->base);
     test_localhost_result_has_ipv4_first_when_ipv6_isnt_available();
     grpc_shutdown();
   }

@@ -22,6 +22,10 @@
 
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -41,12 +45,42 @@
 #define MAX_CREDENTIALS_METADATA_COUNT 4
 
 namespace {
+
+/* We can have a per-channel credentials. */
+struct channel_data {
+  channel_data(grpc_channel_security_connector* security_connector,
+               grpc_auth_context* auth_context)
+      : security_connector(
+            security_connector->Ref(DEBUG_LOCATION, "client_auth_filter")),
+        auth_context(auth_context->Ref(DEBUG_LOCATION, "client_auth_filter")) {}
+  ~channel_data() {
+    security_connector.reset(DEBUG_LOCATION, "client_auth_filter");
+    auth_context.reset(DEBUG_LOCATION, "client_auth_filter");
+  }
+
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> security_connector;
+  grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
+};
+
 /* We can have a per-call credentials. */
 struct call_data {
   call_data(grpc_call_element* elem, const grpc_call_element_args& args)
-      : arena(args.arena),
-        owning_call(args.call_stack),
-        call_combiner(args.call_combiner) {}
+      : owning_call(args.call_stack), call_combiner(args.call_combiner) {
+    channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+    GPR_ASSERT(args.context != nullptr);
+    if (args.context[GRPC_CONTEXT_SECURITY].value == nullptr) {
+      args.context[GRPC_CONTEXT_SECURITY].value =
+          grpc_client_security_context_create(args.arena, /*creds=*/nullptr);
+      args.context[GRPC_CONTEXT_SECURITY].destroy =
+          grpc_client_security_context_destroy;
+    }
+    grpc_client_security_context* sec_ctx =
+        static_cast<grpc_client_security_context*>(
+            args.context[GRPC_CONTEXT_SECURITY].value);
+    sec_ctx->auth_context.reset(DEBUG_LOCATION, "client_auth_filter");
+    sec_ctx->auth_context =
+        chand->auth_context->Ref(DEBUG_LOCATION, "client_auth_filter");
+  }
 
   // This method is technically the dtor of this class. However, since
   // `get_request_metadata_cancel_closure` can run in parallel to
@@ -61,9 +95,8 @@ struct call_data {
     grpc_auth_metadata_context_reset(&auth_md_context);
   }
 
-  gpr_arena* arena;
   grpc_call_stack* owning_call;
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
   grpc_core::RefCountedPtr<grpc_call_credentials> creds;
   grpc_slice host = grpc_empty_slice();
   grpc_slice method = grpc_empty_slice();
@@ -81,22 +114,20 @@ struct call_data {
   grpc_closure get_request_metadata_cancel_closure;
 };
 
-/* We can have a per-channel credentials. */
-struct channel_data {
-  channel_data(grpc_channel_security_connector* security_connector,
-               grpc_auth_context* auth_context)
-      : security_connector(
-            security_connector->Ref(DEBUG_LOCATION, "client_auth_filter")),
-        auth_context(auth_context->Ref(DEBUG_LOCATION, "client_auth_filter")) {}
-  ~channel_data() {
-    security_connector.reset(DEBUG_LOCATION, "client_auth_filter");
-    auth_context.reset(DEBUG_LOCATION, "client_auth_filter");
-  }
-
-  grpc_core::RefCountedPtr<grpc_channel_security_connector> security_connector;
-  grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
-};
 }  // namespace
+
+void grpc_auth_metadata_context_copy(grpc_auth_metadata_context* from,
+                                     grpc_auth_metadata_context* to) {
+  grpc_auth_metadata_context_reset(to);
+  to->channel_auth_context = from->channel_auth_context;
+  if (to->channel_auth_context != nullptr) {
+    const_cast<grpc_auth_context*>(to->channel_auth_context)
+        ->Ref(DEBUG_LOCATION, "grpc_auth_metadata_context_copy")
+        .release();
+  }
+  to->service_url = gpr_strdup(from->service_url);
+  to->method_name = gpr_strdup(from->method_name);
+}
 
 void grpc_auth_metadata_context_reset(
     grpc_auth_metadata_context* auth_md_context) {
@@ -115,7 +146,7 @@ void grpc_auth_metadata_context_reset(
   }
 }
 
-static void add_error(grpc_error** combined, grpc_error* error) {
+static void add_error(grpc_error_handle* combined, grpc_error_handle error) {
   if (error == GRPC_ERROR_NONE) return;
   if (*combined == GRPC_ERROR_NONE) {
     *combined = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -124,14 +155,14 @@ static void add_error(grpc_error** combined, grpc_error* error) {
   *combined = grpc_error_add_child(*combined, error);
 }
 
-static void on_credentials_metadata(void* arg, grpc_error* input_error) {
+static void on_credentials_metadata(void* arg, grpc_error_handle input_error) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
   grpc_call_element* elem =
       static_cast<grpc_call_element*>(batch->handler_private.extra_arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_auth_metadata_context_reset(&calld->auth_md_context);
-  grpc_error* error = GRPC_ERROR_REF(input_error);
+  grpc_error_handle error = GRPC_ERROR_REF(input_error);
   if (error == GRPC_ERROR_NONE) {
     GPR_ASSERT(calld->md_array.size <= MAX_CREDENTIALS_METADATA_COUNT);
     GPR_ASSERT(batch->send_initial_metadata);
@@ -155,8 +186,8 @@ static void on_credentials_metadata(void* arg, grpc_error* input_error) {
 }
 
 void grpc_auth_metadata_context_build(
-    const char* url_scheme, grpc_slice call_host, grpc_slice call_method,
-    grpc_auth_context* auth_context,
+    const char* url_scheme, const grpc_slice& call_host,
+    const grpc_slice& call_method, grpc_auth_context* auth_context,
     grpc_auth_metadata_context* auth_md_context) {
   char* service = grpc_slice_to_c_string(call_method);
   char* last_slash = strrchr(service, '/');
@@ -194,13 +225,14 @@ void grpc_auth_metadata_context_build(
   gpr_free(host_and_port);
 }
 
-static void cancel_get_request_metadata(void* arg, grpc_error* error) {
+static void cancel_get_request_metadata(void* arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (error != GRPC_ERROR_NONE) {
     calld->creds->cancel_get_request_metadata(&calld->md_array,
                                               GRPC_ERROR_REF(error));
   }
+  GRPC_CALL_STACK_UNREF(calld->owning_call, "cancel_get_request_metadata");
 }
 
 static void send_security_metadata(grpc_call_element* elem,
@@ -239,6 +271,39 @@ static void send_security_metadata(grpc_call_element* elem,
         call_creds_has_md ? ctx->creds->Ref() : channel_call_creds->Ref();
   }
 
+  /* Check security level of call credential and channel, and do not send
+   * metadata if the check fails. */
+  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
+      chand->auth_context.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  if (prop == nullptr) {
+    grpc_transport_stream_op_batch_finish_with_failure(
+        batch,
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "Established channel does not have an auth property "
+                "representing a security level."),
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED),
+        calld->call_combiner);
+    return;
+  }
+  grpc_security_level call_cred_security_level =
+      calld->creds->min_security_level();
+  int is_security_level_ok = grpc_check_security_level(
+      grpc_tsi_security_level_string_to_enum(prop->value),
+      call_cred_security_level);
+  if (!is_security_level_ok) {
+    grpc_transport_stream_op_batch_finish_with_failure(
+        batch,
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                               "Established channel does not have a sufficient "
+                               "security level to transfer call credential."),
+                           GRPC_ERROR_INT_GRPC_STATUS,
+                           GRPC_STATUS_UNAUTHENTICATED),
+        calld->call_combiner);
+    return;
+  }
+
   grpc_auth_metadata_context_build(
       chand->security_connector->url_scheme(), calld->host, calld->method,
       chand->auth_context.get(), &calld->auth_md_context);
@@ -247,7 +312,7 @@ static void send_security_metadata(grpc_call_element* elem,
   GRPC_CALL_STACK_REF(calld->owning_call, "get_request_metadata");
   GRPC_CLOSURE_INIT(&calld->async_result_closure, on_credentials_metadata,
                     batch, grpc_schedule_on_exec_ctx);
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   if (calld->creds->get_request_metadata(
           calld->pollent, calld->auth_md_context, &calld->md_array,
           &calld->async_result_closure, &error)) {
@@ -256,15 +321,16 @@ static void send_security_metadata(grpc_call_element* elem,
     GRPC_ERROR_UNREF(error);
   } else {
     // Async return; register cancellation closure with call combiner.
-    grpc_call_combiner_set_notify_on_cancel(
-        calld->call_combiner,
-        GRPC_CLOSURE_INIT(&calld->get_request_metadata_cancel_closure,
-                          cancel_get_request_metadata, elem,
-                          grpc_schedule_on_exec_ctx));
+    // TODO(yashykt): We would not need this ref if call combiners used
+    // Closure::Run() instead of ExecCtx::Run()
+    GRPC_CALL_STACK_REF(calld->owning_call, "cancel_get_request_metadata");
+    calld->call_combiner->SetNotifyOnCancel(GRPC_CLOSURE_INIT(
+        &calld->get_request_metadata_cancel_closure,
+        cancel_get_request_metadata, elem, grpc_schedule_on_exec_ctx));
   }
 }
 
-static void on_host_checked(void* arg, grpc_error* error) {
+static void on_host_checked(void* arg, grpc_error_handle error) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
   grpc_call_element* elem =
@@ -273,23 +339,20 @@ static void on_host_checked(void* arg, grpc_error* error) {
   if (error == GRPC_ERROR_NONE) {
     send_security_metadata(elem, batch);
   } else {
-    char* error_msg;
-    char* host = grpc_slice_to_c_string(calld->host);
-    gpr_asprintf(&error_msg, "Invalid host %s set in :authority metadata.",
-                 host);
-    gpr_free(host);
+    std::string error_msg = absl::StrCat(
+        "Invalid host ", grpc_core::StringViewFromSlice(calld->host),
+        " set in :authority metadata.");
     grpc_transport_stream_op_batch_finish_with_failure(
         batch,
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg),
-                           GRPC_ERROR_INT_GRPC_STATUS,
-                           GRPC_STATUS_UNAUTHENTICATED),
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str()),
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED),
         calld->call_combiner);
-    gpr_free(error_msg);
   }
   GRPC_CALL_STACK_UNREF(calld->owning_call, "check_call_host");
 }
 
-static void cancel_check_call_host(void* arg, grpc_error* error) {
+static void cancel_check_call_host(void* arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
@@ -297,33 +360,16 @@ static void cancel_check_call_host(void* arg, grpc_error* error) {
     chand->security_connector->cancel_check_call_host(
         &calld->async_result_closure, GRPC_ERROR_REF(error));
   }
+  GRPC_CALL_STACK_UNREF(calld->owning_call, "cancel_check_call_host");
 }
 
-static void auth_start_transport_stream_op_batch(
+static void client_auth_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   GPR_TIMER_SCOPE("auth_start_transport_stream_op_batch", 0);
 
   /* grab pointers to our data from the call element */
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-
-  if (!batch->cancel_stream) {
-    // TODO(hcaseyal): move this to init_call_elem once issue #15927 is
-    // resolved.
-    GPR_ASSERT(batch->payload->context != nullptr);
-    if (batch->payload->context[GRPC_CONTEXT_SECURITY].value == nullptr) {
-      batch->payload->context[GRPC_CONTEXT_SECURITY].value =
-          grpc_client_security_context_create(calld->arena, /*creds=*/nullptr);
-      batch->payload->context[GRPC_CONTEXT_SECURITY].destroy =
-          grpc_client_security_context_destroy;
-    }
-    grpc_client_security_context* sec_ctx =
-        static_cast<grpc_client_security_context*>(
-            batch->payload->context[GRPC_CONTEXT_SECURITY].value);
-    sec_ctx->auth_context.reset(DEBUG_LOCATION, "client_auth_filter");
-    sec_ctx->auth_context =
-        chand->auth_context->Ref(DEBUG_LOCATION, "client_auth_filter");
-  }
 
   if (batch->send_initial_metadata) {
     grpc_metadata_batch* metadata =
@@ -339,8 +385,8 @@ static void auth_start_transport_stream_op_batch(
       GRPC_CALL_STACK_REF(calld->owning_call, "check_call_host");
       GRPC_CLOSURE_INIT(&calld->async_result_closure, on_host_checked, batch,
                         grpc_schedule_on_exec_ctx);
-      char* call_host = grpc_slice_to_c_string(calld->host);
-      grpc_error* error = GRPC_ERROR_NONE;
+      absl::string_view call_host(grpc_core::StringViewFromSlice(calld->host));
+      grpc_error_handle error = GRPC_ERROR_NONE;
       if (chand->security_connector->check_call_host(
               call_host, chand->auth_context.get(),
               &calld->async_result_closure, &error)) {
@@ -349,13 +395,13 @@ static void auth_start_transport_stream_op_batch(
         GRPC_ERROR_UNREF(error);
       } else {
         // Async return; register cancellation closure with call combiner.
-        grpc_call_combiner_set_notify_on_cancel(
-            calld->call_combiner,
-            GRPC_CLOSURE_INIT(&calld->check_call_host_cancel_closure,
-                              cancel_check_call_host, elem,
-                              grpc_schedule_on_exec_ctx));
+        // TODO(yashykt): We would not need this ref if call combiners used
+        // Closure::Run() instead of ExecCtx::Run()
+        GRPC_CALL_STACK_REF(calld->owning_call, "cancel_check_call_host");
+        calld->call_combiner->SetNotifyOnCancel(GRPC_CLOSURE_INIT(
+            &calld->check_call_host_cancel_closure, cancel_check_call_host,
+            elem, grpc_schedule_on_exec_ctx));
       }
-      gpr_free(call_host);
       return; /* early exit */
     }
   }
@@ -365,29 +411,29 @@ static void auth_start_transport_stream_op_batch(
 }
 
 /* Constructor for call_data */
-static grpc_error* init_call_elem(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+static grpc_error_handle client_auth_init_call_elem(
+    grpc_call_element* elem, const grpc_call_element_args* args) {
   new (elem->call_data) call_data(elem, *args);
   return GRPC_ERROR_NONE;
 }
 
-static void set_pollset_or_pollset_set(grpc_call_element* elem,
-                                       grpc_polling_entity* pollent) {
+static void client_auth_set_pollset_or_pollset_set(
+    grpc_call_element* elem, grpc_polling_entity* pollent) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->pollent = pollent;
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_call_element* elem,
-                              const grpc_call_final_info* final_info,
-                              grpc_closure* ignored) {
+static void client_auth_destroy_call_elem(
+    grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
+    grpc_closure* /*ignored*/) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->destroy();
 }
 
 /* Constructor for channel_data */
-static grpc_error* init_channel_elem(grpc_channel_element* elem,
-                                     grpc_channel_element_args* args) {
+static grpc_error_handle client_auth_init_channel_elem(
+    grpc_channel_element* elem, grpc_channel_element_args* args) {
   /* The first and the last filters tend to be implemented differently to
      handle the case that there's no 'next' filter to call on the up or down
      path */
@@ -410,20 +456,20 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 }
 
 /* Destructor for channel data */
-static void destroy_channel_elem(grpc_channel_element* elem) {
+static void client_auth_destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   chand->~channel_data();
 }
 
 const grpc_channel_filter grpc_client_auth_filter = {
-    auth_start_transport_stream_op_batch,
+    client_auth_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
-    init_call_elem,
-    set_pollset_or_pollset_set,
-    destroy_call_elem,
+    client_auth_init_call_elem,
+    client_auth_set_pollset_or_pollset_set,
+    client_auth_destroy_call_elem,
     sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
+    client_auth_init_channel_elem,
+    client_auth_destroy_channel_elem,
     grpc_channel_next_get_info,
     "client-auth"};

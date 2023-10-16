@@ -71,9 +71,11 @@ static void test1(void) {
     th.Join();
   }
   GPR_ASSERT(t.n == 0);
+  gpr_mu_destroy(&t.mu);
+  gpr_cv_destroy(&t.done_cv);
 }
 
-static void thd_body2(void* v) {}
+static void thd_body2(void* /*v*/) {}
 
 /* Test that we can create a number of threads and join them. */
 static void test2(void) {

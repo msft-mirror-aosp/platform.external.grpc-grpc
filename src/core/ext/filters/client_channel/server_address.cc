@@ -20,84 +20,151 @@
 
 #include "src/core/ext/filters/client_channel/server_address.h"
 
-#include <string.h>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 
 namespace grpc_core {
+
+//
+// ServerAddressWeightAttribute
+//
+const char* ServerAddressWeightAttribute::kServerAddressWeightAttributeKey =
+    "server_address_weight";
 
 //
 // ServerAddress
 //
 
-ServerAddress::ServerAddress(const grpc_resolved_address& address,
-                             grpc_channel_args* args)
-    : address_(address), args_(args) {}
+ServerAddress::ServerAddress(
+    const grpc_resolved_address& address, grpc_channel_args* args,
+    std::map<const char*, std::unique_ptr<AttributeInterface>> attributes)
+    : address_(address), args_(args), attributes_(std::move(attributes)) {}
 
-ServerAddress::ServerAddress(const void* address, size_t address_len,
-                             grpc_channel_args* args)
-    : args_(args) {
+ServerAddress::ServerAddress(
+    const void* address, size_t address_len, grpc_channel_args* args,
+    std::map<const char*, std::unique_ptr<AttributeInterface>> attributes)
+    : args_(args), attributes_(std::move(attributes)) {
   memcpy(address_.addr, address, address_len);
   address_.len = static_cast<socklen_t>(address_len);
 }
+
+ServerAddress::ServerAddress(const ServerAddress& other)
+    : address_(other.address_), args_(grpc_channel_args_copy(other.args_)) {
+  for (const auto& p : other.attributes_) {
+    attributes_[p.first] = p.second->Copy();
+  }
+}
+ServerAddress& ServerAddress::operator=(const ServerAddress& other) {
+  if (&other == this) {
+    return *this;
+  }
+  address_ = other.address_;
+  grpc_channel_args_destroy(args_);
+  args_ = grpc_channel_args_copy(other.args_);
+  attributes_.clear();
+  for (const auto& p : other.attributes_) {
+    attributes_[p.first] = p.second->Copy();
+  }
+  return *this;
+}
+
+ServerAddress::ServerAddress(ServerAddress&& other) noexcept
+    : address_(other.address_),
+      args_(other.args_),
+      attributes_(std::move(other.attributes_)) {
+  other.args_ = nullptr;
+}
+ServerAddress& ServerAddress::operator=(ServerAddress&& other) noexcept {
+  address_ = other.address_;
+  grpc_channel_args_destroy(args_);
+  args_ = other.args_;
+  other.args_ = nullptr;
+  attributes_ = std::move(other.attributes_);
+  return *this;
+}
+
+namespace {
+
+int CompareAttributes(
+    const std::map<const char*,
+                   std::unique_ptr<ServerAddress::AttributeInterface>>&
+        attributes1,
+    const std::map<const char*,
+                   std::unique_ptr<ServerAddress::AttributeInterface>>&
+        attributes2) {
+  auto it2 = attributes2.begin();
+  for (auto it1 = attributes1.begin(); it1 != attributes1.end(); ++it1) {
+    // attributes2 has fewer elements than attributes1
+    if (it2 == attributes2.end()) return -1;
+    // compare keys
+    int retval = strcmp(it1->first, it2->first);
+    if (retval != 0) return retval;
+    // compare values
+    retval = it1->second->Cmp(it2->second.get());
+    if (retval != 0) return retval;
+    ++it2;
+  }
+  // attributes1 has fewer elements than attributes2
+  if (it2 != attributes2.end()) return 1;
+  // equal
+  return 0;
+}
+
+}  // namespace
 
 int ServerAddress::Cmp(const ServerAddress& other) const {
   if (address_.len > other.address_.len) return 1;
   if (address_.len < other.address_.len) return -1;
   int retval = memcmp(address_.addr, other.address_.addr, address_.len);
   if (retval != 0) return retval;
-  return grpc_channel_args_compare(args_, other.args_);
+  retval = grpc_channel_args_compare(args_, other.args_);
+  if (retval != 0) return retval;
+  return CompareAttributes(attributes_, other.attributes_);
 }
 
-bool ServerAddress::IsBalancer() const {
-  return grpc_channel_arg_get_bool(
-      grpc_channel_args_find(args_, GRPC_ARG_ADDRESS_IS_BALANCER), false);
+const ServerAddress::AttributeInterface* ServerAddress::GetAttribute(
+    const char* key) const {
+  auto it = attributes_.find(key);
+  if (it == attributes_.end()) return nullptr;
+  return it->second.get();
 }
 
-//
-// ServerAddressList
-//
-
-namespace {
-
-void* ServerAddressListCopy(void* addresses) {
-  ServerAddressList* a = static_cast<ServerAddressList*>(addresses);
-  return New<ServerAddressList>(*a);
-}
-
-void ServerAddressListDestroy(void* addresses) {
-  ServerAddressList* a = static_cast<ServerAddressList*>(addresses);
-  Delete(a);
-}
-
-int ServerAddressListCompare(void* addresses1, void* addresses2) {
-  ServerAddressList* a1 = static_cast<ServerAddressList*>(addresses1);
-  ServerAddressList* a2 = static_cast<ServerAddressList*>(addresses2);
-  if (a1->size() > a2->size()) return 1;
-  if (a1->size() < a2->size()) return -1;
-  for (size_t i = 0; i < a1->size(); ++i) {
-    int retval = (*a1)[i].Cmp((*a2)[i]);
-    if (retval != 0) return retval;
+// Returns a copy of the address with a modified attribute.
+// If the new value is null, the attribute is removed.
+ServerAddress ServerAddress::WithAttribute(
+    const char* key, std::unique_ptr<AttributeInterface> value) const {
+  ServerAddress address = *this;
+  if (value == nullptr) {
+    address.attributes_.erase(key);
+  } else {
+    address.attributes_[key] = std::move(value);
   }
-  return 0;
+  return address;
 }
 
-const grpc_arg_pointer_vtable server_addresses_arg_vtable = {
-    ServerAddressListCopy, ServerAddressListDestroy, ServerAddressListCompare};
-
-}  // namespace
-
-grpc_arg CreateServerAddressListChannelArg(const ServerAddressList* addresses) {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_SERVER_ADDRESS_LIST),
-      const_cast<ServerAddressList*>(addresses), &server_addresses_arg_vtable);
-}
-
-ServerAddressList* FindServerAddressListChannelArg(
-    const grpc_channel_args* channel_args) {
-  const grpc_arg* lb_addresses_arg =
-      grpc_channel_args_find(channel_args, GRPC_ARG_SERVER_ADDRESS_LIST);
-  if (lb_addresses_arg == nullptr || lb_addresses_arg->type != GRPC_ARG_POINTER)
-    return nullptr;
-  return static_cast<ServerAddressList*>(lb_addresses_arg->value.pointer.p);
+std::string ServerAddress::ToString() const {
+  std::vector<std::string> parts = {
+      grpc_sockaddr_to_string(&address_, false),
+  };
+  if (args_ != nullptr) {
+    parts.emplace_back(
+        absl::StrCat("args={", grpc_channel_args_string(args_), "}"));
+  }
+  if (!attributes_.empty()) {
+    std::vector<std::string> attrs;
+    for (const auto& p : attributes_) {
+      attrs.emplace_back(absl::StrCat(p.first, "=", p.second->ToString()));
+    }
+    parts.emplace_back(
+        absl::StrCat("attributes={", absl::StrJoin(attrs, ", "), "}"));
+  }
+  return absl::StrJoin(parts, " ");
 }
 
 }  // namespace grpc_core

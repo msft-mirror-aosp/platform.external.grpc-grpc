@@ -50,7 +50,7 @@ namespace testing {
 
 namespace {
 
-void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
+void* tag(int i) { return reinterpret_cast<void*>(i); }
 int detag(void* p) { return static_cast<int>(reinterpret_cast<intptr_t>(p)); }
 
 class Verifier {
@@ -110,8 +110,8 @@ class RawEnd2EndTest : public ::testing::Test {
     void* ignored_tag;
     bool ignored_ok;
     cq_->Shutdown();
-    while (cq_->Next(&ignored_tag, &ignored_ok))
-      ;
+    while (cq_->Next(&ignored_tag, &ignored_ok)) {
+    }
     stub_.reset();
     grpc_recycle_unused_port(port_);
   }
@@ -130,7 +130,7 @@ class RawEnd2EndTest : public ::testing::Test {
 
   void ResetStub() {
     ChannelArguments args;
-    std::shared_ptr<Channel> channel = CreateChannel(
+    std::shared_ptr<Channel> channel = grpc::CreateChannel(
         server_address_.str(), grpc::InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }

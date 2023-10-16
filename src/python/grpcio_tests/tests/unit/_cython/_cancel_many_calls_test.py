@@ -18,8 +18,9 @@ import unittest
 
 from grpc._cython import cygrpc
 from grpc.framework.foundation import logging_pool
-from tests.unit.framework.common import test_constants
+
 from tests.unit._cython import test_utilities
+from tests.unit.framework.common import test_constants
 
 _EMPTY_FLAGS = 0
 _EMPTY_METADATA = ()
@@ -144,12 +145,10 @@ class CancelManyCallsTest(unittest.TestCase):
             test_constants.THREAD_CONCURRENCY)
 
         server_completion_queue = cygrpc.CompletionQueue()
-        server = cygrpc.Server([
-            (
-                b'grpc.so_reuseport',
-                0,
-            ),
-        ])
+        server = cygrpc.Server([(
+            b'grpc.so_reuseport',
+            0,
+        )], False)
         server.register_completion_queue(server_completion_queue)
         port = server.add_http2_port(b'[::]:0')
         server.start()
@@ -193,8 +192,8 @@ class CancelManyCallsTest(unittest.TestCase):
                 client_due.add(tag)
                 client_calls.append(client_call)
 
-        client_events_future = test_utilities.SimpleFuture(
-            lambda: tuple(channel.next_call_event() for _ in range(_SUCCESSFUL_CALLS)))
+        client_events_future = test_utilities.SimpleFuture(lambda: tuple(
+            channel.next_call_event() for _ in range(_SUCCESSFUL_CALLS)))
 
         with state.condition:
             while True:

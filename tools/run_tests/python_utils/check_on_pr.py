@@ -13,13 +13,16 @@
 # limitations under the License.
 
 from __future__ import print_function
-import os
-import json
-import time
-import datetime
 
-import requests
+import datetime
+import json
+import os
+import sys
+import time
+import traceback
+
 import jwt
+import requests
 
 _GITHUB_API_PREFIX = 'https://api.github.com'
 _GITHUB_REPO = 'grpc/grpc'
@@ -27,6 +30,8 @@ _GITHUB_APP_ID = 22338
 _INSTALLATION_ID = 519109
 
 _ACCESS_TOKEN_CACHE = None
+_ACCESS_TOKEN_FETCH_RETRIES = 6
+_ACCESS_TOKEN_FETCH_RETRIES_INTERVAL_S = 15
 
 
 def _jwt_token():
@@ -46,17 +51,34 @@ def _jwt_token():
 def _access_token():
     global _ACCESS_TOKEN_CACHE
     if _ACCESS_TOKEN_CACHE == None or _ACCESS_TOKEN_CACHE['exp'] < time.time():
-        resp = requests.post(
-            url='https://api.github.com/app/installations/%s/access_tokens' %
-            _INSTALLATION_ID,
-            headers={
-                'Authorization': 'Bearer %s' % _jwt_token().decode('ASCII'),
-                'Accept': 'application/vnd.github.machine-man-preview+json',
-            })
-        _ACCESS_TOKEN_CACHE = {
-            'token': resp.json()['token'],
-            'exp': time.time() + 60
-        }
+        for i in range(_ACCESS_TOKEN_FETCH_RETRIES):
+            resp = requests.post(
+                url='https://api.github.com/app/installations/%s/access_tokens'
+                % _INSTALLATION_ID,
+                headers={
+                    'Authorization': 'Bearer %s' % _jwt_token(),
+                    'Accept': 'application/vnd.github.machine-man-preview+json',
+                })
+
+            try:
+                _ACCESS_TOKEN_CACHE = {
+                    'token': resp.json()['token'],
+                    'exp': time.time() + 60
+                }
+                break
+            except (KeyError, ValueError):
+                traceback.print_exc()
+                print('HTTP Status %d %s' % (resp.status_code, resp.reason))
+                print("Fetch access token from Github API failed:")
+                print(resp.text)
+                if i != _ACCESS_TOKEN_FETCH_RETRIES - 1:
+                    print('Retrying after %.2f second.' %
+                          _ACCESS_TOKEN_FETCH_RETRIES_INTERVAL_S)
+                    time.sleep(_ACCESS_TOKEN_FETCH_RETRIES_INTERVAL_S)
+        else:
+            print("error: Unable to fetch access token, exiting...")
+            sys.exit(0)
+
     return _ACCESS_TOKEN_CACHE['token']
 
 
@@ -71,9 +93,9 @@ def _call(url, method='GET', json=None):
 
 
 def _latest_commit():
-    resp = _call('/repos/%s/pulls/%s/commits' %
-                 (_GITHUB_REPO,
-                  os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']))
+    resp = _call(
+        '/repos/%s/pulls/%s/commits' %
+        (_GITHUB_REPO, os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']))
     return resp.json()[-1]
 
 
@@ -102,19 +124,18 @@ def check_on_pr(name, summary, success=True):
         return
     completion_time = str(
         datetime.datetime.utcnow().replace(microsecond=0).isoformat()) + 'Z'
-    resp = _call(
-        '/repos/%s/check-runs' % _GITHUB_REPO,
-        method='POST',
-        json={
-            'name': name,
-            'head_sha': os.environ['KOKORO_GIT_COMMIT'],
-            'status': 'completed',
-            'completed_at': completion_time,
-            'conclusion': 'success' if success else 'failure',
-            'output': {
-                'title': name,
-                'summary': summary,
-            }
-        })
+    resp = _call('/repos/%s/check-runs' % _GITHUB_REPO,
+                 method='POST',
+                 json={
+                     'name': name,
+                     'head_sha': os.environ['KOKORO_GIT_COMMIT'],
+                     'status': 'completed',
+                     'completed_at': completion_time,
+                     'conclusion': 'success' if success else 'failure',
+                     'output': {
+                         'title': name,
+                         'summary': summary,
+                     }
+                 })
     print('Result of Creating/Updating Check on PR:',
           json.dumps(resp.json(), indent=2))

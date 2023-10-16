@@ -18,6 +18,9 @@ import sys
 
 import setuptools
 
+_PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
+_README_PATH = os.path.join(_PACKAGE_PATH, 'README.rst')
+
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -44,12 +47,13 @@ class _NoOpCommand(setuptools.Command):
 CLASSIFIERS = [
     'Development Status :: 5 - Production/Stable',
     'Programming Language :: Python',
-    'Programming Language :: Python :: 2',
-    'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
     'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
     'License :: OSI Approved :: Apache Software License',
 ]
 
@@ -64,9 +68,10 @@ INSTALL_REQUIRES = (
 
 try:
     import channelz_commands as _channelz_commands
+
     # we are in the build environment, otherwise the above import fails
-    SETUP_REQUIRES = (
-        'grpcio-tools=={version}'.format(version=grpc_version.VERSION),)
+    SETUP_REQUIRES = ('grpcio-tools=={version}'.format(
+        version=grpc_version.VERSION),)
     COMMAND_CLASS = {
         # Run preprocess from the repository *before* doing any packaging!
         'preprocess': _channelz_commands.Preprocess,
@@ -85,6 +90,7 @@ setuptools.setup(
     version=grpc_version.VERSION,
     license='Apache License 2.0',
     description='Channel Level Live Debug Information Service for gRPC',
+    long_description=open(_README_PATH, 'r').read(),
     author='The gRPC Authors',
     author_email='grpc-io@googlegroups.com',
     classifiers=CLASSIFIERS,

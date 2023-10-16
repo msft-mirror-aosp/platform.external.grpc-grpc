@@ -13,10 +13,19 @@
 # limitations under the License.
 """Implementations of interoperability test methods."""
 
+# NOTE(lidiz) This module only exists in Bazel BUILD file, for more details
+# please refer to comments in the "bazel_namespace_package_hack" module.
+try:
+    from tests import bazel_namespace_package_hack
+    bazel_namespace_package_hack.sys_path_to_site_dir_hack()
+except ImportError:
+    pass
+
 import enum
 import json
 import os
 import threading
+import time
 
 from google import auth as google_auth
 from google.auth import environment_vars as google_auth_environment_vars
@@ -26,88 +35,21 @@ import grpc
 
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
-from src.proto.grpc.testing import test_pb2_grpc
 
 _INITIAL_METADATA_KEY = "x-grpc-test-echo-initial"
 _TRAILING_METADATA_KEY = "x-grpc-test-echo-trailing-bin"
 
 
-def _maybe_echo_metadata(servicer_context):
-    """Copies metadata from request to response if it is present."""
-    invocation_metadata = dict(servicer_context.invocation_metadata())
-    if _INITIAL_METADATA_KEY in invocation_metadata:
-        initial_metadatum = (_INITIAL_METADATA_KEY,
-                             invocation_metadata[_INITIAL_METADATA_KEY])
-        servicer_context.send_initial_metadata((initial_metadatum,))
-    if _TRAILING_METADATA_KEY in invocation_metadata:
-        trailing_metadatum = (_TRAILING_METADATA_KEY,
-                              invocation_metadata[_TRAILING_METADATA_KEY])
-        servicer_context.set_trailing_metadata((trailing_metadatum,))
-
-
-def _maybe_echo_status_and_message(request, servicer_context):
-    """Sets the response context code and details if the request asks for them"""
-    if request.HasField('response_status'):
-        servicer_context.set_code(request.response_status.code)
-        servicer_context.set_details(request.response_status.message)
-
-
-class TestService(test_pb2_grpc.TestServiceServicer):
-
-    def EmptyCall(self, request, context):
-        _maybe_echo_metadata(context)
-        return empty_pb2.Empty()
-
-    def UnaryCall(self, request, context):
-        _maybe_echo_metadata(context)
-        _maybe_echo_status_and_message(request, context)
-        return messages_pb2.SimpleResponse(
-            payload=messages_pb2.Payload(
-                type=messages_pb2.COMPRESSABLE,
-                body=b'\x00' * request.response_size))
-
-    def StreamingOutputCall(self, request, context):
-        _maybe_echo_status_and_message(request, context)
-        for response_parameters in request.response_parameters:
-            yield messages_pb2.StreamingOutputCallResponse(
-                payload=messages_pb2.Payload(
-                    type=request.response_type,
-                    body=b'\x00' * response_parameters.size))
-
-    def StreamingInputCall(self, request_iterator, context):
-        aggregate_size = 0
-        for request in request_iterator:
-            if request.payload is not None and request.payload.body:
-                aggregate_size += len(request.payload.body)
-        return messages_pb2.StreamingInputCallResponse(
-            aggregated_payload_size=aggregate_size)
-
-    def FullDuplexCall(self, request_iterator, context):
-        _maybe_echo_metadata(context)
-        for request in request_iterator:
-            _maybe_echo_status_and_message(request, context)
-            for response_parameters in request.response_parameters:
-                yield messages_pb2.StreamingOutputCallResponse(
-                    payload=messages_pb2.Payload(
-                        type=request.payload.type,
-                        body=b'\x00' * response_parameters.size))
-
-    # NOTE(nathaniel): Apparently this is the same as the full-duplex call?
-    # NOTE(atash): It isn't even called in the interop spec (Oct 22 2015)...
-    def HalfDuplexCall(self, request_iterator, context):
-        return self.FullDuplexCall(request_iterator, context)
-
-
 def _expect_status_code(call, expected_code):
     if call.code() != expected_code:
-        raise ValueError('expected code %s, got %s' % (expected_code,
-                                                       call.code()))
+        raise ValueError('expected code %s, got %s' %
+                         (expected_code, call.code()))
 
 
 def _expect_status_details(call, expected_details):
     if call.details() != expected_details:
-        raise ValueError('expected message %s, got %s' % (expected_details,
-                                                          call.details()))
+        raise ValueError('expected message %s, got %s' %
+                         (expected_details, call.details()))
 
 
 def _validate_status_code_and_details(call, expected_code, expected_details):
@@ -133,8 +75,8 @@ def _large_unary_common_behavior(stub, fill_username, fill_oauth_scope,
         payload=messages_pb2.Payload(body=b'\x00' * 271828),
         fill_username=fill_username,
         fill_oauth_scope=fill_oauth_scope)
-    response_future = stub.UnaryCall.future(
-        request, credentials=call_credentials)
+    response_future = stub.UnaryCall.future(request,
+                                            credentials=call_credentials)
     response = response_future.result()
     _validate_payload_type_and_length(response, messages_pb2.COMPRESSABLE, size)
     return response
@@ -143,8 +85,8 @@ def _large_unary_common_behavior(stub, fill_username, fill_oauth_scope,
 def _empty_unary(stub):
     response = stub.EmptyCall(empty_pb2.Empty())
     if not isinstance(response, empty_pb2.Empty):
-        raise TypeError(
-            'response is of type "%s", not empty_pb2.Empty!' % type(response))
+        raise TypeError('response is of type "%s", not empty_pb2.Empty!' %
+                        type(response))
 
 
 def _large_unary(stub):
@@ -164,8 +106,8 @@ def _client_streaming(stub):
                 for payload in payloads)
     response = stub.StreamingInputCall(requests)
     if response.aggregated_payload_size != 74922:
-        raise ValueError(
-            'incorrect size %d!' % response.aggregated_payload_size)
+        raise ValueError('incorrect size %d!' %
+                         response.aggregated_payload_size)
 
 
 def _server_streaming(stub):
@@ -249,13 +191,14 @@ def _ping_pong(stub):
                                                request_payload_sizes):
             request = messages_pb2.StreamingOutputCallRequest(
                 response_type=messages_pb2.COMPRESSABLE,
-                response_parameters=(
-                    messages_pb2.ResponseParameters(size=response_size),),
+                response_parameters=(messages_pb2.ResponseParameters(
+                    size=response_size),),
                 payload=messages_pb2.Payload(body=b'\x00' * payload_size))
             pipe.add(request)
             response = next(response_iterator)
-            _validate_payload_type_and_length(
-                response, messages_pb2.COMPRESSABLE, response_size)
+            _validate_payload_type_and_length(response,
+                                              messages_pb2.COMPRESSABLE,
+                                              response_size)
 
 
 def _cancel_after_begin(stub):
@@ -288,8 +231,8 @@ def _cancel_after_first_response(stub):
         payload_size = request_payload_sizes[0]
         request = messages_pb2.StreamingOutputCallRequest(
             response_type=messages_pb2.COMPRESSABLE,
-            response_parameters=(
-                messages_pb2.ResponseParameters(size=response_size),),
+            response_parameters=(messages_pb2.ResponseParameters(
+                size=response_size),),
             payload=messages_pb2.Payload(body=b'\x00' * payload_size))
         pipe.add(request)
         response = next(response_iterator)
@@ -358,6 +301,10 @@ def _status_code_and_message(stub):
             payload=messages_pb2.Payload(body=b'\x00'),
             response_status=messages_pb2.EchoStatus(code=code, message=details))
         pipe.add(request)  # sends the initial request.
+    try:
+        next(response_iterator)
+    except grpc.RpcError as rpc_error:
+        assert rpc_error.code() == status
     # Dropping out of with block closes the pipe
     _validate_status_code_and_details(response_iterator, status, details)
 
@@ -424,8 +371,8 @@ def _oauth2_auth_token(stub, args):
     wanted_email = json.load(open(json_key_filename, 'r'))['client_email']
     response = _large_unary_common_behavior(stub, True, True, None)
     if wanted_email != response.username:
-        raise ValueError('expected username %s, got %s' % (wanted_email,
-                                                           response.username))
+        raise ValueError('expected username %s, got %s' %
+                         (wanted_email, response.username))
     if args.oauth_scope.find(response.oauth_scope) == -1:
         raise ValueError(
             'expected to find oauth scope "{}" in received "{}"'.format(
@@ -437,8 +384,8 @@ def _jwt_token_creds(stub, args):
     wanted_email = json.load(open(json_key_filename, 'r'))['client_email']
     response = _large_unary_common_behavior(stub, True, False, None)
     if wanted_email != response.username:
-        raise ValueError('expected username %s, got %s' % (wanted_email,
-                                                           response.username))
+        raise ValueError('expected username %s, got %s' %
+                         (wanted_email, response.username))
 
 
 def _per_rpc_creds(stub, args):
@@ -452,8 +399,8 @@ def _per_rpc_creds(stub, args):
             request=google_auth_transport_requests.Request()))
     response = _large_unary_common_behavior(stub, True, False, call_credentials)
     if wanted_email != response.username:
-        raise ValueError('expected username %s, got %s' % (wanted_email,
-                                                           response.username))
+        raise ValueError('expected username %s, got %s' %
+                         (wanted_email, response.username))
 
 
 def _special_status_message(stub, args):
@@ -531,5 +478,5 @@ class TestCase(enum.Enum):
         elif self is TestCase.SPECIAL_STATUS_MESSAGE:
             _special_status_message(stub, args)
         else:
-            raise NotImplementedError(
-                'Test case "%s" not implemented!' % self.name)
+            raise NotImplementedError('Test case "%s" not implemented!' %
+                                      self.name)

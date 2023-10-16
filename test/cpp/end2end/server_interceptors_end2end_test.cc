@@ -29,6 +29,9 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/server_interceptor.h>
 
+#include "absl/memory/memory.h"
+#include "absl/strings/match.h"
+
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -44,7 +47,7 @@ namespace {
 
 class LoggingInterceptor : public experimental::Interceptor {
  public:
-  LoggingInterceptor(experimental::ServerRpcInfo* info) {
+  explicit LoggingInterceptor(experimental::ServerRpcInfo* info) {
     info_ = info;
 
     // Check the method name and compare to the type
@@ -96,8 +99,8 @@ class LoggingInterceptor : public experimental::Interceptor {
       bool found = false;
       // Check that we received the metadata as an echo
       for (const auto& pair : *map) {
-        found = pair.first.find("testkey") == 0 &&
-                pair.second.find("testvalue") == 0;
+        found = absl::StartsWith(pair.first, "testkey") &&
+                absl::StartsWith(pair.second, "testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);
@@ -120,7 +123,9 @@ class LoggingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::POST_RECV_MESSAGE)) {
       EchoResponse* resp =
           static_cast<EchoResponse*>(methods->GetRecvMessage());
-      EXPECT_TRUE(resp->message().find("Hello") == 0);
+      if (resp != nullptr) {
+        EXPECT_TRUE(resp->message().find("Hello") == 0);
+      }
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_CLOSE)) {
@@ -136,7 +141,7 @@ class LoggingInterceptor : public experimental::Interceptor {
 class LoggingInterceptorFactory
     : public experimental::ServerInterceptorFactoryInterface {
  public:
-  virtual experimental::Interceptor* CreateServerInterceptor(
+  experimental::Interceptor* CreateServerInterceptor(
       experimental::ServerRpcInfo* info) override {
     return new LoggingInterceptor(info);
   }
@@ -145,7 +150,7 @@ class LoggingInterceptorFactory
 // Test if SendMessage function family works as expected for sync/callback apis
 class SyncSendMessageTester : public experimental::Interceptor {
  public:
-  SyncSendMessageTester(experimental::ServerRpcInfo* info) {}
+  explicit SyncSendMessageTester(experimental::ServerRpcInfo* /*info*/) {}
 
   void Intercept(experimental::InterceptorBatchMethods* methods) override {
     if (methods->QueryInterceptionHookPoint(
@@ -166,7 +171,7 @@ class SyncSendMessageTester : public experimental::Interceptor {
 class SyncSendMessageTesterFactory
     : public experimental::ServerInterceptorFactoryInterface {
  public:
-  virtual experimental::Interceptor* CreateServerInterceptor(
+  experimental::Interceptor* CreateServerInterceptor(
       experimental::ServerRpcInfo* info) override {
     return new SyncSendMessageTester(info);
   }
@@ -175,7 +180,7 @@ class SyncSendMessageTesterFactory
 // Test if SendMessage function family works as expected for sync/callback apis
 class SyncSendMessageVerifier : public experimental::Interceptor {
  public:
-  SyncSendMessageVerifier(experimental::ServerRpcInfo* info) {}
+  explicit SyncSendMessageVerifier(experimental::ServerRpcInfo* /*info*/) {}
 
   void Intercept(experimental::InterceptorBatchMethods* methods) override {
     if (methods->QueryInterceptionHookPoint(
@@ -201,7 +206,7 @@ class SyncSendMessageVerifier : public experimental::Interceptor {
 class SyncSendMessageVerifierFactory
     : public experimental::ServerInterceptorFactoryInterface {
  public:
-  virtual experimental::Interceptor* CreateServerInterceptor(
+  experimental::Interceptor* CreateServerInterceptor(
       experimental::ServerRpcInfo* info) override {
     return new SyncSendMessageVerifier(info);
   }
@@ -247,12 +252,10 @@ class ServerInterceptorsEnd2endSyncUnaryTest : public ::testing::Test {
     creators.push_back(
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
             new LoggingInterceptorFactory()));
-    // Add 20 dummy interceptor factories and null interceptor factories
+    // Add 20 phony interceptor factories and null interceptor factories
     for (auto i = 0; i < 20; i++) {
-      creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-          new DummyInterceptorFactory()));
-      creators.push_back(std::unique_ptr<NullInterceptorFactory>(
-          new NullInterceptorFactory()));
+      creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
+      creators.push_back(absl::make_unique<NullInterceptorFactory>());
     }
     builder.experimental().SetInterceptorCreators(std::move(creators));
     server_ = builder.BuildAndStart();
@@ -264,11 +267,12 @@ class ServerInterceptorsEnd2endSyncUnaryTest : public ::testing::Test {
 
 TEST_F(ServerInterceptorsEnd2endSyncUnaryTest, UnaryTest) {
   ChannelArguments args;
-  DummyInterceptor::Reset();
-  auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
+  PhonyInterceptor::Reset();
+  auto channel =
+      grpc::CreateChannel(server_address_, InsecureChannelCredentials());
   MakeCall(channel);
-  // Make sure all 20 dummy interceptors were run
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Make sure all 20 phony interceptors were run
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 }
 
 class ServerInterceptorsEnd2endSyncStreamingTest : public ::testing::Test {
@@ -294,8 +298,7 @@ class ServerInterceptorsEnd2endSyncStreamingTest : public ::testing::Test {
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
             new LoggingInterceptorFactory()));
     for (auto i = 0; i < 20; i++) {
-      creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-          new DummyInterceptorFactory()));
+      creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
     }
     builder.experimental().SetInterceptorCreators(std::move(creators));
     server_ = builder.BuildAndStart();
@@ -307,35 +310,38 @@ class ServerInterceptorsEnd2endSyncStreamingTest : public ::testing::Test {
 
 TEST_F(ServerInterceptorsEnd2endSyncStreamingTest, ClientStreamingTest) {
   ChannelArguments args;
-  DummyInterceptor::Reset();
-  auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
+  PhonyInterceptor::Reset();
+  auto channel =
+      grpc::CreateChannel(server_address_, InsecureChannelCredentials());
   MakeClientStreamingCall(channel);
-  // Make sure all 20 dummy interceptors were run
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Make sure all 20 phony interceptors were run
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 }
 
 TEST_F(ServerInterceptorsEnd2endSyncStreamingTest, ServerStreamingTest) {
   ChannelArguments args;
-  DummyInterceptor::Reset();
-  auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
+  PhonyInterceptor::Reset();
+  auto channel =
+      grpc::CreateChannel(server_address_, InsecureChannelCredentials());
   MakeServerStreamingCall(channel);
-  // Make sure all 20 dummy interceptors were run
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Make sure all 20 phony interceptors were run
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 }
 
 TEST_F(ServerInterceptorsEnd2endSyncStreamingTest, BidiStreamingTest) {
   ChannelArguments args;
-  DummyInterceptor::Reset();
-  auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
+  PhonyInterceptor::Reset();
+  auto channel =
+      grpc::CreateChannel(server_address_, InsecureChannelCredentials());
   MakeBidiStreamingCall(channel);
-  // Make sure all 20 dummy interceptors were run
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Make sure all 20 phony interceptors were run
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 }
 
 class ServerInterceptorsAsyncEnd2endTest : public ::testing::Test {};
 
 TEST_F(ServerInterceptorsAsyncEnd2endTest, UnaryTest) {
-  DummyInterceptor::Reset();
+  PhonyInterceptor::Reset();
   int port = grpc_pick_unused_port_or_die();
   string server_address = "localhost:" + std::to_string(port);
   ServerBuilder builder;
@@ -348,15 +354,15 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnaryTest) {
       std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
           new LoggingInterceptorFactory()));
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
   auto cq = builder.AddCompletionQueue();
   auto server = builder.BuildAndStart();
 
   ChannelArguments args;
-  auto channel = CreateChannel(server_address, InsecureChannelCredentials());
+  auto channel =
+      grpc::CreateChannel(server_address, InsecureChannelCredentials());
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
 
   EchoRequest send_request;
@@ -394,20 +400,20 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnaryTest) {
   EXPECT_TRUE(CheckMetadata(cli_ctx.GetServerTrailingMetadata(), "testkey",
                             "testvalue"));
 
-  // Make sure all 20 dummy interceptors were run
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Make sure all 20 phony interceptors were run
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 
   server->Shutdown();
   cq->Shutdown();
   void* ignored_tag;
   bool ignored_ok;
-  while (cq->Next(&ignored_tag, &ignored_ok))
-    ;
+  while (cq->Next(&ignored_tag, &ignored_ok)) {
+  }
   grpc_recycle_unused_port(port);
 }
 
 TEST_F(ServerInterceptorsAsyncEnd2endTest, BidiStreamingTest) {
-  DummyInterceptor::Reset();
+  PhonyInterceptor::Reset();
   int port = grpc_pick_unused_port_or_die();
   string server_address = "localhost:" + std::to_string(port);
   ServerBuilder builder;
@@ -420,15 +426,15 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, BidiStreamingTest) {
       std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
           new LoggingInterceptorFactory()));
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
   auto cq = builder.AddCompletionQueue();
   auto server = builder.BuildAndStart();
 
   ChannelArguments args;
-  auto channel = CreateChannel(server_address, InsecureChannelCredentials());
+  auto channel =
+      grpc::CreateChannel(server_address, InsecureChannelCredentials());
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
 
   EchoRequest send_request;
@@ -476,20 +482,20 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, BidiStreamingTest) {
   EXPECT_TRUE(CheckMetadata(cli_ctx.GetServerTrailingMetadata(), "testkey",
                             "testvalue"));
 
-  // Make sure all 20 dummy interceptors were run
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Make sure all 20 phony interceptors were run
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 
   server->Shutdown();
   cq->Shutdown();
   void* ignored_tag;
   bool ignored_ok;
-  while (cq->Next(&ignored_tag, &ignored_ok))
-    ;
+  while (cq->Next(&ignored_tag, &ignored_ok)) {
+  }
   grpc_recycle_unused_port(port);
 }
 
 TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
-  DummyInterceptor::Reset();
+  PhonyInterceptor::Reset();
   int port = grpc_pick_unused_port_or_die();
   string server_address = "localhost:" + std::to_string(port);
   ServerBuilder builder;
@@ -500,8 +506,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
       creators;
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
   auto srv_cq = builder.AddCompletionQueue();
@@ -509,10 +514,11 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   auto server = builder.BuildAndStart();
 
   ChannelArguments args;
-  auto channel = CreateChannel(server_address, InsecureChannelCredentials());
+  auto channel =
+      grpc::CreateChannel(server_address, InsecureChannelCredentials());
   GenericStub generic_stub(channel);
 
-  const grpc::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
+  const std::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
   EchoRequest send_request;
   EchoRequest recv_request;
   EchoResponse send_response;
@@ -527,6 +533,8 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   send_request.set_message("Hello");
   cli_ctx.AddMetadata("testkey", "testvalue");
 
+  CompletionQueue* cq = srv_cq.get();
+  std::thread request_call([cq]() { Verifier().Expect(4, true).Verify(cq); });
   std::unique_ptr<GenericClientAsyncReaderWriter> call =
       generic_stub.PrepareCall(&cli_ctx, kMethodName, &cli_cq);
   call->StartCall(tag(1));
@@ -542,7 +550,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
 
   service.RequestCall(&srv_ctx, &stream, srv_cq.get(), srv_cq.get(), tag(4));
 
-  Verifier().Expect(4, true).Verify(srv_cq.get());
+  request_call.join();
   EXPECT_EQ(kMethodName, srv_ctx.method());
   EXPECT_TRUE(CheckMetadata(srv_ctx.client_metadata(), "testkey", "testvalue"));
   srv_ctx.AddTrailingMetadata("testkey", "testvalue");
@@ -580,21 +588,21 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   EXPECT_TRUE(CheckMetadata(cli_ctx.GetServerTrailingMetadata(), "testkey",
                             "testvalue"));
 
-  // Make sure all 20 dummy interceptors were run
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Make sure all 20 phony interceptors were run
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 
   server->Shutdown();
   void* ignored_tag;
   bool ignored_ok;
-  while (cli_cq.Next(&ignored_tag, &ignored_ok))
-    ;
-  while (srv_cq->Next(&ignored_tag, &ignored_ok))
-    ;
+  while (cli_cq.Next(&ignored_tag, &ignored_ok)) {
+  }
+  while (srv_cq->Next(&ignored_tag, &ignored_ok)) {
+  }
   grpc_recycle_unused_port(port);
 }
 
 TEST_F(ServerInterceptorsAsyncEnd2endTest, UnimplementedRpcTest) {
-  DummyInterceptor::Reset();
+  PhonyInterceptor::Reset();
   int port = grpc_pick_unused_port_or_die();
   string server_address = "localhost:" + std::to_string(port);
   ServerBuilder builder;
@@ -603,8 +611,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnimplementedRpcTest) {
       creators;
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
   auto cq = builder.AddCompletionQueue();
@@ -612,7 +619,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnimplementedRpcTest) {
 
   ChannelArguments args;
   std::shared_ptr<Channel> channel =
-      CreateChannel(server_address, InsecureChannelCredentials());
+      grpc::CreateChannel(server_address, InsecureChannelCredentials());
   std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
   stub = grpc::testing::UnimplementedEchoService::NewStub(channel);
   EchoRequest send_request;
@@ -630,15 +637,15 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnimplementedRpcTest) {
   EXPECT_EQ(StatusCode::UNIMPLEMENTED, recv_status.error_code());
   EXPECT_EQ("", recv_status.error_message());
 
-  // Make sure all 20 dummy interceptors were run
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Make sure all 20 phony interceptors were run
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 
   server->Shutdown();
   cq->Shutdown();
   void* ignored_tag;
   bool ignored_ok;
-  while (cq->Next(&ignored_tag, &ignored_ok))
-    ;
+  while (cq->Next(&ignored_tag, &ignored_ok)) {
+  }
   grpc_recycle_unused_port(port);
 }
 
@@ -646,7 +653,7 @@ class ServerInterceptorsSyncUnimplementedEnd2endTest : public ::testing::Test {
 };
 
 TEST_F(ServerInterceptorsSyncUnimplementedEnd2endTest, UnimplementedRpcTest) {
-  DummyInterceptor::Reset();
+  PhonyInterceptor::Reset();
   int port = grpc_pick_unused_port_or_die();
   string server_address = "localhost:" + std::to_string(port);
   ServerBuilder builder;
@@ -657,15 +664,14 @@ TEST_F(ServerInterceptorsSyncUnimplementedEnd2endTest, UnimplementedRpcTest) {
       creators;
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
   auto server = builder.BuildAndStart();
 
   ChannelArguments args;
   std::shared_ptr<Channel> channel =
-      CreateChannel(server_address, InsecureChannelCredentials());
+      grpc::CreateChannel(server_address, InsecureChannelCredentials());
   std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
   stub = grpc::testing::UnimplementedEchoService::NewStub(channel);
   EchoRequest send_request;
@@ -679,8 +685,8 @@ TEST_F(ServerInterceptorsSyncUnimplementedEnd2endTest, UnimplementedRpcTest) {
   EXPECT_EQ(StatusCode::UNIMPLEMENTED, recv_status.error_code());
   EXPECT_EQ("", recv_status.error_message());
 
-  // Make sure all 20 dummy interceptors were run
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Make sure all 20 phony interceptors were run
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 
   server->Shutdown();
   grpc_recycle_unused_port(port);

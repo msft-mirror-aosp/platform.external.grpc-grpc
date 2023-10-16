@@ -13,10 +13,10 @@
 # limitations under the License.
 """Tests server context abort mechanism"""
 
-import unittest
 import collections
 import gc
 import logging
+import unittest
 import weakref
 
 import grpc
@@ -36,8 +36,9 @@ _ABORT_METADATA = (('a-trailing-metadata', '42'),)
 
 
 class _Status(
-        collections.namedtuple(
-            '_Status', ('code', 'details', 'trailing_metadata')), grpc.Status):
+        collections.namedtuple('_Status',
+                               ('code', 'details', 'trailing_metadata')),
+        grpc.Status):
     pass
 
 
@@ -115,6 +116,7 @@ class AbortTest(unittest.TestCase):
     # on Python 3 (via the `__traceback__` attribute) holds a reference to
     # all local vars. Storing the raised exception can prevent GC and stop the
     # grpc_call from being unref'ed, even after server shutdown.
+    @unittest.skip("https://github.com/grpc/grpc/issues/17927")
     def test_abort_does_not_leak_local_vars(self):
         global do_not_leak_me  # pylint: disable=global-statement
         weak_ref = weakref.ref(do_not_leak_me)

@@ -14,16 +14,12 @@
 """The reflection-enabled version of gRPC helloworld.Greeter server."""
 
 from concurrent import futures
-import time
 import logging
 
 import grpc
 from grpc_reflection.v1alpha import reflection
-
 import helloworld_pb2
 import helloworld_pb2_grpc
-
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
@@ -42,11 +38,7 @@ def serve():
     reflection.enable_server_reflection(SERVICE_NAMES, server)
     server.add_insecure_port('[::]:50051')
     server.start()
-    try:
-        while True:
-            time.sleep(_ONE_DAY_IN_SECONDS)
-    except KeyboardInterrupt:
-        server.stop(0)
+    server.wait_for_termination()
 
 
 if __name__ == '__main__':

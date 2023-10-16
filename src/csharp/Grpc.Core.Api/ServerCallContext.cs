@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -27,6 +28,8 @@ namespace Grpc.Core
     /// </summary>
     public abstract class ServerCallContext
     {
+        private Dictionary<object, object> userState;
+
         /// <summary>
         /// Creates a new instance of <c>ServerCallContext</c>.
         /// </summary>
@@ -63,13 +66,13 @@ namespace Grpc.Core
         /// <summary>Address of the remote endpoint in URI format.</summary>
         public string Peer => PeerCore;
 
-        /// <summary>Deadline for this RPC.</summary>
+        /// <summary>Deadline for this RPC. The call will be automatically cancelled once the deadline is exceeded.</summary>
         public DateTime Deadline => DeadlineCore;
 
         /// <summary>Initial metadata sent by client.</summary>
         public Metadata RequestHeaders => RequestHeadersCore;
 
-        /// <summary>Cancellation token signals when call is cancelled.</summary>
+        /// <summary>Cancellation token signals when call is cancelled. It is also triggered when the deadline is exceeeded or there was some other error (e.g. network problem).</summary>
         public CancellationToken CancellationToken => CancellationTokenCore;
 
         /// <summary>Trailers to send back to client after RPC finishes.</summary>
@@ -113,6 +116,12 @@ namespace Grpc.Core
         /// </summary>
         public AuthContext AuthContext => AuthContextCore;
 
+        /// <summary>
+        /// Gets a dictionary that can be used by the various interceptors and handlers of this
+        /// call to store arbitrary state.
+        /// </summary>
+        public IDictionary<object, object> UserState => UserStateCore;
+
         /// <summary>Provides implementation of a non-virtual public member.</summary>
         protected abstract Task WriteResponseHeadersAsyncCore(Metadata responseHeaders);
         /// <summary>Provides implementation of a non-virtual public member.</summary>
@@ -135,7 +144,20 @@ namespace Grpc.Core
         protected abstract Status StatusCore { get; set; }
         /// <summary>Provides implementation of a non-virtual public member.</summary>
         protected abstract WriteOptions WriteOptionsCore { get; set; }
-          /// <summary>Provides implementation of a non-virtual public member.</summary>
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
         protected abstract AuthContext AuthContextCore { get; }
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected virtual IDictionary<object, object> UserStateCore
+        {
+            get
+            {
+                if (userState == null)
+                {
+                    userState = new Dictionary<object, object>();
+                }
+
+                return userState;
+            }
+        }
     }
 }

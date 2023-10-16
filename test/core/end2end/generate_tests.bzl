@@ -17,7 +17,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library")
 
-POLLERS = ["epollex", "epoll1", "poll", "poll-cv"]
+POLLERS = ["epollex", "epoll1", "poll"]
 
 def _fixture_options(
         fullstack = True,
@@ -31,7 +31,9 @@ def _fixture_options(
         is_http2 = True,
         supports_proxy_auth = False,
         supports_write_buffering = True,
-        client_channel = True):
+        client_channel = True,
+        supports_msvc = True,
+        flaky_tests = []):
     return struct(
         fullstack = fullstack,
         includes_proxy = includes_proxy,
@@ -44,7 +46,9 @@ def _fixture_options(
         supports_proxy_auth = supports_proxy_auth,
         supports_write_buffering = supports_write_buffering,
         client_channel = client_channel,
-        #_platforms=_platforms,
+        supports_msvc = supports_msvc,
+        _platforms = _platforms,
+        flaky_tests = flaky_tests,
     )
 
 # maps fixture name to whether it requires the security library
@@ -66,6 +70,7 @@ END2END_FIXTURES = {
     "h2_full+trace": _fixture_options(tracing = True),
     "h2_full+workarounds": _fixture_options(),
     "h2_http_proxy": _fixture_options(supports_proxy_auth = True),
+    "h2_insecure": _fixture_options(secure = True),
     "h2_oauth2": _fixture_options(),
     "h2_proxy": _fixture_options(includes_proxy = True),
     "h2_sockpair_1byte": _fixture_options(
@@ -85,7 +90,13 @@ END2END_FIXTURES = {
         client_channel = False,
     ),
     "h2_ssl": _fixture_options(secure = True),
-    "h2_local_uds": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
+    "h2_ssl_cred_reload": _fixture_options(secure = True),
+    "h2_tls": _fixture_options(secure = True),
+    "h2_local_uds": _fixture_options(
+        secure = True,
+        dns_resolver = False,
+        _platforms = ["linux", "mac", "posix"],
+    ),
     "h2_local_ipv4": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
     "h2_local_ipv6": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
     "h2_ssl_proxy": _fixture_options(includes_proxy = True, secure = True),
@@ -119,10 +130,11 @@ END2END_NOSEC_FIXTURES = {
         client_channel = False,
         secure = False,
         _platforms = ["linux", "mac", "posix"],
+        supports_msvc = False,
     ),
     "h2_full": _fixture_options(secure = False),
-    "h2_full+pipe": _fixture_options(secure = False, _platforms = ["linux"]),
-    "h2_full+trace": _fixture_options(secure = False, tracing = True),
+    "h2_full+pipe": _fixture_options(secure = False, _platforms = ["linux"], supports_msvc = False),
+    "h2_full+trace": _fixture_options(secure = False, tracing = True, supports_msvc = False),
     "h2_full+workarounds": _fixture_options(secure = False),
     "h2_http_proxy": _fixture_options(secure = False, supports_proxy_auth = True),
     "h2_proxy": _fixture_options(secure = False, includes_proxy = True),
@@ -146,11 +158,13 @@ END2END_NOSEC_FIXTURES = {
         client_channel = False,
     ),
     "h2_ssl": _fixture_options(secure = False),
+    "h2_ssl_cred_reload": _fixture_options(secure = False),
     "h2_ssl_proxy": _fixture_options(includes_proxy = True, secure = False),
     "h2_uds": _fixture_options(
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
         secure = False,
+        supports_msvc = False,
     ),
 }
 
@@ -165,7 +179,9 @@ def _test_options(
         needs_http2 = False,
         needs_proxy_auth = False,
         needs_write_buffering = False,
-        needs_client_channel = False):
+        needs_client_channel = False,
+        short_name = None,
+        exclude_pollers = []):
     return struct(
         needs_fullstack = needs_fullstack,
         needs_dns = needs_dns,
@@ -178,6 +194,8 @@ def _test_options(
         needs_proxy_auth = needs_proxy_auth,
         needs_write_buffering = needs_write_buffering,
         needs_client_channel = needs_client_channel,
+        short_name = short_name,
+        exclude_pollers = exclude_pollers,
     )
 
 # maps test names to options
@@ -185,7 +203,11 @@ END2END_TESTS = {
     "bad_hostname": _test_options(needs_names = True),
     "bad_ping": _test_options(needs_fullstack = True, proxyable = False),
     "binary_metadata": _test_options(),
-    "resource_quota_server": _test_options(proxyable = False),
+    "resource_quota_server": _test_options(
+        proxyable = False,
+        # TODO(b/151212019): Test case known to be flaky under epoll1.
+        exclude_pollers = ["epoll1"],
+    ),
     "call_creds": _test_options(secure = True),
     "call_host_override": _test_options(
         needs_fullstack = True,
@@ -199,6 +221,7 @@ END2END_TESTS = {
     "cancel_before_invoke": _test_options(),
     "cancel_in_a_vacuum": _test_options(),
     "cancel_with_status": _test_options(),
+    "client_streaming": _test_options(),
     "compressed_payload": _test_options(proxyable = False, exclude_inproc = True),
     "connectivity": _test_options(
         needs_fullstack = True,
@@ -214,7 +237,8 @@ END2END_TESTS = {
     "disappearing_server": _test_options(needs_fullstack = True, needs_names = True),
     "empty_batch": _test_options(),
     "filter_causes_close": _test_options(),
-    "filter_call_init_fails": _test_options(),
+    "filter_init_fails": _test_options(),
+    "filter_context": _test_options(),
     "graceful_server_shutdown": _test_options(exclude_inproc = True),
     "hpack_size": _test_options(
         proxyable = False,
@@ -248,63 +272,72 @@ END2END_TESTS = {
     "registered_call": _test_options(),
     "request_with_flags": _test_options(proxyable = False),
     "request_with_payload": _test_options(),
-    # TODO(roth): Remove proxyable=False for all retry tests once we
-    # have a way for the proxy to propagate the fact that trailing
-    # metadata is available when initial metadata is returned.
-    # See https://github.com/grpc/grpc/issues/14467 for context.
-    "retry": _test_options(needs_client_channel = True, proxyable = False),
-    "retry_cancellation": _test_options(
+    "retry": _test_options(needs_client_channel = True),
+    "retry_cancellation": _test_options(needs_client_channel = True),
+    "retry_cancel_during_delay": _test_options(needs_client_channel = True),
+    "retry_cancel_with_multiple_send_batches": _test_options(
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_cancel3",
         needs_client_channel = True,
-        proxyable = False,
     ),
-    "retry_disabled": _test_options(needs_client_channel = True, proxyable = False),
+    "retry_disabled": _test_options(needs_client_channel = True),
+    "retry_exceeds_buffer_size_in_delay": _test_options(
+        needs_client_channel = True,
+    ),
     "retry_exceeds_buffer_size_in_initial_batch": _test_options(
         needs_client_channel = True,
-        proxyable = False,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_exceeds_buffer_size_in_init",
     ),
     "retry_exceeds_buffer_size_in_subsequent_batch": _test_options(
         needs_client_channel = True,
-        proxyable = False,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_exceeds_buffer_size_in_subseq",
     ),
-    "retry_non_retriable_status": _test_options(
+    "retry_lb_drop": _test_options(needs_client_channel = True),
+    "retry_lb_fail": _test_options(needs_client_channel = True),
+    "retry_non_retriable_status": _test_options(needs_client_channel = True),
+    "retry_non_retriable_status_before_recv_trailing_metadata_started": _test_options(
         needs_client_channel = True,
-        proxyable = False,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_non_retriable_status2",
     ),
-    "retry_non_retriable_status_before_recv_trailing_metadata_started": _test_options(needs_client_channel = True, proxyable = False),
-    "retry_recv_initial_metadata": _test_options(
+    "retry_per_attempt_recv_timeout": _test_options(
         needs_client_channel = True,
-        proxyable = False,
     ),
-    "retry_recv_message": _test_options(
+    "retry_per_attempt_recv_timeout_on_last_attempt": _test_options(
         needs_client_channel = True,
-        proxyable = False,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_per_attempt_recv_timeout2",
     ),
-    "retry_server_pushback_delay": _test_options(
+    "retry_recv_initial_metadata": _test_options(needs_client_channel = True),
+    "retry_recv_message": _test_options(needs_client_channel = True),
+    "retry_recv_trailing_metadata_error": _test_options(
         needs_client_channel = True,
-        proxyable = False,
     ),
-    "retry_server_pushback_disabled": _test_options(
+    "retry_send_initial_metadata_refs": _test_options(
         needs_client_channel = True,
-        proxyable = False,
     ),
-    "retry_streaming": _test_options(needs_client_channel = True, proxyable = False),
-    "retry_streaming_after_commit": _test_options(
-        needs_client_channel = True,
-        proxyable = False,
-    ),
+    "retry_send_op_fails": _test_options(needs_client_channel = True),
+    "retry_server_pushback_delay": _test_options(needs_client_channel = True),
+    "retry_server_pushback_disabled": _test_options(needs_client_channel = True),
+    "retry_streaming": _test_options(needs_client_channel = True),
+    "retry_streaming_after_commit": _test_options(needs_client_channel = True),
     "retry_streaming_succeeds_before_replay_finished": _test_options(
         needs_client_channel = True,
-        proxyable = False,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_streaming2",
     ),
-    "retry_throttled": _test_options(
-        needs_client_channel = True,
-        proxyable = False,
-    ),
-    "retry_too_many_attempts": _test_options(
-        needs_client_channel = True,
-        proxyable = False,
-    ),
+    "retry_throttled": _test_options(needs_client_channel = True),
+    "retry_too_many_attempts": _test_options(needs_client_channel = True),
     "server_finishes_request": _test_options(),
+    "server_streaming": _test_options(needs_http2 = True),
     "shutdown_finishes_calls": _test_options(),
     "shutdown_finishes_tags": _test_options(),
     "simple_cacheable_request": _test_options(),
@@ -360,6 +393,16 @@ def _compatible(fopt, topt):
             return False
     return True
 
+def _platform_support_tags(fopt):
+    result = []
+    if not "windows" in fopt._platforms:
+        result += ["no_windows"]
+    if not "mac" in fopt._platforms:
+        result += ["no_mac"]
+    if not "linux" in fopt._platforms:
+        result += ["no_linux"]
+    return result
+
 def grpc_end2end_tests():
     grpc_cc_library(
         name = "end2end_tests",
@@ -372,12 +415,14 @@ def grpc_end2end_tests():
             "end2end_tests.h",
         ],
         language = "C++",
+        testonly = 1,
         deps = [
             ":cq_verifier",
             ":ssl_test_data",
             ":http_proxy",
             ":proxy",
             ":local_util",
+            "//test/core/util:test_lb_policies",
         ],
     )
 
@@ -386,20 +431,44 @@ def grpc_end2end_tests():
             name = "%s_test" % f,
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
+            testonly = 1,
+            data = [
+                "//src/core/tsi/test_creds:ca.pem",
+                "//src/core/tsi/test_creds:server1.key",
+                "//src/core/tsi/test_creds:server1.pem",
+            ],
             deps = [
                 ":end2end_tests",
                 "//test/core/util:grpc_test_util",
                 "//:grpc",
                 "//:gpr",
             ],
+            tags = _platform_support_tags(fopt),
         )
+
         for t, topt in END2END_TESTS.items():
             #print(_compatible(fopt, topt), f, t, fopt, topt)
             if not _compatible(fopt, topt):
                 continue
+
+            test_short_name = str(t) if not topt.short_name else topt.short_name
+            native.sh_test(
+                name = "%s_test@%s" % (f, test_short_name),
+                data = [":%s_test" % f],
+                srcs = ["end2end_test.sh"],
+                args = [
+                    "$(location %s_test)" % f,
+                    t,
+                ],
+                tags = ["no_linux"] + _platform_support_tags(fopt),
+                flaky = t in fopt.flaky_tests,
+            )
+
             for poller in POLLERS:
+                if poller in topt.exclude_pollers:
+                    continue
                 native.sh_test(
-                    name = "%s_test@%s@poller=%s" % (f, t, poller),
+                    name = "%s_test@%s@poller=%s" % (f, test_short_name, poller),
                     data = [":%s_test" % f],
                     srcs = ["end2end_test.sh"],
                     args = [
@@ -407,6 +476,8 @@ def grpc_end2end_tests():
                         t,
                         poller,
                     ],
+                    tags = ["no_mac", "no_windows"],
+                    flaky = t in fopt.flaky_tests,
                 )
 
 def grpc_end2end_nosec_tests():
@@ -422,12 +493,14 @@ def grpc_end2end_nosec_tests():
             "end2end_tests.h",
         ],
         language = "C++",
+        testonly = 1,
         deps = [
             ":cq_verifier",
             ":ssl_test_data",
             ":http_proxy",
             ":proxy",
             ":local_util",
+            "//test/core/util:test_lb_policies",
         ],
     )
 
@@ -438,12 +511,19 @@ def grpc_end2end_nosec_tests():
             name = "%s_nosec_test" % f,
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
+            testonly = 1,
+            data = [
+                "//src/core/tsi/test_creds:ca.pem",
+                "//src/core/tsi/test_creds:server1.key",
+                "//src/core/tsi/test_creds:server1.pem",
+            ],
             deps = [
                 ":end2end_nosec_tests",
                 "//test/core/util:grpc_test_util_unsecure",
                 "//:grpc_unsecure",
                 "//:gpr",
             ],
+            tags = _platform_support_tags(fopt),
         )
         for t, topt in END2END_TESTS.items():
             #print(_compatible(fopt, topt), f, t, fopt, topt)
@@ -451,9 +531,25 @@ def grpc_end2end_nosec_tests():
                 continue
             if topt.secure:
                 continue
+
+            test_short_name = str(t) if not topt.short_name else topt.short_name
+            native.sh_test(
+                name = "%s_nosec_test@%s" % (f, test_short_name),
+                data = [":%s_nosec_test" % f],
+                srcs = ["end2end_test.sh"],
+                args = [
+                    "$(location %s_nosec_test)" % f,
+                    t,
+                ],
+                tags = ["no_linux"] + _platform_support_tags(fopt),
+                flaky = t in fopt.flaky_tests,
+            )
+
             for poller in POLLERS:
+                if poller in topt.exclude_pollers:
+                    continue
                 native.sh_test(
-                    name = "%s_nosec_test@%s@poller=%s" % (f, t, poller),
+                    name = "%s_nosec_test@%s@poller=%s" % (f, test_short_name, poller),
                     data = [":%s_nosec_test" % f],
                     srcs = ["end2end_test.sh"],
                     args = [
@@ -461,4 +557,6 @@ def grpc_end2end_nosec_tests():
                         t,
                         poller,
                     ],
+                    tags = ["no_mac", "no_windows"],
+                    flaky = t in fopt.flaky_tests,
                 )

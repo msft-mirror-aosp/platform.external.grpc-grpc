@@ -24,6 +24,7 @@ import os
 import sys
 import time
 import uuid
+
 import massage_qps_stats
 
 gcp_utils_dir = os.path.abspath(
@@ -158,22 +159,19 @@ def _populate_metadata_inplace(scenario_result):
 
 
 argp = argparse.ArgumentParser(description='Upload result to big query.')
-argp.add_argument(
-    '--bq_result_table',
-    required=True,
-    default=None,
-    type=str,
-    help='Bigquery "dataset.table" to upload results to.')
-argp.add_argument(
-    '--file_to_upload',
-    default='scenario_result.json',
-    type=str,
-    help='Report file to upload.')
-argp.add_argument(
-    '--file_format',
-    choices=['scenario_result', 'netperf_latency_csv'],
-    default='scenario_result',
-    help='Format of the file to upload.')
+argp.add_argument('--bq_result_table',
+                  required=True,
+                  default=None,
+                  type=str,
+                  help='Bigquery "dataset.table" to upload results to.')
+argp.add_argument('--file_to_upload',
+                  default='scenario_result.json',
+                  type=str,
+                  help='Report file to upload.')
+argp.add_argument('--file_format',
+                  choices=['scenario_result', 'netperf_latency_csv'],
+                  default='scenario_result',
+                  help='Format of the file to upload.')
 
 args = argp.parse_args()
 

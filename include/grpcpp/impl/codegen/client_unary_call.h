@@ -20,6 +20,7 @@
 #define GRPCPP_IMPL_CODEGEN_CLIENT_UNARY_CALL_H
 
 #include <grpcpp/impl/codegen/call.h>
+#include <grpcpp/impl/codegen/call_op_set.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
@@ -27,18 +28,26 @@
 
 namespace grpc {
 
-class Channel;
 class ClientContext;
-class CompletionQueue;
-
 namespace internal {
 class RpcMethod;
-/// Wrapper that performs a blocking unary call
-template <class InputMessage, class OutputMessage>
+
+/// Wrapper that performs a blocking unary call. May optionally specify the base
+/// class of the Request and Response so that the internal calls and structures
+/// below this may be based on those base classes and thus achieve code reuse
+/// across different RPCs (e.g., for protobuf, MessageLite would be a base
+/// class).
+template <class InputMessage, class OutputMessage,
+          class BaseInputMessage = InputMessage,
+          class BaseOutputMessage = OutputMessage>
 Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
-                         ClientContext* context, const InputMessage& request,
-                         OutputMessage* result) {
-  return BlockingUnaryCallImpl<InputMessage, OutputMessage>(
+                         grpc::ClientContext* context,
+                         const InputMessage& request, OutputMessage* result) {
+  static_assert(std::is_base_of<BaseInputMessage, InputMessage>::value,
+                "Invalid input message specification");
+  static_assert(std::is_base_of<BaseOutputMessage, OutputMessage>::value,
+                "Invalid output message specification");
+  return BlockingUnaryCallImpl<BaseInputMessage, BaseOutputMessage>(
              channel, method, context, request, result)
       .status();
 }
@@ -47,12 +56,12 @@ template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl {
  public:
   BlockingUnaryCallImpl(ChannelInterface* channel, const RpcMethod& method,
-                        ClientContext* context, const InputMessage& request,
-                        OutputMessage* result) {
-    CompletionQueue cq(grpc_completion_queue_attributes{
+                        grpc::ClientContext* context,
+                        const InputMessage& request, OutputMessage* result) {
+    ::grpc::CompletionQueue cq(grpc_completion_queue_attributes{
         GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
         nullptr});  // Pluckable completion queue
-    Call call(channel->CreateCall(method, context, &cq));
+    ::grpc::internal::Call call(channel->CreateCall(method, context, &cq));
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
               CallOpRecvInitialMetadata, CallOpRecvMessage<OutputMessage>,
               CallOpClientSendClose, CallOpClientRecvStatus>

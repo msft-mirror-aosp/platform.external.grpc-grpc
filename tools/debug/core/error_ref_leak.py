@@ -17,10 +17,10 @@
 # Reads stdin to find error_refcount log lines, and prints reference leaks
 # to stdout
 
-# usege: python error_ref_leak < logfile.txt
+# usage: python error_ref_leak < logfile.txt
 
-import sys
 import re
+import sys
 
 data = sys.stdin.readlines()
 

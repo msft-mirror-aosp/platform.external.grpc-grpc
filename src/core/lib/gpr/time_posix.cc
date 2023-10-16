@@ -82,7 +82,7 @@ static gpr_timespec now_impl(gpr_clock_type clock_type) {
   }
 }
 #else
-  /* For some reason Apple's OSes haven't implemented clock_gettime. */
+/* For some reason Apple's OSes haven't implemented clock_gettime. */
 
 #include <mach/mach.h>
 #include <mach/mach_time.h>
@@ -108,6 +108,9 @@ static gpr_timespec now_impl(gpr_clock_type clock) {
   now.clock_type = clock;
   switch (clock) {
     case GPR_CLOCK_REALTIME:
+      // gettimeofday(...) function may return with a value whose tv_usec is
+      // greater than 1e6 on iOS The case is resolved with the guard at end of
+      // this function.
       gettimeofday(&now_tv, nullptr);
       now.tv_sec = now_tv.tv_sec;
       now.tv_nsec = now_tv.tv_usec * 1000;
@@ -122,6 +125,16 @@ static gpr_timespec now_impl(gpr_clock_type clock) {
       break;
     case GPR_TIMESPAN:
       abort();
+  }
+
+  // Guard the tv_nsec field in valid range for all clock types
+  while (GPR_UNLIKELY(now.tv_nsec >= 1e9)) {
+    now.tv_sec++;
+    now.tv_nsec -= 1e9;
+  }
+  while (GPR_UNLIKELY(now.tv_nsec < 0)) {
+    now.tv_sec--;
+    now.tv_nsec += 1e9;
   }
 
   return now;

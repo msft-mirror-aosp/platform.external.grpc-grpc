@@ -32,11 +32,14 @@ typedef enum {
   /// Value is a \a census_context.
   GRPC_CONTEXT_TRACING,
 
+  /// Value is a CallTracer object.
+  GRPC_CONTEXT_CALL_TRACER,
+
   /// Reserved for traffic_class_context.
   GRPC_CONTEXT_TRAFFIC,
 
-  /// Value is a \a grpc_grpclb_client_stats.
-  GRPC_GRPCLB_CLIENT_STATS,
+  /// Holds a pointer to ServiceConfigCallData associated with this call.
+  GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA,
 
   GRPC_CONTEXT_COUNT
 } grpc_context_index;

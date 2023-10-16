@@ -27,8 +27,6 @@
 #include <cinttypes>
 #include <memory>
 
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -46,57 +44,51 @@ class Orphanable {
   // Gives up ownership of the object.  The implementation must arrange
   // to eventually destroy the object without further interaction from the
   // caller.
-  virtual void Orphan() GRPC_ABSTRACT;
+  virtual void Orphan() = 0;
 
   // Not copyable or movable.
   Orphanable(const Orphanable&) = delete;
   Orphanable& operator=(const Orphanable&) = delete;
-
-  GRPC_ABSTRACT_BASE_CLASS
 
  protected:
   Orphanable() {}
   virtual ~Orphanable() {}
 };
 
-template <typename T>
 class OrphanableDelete {
  public:
-  void operator()(T* p) { p->Orphan(); }
+  template <typename T>
+  void operator()(T* p) {
+    p->Orphan();
+  }
 };
 
-template <typename T, typename Deleter = OrphanableDelete<T>>
+template <typename T, typename Deleter = OrphanableDelete>
 using OrphanablePtr = std::unique_ptr<T, Deleter>;
 
 template <typename T, typename... Args>
 inline OrphanablePtr<T> MakeOrphanable(Args&&... args) {
-  return OrphanablePtr<T>(New<T>(std::forward<Args>(args)...));
+  return OrphanablePtr<T>(new T(std::forward<Args>(args)...));
 }
 
 // A type of Orphanable with internal ref-counting.
-template <typename Child>
+template <typename Child, UnrefBehavior UnrefBehaviorArg = kUnrefDelete>
 class InternallyRefCounted : public Orphanable {
  public:
   // Not copyable nor movable.
   InternallyRefCounted(const InternallyRefCounted&) = delete;
   InternallyRefCounted& operator=(const InternallyRefCounted&) = delete;
 
-  GRPC_ABSTRACT_BASE_CLASS
-
  protected:
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-
   // Allow RefCountedPtr<> to access Unref() and IncrementRefCount().
   template <typename T>
   friend class RefCountedPtr;
 
-  // TraceFlagT is defined to accept both DebugOnlyTraceFlag and TraceFlag.
-  // Note: RefCount tracing is only enabled on debug builds, even when a
-  //       TraceFlag is used.
-  template <typename TraceFlagT = TraceFlag>
-  explicit InternallyRefCounted(TraceFlagT* trace_flag = nullptr)
-      : refs_(1, trace_flag) {}
-  virtual ~InternallyRefCounted() = default;
+  // Note: Tracing is a no-op on non-debug builds.
+  explicit InternallyRefCounted(const char* trace = nullptr,
+                                intptr_t initial_refcount = 1)
+      : refs_(initial_refcount, trace) {}
+  ~InternallyRefCounted() override = default;
 
   RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();
@@ -109,13 +101,13 @@ class InternallyRefCounted : public Orphanable {
   }
 
   void Unref() {
-    if (refs_.Unref()) {
-      Delete(static_cast<Child*>(this));
+    if (GPR_UNLIKELY(refs_.Unref())) {
+      internal::Delete<Child, UnrefBehaviorArg>(static_cast<Child*>(this));
     }
   }
   void Unref(const DebugLocation& location, const char* reason) {
-    if (refs_.Unref(location, reason)) {
-      Delete(static_cast<Child*>(this));
+    if (GPR_UNLIKELY(refs_.Unref(location, reason))) {
+      internal::Delete<Child, UnrefBehaviorArg>(static_cast<Child*>(this));
     }
   }
 

@@ -13,12 +13,11 @@
 # limitations under the License.
 
 import os
-import pkg_resources
 import sys
 
-import setuptools
-
 from grpc_tools import protoc
+import pkg_resources
+import setuptools
 
 
 def build_package_protos(package_root, strict_mode=False):
@@ -27,8 +26,8 @@ def build_package_protos(package_root, strict_mode=False):
     for root, _, files in os.walk(inclusion_root):
         for filename in files:
             if filename.endswith('.proto'):
-                proto_files.append(
-                    os.path.abspath(os.path.join(root, filename)))
+                proto_files.append(os.path.abspath(os.path.join(root,
+                                                                filename)))
 
     well_known_protos_include = pkg_resources.resource_filename(
         'grpc_tools', '_proto')

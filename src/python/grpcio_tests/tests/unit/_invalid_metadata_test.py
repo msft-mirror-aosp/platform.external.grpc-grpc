@@ -13,8 +13,8 @@
 # limitations under the License.
 """Test of RPCs made against gRPC Python's application-layer API."""
 
-import unittest
 import logging
+import unittest
 
 import grpc
 
@@ -36,17 +36,15 @@ def _unary_unary_multi_callable(channel):
 
 
 def _unary_stream_multi_callable(channel):
-    return channel.unary_stream(
-        _UNARY_STREAM,
-        request_serializer=_SERIALIZE_REQUEST,
-        response_deserializer=_DESERIALIZE_RESPONSE)
+    return channel.unary_stream(_UNARY_STREAM,
+                                request_serializer=_SERIALIZE_REQUEST,
+                                response_deserializer=_DESERIALIZE_RESPONSE)
 
 
 def _stream_unary_multi_callable(channel):
-    return channel.stream_unary(
-        _STREAM_UNARY,
-        request_serializer=_SERIALIZE_REQUEST,
-        response_deserializer=_DESERIALIZE_RESPONSE)
+    return channel.stream_unary(_STREAM_UNARY,
+                                request_serializer=_SERIALIZE_REQUEST,
+                                response_deserializer=_DESERIALIZE_RESPONSE)
 
 
 def _stream_stream_multi_callable(channel):

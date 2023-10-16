@@ -28,8 +28,8 @@
 
 namespace grpc {
 
-class ClientContext;
 class Channel;
+class ClientContext;
 
 namespace internal {
 class InterceptorBatchMethodsImpl;
@@ -76,7 +76,7 @@ class ClientRpcInfo {
     UNKNOWN  // UNKNOWN is not API and will be removed later
   };
 
-  ~ClientRpcInfo(){};
+  ~ClientRpcInfo() {}
 
   // Delete copy constructor but allow default move constructor
   ClientRpcInfo(const ClientRpcInfo&) = delete;
@@ -86,6 +86,10 @@ class ClientRpcInfo {
 
   /// Return the fully-specified method name
   const char* method() const { return method_; }
+
+  /// Return an identifying suffix for the client stub, or nullptr if one wasn't
+  /// specified.
+  const char* suffix_for_stats() const { return suffix_for_stats_; }
 
   /// Return a pointer to the channel on which the RPC is being sent
   ChannelInterface* channel() { return channel_; }
@@ -116,10 +120,12 @@ class ClientRpcInfo {
 
   // Constructor will only be called from ClientContext
   ClientRpcInfo(grpc::ClientContext* ctx, internal::RpcMethod::RpcType type,
-                const char* method, grpc::ChannelInterface* channel)
+                const char* method, const char* suffix_for_stats,
+                grpc::ChannelInterface* channel)
       : ctx_(ctx),
         type_(static_cast<Type>(type)),
         method_(method),
+        suffix_for_stats_(suffix_for_stats),
         channel_(channel) {}
 
   // Move assignment should only be used by ClientContext
@@ -141,6 +147,8 @@ class ClientRpcInfo {
       // No interceptors to register
       return;
     }
+    // NOTE: The following is not a range-based for loop because it will only
+    //       iterate over a portion of the creators vector.
     for (auto it = creators.begin() + interceptor_pos; it != creators.end();
          ++it) {
       auto* interceptor = (*it)->CreateClientInterceptor(this);
@@ -160,6 +168,7 @@ class ClientRpcInfo {
   // TODO(yashykt): make type_ const once move-assignment is deleted
   Type type_{Type::UNKNOWN};
   const char* method_ = nullptr;
+  const char* suffix_for_stats_ = nullptr;
   grpc::ChannelInterface* channel_ = nullptr;
   std::vector<std::unique_ptr<experimental::Interceptor>> interceptors_;
   bool hijacked_ = false;
@@ -172,16 +181,15 @@ class ClientRpcInfo {
 // PLEASE DO NOT USE THIS. ALWAYS PREFER PER CHANNEL INTERCEPTORS OVER A GLOBAL
 // INTERCEPTOR. IF USAGE IS ABSOLUTELY NECESSARY, PLEASE READ THE SAFETY NOTES.
 // Registers a global client interceptor factory object, which is used for all
-// RPCs made in this process.  If the argument is nullptr, the global
-// interceptor factory is deregistered. The application is responsible for
-// maintaining the life of the object while gRPC operations are in progress. It
-// is unsafe to try to register/deregister if any gRPC operation is in progress.
-// For safety, it is in the best interests of the developer to register the
-// global interceptor factory once at the start of the process before any gRPC
-// operations have begun. Deregistration is optional since gRPC does not
-// maintain any references to the object.
+// RPCs made in this process. The application is responsible for maintaining the
+// life of the object while gRPC operations are in progress. The global
+// interceptor factory should only be registered once at the start of the
+// process before any gRPC operations have begun.
 void RegisterGlobalClientInterceptorFactory(
     ClientInterceptorFactoryInterface* factory);
+
+// For testing purposes only
+void TestOnlyResetGlobalClientInterceptorFactory();
 
 }  // namespace experimental
 }  // namespace grpc

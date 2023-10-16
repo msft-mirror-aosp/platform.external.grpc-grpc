@@ -145,7 +145,7 @@ class PolymorphicManualConstructor {
   }
   template <class DerivedType>
   void Init(DerivedType&& x) {
-    FinishInit(new (&space_) DerivedType(std::move(x)));
+    FinishInit(new (&space_) DerivedType(std::forward<DerivedType>(x)));
   }
 
   void Destroy() { get()->~BaseType(); }
@@ -210,4 +210,4 @@ class ManualConstructor {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_GPRPP_MANUAL_CONSTRUCTOR_H

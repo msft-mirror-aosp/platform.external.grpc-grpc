@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.39.1
+PROJECT_NUMBER         = 1.40.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1202,6 +1202,8 @@ src/core/ext/transport/chttp2/transport/bin_decoder.h \
 src/core/ext/transport/chttp2/transport/bin_encoder.cc \
 src/core/ext/transport/chttp2/transport/bin_encoder.h \
 src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
+src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc \
+src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h \
 src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
 src/core/ext/transport/chttp2/transport/chttp2_transport.h \
 src/core/ext/transport/chttp2/transport/context_list.cc \
@@ -1284,10 +1286,14 @@ src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.c \
 src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.h \
 src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.c \
 src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.h \
+src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.c \
+src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.h \
 src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c \
 src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.h \
 src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.c \
 src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.h \
+src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.c \
+src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.h \
 src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.c \
 src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.h \
 src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.c \
@@ -1300,6 +1306,8 @@ src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c \
 src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.h \
 src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c \
 src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.h \
+src/core/ext/upb-generated/envoy/config/listener/v3/quic_config.upb.c \
+src/core/ext/upb-generated/envoy/config/listener/v3/quic_config.upb.h \
 src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c \
 src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.h \
 src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.c \
@@ -1352,6 +1360,8 @@ src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c \
 src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.h \
 src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.c \
 src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.h \
+src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.c \
+src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.h \
 src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c \
 src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.h \
 src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c \
@@ -1480,10 +1490,14 @@ src/core/ext/upbdefs-generated/envoy/config/core/v3/protocol.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/core/v3/protocol.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/core/v3/proxy_protocol.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/core/v3/proxy_protocol.upbdefs.h \
+src/core/ext/upbdefs-generated/envoy/config/core/v3/resolver.upbdefs.c \
+src/core/ext/upbdefs-generated/envoy/config/core/v3/resolver.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/core/v3/socket_option.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/core/v3/socket_option.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/core/v3/substitution_format_string.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/core/v3/substitution_format_string.upbdefs.h \
+src/core/ext/upbdefs-generated/envoy/config/core/v3/udp_socket_config.upbdefs.c \
+src/core/ext/upbdefs-generated/envoy/config/core/v3/udp_socket_config.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint_components.upbdefs.c \
@@ -1496,6 +1510,8 @@ src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.h \
+src/core/ext/upbdefs-generated/envoy/config/listener/v3/quic_config.upbdefs.c \
+src/core/ext/upbdefs-generated/envoy/config/listener/v3/quic_config.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.c \
@@ -1546,6 +1562,8 @@ src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.h \
+src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.c \
+src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.c \
@@ -1649,6 +1667,7 @@ src/core/lib/avl/avl.cc \
 src/core/lib/avl/avl.h \
 src/core/lib/backoff/backoff.cc \
 src/core/lib/backoff/backoff.h \
+src/core/lib/channel/call_tracer.h \
 src/core/lib/channel/channel_args.cc \
 src/core/lib/channel/channel_args.h \
 src/core/lib/channel/channel_stack.cc \
@@ -1694,12 +1713,10 @@ src/core/lib/debug/trace.h \
 src/core/lib/event_engine/endpoint_config.cc \
 src/core/lib/event_engine/endpoint_config_internal.h \
 src/core/lib/event_engine/event_engine.cc \
-src/core/lib/event_engine/slice_allocator.cc \
 src/core/lib/event_engine/sockaddr.cc \
 src/core/lib/event_engine/sockaddr.h \
 src/core/lib/gpr/alloc.cc \
 src/core/lib/gpr/alloc.h \
-src/core/lib/gpr/arena.h \
 src/core/lib/gpr/atm.cc \
 src/core/lib/gpr/cpu_iphone.cc \
 src/core/lib/gpr/cpu_linux.cc \

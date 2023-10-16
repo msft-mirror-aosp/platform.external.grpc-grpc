@@ -215,7 +215,6 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   cl = nullptr;
 
   grpc_slice_buffer_destroy_internal(&read_buffer);
-  grpc_chttp2_hpack_parser_destroy(&hpack_parser);
   grpc_chttp2_goaway_parser_destroy(&goaway_parser);
 
   for (i = 0; i < STREAM_LIST_COUNT; i++) {
@@ -485,7 +484,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
       settings[j][i] = grpc_chttp2_settings_parameters[i].default_value;
     }
   }
-  grpc_chttp2_hpack_parser_init(&hpack_parser);
   grpc_chttp2_goaway_parser_init(&goaway_parser);
 
   // configure http2 the way we like it
@@ -1288,7 +1286,6 @@ static void continue_fetching_send_locked(grpc_chttp2_transport* t,
     if (s->fetching_send_message == nullptr) {
       // Stream was cancelled before message fetch completed
       abort(); /* TODO(ctiller): what cleanup here? */
-      return;  /* early out */
     }
     if (s->fetched_send_message_length == s->fetching_send_message->length()) {
       int64_t notify_offset = s->next_message_end_offset;
@@ -1593,8 +1590,7 @@ static void perform_stream_op_locked(void* stream_op,
     grpc_chttp2_maybe_complete_recv_message(t, s);
     if (s->id != 0) {
       if (!s->read_closed && s->frame_storage.length == 0) {
-        size_t after = s->frame_storage.length +
-                       s->unprocessed_incoming_frames_buffer_cached_length;
+        size_t after = s->unprocessed_incoming_frames_buffer_cached_length;
         s->flow_control->IncomingByteStreamUpdate(GRPC_HEADER_SIZE_IN_BYTES,
                                                   before - after);
         grpc_chttp2_act_on_flowctl_action(s->flow_control->MakeAction(), t, s);
@@ -2447,7 +2443,7 @@ static void WithUrgency(grpc_chttp2_transport* t,
       break;
     case grpc_core::chttp2::FlowControlAction::Urgency::UPDATE_IMMEDIATELY:
       grpc_chttp2_initiate_write(t, reason);
-    // fallthrough
+      ABSL_FALLTHROUGH_INTENDED;
     case grpc_core::chttp2::FlowControlAction::Urgency::QUEUE_UPDATE:
       action();
       break;

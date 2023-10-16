@@ -18,6 +18,9 @@ licenses(["notice"])
 
 package(
     default_visibility = ["//visibility:public"],
+    features = [
+        "layering_check",
+    ],
 )
 
 grpc_cc_library(
@@ -30,13 +33,14 @@ grpc_cc_library(
         "transport_stream_receiver_impl.h",
     ],
     external_deps = [
+        "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
-        "absl/types:optional",
     ],
     deps = [
         "//:gpr",
         "//:gpr_base",
+        "//:gpr_platform",
         "//src/core/ext/transport/binder/wire_format:transaction",
     ],
 )

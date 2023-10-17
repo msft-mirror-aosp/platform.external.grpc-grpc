@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
+
+#ifndef GRPC_NO_BINDER
 
 #include <functional>
 #include <limits>
@@ -40,7 +42,7 @@
 namespace grpc_binder {
 namespace {
 
-absl::StatusOr<Metadata> parse_metadata(const ReadableParcel* reader) {
+absl::StatusOr<Metadata> parse_metadata(ReadableParcel* reader) {
   int num_header;
   RETURN_IF_ERROR(reader->ReadInt32(&num_header));
   gpr_log(GPR_INFO, "num_header = %d", num_header);
@@ -69,9 +71,12 @@ absl::StatusOr<Metadata> parse_metadata(const ReadableParcel* reader) {
 
 WireReaderImpl::WireReaderImpl(
     std::shared_ptr<TransportStreamReceiver> transport_stream_receiver,
-    bool is_client, std::function<void()> on_destruct_callback)
+    bool is_client,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy,
+    std::function<void()> on_destruct_callback)
     : transport_stream_receiver_(std::move(transport_stream_receiver)),
       is_client_(is_client),
+      security_policy_(security_policy),
       on_destruct_callback_(on_destruct_callback) {}
 
 WireReaderImpl::~WireReaderImpl() {
@@ -109,14 +114,9 @@ void WireReaderImpl::SendSetupTransport(Binder* binder) {
   gpr_log(GPR_INFO, "prepare transaction = %d",
           binder->PrepareTransaction().ok());
   WritableParcel* writable_parcel = binder->GetWritableParcel();
-  gpr_log(GPR_INFO, "data position = %d", writable_parcel->GetDataPosition());
-  // gpr_log(GPR_INFO, "set data position to 0 = %d",
-  // writer->SetDataPosition(0));
-  gpr_log(GPR_INFO, "data position = %d", writable_parcel->GetDataPosition());
   int32_t version = 77;
   gpr_log(GPR_INFO, "write int32 = %d",
           writable_parcel->WriteInt32(version).ok());
-  gpr_log(GPR_INFO, "data position = %d", writable_parcel->GetDataPosition());
   // The lifetime of the transaction receiver is the same as the wire writer's.
   // The transaction receiver is responsible for not calling the on-transact
   // callback when it's dead.
@@ -125,8 +125,9 @@ void WireReaderImpl::SendSetupTransport(Binder* binder) {
   // callback owns a Ref() when it's being invoked.
   tx_receiver_ = binder->ConstructTxReceiver(
       /*wire_reader_ref=*/Ref(),
-      [this](transaction_code_t code, const ReadableParcel* readable_parcel) {
-        return this->ProcessTransaction(code, readable_parcel);
+      [this](transaction_code_t code, ReadableParcel* readable_parcel,
+             int uid) {
+        return this->ProcessTransaction(code, readable_parcel, uid);
       });
 
   gpr_log(GPR_INFO, "tx_receiver = %p", tx_receiver_->GetRawBinder());
@@ -146,7 +147,8 @@ std::unique_ptr<Binder> WireReaderImpl::RecvSetupTransport() {
 }
 
 absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
-                                                const ReadableParcel* parcel) {
+                                                ReadableParcel* parcel,
+                                                int uid) {
   gpr_log(GPR_INFO, __func__);
   gpr_log(GPR_INFO, "tx code = %u", code);
   if (code >= static_cast<unsigned>(kFirstCallId)) {
@@ -171,6 +173,9 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
     return absl::InvalidArgumentError("Transports not connected yet");
   }
 
+  // TODO(mingcl): See if we want to check the security policy for every RPC
+  // call or just during transport setup.
+
   switch (BinderTransportTxCode(code)) {
     case BinderTransportTxCode::SETUP_TRANSPORT: {
       if (recvd_setup_transport_) {
@@ -178,13 +183,17 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
             "Already received a SETUP_TRANSPORT request");
       }
       recvd_setup_transport_ = true;
-      // int datasize;
+
+      gpr_log(GPR_ERROR, "calling uid = %d", uid);
+      if (!security_policy_->IsAuthorized(uid)) {
+        return absl::PermissionDeniedError(
+            "UID " + std::to_string(uid) +
+            " is not allowed to connect to this "
+            "transport according to security policy.");
+      }
+
       int version;
-      // getDataSize not supported until 31
-      // gpr_log(GPR_INFO, "getDataSize = %d", AParcel_getDataSize(in,
-      // &datasize));
       RETURN_IF_ERROR(parcel->ReadInt32(&version));
-      // gpr_log(GPR_INFO, "data size = %d", datasize);
       gpr_log(GPR_INFO, "version = %d", version);
       std::unique_ptr<Binder> binder{};
       RETURN_IF_ERROR(parcel->ReadBinder(&binder));
@@ -230,7 +239,7 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
 }
 
 absl::Status WireReaderImpl::ProcessStreamingTransaction(
-    transaction_code_t code, const ReadableParcel* parcel) {
+    transaction_code_t code, ReadableParcel* parcel) {
   grpc_core::MutexLock lock(&mu_);
   if (!connected_) {
     return absl::InvalidArgumentError("Transports not connected yet");
@@ -272,8 +281,7 @@ absl::Status WireReaderImpl::ProcessStreamingTransaction(
 }
 
 absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
-    transaction_code_t code, const ReadableParcel* parcel,
-    int* cancellation_flags) {
+    transaction_code_t code, ReadableParcel* parcel, int* cancellation_flags) {
   GPR_ASSERT(cancellation_flags);
   num_incoming_bytes_ += parcel->GetDataSize();
 
@@ -316,10 +324,9 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
   expectation++;
   gpr_log(GPR_INFO, "sequence number = %d", seq_num);
   if (flags & kFlagPrefix) {
-    char method_ref[111];
-    memset(method_ref, 0, sizeof(method_ref));
+    std::string method_ref;
     if (!is_client_) {
-      RETURN_IF_ERROR(parcel->ReadString(method_ref));
+      RETURN_IF_ERROR(parcel->ReadString(&method_ref));
     }
     absl::StatusOr<Metadata> initial_metadata_or_error = parse_metadata(parcel);
     if (!initial_metadata_or_error.ok()) {
@@ -353,10 +360,9 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
   if (flags & kFlagSuffix) {
     if (flags & kFlagStatusDescription) {
       // FLAG_STATUS_DESCRIPTION set
-      char desc[111];
-      memset(desc, 0, sizeof(desc));
-      RETURN_IF_ERROR(parcel->ReadString(desc));
-      gpr_log(GPR_INFO, "description = %s", desc);
+      std::string desc;
+      RETURN_IF_ERROR(parcel->ReadString(&desc));
+      gpr_log(GPR_INFO, "description = %s", desc.c_str());
     }
     Metadata trailing_metadata;
     if (is_client_) {
@@ -375,3 +381,4 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
 }
 
 }  // namespace grpc_binder
+#endif

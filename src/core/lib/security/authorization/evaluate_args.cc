@@ -81,14 +81,13 @@ EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
 }
 
 absl::string_view EvaluateArgs::GetPath() const {
-  absl::string_view path;
-  if (metadata_ != nullptr &&
-      metadata_->legacy_index()->named.path != nullptr) {
-    grpc_linked_mdelem* elem = metadata_->legacy_index()->named.path;
-    const grpc_slice& val = GRPC_MDVALUE(elem->md);
-    path = StringViewFromSlice(val);
+  if (metadata_ != nullptr) {
+    const auto* path = metadata_->get_pointer(HttpPathMetadata());
+    if (path != nullptr) {
+      return path->as_string_view();
+    }
   }
-  return path;
+  return absl::string_view();
 }
 
 absl::string_view EvaluateArgs::GetHost() const {
@@ -101,15 +100,24 @@ absl::string_view EvaluateArgs::GetHost() const {
   return host;
 }
 
-absl::string_view EvaluateArgs::GetMethod() const {
-  absl::string_view method;
-  if (metadata_ != nullptr &&
-      metadata_->legacy_index()->named.method != nullptr) {
-    grpc_linked_mdelem* elem = metadata_->legacy_index()->named.method;
-    const grpc_slice& val = GRPC_MDVALUE(elem->md);
-    method = StringViewFromSlice(val);
+absl::string_view EvaluateArgs::GetAuthority() const {
+  absl::string_view authority;
+  if (metadata_ != nullptr) {
+    if (auto* authority_md = metadata_->get_pointer(HttpAuthorityMetadata())) {
+      authority = authority_md->as_string_view();
+    }
   }
-  return method;
+  return authority;
+}
+
+absl::string_view EvaluateArgs::GetMethod() const {
+  if (metadata_ != nullptr) {
+    auto method_md = metadata_->get(HttpMethodMetadata());
+    if (method_md.has_value()) {
+      return HttpMethodMetadata::Encode(*method_md).as_string_view();
+    }
+  }
+  return absl::string_view();
 }
 
 absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
@@ -117,7 +125,14 @@ absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
   if (metadata_ == nullptr) {
     return absl::nullopt;
   }
-  return metadata_->GetValue(key, concatenated_value);
+  if (absl::EqualsIgnoreCase(key, "te")) {
+    return absl::nullopt;
+  }
+  if (absl::EqualsIgnoreCase(key, "host")) {
+    // Maps legacy host header to :authority.
+    return GetAuthority();
+  }
+  return metadata_->GetStringValue(key, concatenated_value);
 }
 
 grpc_resolved_address EvaluateArgs::GetLocalAddress() const {

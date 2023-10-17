@@ -33,13 +33,13 @@
 void grpc_create_socketpair_if_unix(int sv[2]);
 
 grpc_error_handle grpc_resolve_unix_domain_address(
-    const char* name, grpc_resolved_addresses** addresses);
+    absl::string_view name, grpc_resolved_addresses** addresses);
 
 grpc_error_handle grpc_resolve_unix_abstract_domain_address(
     absl::string_view name, grpc_resolved_addresses** addresses);
 
 grpc_error_handle grpc_resolve_vsock_address(
-    const char* name, grpc_resolved_addresses** addrs);
+    absl::string_view name, grpc_resolved_addresses** addrs);
 
 int grpc_is_unix_socket(const grpc_resolved_address* resolved_addr);
 

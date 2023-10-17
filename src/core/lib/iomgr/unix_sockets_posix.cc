@@ -43,7 +43,7 @@ void grpc_create_socketpair_if_unix(int sv[2]) {
 }
 
 grpc_error_handle grpc_resolve_unix_domain_address(
-    const char* name, grpc_resolved_addresses** addresses) {
+    absl::string_view name, grpc_resolved_addresses** addresses) {
   *addresses = static_cast<grpc_resolved_addresses*>(
       gpr_malloc(sizeof(grpc_resolved_addresses)));
   (*addresses)->naddrs = 1;
@@ -62,14 +62,14 @@ grpc_error_handle grpc_resolve_unix_abstract_domain_address(
   return grpc_core::UnixAbstractSockaddrPopulate(name, (*addresses)->addrs);
 }
 
-grpc_error_handle grpc_resolve_vsock_address(const char* name,
+grpc_error_handle grpc_resolve_vsock_address(absl::string_view name,
                                              grpc_resolved_addresses** addrs) {
 #ifdef GRPC_HAVE_LINUX_VSOCK
-  struct sockaddr_vm* vm;
-  unsigned int cid;
-  unsigned int port;
+  std::string name_string(name);
+  unsigned int cid = 0;
+  unsigned int port = 0;
 
-  if (sscanf(name, "%u:%u", &cid, &port) != 2) {
+  if (sscanf(name_string.c_str(), "%u:%u", &cid, &port) != 2) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Failed to parse cid:port pair");
   }
@@ -79,7 +79,7 @@ grpc_error_handle grpc_resolve_vsock_address(const char* name,
   (*addrs)->naddrs = 1;
   (*addrs)->addrs = static_cast<grpc_resolved_address*>(
       gpr_zalloc(sizeof(grpc_resolved_address)));
-  vm = reinterpret_cast<struct sockaddr_vm*>((*addrs)->addrs->addr);
+  auto* vm = reinterpret_cast<struct sockaddr_vm*>((*addrs)->addrs->addr);
   vm->svm_family = AF_VSOCK;
   vm->svm_cid = cid;
   vm->svm_port = port;

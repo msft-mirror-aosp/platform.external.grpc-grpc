@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/http/client/http_client_filter.h"
+
 #include <stdint.h>
 #include <string.h>
 
@@ -30,7 +32,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/profiling/timers.h"
@@ -142,7 +143,7 @@ static grpc_error_handle client_filter_incoming_metadata(
   }
 
   if (b->idx.named.grpc_message != nullptr) {
-    grpc_slice pct_decoded_msg = grpc_permissive_percent_decode_slice(
+    grpc_slice pct_decoded_msg = grpc_core::PermissivePercentDecodeSlice(
         GRPC_MDVALUE(b->idx.named.grpc_message->md));
     if (grpc_slice_is_equivalent(pct_decoded_msg,
                                  GRPC_MDVALUE(b->idx.named.grpc_message->md))) {

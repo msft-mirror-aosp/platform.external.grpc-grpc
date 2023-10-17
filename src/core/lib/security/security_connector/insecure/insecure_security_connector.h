@@ -29,39 +29,66 @@ namespace grpc_core {
 
 extern const char kInsecureTransportSecurityType[];
 
+// Exposed for testing purposes only.
+// Create an auth context which is necessary to pass the santiy check in
+// client_auth_filter that verifies if the peer's auth context is obtained
+// during handshakes.
+RefCountedPtr<grpc_auth_context> TestOnlyMakeInsecureAuthContext();
+
 class InsecureChannelSecurityConnector
     : public grpc_channel_security_connector {
  public:
   InsecureChannelSecurityConnector(
-      grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
-      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds)
+      RefCountedPtr<grpc_channel_credentials> channel_creds,
+      RefCountedPtr<grpc_call_credentials> request_metadata_creds)
       : grpc_channel_security_connector(/* url_scheme */ nullptr,
                                         std::move(channel_creds),
                                         std::move(request_metadata_creds)) {}
 
   bool check_call_host(absl::string_view host, grpc_auth_context* auth_context,
                        grpc_closure* on_call_host_checked,
-                       grpc_error** error) override;
+                       grpc_error_handle* error) override;
 
   void cancel_check_call_host(grpc_closure* on_call_host_checked,
-                              grpc_error* error) override;
+                              grpc_error_handle error) override;
 
   void add_handshakers(const grpc_channel_args* args,
                        grpc_pollset_set* /* interested_parties */,
-                       grpc_core::HandshakeManager* handshake_manager) override;
+                       HandshakeManager* handshake_manager) override;
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
-                  grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+                  RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 
-  int cmp(const grpc_security_connector* other_sc) const override;
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+                         grpc_error_handle error) override {
+    GRPC_ERROR_UNREF(error);
+  }
 
-  // Exposed for testing purposes only.
-  // Create an auth context which is necessary to pass the santiy check in
-  // client_auth_filter that verifies if the peer's auth context is obtained
-  // during handshakes. The auth context is only checked for its existence and
-  // not actually used.
-  static RefCountedPtr<grpc_auth_context> MakeAuthContext();
+  int cmp(const grpc_security_connector* other_sc) const override;
+};
+
+class InsecureServerSecurityConnector : public grpc_server_security_connector {
+ public:
+  explicit InsecureServerSecurityConnector(
+      RefCountedPtr<grpc_server_credentials> server_creds)
+      : grpc_server_security_connector(nullptr /* url_scheme */,
+                                       std::move(server_creds)) {}
+
+  void add_handshakers(const grpc_channel_args* args,
+                       grpc_pollset_set* /* interested_parties */,
+                       HandshakeManager* handshake_manager) override;
+
+  void check_peer(tsi_peer peer, grpc_endpoint* ep,
+                  RefCountedPtr<grpc_auth_context>* auth_context,
+                  grpc_closure* on_peer_checked) override;
+
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+                         grpc_error_handle error) override {
+    GRPC_ERROR_UNREF(error);
+  }
+
+  int cmp(const grpc_security_connector* other) const override;
 };
 
 }  // namespace grpc_core

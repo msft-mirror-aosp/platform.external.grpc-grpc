@@ -13,12 +13,11 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
-grpc_package(name = "test/core/client_channel")
+grpc_package(name = "test/core/uri")
 
 licenses(["notice"])
-
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
     name = "uri_fuzzer_test",
@@ -36,9 +35,9 @@ grpc_fuzzer(
 grpc_cc_test(
     name = "uri_parser_test",
     srcs = ["uri_parser_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],

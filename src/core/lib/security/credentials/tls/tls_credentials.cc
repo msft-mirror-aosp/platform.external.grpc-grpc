@@ -28,29 +28,40 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 
 #define GRPC_CREDENTIALS_TYPE_TLS "Tls"
 
 namespace {
 
-bool CredentialOptionSanityCheck(const grpc_tls_credentials_options* options,
+bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
                                  bool is_client) {
   if (options == nullptr) {
     gpr_log(GPR_ERROR, "TLS credentials options is nullptr.");
     return false;
   }
-  // TODO(ZhenLian): remove this when it is also supported on server side.
-  if (!is_client && options->server_authorization_check_config() != nullptr) {
-    gpr_log(GPR_INFO,
-            "Server's credentials options should not contain server "
-            "authorization check config.");
-  }
-  if (options->server_verification_option() != GRPC_TLS_SERVER_VERIFICATION &&
-      options->server_authorization_check_config() == nullptr) {
+  // In the following conditions, there won't be any issues, but it might
+  // indicate callers are doing something wrong with the API.
+  if (is_client && options->cert_request_type() !=
+                       GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE) {
     gpr_log(GPR_ERROR,
-            "Should provider custom verifications if bypassing default ones.");
-    return false;
+            "Client's credentials options should not set cert_request_type.");
+  }
+  if (!is_client && !options->verify_server_cert()) {
+    gpr_log(GPR_ERROR,
+            "Server's credentials options should not set verify_server_cert.");
+  }
+  // In the following conditions, there could be severe security issues.
+  if (is_client && options->certificate_verifier() == nullptr) {
+    // If no verifier is specified on the client side, use the hostname verifier
+    // as default. Users who want to bypass all the verifier check should
+    // implement an external verifier instead.
+    gpr_log(GPR_INFO,
+            "No verifier specified on the client side. Using default hostname "
+            "verifier");
+    options->set_certificate_verifier(
+        grpc_core::MakeRefCounted<grpc_core::HostNameCertificateVerifier>());
   }
   return true;
 }
@@ -92,7 +103,7 @@ TlsCredentials::create_security_connector(
   }
   if (args != nullptr) {
     grpc_arg new_arg = grpc_channel_arg_string_create(
-        (char*)GRPC_ARG_HTTP2_SCHEME, (char*)"https");
+        const_cast<char*>(GRPC_ARG_HTTP2_SCHEME), const_cast<char*>("https"));
     *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
   }
   return sc;
@@ -106,7 +117,8 @@ TlsServerCredentials::TlsServerCredentials(
 TlsServerCredentials::~TlsServerCredentials() {}
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
-TlsServerCredentials::create_security_connector() {
+TlsServerCredentials::create_security_connector(
+    const grpc_channel_args* /* args */) {
   return grpc_core::TlsServerSecurityConnector::
       CreateTlsServerSecurityConnector(this->Ref(), options_);
 }

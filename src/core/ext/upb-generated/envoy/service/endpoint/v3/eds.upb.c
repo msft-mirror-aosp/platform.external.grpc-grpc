@@ -7,23 +7,31 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "envoy/service/endpoint/v3/eds.upb.h"
 #include "envoy/service/discovery/v3/discovery.upb.h"
 #include "google/api/annotations.upb.h"
-#include "google/protobuf/duration.upb.h"
-#include "google/protobuf/wrappers.upb.h"
 #include "envoy/annotations/resource.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
-#include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"
 
 const upb_msglayout envoy_service_endpoint_v3_EdsDummy_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false,
+  UPB_SIZE(0, 0), 0, _UPB_MSGEXT_NONE, 0, 255,
+};
+
+static const upb_msglayout *messages_layout[1] = {
+  &envoy_service_endpoint_v3_EdsDummy_msginit,
+};
+
+const upb_msglayout_file envoy_service_endpoint_v3_eds_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  1,
+  0,
 };
 
 #include "upb/port_undef.inc"

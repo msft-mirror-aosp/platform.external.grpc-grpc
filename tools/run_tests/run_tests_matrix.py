@@ -21,9 +21,9 @@ import multiprocessing
 import os
 import sys
 
+from python_utils.filter_pull_request_tests import filter_tests
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
-from python_utils.filter_pull_request_tests import filter_tests
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
@@ -34,7 +34,7 @@ _DEFAULT_RUNTESTS_TIMEOUT = 1 * 60 * 60
 _CPP_RUNTESTS_TIMEOUT = 4 * 60 * 60
 
 # Set timeout high for ObjC for Cocoapods to install pods
-_OBJC_RUNTESTS_TIMEOUT = 90 * 60
+_OBJC_RUNTESTS_TIMEOUT = 2 * 60 * 60
 
 # Number of jobs assigned to each run_tests.py instance
 _DEFAULT_INNER_JOBS = 2
@@ -76,7 +76,7 @@ def _docker_jobspec(name,
         timeout_seconds = _DEFAULT_RUNTESTS_TIMEOUT
     shortname = 'run_tests_%s' % name
     test_job = jobset.JobSpec(cmdline=[
-        'python', 'tools/run_tests/run_tests.py', '--use_docker', '-t', '-j',
+        'python3', 'tools/run_tests/run_tests.py', '--use_docker', '-t', '-j',
         str(inner_jobs), '-x',
         'run_tests/%s' % _report_filename(name), '--report_suite_name',
         '%s' % _safe_report_name(name)
@@ -230,7 +230,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
-    test_jobs += _generate_jobs(languages=['grpc-node', 'ruby', 'php7'],
+    test_jobs += _generate_jobs(languages=['ruby', 'php7'],
                                 configs=['dbg', 'opt'],
                                 platforms=['linux', 'macos'],
                                 labels=['basictests', 'multilang'],
@@ -266,8 +266,8 @@ def _create_portability_test_jobs(extra_args=[],
 
     # portability C and C++ on x64
     for compiler in [
-            'gcc4.9', 'gcc5.3', 'gcc7.4', 'gcc8.3', 'gcc_musl', 'clang3.6',
-            'clang3.7'
+            'gcc4.9', 'gcc5.3', 'gcc8.3', 'gcc8.3_openssl102', 'gcc11',
+            'gcc_musl', 'clang4', 'clang12'
     ]:
         test_jobs += _generate_jobs(languages=['c', 'c++'],
                                     configs=['dbg'],
@@ -320,6 +320,7 @@ def _create_portability_test_jobs(extra_args=[],
                                 labels=['portability', 'corelang'],
                                 extra_args=extra_args,
                                 extra_envs={'GRPC_DNS_RESOLVER': 'ares'},
+                                inner_jobs=inner_jobs,
                                 timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     # C and C++ with no-exceptions on Linux
@@ -328,6 +329,7 @@ def _create_portability_test_jobs(extra_args=[],
                                 platforms=['linux'],
                                 labels=['portability', 'corelang'],
                                 extra_args=extra_args,
+                                inner_jobs=inner_jobs,
                                 timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     test_jobs += _generate_jobs(languages=['python'],
@@ -339,19 +341,6 @@ def _create_portability_test_jobs(extra_args=[],
                                 extra_args=extra_args +
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
-
-    # TODO(jtattermusch): a large portion of the libuv tests is failing,
-    # which can end up killing the kokoro job due to gigabytes of error logs
-    # generated. Remove the --build_only flag
-    # once https://github.com/grpc/grpc/issues/17556 is fixed.
-    test_jobs += _generate_jobs(languages=['c'],
-                                configs=['dbg'],
-                                platforms=['linux'],
-                                iomgr_platforms=['uv'],
-                                labels=['portability', 'corelang'],
-                                extra_args=extra_args + ['--build_only'],
-                                inner_jobs=inner_jobs,
-                                timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     return test_jobs
 
@@ -369,7 +358,8 @@ def _runs_per_test_type(arg_str):
     """Auxiliary function to parse the "runs_per_test" flag."""
     try:
         n = int(arg_str)
-        if n <= 0: raise ValueError
+        if n <= 0:
+            raise ValueError
         return n
     except:
         msg = '\'{}\' is not a positive integer'.format(arg_str)

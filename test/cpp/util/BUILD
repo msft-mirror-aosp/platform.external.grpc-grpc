@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
-
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+
+licenses(["notice"])
 
 grpc_package(
     name = "test/cpp/util",
@@ -204,6 +204,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing:simple_messages_proto",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
     ],
 )
 
@@ -288,8 +289,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_test_ios"],
     deps = [
         "//:grpc++_error_details",
+        "//src/proto/grpc/status:status_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//test/core/util:grpc_test_util",
     ],
@@ -359,5 +362,21 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
         "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "tls_test_utils",
+    srcs = [
+        "tls_test_utils.cc",
+    ],
+    hdrs = [
+        "tls_test_utils.h",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
     ],
 )

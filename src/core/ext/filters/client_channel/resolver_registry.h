@@ -51,7 +51,7 @@ class ResolverRegistry {
   };
 
   /// Checks whether the user input \a target is valid to create a resolver.
-  static bool IsValidTarget(const char* target);
+  static bool IsValidTarget(absl::string_view target);
 
   /// Creates a resolver given \a target.
   /// First tries to parse \a target as a URI. If this succeeds, tries
@@ -73,11 +73,10 @@ class ResolverRegistry {
       std::unique_ptr<Resolver::ResultHandler> result_handler);
 
   /// Returns the default authority to pass from a client for \a target.
-  static grpc_core::UniquePtr<char> GetDefaultAuthority(const char* target);
+  static std::string GetDefaultAuthority(absl::string_view target);
 
   /// Returns \a target with the default prefix prepended, if needed.
-  static grpc_core::UniquePtr<char> AddDefaultPrefixIfNeeded(
-      const char* target);
+  static UniquePtr<char> AddDefaultPrefixIfNeeded(const char* target);
 
   /// Returns the resolver factory for \a scheme.
   /// Caller does NOT own the return value.

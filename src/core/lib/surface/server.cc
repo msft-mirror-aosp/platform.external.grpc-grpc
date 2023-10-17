@@ -794,6 +794,7 @@ void DonePublishedShutdown(void* /*done_arg*/, grpc_cq_completion* storage) {
 //       connection is NOT closed until the server is done with all those calls.
 //    -- Once there are no more calls in progress, the channel is closed.
 void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
+  absl::Notification* await_requests = nullptr;
   ChannelBroadcaster broadcaster;
   {
     // Wait for startup to be finished.  Locks mu_global.
@@ -820,7 +821,12 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
       KillPendingWorkLocked(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server Shutdown"));
     }
-    ShutdownUnrefOnShutdownCall();
+    await_requests = ShutdownUnrefOnShutdownCall();
+  }
+  // We expect no new requests but there can still be requests in-flight.
+  // Wait for them to complete before proceeding.
+  if (await_requests != nullptr) {
+    await_requests->WaitForNotification();
   }
   // Shutdown listeners.
   for (auto& listener : listeners_) {
@@ -1248,7 +1254,7 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
   grpc_call_set_completion_queue(call_, rc->cq_bound_to_call);
   *rc->call = call_;
   cq_new_ = server_->cqs_[cq_idx];
-  GPR_SWAP(grpc_metadata_array, *rc->initial_metadata, initial_metadata_);
+  std::swap(*rc->initial_metadata, initial_metadata_);
   switch (rc->type) {
     case RequestedCall::Type::BATCH_CALL:
       GPR_ASSERT(host_.has_value());
@@ -1379,24 +1385,24 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
                                                 grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
-  grpc_millis op_deadline;
   if (error == GRPC_ERROR_NONE) {
-    GPR_DEBUG_ASSERT(calld->recv_initial_metadata_->idx.named.path != nullptr);
-    GPR_DEBUG_ASSERT(calld->recv_initial_metadata_->idx.named.authority !=
-                     nullptr);
-    calld->path_.emplace(grpc_slice_ref_internal(
-        GRPC_MDVALUE(calld->recv_initial_metadata_->idx.named.path->md)));
-    calld->host_.emplace(grpc_slice_ref_internal(
-        GRPC_MDVALUE(calld->recv_initial_metadata_->idx.named.authority->md)));
-    grpc_metadata_batch_remove(calld->recv_initial_metadata_, GRPC_BATCH_PATH);
-    grpc_metadata_batch_remove(calld->recv_initial_metadata_,
-                               GRPC_BATCH_AUTHORITY);
+    GPR_DEBUG_ASSERT(
+        calld->recv_initial_metadata_->legacy_index()->named.path != nullptr);
+    GPR_DEBUG_ASSERT(
+        calld->recv_initial_metadata_->legacy_index()->named.authority !=
+        nullptr);
+    calld->path_.emplace(grpc_slice_ref_internal(GRPC_MDVALUE(
+        calld->recv_initial_metadata_->legacy_index()->named.path->md)));
+    calld->host_.emplace(grpc_slice_ref_internal(GRPC_MDVALUE(
+        calld->recv_initial_metadata_->legacy_index()->named.authority->md)));
+    calld->recv_initial_metadata_->Remove(GRPC_BATCH_PATH);
+    calld->recv_initial_metadata_->Remove(GRPC_BATCH_AUTHORITY);
   } else {
-    GRPC_ERROR_REF(error);
+    (void)GRPC_ERROR_REF(error);
   }
-  op_deadline = calld->recv_initial_metadata_->deadline;
-  if (op_deadline != GRPC_MILLIS_INF_FUTURE) {
-    calld->deadline_ = op_deadline;
+  auto op_deadline = calld->recv_initial_metadata_->get(GrpcTimeoutMetadata());
+  if (op_deadline.has_value()) {
+    calld->deadline_ = *op_deadline;
   }
   if (calld->host_.has_value() && calld->path_.has_value()) {
     /* do nothing */
@@ -1469,9 +1475,11 @@ void Server::CallData::StartTransportStreamOpBatch(
 
 grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
   grpc_core::ExecCtx exec_ctx;
+  args = grpc_channel_args_remove_grpc_internal(args);
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
   grpc_server* c_server = new grpc_server;
   c_server->core_server = grpc_core::MakeOrphanable<grpc_core::Server>(args);
+  grpc_channel_args_destroy(args);
   return c_server;
 }
 

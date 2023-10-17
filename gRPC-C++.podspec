@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.39.1'
+  version = '1.40.0'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -189,12 +189,14 @@ Pod::Spec.new do |s|
     ss.dependency 'gRPC-Core', version
     abseil_version = '1.20210324.0'
     ss.dependency 'abseil/base/base', abseil_version
+    ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/status/statusor', abseil_version
+    ss.dependency 'abseil/strings/cord', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/synchronization/synchronization', abseil_version
@@ -268,6 +270,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/server/chttp2_server.h',
                       'src/core/ext/transport/chttp2/transport/bin_decoder.h',
                       'src/core/ext/transport/chttp2/transport/bin_encoder.h',
+                      'src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h',
                       'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
                       'src/core/ext/transport/chttp2/transport/context_list.h',
                       'src/core/ext/transport/chttp2/transport/flow_control.h',
@@ -308,14 +311,17 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.h',
                       'src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.h',
                       'src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.h',
+                      'src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.h',
                       'src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.h',
                       'src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.h',
+                      'src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.h',
                       'src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.h',
                       'src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.h',
                       'src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.h',
                       'src/core/ext/upb-generated/envoy/config/listener/v3/api_listener.upb.h',
                       'src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.h',
                       'src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.h',
+                      'src/core/ext/upb-generated/envoy/config/listener/v3/quic_config.upb.h',
                       'src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.h',
                       'src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.h',
                       'src/core/ext/upb-generated/envoy/config/overload/v3/overload.upb.h',
@@ -342,6 +348,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.h',
                       'src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.h',
                       'src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.h',
+                      'src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.h',
                       'src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.h',
                       'src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.h',
                       'src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.h',
@@ -407,14 +414,17 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-generated/envoy/config/core/v3/http_uri.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/core/v3/protocol.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/core/v3/proxy_protocol.upbdefs.h',
+                      'src/core/ext/upbdefs-generated/envoy/config/core/v3/resolver.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/core/v3/socket_option.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/core/v3/substitution_format_string.upbdefs.h',
+                      'src/core/ext/upbdefs-generated/envoy/config/core/v3/udp_socket_config.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint_components.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/load_report.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/listener/v3/api_listener.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.h',
+                      'src/core/ext/upbdefs-generated/envoy/config/listener/v3/quic_config.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.h',
@@ -440,6 +450,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-generated/envoy/service/route/v3/rds.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.h',
+                      'src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.h',
@@ -493,6 +504,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/address_utils/sockaddr_utils.h',
                       'src/core/lib/avl/avl.h',
                       'src/core/lib/backoff/backoff.h',
+                      'src/core/lib/channel/call_tracer.h',
                       'src/core/lib/channel/channel_args.h',
                       'src/core/lib/channel/channel_stack.h',
                       'src/core/lib/channel/channel_stack_builder.h',
@@ -518,7 +530,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/endpoint_config_internal.h',
                       'src/core/lib/event_engine/sockaddr.h',
                       'src/core/lib/gpr/alloc.h',
-                      'src/core/lib/gpr/arena.h',
                       'src/core/lib/gpr/env.h',
                       'src/core/lib/gpr/murmur_hash.h',
                       'src/core/lib/gpr/spinlock.h',
@@ -920,6 +931,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/server/chttp2_server.h',
                               'src/core/ext/transport/chttp2/transport/bin_decoder.h',
                               'src/core/ext/transport/chttp2/transport/bin_encoder.h',
+                              'src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h',
                               'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
                               'src/core/ext/transport/chttp2/transport/context_list.h',
                               'src/core/ext/transport/chttp2/transport/flow_control.h',
@@ -960,14 +972,17 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.h',
                               'src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.h',
                               'src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.h',
+                              'src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.h',
                               'src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.h',
                               'src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.h',
+                              'src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.h',
                               'src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.h',
                               'src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.h',
                               'src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.h',
                               'src/core/ext/upb-generated/envoy/config/listener/v3/api_listener.upb.h',
                               'src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.h',
                               'src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.h',
+                              'src/core/ext/upb-generated/envoy/config/listener/v3/quic_config.upb.h',
                               'src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.h',
                               'src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.h',
                               'src/core/ext/upb-generated/envoy/config/overload/v3/overload.upb.h',
@@ -994,6 +1009,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.h',
                               'src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.h',
                               'src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.h',
+                              'src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.h',
                               'src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.h',
                               'src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.h',
                               'src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.h',
@@ -1059,14 +1075,17 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-generated/envoy/config/core/v3/http_uri.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/core/v3/protocol.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/core/v3/proxy_protocol.upbdefs.h',
+                              'src/core/ext/upbdefs-generated/envoy/config/core/v3/resolver.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/core/v3/socket_option.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/core/v3/substitution_format_string.upbdefs.h',
+                              'src/core/ext/upbdefs-generated/envoy/config/core/v3/udp_socket_config.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint_components.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/load_report.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/listener/v3/api_listener.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.h',
+                              'src/core/ext/upbdefs-generated/envoy/config/listener/v3/quic_config.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.h',
@@ -1092,6 +1111,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-generated/envoy/service/route/v3/rds.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.h',
+                              'src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.h',
@@ -1145,6 +1165,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/address_utils/sockaddr_utils.h',
                               'src/core/lib/avl/avl.h',
                               'src/core/lib/backoff/backoff.h',
+                              'src/core/lib/channel/call_tracer.h',
                               'src/core/lib/channel/channel_args.h',
                               'src/core/lib/channel/channel_stack.h',
                               'src/core/lib/channel/channel_stack_builder.h',
@@ -1170,7 +1191,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/endpoint_config_internal.h',
                               'src/core/lib/event_engine/sockaddr.h',
                               'src/core/lib/gpr/alloc.h',
-                              'src/core/lib/gpr/arena.h',
                               'src/core/lib/gpr/env.h',
                               'src/core/lib/gpr/murmur_hash.h',
                               'src/core/lib/gpr/spinlock.h',

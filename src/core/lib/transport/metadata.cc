@@ -279,9 +279,9 @@ void grpc_mdctx_global_shutdown() {
 #ifndef NDEBUG
 static int is_mdelem_static(grpc_mdelem e) {
   return reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(e)) >=
-             &grpc_static_mdelem_table()[0] &&
+             &grpc_core::g_static_mdelem_table[0] &&
          reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(e)) <
-             &grpc_static_mdelem_table()[GRPC_STATIC_MDELEM_COUNT];
+             &grpc_core::g_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
 }
 #endif
 
@@ -549,14 +549,35 @@ grpc_mdelem grpc_mdelem_from_slices(
 }
 
 grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_metadata* metadata) {
-  bool changed = false;
+  bool key_changed = false;
   grpc_slice key_slice =
-      grpc_slice_maybe_static_intern(metadata->key, &changed);
+      grpc_slice_maybe_static_intern(metadata->key, &key_changed);
+  bool value_changed = false;
+  grpc_slice* unref_slice = nullptr;
   grpc_slice value_slice =
-      grpc_slice_maybe_static_intern(metadata->value, &changed);
-  return grpc_mdelem_create(
-      key_slice, value_slice,
-      changed ? nullptr : reinterpret_cast<grpc_mdelem_data*>(metadata));
+      grpc_slice_maybe_static_intern(metadata->value, &value_changed);
+  // If key or value changed, but the other didn't.... AND the other is a NOP
+  // refcount, then we need to convert it to a slice with a refcount else we run
+  // the risk of leaving a dangling reference to that metadata on the heap via
+  // this mdelem.
+  if (key_changed && !value_changed && value_slice.refcount != nullptr &&
+      value_slice.refcount->GetType() == grpc_slice_refcount::Type::NOP) {
+    value_slice = grpc_slice_copy(value_slice);
+    unref_slice = &value_slice;
+    value_changed = true;
+  } else if (!key_changed && value_changed && key_slice.refcount != nullptr &&
+             key_slice.refcount->GetType() == grpc_slice_refcount::Type::NOP) {
+    key_slice = grpc_slice_copy(key_slice);
+    unref_slice = &key_slice;
+    key_changed = true;
+  }
+  auto mdelem =
+      grpc_mdelem_create(key_slice, value_slice,
+                         key_changed || value_changed
+                             ? nullptr
+                             : reinterpret_cast<grpc_mdelem_data*>(metadata));
+  if (unref_slice != nullptr) grpc_slice_unref_internal(*unref_slice);
+  return mdelem;
 }
 
 static void* get_user_data(UserData* user_data, void (*destroy_func)(void*)) {
@@ -577,7 +598,7 @@ void* grpc_mdelem_get_user_data(grpc_mdelem md, void (*destroy_func)(void*)) {
           grpc_static_mdelem_user_data
               [reinterpret_cast<grpc_core::StaticMetadata*>(
                    GRPC_MDELEM_DATA(md)) -
-               grpc_static_mdelem_table()]);
+               grpc_core::g_static_mdelem_table]);
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
       auto* am = reinterpret_cast<AllocatedMetadata*>(GRPC_MDELEM_DATA(md));
       return get_user_data(am->user_data(), destroy_func);
@@ -619,7 +640,7 @@ void* grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void*),
           grpc_static_mdelem_user_data
               [reinterpret_cast<grpc_core::StaticMetadata*>(
                    GRPC_MDELEM_DATA(md)) -
-               grpc_static_mdelem_table()]);
+               grpc_core::g_static_mdelem_table]);
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
       auto* am = reinterpret_cast<AllocatedMetadata*>(GRPC_MDELEM_DATA(md));
       return set_user_data(am->user_data(), destroy_func, data);

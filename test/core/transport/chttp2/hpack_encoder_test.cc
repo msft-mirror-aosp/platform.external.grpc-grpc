@@ -161,35 +161,25 @@ static void verify(const verify_params params, const char* expected,
   va_list l;
   grpc_linked_mdelem* e =
       static_cast<grpc_linked_mdelem*>(gpr_malloc(sizeof(*e) * nheaders));
-  grpc_metadata_batch b;
-
-  grpc_metadata_batch_init(&b);
+  auto arena = grpc_core::MakeScopedArena(1024);
+  grpc_metadata_batch b(arena.get());
 
   va_start(l, nheaders);
   for (i = 0; i < nheaders; i++) {
     char* key = va_arg(l, char*);
     char* value = va_arg(l, char*);
-    if (i) {
-      e[i - 1].next = &e[i];
-      e[i].prev = &e[i - 1];
-    }
     grpc_slice value_slice = grpc_slice_from_static_string(value);
     if (!params.only_intern_key) {
       value_slice = grpc_slice_intern(value_slice);
     }
     e[i].md = grpc_mdelem_from_slices(
         grpc_slice_intern(grpc_slice_from_static_string(key)), value_slice);
+    GPR_ASSERT(GRPC_ERROR_NONE == b.LinkTail(&e[i]));
   }
-  e[0].prev = nullptr;
-  e[nheaders - 1].next = nullptr;
   va_end(l);
 
-  b.list.head = &e[0];
-  b.list.tail = &e[nheaders - 1];
-  b.list.count = nheaders;
-
   if (cap_to_delete == num_to_delete) {
-    cap_to_delete = GPR_MAX(2 * cap_to_delete, 1000);
+    cap_to_delete = std::max(2 * cap_to_delete, size_t(1000));
     to_delete = static_cast<void**>(
         gpr_realloc(to_delete, sizeof(*to_delete) * cap_to_delete));
   }
@@ -210,7 +200,6 @@ static void verify(const verify_params params, const char* expected,
   verify_frames(output, params.eof);
   merged = grpc_slice_merge(output.slices, output.count);
   grpc_slice_buffer_destroy_internal(&output);
-  grpc_metadata_batch_destroy(&b);
 
   if (!grpc_slice_eq(merged, expect)) {
     char* expect_str = grpc_dump_slice(expect, GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -255,20 +244,17 @@ static void test_basic_headers() {
 
 static void verify_continuation_headers(const char* key, const char* value,
                                         bool is_eof) {
+  auto arena = grpc_core::MakeScopedArena(1024);
   grpc_slice_buffer output;
   grpc_mdelem elem = grpc_mdelem_from_slices(
       grpc_slice_intern(grpc_slice_from_static_string(key)),
       grpc_slice_intern(grpc_slice_from_static_string(value)));
-  grpc_linked_mdelem* e =
-      static_cast<grpc_linked_mdelem*>(gpr_malloc(sizeof(*e)));
-  grpc_metadata_batch b;
-  grpc_metadata_batch_init(&b);
-  e[0].md = elem;
-  e[0].prev = nullptr;
-  e[0].next = nullptr;
-  b.list.head = &e[0];
-  b.list.tail = &e[0];
-  b.list.count = 1;
+  grpc_linked_mdelem e;
+  e.md = elem;
+  e.prev = nullptr;
+  e.next = nullptr;
+  grpc_metadata_batch b(arena.get());
+  GPR_ASSERT(GRPC_ERROR_NONE == b.LinkTail(&e));
   grpc_slice_buffer_init(&output);
 
   grpc_transport_one_way_stats stats;
@@ -282,8 +268,6 @@ static void verify_continuation_headers(const char* key, const char* value,
   g_compressor->EncodeHeaders(hopt, b, &output);
   verify_frames(output, is_eof);
   grpc_slice_buffer_destroy_internal(&output);
-  grpc_metadata_batch_destroy(&b);
-  gpr_free(e);
 }
 
 static void test_continuation_headers() {
@@ -343,22 +327,19 @@ static void test_decode_table_overflow() {
 static void verify_table_size_change_match_elem_size(const char* key,
                                                      const char* value,
                                                      bool use_true_binary) {
+  auto arena = grpc_core::MakeScopedArena(1024);
   grpc_slice_buffer output;
   grpc_mdelem elem = grpc_mdelem_from_slices(
       grpc_slice_intern(grpc_slice_from_static_string(key)),
       grpc_slice_intern(grpc_slice_from_static_string(value)));
   size_t elem_size = grpc_core::MetadataSizeInHPackTable(elem, use_true_binary);
   size_t initial_table_size = g_compressor->test_only_table_size();
-  grpc_linked_mdelem* e =
-      static_cast<grpc_linked_mdelem*>(gpr_malloc(sizeof(*e)));
-  grpc_metadata_batch b;
-  grpc_metadata_batch_init(&b);
-  e[0].md = elem;
-  e[0].prev = nullptr;
-  e[0].next = nullptr;
-  b.list.head = &e[0];
-  b.list.tail = &e[0];
-  b.list.count = 1;
+  grpc_linked_mdelem e;
+  e.md = elem;
+  e.prev = nullptr;
+  e.next = nullptr;
+  grpc_metadata_batch b(arena.get());
+  GPR_ASSERT(GRPC_ERROR_NONE == b.LinkTail(&e));
   grpc_slice_buffer_init(&output);
 
   grpc_transport_one_way_stats stats;
@@ -372,11 +353,9 @@ static void verify_table_size_change_match_elem_size(const char* key,
   g_compressor->EncodeHeaders(hopt, b, &output);
   verify_frames(output, false);
   grpc_slice_buffer_destroy_internal(&output);
-  grpc_metadata_batch_destroy(&b);
 
   GPR_ASSERT(g_compressor->test_only_table_size() ==
              elem_size + initial_table_size);
-  gpr_free(e);
 }
 
 static void test_encode_header_size() {

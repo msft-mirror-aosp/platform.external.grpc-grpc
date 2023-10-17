@@ -20,6 +20,7 @@ import json
 import logging
 import os
 import random
+import re
 import shlex
 import socket
 import subprocess
@@ -2264,7 +2265,7 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                                 args.zone)
                     ok = False
                 seen = set()
-                for xds_config in client_config['xds_config']:
+                for xds_config in client_config.get('xds_config', []):
                     if 'listener_config' in xds_config:
                         listener_name = xds_config['listener_config'][
                             'dynamic_listeners'][0]['active_state']['listener'][
@@ -2304,6 +2305,41 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                             ok = False
                         else:
                             seen.add('eds')
+                for generic_xds_config in client_config.get(
+                        'generic_xds_configs', []):
+                    if re.search(r'\.Listener$',
+                                 generic_xds_config['type_url']):
+                        seen.add('lds')
+                        listener = generic_xds_config["xds_config"]
+                        if listener['name'] != server_uri:
+                            logger.info('Invalid Listener name %s != %s',
+                                        listener_name, server_uri)
+                            ok = False
+                    elif re.search(r'\.RouteConfiguration$',
+                                   generic_xds_config['type_url']):
+                        seen.add('rds')
+                        route_config = generic_xds_config["xds_config"]
+                        if not len(route_config['virtual_hosts']):
+                            logger.info('Invalid number of VirtualHosts %s',
+                                        num_vh)
+                            ok = False
+                    elif re.search(r'\.Cluster$',
+                                   generic_xds_config['type_url']):
+                        seen.add('cds')
+                        cluster = generic_xds_config["xds_config"]
+                        if cluster['type'] != 'EDS':
+                            logger.info('Invalid cluster type %s != EDS',
+                                        cluster_type)
+                            ok = False
+                    elif re.search(r'\.ClusterLoadAssignment$',
+                                   generic_xds_config['type_url']):
+                        seen.add('eds')
+                        endpoint = generic_xds_config["xds_config"]
+                        if args.zone not in endpoint["endpoints"][0][
+                                "locality"]["sub_zone"]:
+                            logger.info('Invalid endpoint sub_zone %s',
+                                        sub_zone)
+                            ok = False
                 want = {'lds', 'rds', 'cds', 'eds'}
                 if seen != want:
                     logger.info('Incomplete xDS config dump, seen=%s', seen)
@@ -2685,11 +2721,10 @@ def get_url_map(gcp, url_map_name, record_error=True):
         result = gcp.compute.urlMaps().get(project=gcp.project,
                                            urlMap=url_map_name).execute()
         url_map = GcpResource(url_map_name, result['selfLink'])
+        gcp.url_maps.append(url_map)
     except Exception as e:
         if record_error:
             gcp.errors.append(e)
-        url_map = GcpResource(url_map_name, None)
-    gcp.url_maps.append(url_map)
 
 
 def get_target_proxy(gcp, target_proxy_name, record_error=True):
@@ -2703,11 +2738,10 @@ def get_target_proxy(gcp, target_proxy_name, record_error=True):
                 project=gcp.project,
                 targetHttpProxy=target_proxy_name).execute()
         target_proxy = GcpResource(target_proxy_name, result['selfLink'])
+        gcp.target_proxies.append(target_proxy)
     except Exception as e:
         if record_error:
             gcp.errors.append(e)
-        target_proxy = GcpResource(target_proxy_name, None)
-    gcp.target_proxies.append(target_proxy)
 
 
 def get_global_forwarding_rule(gcp, forwarding_rule_name, record_error=True):
@@ -2716,11 +2750,10 @@ def get_global_forwarding_rule(gcp, forwarding_rule_name, record_error=True):
             project=gcp.project, forwardingRule=forwarding_rule_name).execute()
         global_forwarding_rule = GcpResource(forwarding_rule_name,
                                              result['selfLink'])
+        gcp.global_forwarding_rules.append(global_forwarding_rule)
     except Exception as e:
         if record_error:
             gcp.errors.append(e)
-        global_forwarding_rule = GcpResource(forwarding_rule_name, None)
-    gcp.global_forwarding_rules.append(global_forwarding_rule)
 
 
 def get_instance_template(gcp, template_name):
@@ -2770,7 +2803,8 @@ def delete_global_forwarding_rule(gcp, forwarding_rule_to_delete=None):
 
 
 def delete_global_forwarding_rules(gcp):
-    for forwarding_rule in gcp.global_forwarding_rules:
+    forwarding_rules_to_delete = gcp.global_forwarding_rules.copy()
+    for forwarding_rule in forwarding_rules_to_delete:
         delete_global_forwarding_rule(gcp, forwarding_rule)
 
 
@@ -2801,7 +2835,8 @@ def delete_target_proxy(gcp, proxy_to_delete=None):
 
 
 def delete_target_proxies(gcp):
-    for target_proxy in gcp.target_proxies:
+    target_proxies_to_delete = gcp.target_proxies.copy()
+    for target_proxy in target_proxies_to_delete:
         delete_target_proxy(gcp, target_proxy)
 
 
@@ -2824,7 +2859,8 @@ def delete_url_map(gcp, url_map_to_delete=None):
 
 
 def delete_url_maps(gcp):
-    for url_map in gcp.url_maps:
+    url_maps_to_delete = gcp.url_maps.copy()
+    for url_map in url_maps_to_delete:
         delete_url_map(gcp, url_map)
 
 

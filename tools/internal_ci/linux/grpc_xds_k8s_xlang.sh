@@ -22,7 +22,7 @@ readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TES
 readonly IMAGE_REPO="gcr.io/grpc-testing/xds-interop"
 readonly SERVER_LANG="cpp go java"
 readonly CLIENT_LANG="cpp go java"
-readonly VERSION_TAG="v1.40.x"
+readonly VERSION_TAG="v1.41.x"
 
 #######################################
 # Executes the test case
@@ -57,7 +57,6 @@ run_test() {
     --xml_output_file="${TEST_XML_OUTPUT_DIR}/${tag}/${clang}-${slang}/sponge_log.xml" \
     --force_cleanup \
     --nocheck_local_certs
-  set +x
 }
 
 #######################################
@@ -100,6 +99,8 @@ main() {
   fi
 
   local failed_tests=0
+  local successful_string
+  local failed_string
   # Run tests
   for TAG in ${VERSION_TAG}
   do
@@ -108,12 +109,20 @@ main() {
     for SLANG in ${SERVER_LANG}
     do
       if [ "${CLANG}" != "${SLANG}" ]; then
-        run_test "${TAG}" "${SLANG}" "${CLANG}" || (( failed_tests++ ))
+        if run_test "${TAG}" "${SLANG}" "${CLANG}"; then
+          successful_string="${successful_string} ${TAG}/${CLANG}-${SLANG}"
+        else
+          failed_tests=$((failed_tests+1))
+          failed_string="${failed_string} ${TAG}/${CLANG}-${SLANG}"
+        fi
       fi
     done
     echo "Failed test suites: ${failed_tests}"
     done
   done
+  set +x
+  echo "Failed test suites list: ${failed_string}"
+  echo "Successful test suites list: ${successful_string}"
   if (( failed_tests > 0 )); then
     exit 1
   fi

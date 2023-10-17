@@ -18,7 +18,7 @@ GRPC_PATH="$1"
 pushd "$GRPC_PATH"
 
 # Settings for Bazel queries
-CONFIGS="--define=grpc_no_binder=true --define=grpc_no_rls=true --define=grpc_no_ares=true"
+CONFIGS="--define=grpc_no_ares=true"
 TEMP=/tmp/grpc_android_bp
 mkdir -p $TEMP
 
@@ -28,7 +28,7 @@ mkdir -p $TEMP
 /usr/bin/bazel cquery $CONFIGS 'kind("source file", deps("//:grpc++"))' > $TEMP/grpc_secure_deps.txt
 
 # Remove irrelevant content from the list and clean it up
-sed -i -e '\@\.h @d; \@\.proto @d; \@\.upb\.c@d; \@\.upbdefs\.c@d; \@\.inc @d; \@third_party@d; \@wrap_memcpy\.cc@d; /^@/d; s@ \(.*\)@@; s@:@/@; s@/\+@/@g; s@^/@@; s@^.*$@"\0",@' $TEMP/grpc_unsecure_deps.txt $TEMP/grpc_secure_deps.txt
+sed -i -e '\@\.h @d; \@\.proto @d; \@\.upb\.c@d; \@\.upbdefs\.c@d; \@\.inc @d; \@third_party@d; \@wrap_memcpy\.cc@d; \@ndk_binder\.cc@d; /^@/d; s@ \(.*\)@@; s@:@/@; s@/\+@/@g; s@^/@@; s@^.*$@"\0",@' $TEMP/grpc_unsecure_deps.txt $TEMP/grpc_secure_deps.txt
 # Use diff to annotate the file lists with + and -
 # This way we detect which files are only in the secure/unsecure target.
 # Diff has exit status 1 when the files are different, hence the "|| true".

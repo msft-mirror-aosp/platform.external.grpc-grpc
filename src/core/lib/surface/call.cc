@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/surface/call.h"
+
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
@@ -51,7 +53,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -105,13 +106,13 @@ struct batch_control {
   } completion_data;
   grpc_closure start_batch;
   grpc_closure finish_batch;
-  grpc_core::Atomic<intptr_t> steps_to_complete;
+  std::atomic<intptr_t> steps_to_complete{0};
   gpr_atm batch_error = reinterpret_cast<gpr_atm>(GRPC_ERROR_NONE);
   void set_num_steps_to_complete(uintptr_t steps) {
-    steps_to_complete.Store(steps, grpc_core::MemoryOrder::RELEASE);
+    steps_to_complete.store(steps, std::memory_order_release);
   }
   bool completed_batch_step() {
-    return steps_to_complete.FetchSub(1, grpc_core::MemoryOrder::ACQ_REL) == 1;
+    return steps_to_complete.fetch_sub(1, std::memory_order_acq_rel) == 1;
   }
 };
 
@@ -1065,10 +1066,10 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b,
     grpc_error_handle error = GRPC_ERROR_NONE;
     if (status_code != GRPC_STATUS_OK) {
       char* peer = grpc_call_get_peer(call);
-      error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("Error received from peer ", peer).c_str()),
-          GRPC_ERROR_INT_GRPC_STATUS, static_cast<intptr_t>(status_code));
+      error = grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+                                     "Error received from peer ", peer)),
+                                 GRPC_ERROR_INT_GRPC_STATUS,
+                                 static_cast<intptr_t>(status_code));
       gpr_free(peer);
     }
     if (b->idx.named.grpc_message != nullptr) {

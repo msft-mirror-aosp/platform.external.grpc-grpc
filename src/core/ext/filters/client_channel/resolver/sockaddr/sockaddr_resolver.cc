@@ -28,13 +28,13 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
@@ -73,7 +73,7 @@ void SockaddrResolver::StartLocked() {
   // TODO(roth): Use std::move() once channel args is converted to C++.
   result.args = channel_args_;
   channel_args_ = nullptr;
-  result_handler_->ReturnResult(std::move(result));
+  result_handler_->ReportResult(std::move(result));
 }
 
 //
@@ -91,9 +91,9 @@ bool ParseUri(const URI& uri,
   // Construct addresses.
   bool errors_found = false;
   for (absl::string_view ith_path : absl::StrSplit(uri.path(), ',')) {
-    URI ith_uri(uri.scheme(), "", std::string(ith_path), {}, "");
+    auto ith_uri = URI::Create(uri.scheme(), "", std::string(ith_path), {}, "");
     grpc_resolved_address addr;
-    if (!parse(ith_uri, &addr)) {
+    if (!ith_uri.ok() || !parse(*ith_uri, &addr)) {
       errors_found = true;
       break;
     }
@@ -175,6 +175,25 @@ class UnixAbstractResolverFactory : public ResolverFactory {
 };
 #endif  // GRPC_HAVE_UNIX_SOCKET
 
+#ifdef GRPC_HAVE_LINUX_VSOCK
+class VSockResolverFactory : public ResolverFactory {
+ public:
+  bool IsValidUri(const URI& uri) const override {
+    return ParseUri(uri, grpc_parse_vsock, nullptr);
+  }
+
+  OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
+    return CreateSockaddrResolver(std::move(args), grpc_parse_vsock);
+  }
+
+  std::string GetDefaultAuthority(const URI& /*uri*/) const override {
+    return "localhost";
+  }
+
+  const char* scheme() const override { return "vsock"; }
+};
+#endif
+
 }  // namespace
 
 }  // namespace grpc_core
@@ -189,6 +208,10 @@ void grpc_resolver_sockaddr_init() {
       absl::make_unique<grpc_core::UnixResolverFactory>());
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
       absl::make_unique<grpc_core::UnixAbstractResolverFactory>());
+#endif
+#ifdef GRPC_HAVE_LINUX_VSOCK
+  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
+      absl::make_unique<grpc_core::VSockResolverFactory>());
 #endif
 }
 

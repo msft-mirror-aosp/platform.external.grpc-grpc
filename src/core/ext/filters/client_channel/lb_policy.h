@@ -29,7 +29,6 @@
 #include "absl/types/variant.h"
 
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -134,34 +133,15 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Implemented by the client channel and used by the SubchannelPicker.
   class MetadataInterface {
    public:
-    class iterator
-        : public std::iterator<
-              std::input_iterator_tag,
-              std::pair<absl::string_view, absl::string_view>,  // value_type
-              std::ptrdiff_t,  // difference_type
-              std::pair<absl::string_view, absl::string_view>*,  // pointer
-              std::pair<absl::string_view, absl::string_view>&   // reference
-              > {
-     public:
-      iterator(const MetadataInterface* md, intptr_t handle)
-          : md_(md), handle_(handle) {}
-      iterator& operator++() {
-        handle_ = md_->IteratorHandleNext(handle_);
-        return *this;
-      }
-      bool operator==(iterator other) const {
-        return md_ == other.md_ && handle_ == other.handle_;
-      }
-      bool operator!=(iterator other) const { return !(*this == other); }
-      value_type operator*() const { return md_->IteratorHandleGet(handle_); }
-
-     private:
-      friend class MetadataInterface;
-      const MetadataInterface* md_;
-      intptr_t handle_;
-    };
-
     virtual ~MetadataInterface() = default;
+
+    //////////////////////////////////////////////////////////////////////////
+    // TODO(ctiller): DO NOT MAKE THIS A PUBLIC API YET
+    // This needs some API design to ensure we can add/remove/replace metadata
+    // keys... we're deliberately not doing so to save some time whilst
+    // cleaning up the internal metadata representation, but we should add
+    // something back before making this a public API.
+    //////////////////////////////////////////////////////////////////////////
 
     /// Adds a key/value pair.
     /// Does NOT take ownership of \a key or \a value.
@@ -170,23 +150,12 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// CallState::Alloc().
     virtual void Add(absl::string_view key, absl::string_view value) = 0;
 
-    /// Iteration interface.
-    virtual iterator begin() const = 0;
-    virtual iterator end() const = 0;
+    /// Produce a vector of metadata key/value strings for tests.
+    virtual std::vector<std::pair<std::string, std::string>>
+    TestOnlyCopyToVector() = 0;
 
-    /// Removes the element pointed to by \a it.
-    /// Returns an iterator pointing to the next element.
-    virtual iterator erase(iterator it) = 0;
-
-   protected:
-    intptr_t GetIteratorHandle(const iterator& it) const { return it.handle_; }
-
-   private:
-    friend class iterator;
-
-    virtual intptr_t IteratorHandleNext(intptr_t handle) const = 0;
-    virtual std::pair<absl::string_view /*key*/, absl::string_view /*value */>
-    IteratorHandleGet(intptr_t handle) const = 0;
+    virtual absl::optional<absl::string_view> Lookup(
+        absl::string_view key, std::string* buffer) const = 0;
   };
 
   /// Arguments used when picking a subchannel for a call.
@@ -294,6 +263,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// A proxy object implemented by the client channel and used by the
   /// LB policy to communicate with the channel.
+  // TODO(roth): Once insecure builds go away, add methods for accessing
+  // channel creds.  By default, that should strip off the call creds
+  // attached to the channel creds, but there should also be a "use at
+  // your own risk" option to get the channel creds without stripping
+  // off the attached call creds.
   class ChannelControlHelper {
    public:
     ChannelControlHelper() = default;
@@ -311,6 +285,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Requests that the resolver re-resolve.
     virtual void RequestReresolution() = 0;
+
+    /// Returns the channel authority.
+    virtual absl::string_view GetAuthority() = 0;
 
     /// Adds a trace message associated with the channel.
     enum TraceSeverity { TRACE_INFO, TRACE_WARNING, TRACE_ERROR };

@@ -406,7 +406,9 @@ def _expand_upb_proto_library_rules(bazel_rules):
     GEN_UPB_ROOT = '//:src/core/ext/upb-generated/'
     GEN_UPBDEFS_ROOT = '//:src/core/ext/upbdefs-generated/'
     EXTERNAL_LINKS = [('@com_google_protobuf//', ':src/'),
-                      ('@com_google_googleapis//', '')]
+                      ('@com_google_googleapis//', ''),
+                      ('@com_github_cncf_udpa//', ''),
+                      ('@com_envoyproxy_protoc_gen_validate//', '')]
     for name, bazel_rule in bazel_rules.items():
         gen_func = bazel_rule.get('generator_function', None)
         if gen_func in ('grpc_upb_proto_library',
@@ -956,7 +958,8 @@ _BUILD_EXTRA_METADATA = {
 # We need a complete picture of all the targets and dependencies we're interested in
 # so we run multiple bazel queries and merge the results.
 _BAZEL_DEPS_QUERIES = [
-    'deps("//test/...")',
+    'deps("//test/core/...")',
+    'deps("//test/cpp/...")',
     'deps("//:all")',
     'deps("//src/compiler/...")',
     'deps("//src/proto/...")',

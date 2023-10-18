@@ -37,6 +37,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
@@ -144,6 +145,63 @@ grpc_error_handle UnixAbstractSockaddrPopulate(
 
 }  // namespace grpc_core
 #endif /* GRPC_HAVE_UNIX_SOCKET */
+
+#ifdef GRPC_HAVE_LINUX_VSOCK
+
+bool grpc_parse_vsock(const grpc_core::URI& uri,
+                      grpc_resolved_address* resolved_addr) {
+  if (uri.scheme() != "vsock") {
+    gpr_log(GPR_ERROR, "Expected 'vsock' scheme, got '%s'",
+            uri.scheme().c_str());
+    return false;
+  }
+  grpc_error_handle error =
+      grpc_core::VSockaddrPopulate(uri.path(), resolved_addr);
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "%s", grpc_error_std_string(error).c_str());
+    GRPC_ERROR_UNREF(error);
+    return false;
+  }
+  return true;
+}
+
+namespace grpc_core {
+
+grpc_error_handle VSockaddrPopulate(absl::string_view path,
+                                        grpc_resolved_address* resolved_addr) {
+  memset(resolved_addr, 0, sizeof(*resolved_addr));
+  std::string path_string(path);
+  unsigned int cid = 0;
+  unsigned int port = 0;
+  if (sscanf(path_string.c_str(), "%u:%u", &cid, &port) != 2) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to parse cid:port pair");
+  }
+  struct sockaddr_vm* vm =
+      reinterpret_cast<struct sockaddr_vm*>(resolved_addr->addr);
+  vm->svm_family = AF_VSOCK;
+  vm->svm_cid = cid;
+  vm->svm_port = port;
+  resolved_addr->len = static_cast<socklen_t>(sizeof(*vm));
+  return GRPC_ERROR_NONE;
+}
+
+}  // namespace grpc_core
+
+#else /* GRPC_HAVE_LINUX_VSOCK */
+
+bool grpc_parse_vsock(const grpc_core::URI& /* uri */,
+                      grpc_resolved_address* /* resolved_addr */) {
+  abort();
+}
+
+namespace grpc_core {
+
+grpc_error_handle VSockaddrPopulate(
+    absl::string_view /* path */, grpc_resolved_address* /* resolved_addr */) {
+  abort();
+}
+
+#endif /* GRPC_HAVE_LINUX_VSOCK */
 
 bool grpc_parse_ipv4_hostport(absl::string_view hostport,
                               grpc_resolved_address* addr, bool log_errors) {
@@ -300,6 +358,9 @@ bool grpc_parse_uri(const grpc_core::URI& uri,
   if (uri.scheme() == "unix-abstract") {
     return grpc_parse_unix_abstract(uri, resolved_addr);
   }
+  if (uri.scheme() == "vsock") {
+    return grpc_parse_vsock(uri, resolved_addr);
+  }
   if (uri.scheme() == "ipv4") {
     return grpc_parse_ipv4(uri, resolved_addr);
   }
@@ -317,4 +378,23 @@ uint16_t grpc_strhtons(const char* port) {
     return htons(443);
   }
   return htons(static_cast<unsigned short>(atoi(port)));
+}
+
+grpc_error_handle grpc_string_to_sockaddr(grpc_resolved_address* out,
+                                          const char* addr, int port) {
+  memset(out, 0, sizeof(grpc_resolved_address));
+  grpc_sockaddr_in6* addr6 = reinterpret_cast<grpc_sockaddr_in6*>(out->addr);
+  grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(out->addr);
+  if (grpc_inet_pton(GRPC_AF_INET6, addr, &addr6->sin6_addr) == 1) {
+    addr6->sin6_family = GRPC_AF_INET6;
+    out->len = sizeof(grpc_sockaddr_in6);
+  } else if (grpc_inet_pton(GRPC_AF_INET, addr, &addr4->sin_addr) == 1) {
+    addr4->sin_family = GRPC_AF_INET;
+    out->len = sizeof(grpc_sockaddr_in);
+  } else {
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("Failed to parse address:", addr));
+  }
+  grpc_sockaddr_set_port(out, port);
+  return GRPC_ERROR_NONE;
 }

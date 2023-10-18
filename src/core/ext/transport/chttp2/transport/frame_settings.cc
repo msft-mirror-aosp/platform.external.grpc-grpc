@@ -19,7 +19,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame_settings.h"
-#include "src/core/ext/transport/chttp2/transport/internal.h"
 
 #include <string.h>
 
@@ -30,6 +29,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/http2_errors.h"
 
@@ -109,6 +109,22 @@ grpc_error_handle grpc_chttp2_settings_parser_begin_frame(
     return GRPC_ERROR_NONE;
   }
 }
+
+namespace {
+
+void StreamFlowControlWindowCheck(void* user_data, uint32_t /* key */,
+                                  void* stream) {
+  bool* error = static_cast<bool*>(user_data);
+  grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(stream);
+  if ((s->t->settings[GRPC_PEER_SETTINGS]
+                     [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] +
+       s->t->initial_window_update + s->flow_control->remote_window_delta()) >
+      ((1u << 31) - 1)) {
+    *error = true;
+  }
+}
+
+}  // namespace
 
 grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
                                                     grpc_chttp2_transport* t,
@@ -201,18 +217,16 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
           if (parser->value < sp->min_value || parser->value > sp->max_value) {
             switch (sp->invalid_value_behavior) {
               case GRPC_CHTTP2_CLAMP_INVALID_VALUE:
-                parser->value =
-                    GPR_CLAMP(parser->value, sp->min_value, sp->max_value);
+                parser->value = grpc_core::Clamp(parser->value, sp->min_value,
+                                                 sp->max_value);
                 break;
               case GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE:
                 grpc_chttp2_goaway_append(
                     t->last_new_stream_id, sp->error_value,
                     grpc_slice_from_static_string("HTTP2 settings error"),
                     &t->qbuf);
-                return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                    absl::StrFormat("invalid value %u passed for %s",
-                                    parser->value, sp->name)
-                        .c_str());
+                return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+                    "invalid value %u passed for %s", parser->value, sp->name));
             }
           }
           if (id == GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE &&
@@ -224,6 +238,23 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
               gpr_log(GPR_INFO, "%p[%s] adding %d for initial_window change", t,
                       t->is_client ? "cli" : "svr",
                       static_cast<int>(t->initial_window_update));
+            }
+            if (grpc_core::chttp2::
+                    g_test_only_transport_flow_control_window_check) {
+              bool error = false;
+              if (parser->value > grpc_core::chttp2::kMaxInitialWindowSize ||
+                  parser->value < grpc_core::chttp2::kMinInitialWindowSize) {
+                error = true;
+              } else {
+                grpc_chttp2_stream_map_for_each(
+                    &t->stream_map, StreamFlowControlWindowCheck, &error);
+              }
+              if (error) {
+                grpc_chttp2_goaway_append(
+                    t->last_new_stream_id, sp->error_value,
+                    grpc_slice_from_static_string("HTTP2 settings error"),
+                    &t->qbuf);
+              }
             }
           }
           parser->incoming_settings[id] = parser->value;

@@ -15,20 +15,21 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <memory>
 #include <utility>
 
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
+#include "src/core/lib/gprpp/orphanable.h"
 
 namespace grpc_binder {
 
-class WireReader {
+class WireReader : public grpc_core::InternallyRefCounted<WireReader> {
  public:
-  virtual ~WireReader() = default;
-  virtual std::unique_ptr<WireWriter> SetupTransport(
+  ~WireReader() override = default;
+  virtual std::shared_ptr<WireWriter> SetupTransport(
       std::unique_ptr<Binder> endpoint_binder) = 0;
 };
 

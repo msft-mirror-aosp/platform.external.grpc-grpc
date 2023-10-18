@@ -177,6 +177,8 @@ extern void retry_throttled(grpc_end2end_test_config config);
 extern void retry_throttled_pre_init(void);
 extern void retry_too_many_attempts(grpc_end2end_test_config config);
 extern void retry_too_many_attempts_pre_init(void);
+extern void sdk_authz(grpc_end2end_test_config config);
+extern void sdk_authz_pre_init(void);
 extern void server_finishes_request(grpc_end2end_test_config config);
 extern void server_finishes_request_pre_init(void);
 extern void server_streaming(grpc_end2end_test_config config);
@@ -203,8 +205,6 @@ extern void streaming_error_response(grpc_end2end_test_config config);
 extern void streaming_error_response_pre_init(void);
 extern void trailing_metadata(grpc_end2end_test_config config);
 extern void trailing_metadata_pre_init(void);
-extern void workaround_cronet_compression(grpc_end2end_test_config config);
-extern void workaround_cronet_compression_pre_init(void);
 extern void write_buffering(grpc_end2end_test_config config);
 extern void write_buffering_pre_init(void);
 extern void write_buffering_at_end(grpc_end2end_test_config config);
@@ -287,6 +287,7 @@ void grpc_end2end_tests_pre_init(void) {
   retry_streaming_succeeds_before_replay_finished_pre_init();
   retry_throttled_pre_init();
   retry_too_many_attempts_pre_init();
+  sdk_authz_pre_init();
   server_finishes_request_pre_init();
   server_streaming_pre_init();
   shutdown_finishes_calls_pre_init();
@@ -300,7 +301,6 @@ void grpc_end2end_tests_pre_init(void) {
   stream_compression_ping_pong_streaming_pre_init();
   streaming_error_response_pre_init();
   trailing_metadata_pre_init();
-  workaround_cronet_compression_pre_init();
   write_buffering_pre_init();
   write_buffering_at_end_pre_init();
 }
@@ -387,6 +387,7 @@ void grpc_end2end_tests(int argc, char **argv,
     retry_streaming_succeeds_before_replay_finished(config);
     retry_throttled(config);
     retry_too_many_attempts(config);
+    sdk_authz(config);
     server_finishes_request(config);
     server_streaming(config);
     shutdown_finishes_calls(config);
@@ -400,7 +401,6 @@ void grpc_end2end_tests(int argc, char **argv,
     stream_compression_ping_pong_streaming(config);
     streaming_error_response(config);
     trailing_metadata(config);
-    workaround_cronet_compression(config);
     write_buffering(config);
     write_buffering_at_end(config);
     return;
@@ -703,6 +703,10 @@ void grpc_end2end_tests(int argc, char **argv,
       retry_too_many_attempts(config);
       continue;
     }
+    if (0 == strcmp("sdk_authz", argv[i])) {
+      sdk_authz(config);
+      continue;
+    }
     if (0 == strcmp("server_finishes_request", argv[i])) {
       server_finishes_request(config);
       continue;
@@ -753,10 +757,6 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("trailing_metadata", argv[i])) {
       trailing_metadata(config);
-      continue;
-    }
-    if (0 == strcmp("workaround_cronet_compression", argv[i])) {
-      workaround_cronet_compression(config);
       continue;
     }
     if (0 == strcmp("write_buffering", argv[i])) {

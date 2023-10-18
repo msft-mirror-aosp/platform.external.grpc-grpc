@@ -68,7 +68,6 @@ END2END_FIXTURES = {
     "h2_full": _fixture_options(),
     "h2_full+pipe": _fixture_options(_platforms = ["linux"]),
     "h2_full+trace": _fixture_options(tracing = True),
-    "h2_full+workarounds": _fixture_options(),
     "h2_http_proxy": _fixture_options(supports_proxy_auth = True),
     "h2_insecure": _fixture_options(secure = True),
     "h2_oauth2": _fixture_options(),
@@ -135,7 +134,6 @@ END2END_NOSEC_FIXTURES = {
     "h2_full": _fixture_options(secure = False),
     "h2_full+pipe": _fixture_options(secure = False, _platforms = ["linux"], supports_msvc = False),
     "h2_full+trace": _fixture_options(secure = False, tracing = True, supports_msvc = False),
-    "h2_full+workarounds": _fixture_options(secure = False),
     "h2_http_proxy": _fixture_options(secure = False, supports_proxy_auth = True),
     "h2_proxy": _fixture_options(secure = False, includes_proxy = True),
     "h2_sockpair_1byte": _fixture_options(
@@ -336,6 +334,7 @@ END2END_TESTS = {
     ),
     "retry_throttled": _test_options(needs_client_channel = True),
     "retry_too_many_attempts": _test_options(needs_client_channel = True),
+    "sdk_authz": _test_options(secure = True),
     "server_finishes_request": _test_options(),
     "server_streaming": _test_options(needs_http2 = True),
     "shutdown_finishes_calls": _test_options(),
@@ -355,7 +354,6 @@ END2END_TESTS = {
     "authority_not_supported": _test_options(),
     "filter_latency": _test_options(),
     "filter_status_code": _test_options(),
-    "workaround_cronet_compression": _test_options(),
     "write_buffering": _test_options(needs_write_buffering = True),
     "write_buffering_at_end": _test_options(needs_write_buffering = True),
 }
@@ -423,6 +421,7 @@ def grpc_end2end_tests():
             ":proxy",
             ":local_util",
             "//test/core/util:test_lb_policies",
+            "//:grpc_authorization_provider",
         ],
     )
 

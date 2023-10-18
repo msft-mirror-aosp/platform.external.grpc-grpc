@@ -408,7 +408,8 @@ def _expand_upb_proto_library_rules(bazel_rules):
     EXTERNAL_LINKS = [('@com_google_protobuf//', ':src/'),
                       ('@com_google_googleapis//', ''),
                       ('@com_github_cncf_udpa//', ''),
-                      ('@com_envoyproxy_protoc_gen_validate//', '')]
+                      ('@com_envoyproxy_protoc_gen_validate//', ''),
+                      ('@envoy_api//', ''), ('@opencensus_proto//', '')]
     for name, bazel_rule in bazel_rules.items():
         gen_func = bazel_rule.get('generator_function', None)
         if gen_func in ('grpc_upb_proto_library',
@@ -656,6 +657,9 @@ def _generate_build_extra_metadata_for_tests(
             # currently we hand-list fuzzers instead of generating them automatically
             # because there's no way to obtain maxlen property from bazel BUILD file.
             print(('skipping fuzzer ' + test))
+            continue
+
+        if 'bazel_only' in bazel_tags:
             continue
 
         # if any tags that restrict platform compatibility are present,

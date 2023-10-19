@@ -73,8 +73,6 @@ then
     sleep 3
   done
   [[ "$gpg_recv_keys_success" == 1 ]] || exit 1
-  # fix .rvm directory ownership on kokoro monterey image
-  sudo chown -R "${USER}" ~/.rvm
   rvm get stable # Per https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0
   # stop echoing bash commands temporarily to prevent rvm from polluting the logs
   set +x
@@ -86,6 +84,8 @@ then
   done;
   echo "Setting default ruby version."
   rvm use 2.5.0 --default
+  echo "Installing cocoapods."
+  time gem install cocoapods --version 1.3.1 --no-document
   echo "Updating osx-ssl-certs."
   rvm osx-ssl-certs status all
   rvm osx-ssl-certs update all
@@ -124,6 +124,13 @@ then
   time pip install --user -r $DIR/requirements.macos.txt
   time pip install --user --upgrade virtualenv Mako tox setuptools==44.1.1 twisted
 
+  # 3.6 is not installed by default on Monterey
+  time curl -O https://www.python.org/ftp/python/3.6.8/python-3.6.8-macosx10.9.pkg
+  echo "cc49c4fc9e0a11137866e1b04fd5fc6342e8ed4e  python-3.6.8-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
+  shasum -c /tmp/python_installer_checksum.sha256
+  time sudo installer -pkg ./python-3.6.8-macosx10.9.pkg -target /
+  python3.6 --version
+
   # Force reinstall of python3.7 to upgrade its patch version.
   # Kokoro mac workers come with python 3.7.3 and that version
   # suffers from https://bugs.python.org/issue22490.
@@ -154,10 +161,10 @@ then
 
   # Install Python 3.10 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.10" ]; then
-    time curl -O https://www.python.org/ftp/python/3.10.2/python-3.10.2-macos11.pkg
-    echo "22dd9a45718a99d77398312da6ac720c4968bae7a854da4da3a3986f6d3478f8  python-3.10.2-macos11.pkg" > /tmp/python_installer_checksum.sha256
+    time curl -O https://www.python.org/ftp/python/3.10.5/python-3.10.5-macos11.pkg
+    echo "568c69b4361af1faf0ae35c4cac7236c1a332f5c  python-3.10.5-macos11.pkg" > /tmp/python_installer_checksum.sha256
     shasum -c /tmp/python_installer_checksum.sha256
-    time sudo installer -pkg ./python-3.10.2-macos11.pkg -target /
+    time sudo installer -pkg ./python-3.10.5-macos11.pkg -target /
   fi
 fi
 

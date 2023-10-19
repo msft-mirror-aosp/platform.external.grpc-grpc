@@ -117,6 +117,7 @@ tar xzf "${GRPCIO_TAR_GZ}" -C "${GRPCIO_STRIP_TEMPDIR}"
     clean_non_source_files "${dir}" || true
   done
   tar czf "${GRPCIO_STRIPPED_TAR_GZ}" -- *
+  chmod ugo+r "${GRPCIO_STRIPPED_TAR_GZ}"
 )
 mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 
@@ -143,6 +144,37 @@ then
   venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
   rm -rf venv/
 fi
+
+assert_is_universal_wheel()  {
+  WHL="$1"
+  TMPDIR=$(mktemp -d)
+  unzip "$WHL" -d "$TMPDIR"
+  SO=$(find "$TMPDIR" -name '*.so' | head -n1)
+  if ! file "$SO" | grep "Mach-O universal binary with 2 architectures"; then
+    echo "$WHL is not universal2. Found the following:" >/dev/stderr
+    file "$SO" >/dev/stderr
+    exit 1
+  fi
+}
+
+fix_faulty_universal2_wheel() {
+  WHL="$1"
+  assert_is_universal_wheel "$WHL"
+  if echo "$WHL" | grep "x86_64"; then
+    UPDATED_NAME="${WHL//x86_64/universal2}"
+    mv "$WHL" "$UPDATED_NAME"
+  fi
+}
+
+# This is necessary due to https://github.com/pypa/wheel/issues/406.
+# distutils incorrectly generates a universal2 artifact that only contains
+# x86_64 libraries.
+if [ "$GRPC_UNIVERSAL2_REPAIR" != "" ]; then
+  for WHEEL in dist/*.whl tools/distrib/python/grpcio_tools/dist/*.whl; do
+    fix_faulty_universal2_wheel "$WHEEL"
+  done
+fi
+
 
 if [ "$GRPC_RUN_AUDITWHEEL_REPAIR" != "" ]
 then

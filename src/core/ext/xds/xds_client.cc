@@ -198,9 +198,20 @@ class XdsClient::ChannelState::AdsCallState
       Unref(DEBUG_LOCATION, "Orphan");
     }
 
-    void MaybeStartTimer(RefCountedPtr<AdsCallState> ads_calld) {
-      if (timer_started_) return;
-      timer_started_ = true;
+    void MaybeStartTimer(RefCountedPtr<AdsCallState> ads_calld)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
+      if (!timer_start_needed_) return;
+      timer_start_needed_ = false;
+      // Check if we already have a cached version of this resource
+      // (i.e., if this is the initial request for the resource after an
+      // ADS stream restart).  If so, we don't start the timer, because
+      // (a) we already have the resource and (b) the server may
+      // optimize by not resending the resource that we already have.
+      auto& authority_state =
+          ads_calld->xds_client()->authority_state_map_[name_.authority];
+      ResourceState& state = authority_state.resource_map[type_][name_.key];
+      if (state.resource != nullptr) return;
+      // Start timer.
       ads_calld_ = std::move(ads_calld);
       Ref(DEBUG_LOCATION, "timer").release();
       timer_pending_ = true;
@@ -211,6 +222,18 @@ class XdsClient::ChannelState::AdsCallState
     }
 
     void MaybeCancelTimer() {
+      // If the timer hasn't been started yet, make sure we don't start
+      // it later.  This can happen if the last watch for an LDS or CDS
+      // resource is cancelled and then restarted, both while an ADS
+      // request for a different resource type is being sent (causing
+      // the unsubscription and then resubscription requests to be
+      // queued), and then we get a response for the LDS or CDS resource.
+      // In that case, we would call MaybeCancelTimer() when we receive the
+      // response and then MaybeStartTimer() when we finally send the new
+      // LDS or CDS request, thus causing the timer to fire when it shouldn't.
+      // For details, see https://github.com/grpc/grpc/issues/29583.
+      // TODO(roth): Find a way to write a test for this case.
+      timer_start_needed_ = false;
       if (timer_pending_) {
         grpc_timer_cancel(&timer_);
         timer_pending_ = false;
@@ -233,23 +256,23 @@ class XdsClient::ChannelState::AdsCallState
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
       if (error == GRPC_ERROR_NONE && timer_pending_) {
         timer_pending_ = false;
-        absl::Status watcher_error = absl::UnavailableError(absl::StrFormat(
-            "timeout obtaining resource {type=%s name=%s} from xds server",
-            type_->type_url(),
-            XdsClient::ConstructFullXdsResourceName(
-                name_.authority, type_->type_url(), name_.key)));
         if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-          gpr_log(GPR_INFO, "[xds_client %p] xds server %s: %s",
+          gpr_log(GPR_INFO,
+                  "[xds_client %p] xds server %s: timeout obtaining resource "
+                  "{type=%s name=%s} from xds server",
                   ads_calld_->xds_client(),
                   ads_calld_->chand()->server_.server_uri.c_str(),
-                  watcher_error.ToString().c_str());
+                  std::string(type_->type_url()).c_str(),
+                  XdsClient::ConstructFullXdsResourceName(
+                      name_.authority, type_->type_url(), name_.key)
+                      .c_str());
         }
         auto& authority_state =
             ads_calld_->xds_client()->authority_state_map_[name_.authority];
         ResourceState& state = authority_state.resource_map[type_][name_.key];
         state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
-        ads_calld_->xds_client()->NotifyWatchersOnErrorLocked(state.watchers,
-                                                              watcher_error);
+        ads_calld_->xds_client()->NotifyWatchersOnResourceDoesNotExist(
+            state.watchers);
       }
       GRPC_ERROR_UNREF(error);
     }
@@ -258,7 +281,7 @@ class XdsClient::ChannelState::AdsCallState
     const XdsResourceName name_;
 
     RefCountedPtr<AdsCallState> ads_calld_;
-    bool timer_started_ = false;
+    bool timer_start_needed_ = true;
     bool timer_pending_ = false;
     grpc_timer timer_;
     grpc_closure timer_callback_;
@@ -294,7 +317,8 @@ class XdsClient::ChannelState::AdsCallState
 
   // Constructs a list of resource names of a given type for an ADS
   // request.  Also starts the timer for each resource if needed.
-  std::vector<std::string> ResourceNamesForRequest(const XdsResourceType* type);
+  std::vector<std::string> ResourceNamesForRequest(const XdsResourceType* type)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
   // The owning RetryableCall<>.
   RefCountedPtr<RetryableCall<AdsCallState>> parent_;
@@ -555,7 +579,7 @@ namespace {
 bool IsLameChannel(grpc_channel* channel) {
   grpc_channel_element* elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
-  return elem->filter == &grpc_lame_filter;
+  return elem->filter == &LameClientFilter::kFilter;
 }
 
 }  // namespace
@@ -566,7 +590,8 @@ void XdsClient::ChannelState::StartConnectivityWatchLocked() {
         absl::UnavailableError("xds client has a lame channel"));
     return;
   }
-  ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
+  ClientChannel* client_channel =
+      ClientChannel::GetFromChannel(Channel::FromC(channel_));
   GPR_ASSERT(client_channel != nullptr);
   watcher_ = new StateWatcher(WeakRef(DEBUG_LOCATION, "ChannelState+watch"));
   client_channel->AddConnectivityWatcher(
@@ -578,7 +603,8 @@ void XdsClient::ChannelState::CancelConnectivityWatchLocked() {
   if (IsLameChannel(channel_)) {
     return;
   }
-  ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
+  ClientChannel* client_channel =
+      ClientChannel::GetFromChannel(Channel::FromC(channel_));
   GPR_ASSERT(client_channel != nullptr);
   client_channel->RemoveConnectivityWatcher(watcher_);
 }
@@ -1925,11 +1951,9 @@ void XdsClient::CancelResourceWatch(const XdsResourceType* type,
                                     bool delay_unsubscription) {
   auto resource_name = ParseXdsResourceName(name, type);
   MutexLock lock(&mu_);
-  if (!resource_name.ok()) {
-    invalid_watchers_.erase(watcher);
-    return;
-  }
-  if (shutting_down_) return;
+  // We cannot be sure whether the watcher is in invalid_watchers_ or in
+  // authority_state_map_, so we check both, just to be safe.
+  invalid_watchers_.erase(watcher);
   // Find authority.
   if (!resource_name.ok()) return;
   auto authority_it = authority_state_map_.find(resource_name->authority);

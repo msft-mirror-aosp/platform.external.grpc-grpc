@@ -479,7 +479,6 @@ class ChannelBroadcaster {
                   GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown"),
                   GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_OK)
             : GRPC_ERROR_NONE;
-    op->set_accept_stream = true;
     sc->slice = grpc_slice_from_copied_string("Server shutdown");
     op->disconnect_with_error = send_disconnect;
     elem =
@@ -685,7 +684,7 @@ Server::RegisteredMethod* Server::RegisterMethod(
       return nullptr;
     }
   }
-  if ((flags & ~GRPC_INITIAL_METADATA_USED_MASK) != 0) {
+  if (flags != 0) {
     gpr_log(GPR_ERROR, "grpc_server_register_method invalid flags 0x%08x",
             flags);
     return nullptr;
@@ -1062,7 +1061,7 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
 }
 
 Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
-    const grpc_slice& host, const grpc_slice& path, bool is_idempotent) {
+    const grpc_slice& host, const grpc_slice& path) {
   if (registered_methods_ == nullptr) return nullptr;
   /* TODO(ctiller): unify these two searches */
   /* check for an exact match with host */
@@ -1075,10 +1074,6 @@ Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
     if (!rm->has_host) continue;
     if (rm->host != host) continue;
     if (rm->method != path) continue;
-    if ((rm->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) &&
-        !is_idempotent) {
-      continue;
-    }
     return rm;
   }
   /* check for a wildcard method definition (no host set) */
@@ -1089,10 +1084,6 @@ Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
     if (rm->server_registered_method == nullptr) break;
     if (rm->has_host) continue;
     if (rm->method != path) continue;
-    if ((rm->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) &&
-        !is_idempotent) {
-      continue;
-    }
     return rm;
   }
   return nullptr;
@@ -1299,9 +1290,7 @@ void Server::CallData::StartNewRpc(grpc_call_element* elem) {
       GRPC_SRM_PAYLOAD_NONE;
   if (path_.has_value() && host_.has_value()) {
     ChannelRegisteredMethod* rm =
-        chand->GetRegisteredMethod(host_->c_slice(), path_->c_slice(),
-                                   (recv_initial_metadata_flags_ &
-                                    GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST));
+        chand->GetRegisteredMethod(host_->c_slice(), path_->c_slice());
     if (rm != nullptr) {
       matcher_ = rm->server_registered_method->matcher.get();
       payload_handling = rm->server_registered_method->payload_handling;

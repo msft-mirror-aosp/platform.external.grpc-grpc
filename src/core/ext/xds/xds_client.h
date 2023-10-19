@@ -55,7 +55,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     virtual void OnGenericResourceChanged(
         const XdsResourceType::ResourceData* resource)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
-    virtual void OnError(grpc_error_handle error)
+    virtual void OnError(absl::Status status)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
     virtual void OnResourceDoesNotExist()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
@@ -266,11 +266,18 @@ class XdsClient : public DualRefCounted<XdsClient> {
     LoadReportMap load_report_map;
   };
 
-  class Notifier;
-
   // Sends an error notification to all watchers.
-  void NotifyOnErrorLocked(grpc_error_handle error)
+  void NotifyOnErrorLocked(absl::Status status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  // Sends an error notification to a specific set of watchers.
+  void NotifyWatchersOnErrorLocked(
+      const std::map<ResourceWatcherInterface*,
+                     RefCountedPtr<ResourceWatcherInterface>>& watchers,
+      absl::Status status);
+  // Sends a resource-does-not-exist notification to a specific set of watchers.
+  void NotifyWatchersOnResourceDoesNotExist(
+      const std::map<ResourceWatcherInterface*,
+                     RefCountedPtr<ResourceWatcherInterface>>& watchers);
 
   void MaybeRegisterResourceTypeLocked(const XdsResourceType* resource_type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -279,7 +286,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   const XdsResourceType* GetResourceTypeLocked(absl::string_view resource_type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  static absl::StatusOr<XdsResourceName> ParseXdsResourceName(
+  absl::StatusOr<XdsResourceName> ParseXdsResourceName(
       absl::string_view name, const XdsResourceType* type);
   static std::string ConstructFullXdsResourceName(
       absl::string_view authority, absl::string_view resource_type,
@@ -295,6 +302,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   std::unique_ptr<XdsBootstrap> bootstrap_;
   grpc_channel_args* args_;
   const Duration request_timeout_;
+  const bool xds_federation_enabled_;
   grpc_pollset_set* interested_parties_;
   OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
   XdsApi api_;

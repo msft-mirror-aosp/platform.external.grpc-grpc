@@ -340,8 +340,7 @@ int grpc_sockaddr_get_port(const grpc_resolved_address* resolved_addr) {
 #endif
 #ifdef GRPC_HAVE_LINUX_VSOCK
     case GRPC_AF_VSOCK:
-      return static_cast<int>(
-          reinterpret_cast<const struct sockaddr_vm *>(addr)->svm_port);
+      return 1;
 #endif /* GRPC_HAVE_LINUX_VSOCK */
     default:
       gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_get_port",
@@ -363,11 +362,6 @@ int grpc_sockaddr_set_port(grpc_resolved_address* resolved_addr, int port) {
       (reinterpret_cast<grpc_sockaddr_in6*>(addr))->sin6_port =
           grpc_htons(static_cast<uint16_t>(port));
       return 1;
-#ifdef GRPC_HAVE_LINUX_VSOCK
-    case GRPC_AF_VSOCK:
-      reinterpret_cast<struct sockaddr_vm *>(addr)->svm_port = static_cast<unsigned int>(port);
-      return 1;
-#endif /* GRPC_HAVE_LINUX_VSOCK */
     default:
       gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_set_port",
               addr->sa_family);

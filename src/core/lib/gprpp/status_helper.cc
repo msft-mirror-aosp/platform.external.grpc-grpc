@@ -20,6 +20,11 @@
 
 #include "src/core/lib/gprpp/status_helper.h"
 
+#include <string.h>
+
+#include <algorithm>
+#include <utility>
+
 #include "absl/strings/cord.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
@@ -218,9 +223,10 @@ absl::optional<std::string> StatusGetStr(const absl::Status& status,
 
 void StatusSetTime(absl::Status* status, StatusTimeProperty key,
                    absl::Time time) {
+  std::string time_str =
+      absl::FormatTime(absl::RFC3339_full, time, absl::UTCTimeZone());
   status->SetPayload(GetStatusTimePropertyUrl(key),
-                     absl::Cord(absl::string_view(
-                         reinterpret_cast<const char*>(&time), sizeof(time))));
+                     absl::Cord(std::move(time_str)));
 }
 
 absl::optional<absl::Time> StatusGetTime(const absl::Status& status,
@@ -229,14 +235,16 @@ absl::optional<absl::Time> StatusGetTime(const absl::Status& status,
       status.GetPayload(GetStatusTimePropertyUrl(key));
   if (p.has_value()) {
     absl::optional<absl::string_view> sv = p->TryFlat();
+    absl::Time time;
     if (sv.has_value()) {
-      // copy the content before casting to avoid misaligned address access
-      alignas(absl::Time) char buf[sizeof(const absl::Time)];
-      memcpy(buf, sv->data(), sizeof(const absl::Time));
-      return *reinterpret_cast<const absl::Time*>(buf);
+      if (absl::ParseTime(absl::RFC3339_full, sv.value(), &time, nullptr)) {
+        return time;
+      }
     } else {
       std::string s = std::string(*p);
-      return *reinterpret_cast<const absl::Time*>(s.c_str());
+      if (absl::ParseTime(absl::RFC3339_full, s, &time, nullptr)) {
+        return time;
+      }
     }
   }
   return {};
@@ -304,9 +312,14 @@ std::string StatusToString(const absl::Status& status) {
                                    absl::CHexEscape(payload_view), "\""));
       } else if (absl::StartsWith(type_url, kTypeTimeTag)) {
         type_url.remove_prefix(kTypeTimeTag.size());
-        absl::Time t =
-            *reinterpret_cast<const absl::Time*>(payload_view.data());
-        kvs.push_back(absl::StrCat(type_url, ":\"", absl::FormatTime(t), "\""));
+        absl::Time t;
+        if (absl::ParseTime(absl::RFC3339_full, payload_view, &t, nullptr)) {
+          kvs.push_back(
+              absl::StrCat(type_url, ":\"", absl::FormatTime(t), "\""));
+        } else {
+          kvs.push_back(absl::StrCat(type_url, ":\"",
+                                     absl::CHexEscape(payload_view), "\""));
+        }
       } else {
         kvs.push_back(absl::StrCat(type_url, ":\"",
                                    absl::CHexEscape(payload_view), "\""));

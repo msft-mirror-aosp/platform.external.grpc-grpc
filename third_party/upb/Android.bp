@@ -32,23 +32,9 @@ license {
     ],
 }
 
-cc_library_static {
-    name: "libgrpc_third_party_upb_base",
+cc_library_headers {
+    name: "libgrpc_third_party_upb_headers",
     defaults: ["grpc_deps_defaults"],
-    srcs: [
-        "third_party/utf8_range/naive.c",
-        "third_party/utf8_range/range2-neon.c",
-        "third_party/utf8_range/range2-sse.c",
-        "upb/decode.c",
-        "upb/decode_fast.c",
-        "upb/encode.c",
-        "upb/msg.c",
-        "upb/table.c",
-        "upb/upb.c",
-    ],
-    cflags: [
-        "-Wno-unused-parameter",
-    ],
     export_include_dirs: [
         ".",
     ],
@@ -58,17 +44,23 @@ cc_library_static {
     name: "libgrpc_third_party_upb",
     defaults: ["grpc_deps_defaults"],
     srcs: [
+        "third_party/utf8_range/naive.c",
+        "third_party/utf8_range/range2-neon.c",
+        "third_party/utf8_range/range2-sse.c",
+        "upb/decode_fast.c",
+        "upb/decode.c",
         "upb/def.c",
+        "upb/encode.c",
         "upb/json_decode.c",
         "upb/json_encode.c",
+        "upb/msg.c",
         "upb/reflection.c",
+        "upb/table.c",
         "upb/text_encode.c",
+        "upb/upb.c",
     ],
     cflags: [
         "-Wno-unused-parameter",
-    ],
-    whole_static_libs: [
-        "libgrpc_third_party_upb_base",
     ],
     static_libs: [
         "libgrpc_upb_protos",

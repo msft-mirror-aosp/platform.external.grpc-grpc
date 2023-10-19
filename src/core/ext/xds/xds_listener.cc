@@ -109,8 +109,10 @@ std::string XdsListenerResource::FilterChainData::ToString() const {
 //
 
 std::string XdsListenerResource::FilterChainMap::CidrRange::ToString() const {
+  auto addr_str = grpc_sockaddr_to_string(&address, false);
   return absl::StrCat(
-      "{address_prefix=", grpc_sockaddr_to_string(&address, false),
+      "{address_prefix=",
+      addr_str.ok() ? addr_str.value() : addr_str.status().ToString(),
       ", prefix_len=", prefix_len, "}");
 }
 
@@ -776,9 +778,12 @@ grpc_error_handle AddFilterChainDataForSourceIpRange(
   } else {
     for (const auto& prefix_range :
          filter_chain.filter_chain_match.source_prefix_ranges) {
+      auto addr_str = grpc_sockaddr_to_string(&prefix_range.address, false);
+      if (!addr_str.ok()) {
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(addr_str.status().ToString());
+      }
       auto insert_result = source_ip_map->emplace(
-          absl::StrCat(grpc_sockaddr_to_string(&prefix_range.address, false),
-                       "/", prefix_range.prefix_len),
+          absl::StrCat(*addr_str, "/", prefix_range.prefix_len),
           XdsListenerResource::FilterChainMap::SourceIp());
       if (insert_result.second) {
         insert_result.first->second.prefix_range.emplace(prefix_range);
@@ -860,9 +865,12 @@ grpc_error_handle AddFilterChainDataForDestinationIpRange(
   } else {
     for (const auto& prefix_range :
          filter_chain.filter_chain_match.prefix_ranges) {
+      auto addr_str = grpc_sockaddr_to_string(&prefix_range.address, false);
+      if (!addr_str.ok()) {
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(addr_str.status().ToString());
+      }
       auto insert_result = destination_ip_map->emplace(
-          absl::StrCat(grpc_sockaddr_to_string(&prefix_range.address, false),
-                       "/", prefix_range.prefix_len),
+          absl::StrCat(*addr_str, "/", prefix_range.prefix_len),
           InternalFilterChainMap::DestinationIp());
       if (insert_result.second) {
         insert_result.first->second.prefix_range.emplace(prefix_range);
@@ -968,10 +976,12 @@ grpc_error_handle LdsResourceParse(
       envoy_config_listener_v3_Listener_api_listener(listener);
   const envoy_config_core_v3_Address* address =
       envoy_config_listener_v3_Listener_address(listener);
-  if (api_listener != nullptr && address != nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Listener has both address and ApiListener");
-  }
+  // TODO(roth): Re-enable the following check once
+  // github.com/istio/istio/issues/38914 is resolved.
+  // if (api_listener != nullptr && address != nullptr) {
+  //   return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+  //       "Listener has both address and ApiListener");
+  // }
   if (api_listener == nullptr && address == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Listener has neither address nor ApiListener");

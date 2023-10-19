@@ -121,6 +121,29 @@ parse_src_repo_git_info() {
   readonly GIT_COMMIT_SHORT=$(git -C "${src_dir}" rev-parse --short HEAD)
 }
 
+
+#######################################
+# Checks if the given string is a version branch.
+# Version branches: "master", "v1.47.x"
+# NOT version branches: "v1.47.0", "1.47.x", "", "dev", "main"
+# Arguments:
+#   Version to test
+#######################################
+is_version_branch() {
+  if [ $# -eq 0 ]; then
+    echo "Usage is_version_branch VERSION"
+    false
+    return
+  fi
+  if [[ $1 == "master" ]]; then
+    true
+    return
+  fi
+  # Do not inline version_regex: keep it a string to avoid issues with escaping chars in ~= expr.
+  local version_regex='^v[0-9]+\.[0-9]+\.x$'
+  [[ "${1}" =~ $version_regex ]]
+}
+
 #######################################
 # List GCR image tags matching given tag name.
 # Arguments:
@@ -226,9 +249,9 @@ test_driver_pip_install() {
     source "${venv_dir}/bin/activate"
   fi
 
-  pip install -r requirements.txt
+  python3 -m pip install -r requirements.txt
   echo "Installed Python packages:"
-  pip list
+  python3 -m pip list
 }
 
 #######################################
@@ -254,7 +277,7 @@ test_driver_compile_protos() {
   )
   echo "Generate python code from grpc.testing protos: ${protos[*]}"
   cd "${TEST_DRIVER_REPO_DIR}"
-  python -m grpc_tools.protoc \
+  python3 -m grpc_tools.protoc \
     --proto_path=. \
     --python_out="${TEST_DRIVER_FULL_DIR}" \
     --grpc_python_out="${TEST_DRIVER_FULL_DIR}" \
@@ -345,19 +368,21 @@ kokoro_setup_python_virtual_environment() {
   pyenv virtualenv --no-pip "${py_latest_patch}" k8s_xds_test_runner
   pyenv local k8s_xds_test_runner
   pyenv activate k8s_xds_test_runner
-  python -m ensurepip
+  python3 -m ensurepip
   # pip is fixed to 21.0.1 due to issue https://github.com/pypa/pip/pull/9835
   # internal details: b/186411224
   # TODO(sergiitk): revert https://github.com/grpc/grpc/pull/26087 when 21.1.1 released
-  python -m pip install -U pip==21.0.1
-  pip --version
+  python3 -m pip install -U pip==21.0.1
+  python3 -m pip --version
 }
 
 #######################################
 # Installs and configures the test driver on Kokoro VM.
 # Globals:
 #   KOKORO_ARTIFACTS_DIR
+#   KOKORO_JOB_NAME
 #   TEST_DRIVER_REPO_NAME
+#   TESTING_VERSION: Populated with the version branch under test, f.e. v1.42.x, master
 #   SRC_DIR: Populated with absolute path to the source repo on Kokoro VM
 #   TEST_DRIVER_REPO_DIR: Populated with the path to the repo containing
 #                         the test driver
@@ -378,6 +403,14 @@ kokoro_setup_test_driver() {
   local src_repository_name="${1:?Usage kokoro_setup_test_driver GITHUB_REPOSITORY_NAME}"
   # Capture Kokoro VM version info in the log.
   kokoro_print_version
+
+  # All grpc kokoro jobs names structured to have the version identifier in the third position:
+  # - grpc/core/master/linux/...
+  # - grpc/core/v1.42.x/branch/linux/...
+  # - grpc/java/v1.47.x/branch/...
+  # - grpc/go/v1.47.x/branch/...
+  # - grpc/node/v1.6.x/...
+  readonly TESTING_VERSION=$(echo "${KOKORO_JOB_NAME}" | cut -d '/' -f3)
 
   # Kokoro clones repo to ${KOKORO_ARTIFACTS_DIR}/github/${GITHUB_REPOSITORY}
   local github_root="${KOKORO_ARTIFACTS_DIR}/github"

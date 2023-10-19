@@ -42,7 +42,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -106,7 +105,6 @@ void grpc_init(void) {
     grpc_fork_handlers_auto_register();
     grpc_stats_init();
     grpc_slice_intern_init();
-    grpc_mdctx_global_init();
     grpc_core::channelz::ChannelzRegistry::Init();
     grpc_security_pre_init();
     grpc_core::ApplicationCallbackExecCtx::GlobalInit();
@@ -142,7 +140,6 @@ void grpc_shutdown_internal_locked(void)
     grpc_iomgr_shutdown();
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
-    grpc_mdctx_global_shutdown();
     grpc_slice_intern_shutdown();
     grpc_core::channelz::ChannelzRegistry::Shutdown();
     grpc_stats_shutdown();

@@ -55,6 +55,7 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
@@ -944,9 +945,9 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
       }
     }
     if (error_list.size() == resolved_or->size()) {
-      std::string msg =
-          absl::StrFormat("No address added out of total %" PRIuPTR " resolved",
-                          resolved_or->size());
+      std::string msg = absl::StrFormat(
+          "No address added out of total %" PRIuPTR " resolved for '%s'",
+          resolved_or->size(), addr);
       return GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
           msg.c_str(), error_list.data(), error_list.size());
     } else if (!error_list.empty()) {
@@ -1063,7 +1064,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
                                      grpc_server_credentials* creds) {
   // For now, we only support insecure server credentials
   if (creds == nullptr ||
-      strcmp(creds->type(), GRPC_CREDENTIALS_TYPE_INSECURE) != 0) {
+      creds->type() != grpc_core::InsecureServerCredentials::Type()) {
     gpr_log(GPR_ERROR, "Failed to create channel due to invalid creds");
     return;
   }

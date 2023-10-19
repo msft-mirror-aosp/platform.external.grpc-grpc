@@ -237,10 +237,10 @@ std::string ExternalAccountCredentials::debug_string() {
 // down.
 void ExternalAccountCredentials::fetch_oauth2(
     grpc_credentials_metadata_request* metadata_req,
-    grpc_httpcli_context* httpcli_context, grpc_polling_entity* pollent,
-    grpc_iomgr_cb_func response_cb, grpc_millis deadline) {
+    grpc_polling_entity* pollent, grpc_iomgr_cb_func response_cb,
+    grpc_millis deadline) {
   GPR_ASSERT(ctx_ == nullptr);
-  ctx_ = new HTTPRequestContext(httpcli_context, pollent, deadline);
+  ctx_ = new HTTPRequestContext(pollent, deadline);
   metadata_req_ = metadata_req;
   response_cb_ = response_cb;
   auto cb = [this](std::string token, grpc_error_handle error) {
@@ -323,14 +323,12 @@ void ExternalAccountCredentials::ExchangeToken(
   body_parts.push_back(absl::StrFormat(
       "options=%s", UrlEncode(addtional_options_json.Dump()).c_str()));
   std::string body = absl::StrJoin(body_parts, "&");
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnExchangeToken, this, nullptr);
-  grpc_httpcli_post(ctx_->httpcli_context, ctx_->pollent, resource_quota,
-                    &request, body.c_str(), body.size(), ctx_->deadline,
-                    &ctx_->closure, &ctx_->response);
+  grpc_httpcli_post(ctx_->pollent, ResourceQuota::Default(), &request,
+                    body.c_str(), body.size(), ctx_->deadline, &ctx_->closure,
+                    &ctx_->response);
   grpc_http_request_destroy(&request.http);
 }
 
@@ -409,14 +407,13 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
       uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   std::string scope = absl::StrJoin(scopes_, " ");
   std::string body = absl::StrFormat("scope=%s", scope);
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnImpersenateServiceAccount, this, nullptr);
-  grpc_httpcli_post(ctx_->httpcli_context, ctx_->pollent, resource_quota,
-                    &request, body.c_str(), body.size(), ctx_->deadline,
-                    &ctx_->closure, &ctx_->response);
+  // TODO(ctiller): Use the callers resource quota.
+  grpc_httpcli_post(ctx_->pollent, ResourceQuota::Default(), &request,
+                    body.c_str(), body.size(), ctx_->deadline, &ctx_->closure,
+                    &ctx_->response);
   grpc_http_request_destroy(&request.http);
 }
 

@@ -26,6 +26,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/socket.h>
 
 #include <string>
 
@@ -152,8 +153,7 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
 
   GPR_ASSERT(fd >= 0);
 
-  if (so_reuseport && !grpc_is_unix_socket(addr) &&
-      !grpc_is_vsock(addr)) {
+  if (so_reuseport && !grpc_is_unix_socket(addr) && !grpc_is_vsock(addr)) {
     err = grpc_set_socket_reuse_port(fd, 1);
     if (err != GRPC_ERROR_NONE) goto error;
   }

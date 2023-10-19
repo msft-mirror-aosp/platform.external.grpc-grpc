@@ -76,7 +76,7 @@ static void client_setup_transport(void* ts, grpc_transport* transport) {
   const grpc_channel_args* args =
       grpc_channel_args_copy_and_add(cs->client_args, &authority_arg, 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
-  cs->f->client = grpc_channel_create(
+  cs->f->client = grpc_channel_create_internal(
       "socketpair-target", args, GRPC_CLIENT_DIRECT_CHANNEL, transport, &error);
   grpc_channel_args_destroy(args);
   if (cs->f->client != nullptr) {
@@ -125,15 +125,15 @@ static void chttp2_init_client_socketpair(
   auto* fixture_data = static_cast<custom_fixture_data*>(f->fixture_data);
   grpc_transport* transport;
   sp_client_setup cs;
-  cs.client_args = client_args;
-  cs.f = f;
   client_args = grpc_core::CoreConfiguration::Get()
                     .channel_args_preconditioning()
                     .PreconditionChannelArgs(client_args);
+  cs.client_args = client_args;
+  cs.f = f;
   transport =
       grpc_create_chttp2_transport(client_args, fixture_data->ep.client, true);
-  grpc_channel_args_destroy(client_args);
   client_setup_transport(&cs, transport);
+  grpc_channel_args_destroy(client_args);
   GPR_ASSERT(f->client);
 }
 

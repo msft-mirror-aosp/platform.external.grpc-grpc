@@ -37,6 +37,9 @@ cc_library_static {
     defaults: ["grpc_deps_defaults"],
     srcs: [
         "cmake/google/protobuf/descriptor.upb.c",
+        "third_party/utf8_range/naive.c",
+        "third_party/utf8_range/range2-neon.c",
+        "third_party/utf8_range/range2-sse.c",
         "upb/decode.c",
         "upb/decode_fast.c",
         "upb/def.c",

@@ -25,7 +25,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
@@ -34,10 +33,10 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
@@ -87,7 +86,6 @@ typedef struct addr_req {
   grpc_timer timer;
   char* addr;
   grpc_closure* on_done;
-  grpc_resolved_addresses** addrs;
   std::unique_ptr<grpc_core::ServerAddressList>* addresses;
 } addr_req;
 
@@ -95,21 +93,11 @@ static void finish_resolve(void* arg, grpc_error_handle error) {
   addr_req* r = static_cast<addr_req*>(arg);
 
   if (error == GRPC_ERROR_NONE && 0 == strcmp(r->addr, "server")) {
-    if (r->addrs != nullptr) {
-      grpc_resolved_addresses* addrs =
-          static_cast<grpc_resolved_addresses*>(gpr_malloc(sizeof(*addrs)));
-      addrs->naddrs = 1;
-      addrs->addrs = static_cast<grpc_resolved_address*>(
-          gpr_malloc(sizeof(*addrs->addrs)));
-      addrs->addrs[0].len = 0;
-      *r->addrs = addrs;
-    } else if (r->addresses != nullptr) {
-      *r->addresses = absl::make_unique<grpc_core::ServerAddressList>();
-      grpc_resolved_address fake_resolved_address;
-      memset(&fake_resolved_address, 0, sizeof(fake_resolved_address));
-      fake_resolved_address.len = 0;
-      (*r->addresses)->emplace_back(fake_resolved_address, nullptr);
-    }
+    *r->addresses = absl::make_unique<grpc_core::ServerAddressList>();
+    grpc_resolved_address fake_resolved_address;
+    memset(&fake_resolved_address, 0, sizeof(fake_resolved_address));
+    fake_resolved_address.len = 0;
+    (*r->addresses)->emplace_back(fake_resolved_address, nullptr);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, GRPC_ERROR_NONE);
   } else {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done,
@@ -121,41 +109,93 @@ static void finish_resolve(void* arg, grpc_error_handle error) {
   delete r;
 }
 
-void my_resolve_address(const char* addr, const char* /*default_port*/,
-                        grpc_pollset_set* /*interested_parties*/,
-                        grpc_closure* on_done,
-                        grpc_resolved_addresses** addrs) {
-  addr_req* r = new addr_req();
-  r->addr = gpr_strdup(addr);
-  r->on_done = on_done;
-  r->addrs = addrs;
-  grpc_timer_init(
-      &r->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
-      GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
-}
+namespace {
 
-static grpc_address_resolver_vtable fuzzer_resolver = {my_resolve_address,
-                                                       nullptr};
+class FuzzerDNSResolver : public grpc_core::DNSResolver {
+ public:
+  class FuzzerDNSRequest : public grpc_core::DNSResolver::Request {
+   public:
+    FuzzerDNSRequest(
+        absl::string_view name,
+        std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+            on_done)
+        : name_(std::string(name)), on_done_(std::move(on_done)) {}
 
-grpc_ares_request* my_dns_lookup_ares_locked(
+    void Start() override {
+      Ref().release();  // ref held by timer callback
+      grpc_timer_init(
+          &timer_,
+          grpc_core::Duration::Seconds(1) + grpc_core::ExecCtx::Get()->Now(),
+          GRPC_CLOSURE_CREATE(FinishResolve, this, grpc_schedule_on_exec_ctx));
+    }
+
+    // cancellation not implemented
+    void Orphan() override { Unref(); }
+
+   private:
+    static void FinishResolve(void* arg, grpc_error_handle error) {
+      FuzzerDNSRequest* self = static_cast<FuzzerDNSRequest*>(arg);
+      if (error == GRPC_ERROR_NONE && self->name_ == "server") {
+        std::vector<grpc_resolved_address> addrs;
+        grpc_resolved_address addr;
+        addr.len = 0;
+        addrs.push_back(addr);
+        self->on_done_(std::move(addrs));
+      } else {
+        self->on_done_(absl::UnknownError("Resolution failed"));
+      }
+      self->Unref();
+    }
+
+    const std::string name_;
+    const std::function<void(
+        absl::StatusOr<std::vector<grpc_resolved_address>>)>
+        on_done_;
+    grpc_timer timer_;
+  };
+
+  // Gets the singleton instance, possibly creating it first
+  static FuzzerDNSResolver* GetOrCreate() {
+    static FuzzerDNSResolver* instance = new FuzzerDNSResolver();
+    return instance;
+  }
+
+  grpc_core::OrphanablePtr<grpc_core::DNSResolver::Request> ResolveName(
+      absl::string_view name, absl::string_view /* default_port */,
+      grpc_pollset_set* /* interested_parties */,
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_done) override {
+    return grpc_core::MakeOrphanable<FuzzerDNSRequest>(name,
+                                                       std::move(on_done));
+  }
+
+  absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
+      absl::string_view /* name */,
+      absl::string_view /* default_port */) override {
+    GPR_ASSERT(0);
+  }
+};
+
+}  // namespace
+
+grpc_ares_request* my_dns_lookup_ares(
     const char* /*dns_server*/, const char* addr, const char* /*default_port*/,
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* /*balancer_addresses*/,
-    char** /*service_config_json*/, int /*query_timeout*/,
-    std::shared_ptr<grpc_core::WorkSerializer> /*combiner*/) {
+    char** /*service_config_json*/, int /*query_timeout*/) {
   addr_req* r = new addr_req();
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
-  r->addrs = nullptr;
   r->addresses = addresses;
   grpc_timer_init(
-      &r->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
+      &r->timer,
+      grpc_core::Duration::Seconds(1) + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
   return nullptr;
 }
 
-static void my_cancel_ares_request_locked(grpc_ares_request* request) {
+static void my_cancel_ares_request(grpc_ares_request* request) {
   GPR_ASSERT(request == nullptr);
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -181,15 +221,16 @@ static void do_connect(void* arg, grpc_error_handle error) {
     grpc_endpoint* server;
     grpc_passthru_endpoint_create(&client, &server, nullptr, true);
     *fc->ep = client;
-    start_scheduling_grpc_passthru_endpoint_channel_effects(
-        client, g_channel_actions, [&]() { g_channel_force_delete = true; });
+    start_scheduling_grpc_passthru_endpoint_channel_effects(client,
+                                                            g_channel_actions);
 
     grpc_core::Server* core_server = grpc_core::Server::FromC(g_server);
     grpc_transport* transport = grpc_create_chttp2_transport(
         core_server->channel_args(), server, false);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "SetupTransport",
-        core_server->SetupTransport(transport, nullptr, nullptr, nullptr)));
+        core_server->SetupTransport(transport, nullptr,
+                                    core_server->channel_args(), nullptr)));
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_NONE);
@@ -214,7 +255,8 @@ static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
   fc->ep = ep;
   fc->deadline = deadline;
   grpc_timer_init(
-      &fc->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
+      &fc->timer,
+      grpc_core::Duration::Seconds(1) + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(do_connect, fc, grpc_schedule_on_exec_ctx));
 }
 
@@ -222,9 +264,8 @@ static void my_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
                                   grpc_pollset_set* /*interested_parties*/,
                                   const grpc_channel_args* /*channel_args*/,
                                   const grpc_resolved_address* /*addr*/,
-                                  grpc_millis deadline) {
-  sched_connect(closure, ep,
-                grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
+                                  grpc_core::Timestamp deadline) {
+  sched_connect(closure, ep, deadline.as_timespec(GPR_CLOCK_MONOTONIC));
 }
 
 grpc_tcp_client_vtable fuzz_tcp_client_vtable = {my_tcp_client_connect};
@@ -234,7 +275,7 @@ grpc_tcp_client_vtable fuzz_tcp_client_vtable = {my_tcp_client_connect};
 
 class Validator {
  public:
-  explicit Validator(std::function<void(bool)> impl) : impl_(impl) {}
+  explicit Validator(std::function<void(bool)> impl) : impl_(std::move(impl)) {}
 
   virtual ~Validator() {}
   void Run(bool success) {
@@ -265,7 +306,8 @@ static Validator* ValidateConnectivityWatch(gpr_timespec deadline,
                                             int* counter) {
   return MakeValidator([deadline, counter](bool success) {
     if (!success) {
-      GPR_ASSERT(gpr_time_cmp(gpr_now(deadline.clock_type), deadline) >= 0);
+      auto now = gpr_now(deadline.clock_type);
+      GPR_ASSERT(gpr_time_cmp(now, deadline) >= 0);
     }
     --*counter;
   });
@@ -342,11 +384,6 @@ class Call : public std::enable_shared_from_this<Call> {
   template <typename T>
   grpc_slice ReadSlice(const T& s) {
     grpc_slice slice = grpc_slice_from_cpp_string(s.value());
-    if (s.intern()) {
-      auto interned_slice = grpc_slice_intern(slice);
-      grpc_slice_unref(slice);
-      slice = interned_slice;
-    }
     unref_slices_.push_back(slice);
     return slice;
   }
@@ -721,6 +758,8 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   if (squelch && grpc_trace_fuzzer == nullptr) gpr_set_log_function(dont_log);
   gpr_free(grpc_trace_fuzzer);
   grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
+  g_now = {1, 0, GPR_CLOCK_MONOTONIC};
+  grpc_core::TestOnlySetProcessEpoch(g_now);
   gpr_now_impl = now_impl;
   grpc_init();
   grpc_timer_manager_set_threading(false);
@@ -728,9 +767,9 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Executor::SetThreadingAll(false);
   }
-  grpc_set_resolver_impl(&fuzzer_resolver);
-  grpc_dns_lookup_ares_locked = my_dns_lookup_ares_locked;
-  grpc_cancel_ares_request_locked = my_cancel_ares_request_locked;
+  grpc_core::SetDNSResolver(FuzzerDNSResolver::GetOrCreate());
+  grpc_dns_lookup_ares = my_dns_lookup_ares;
+  grpc_cancel_ares_request = my_cancel_ares_request;
 
   GPR_ASSERT(g_channel == nullptr);
   GPR_ASSERT(g_server == nullptr);
@@ -834,16 +873,13 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
         } else {
           grpc_channel_args* args =
               ReadArgs(action.create_channel().channel_args());
-          if (action.create_channel().has_channel_creds()) {
-            grpc_channel_credentials* creds =
-                ReadChannelCreds(action.create_channel().channel_creds());
-            g_channel = grpc_secure_channel_create(
-                creds, action.create_channel().target().c_str(), args, nullptr);
-            grpc_channel_credentials_release(creds);
-          } else {
-            g_channel = grpc_insecure_channel_create(
-                action.create_channel().target().c_str(), args, nullptr);
-          }
+          grpc_channel_credentials* creds =
+              action.create_channel().has_channel_creds()
+                  ? ReadChannelCreds(action.create_channel().channel_creds())
+                  : grpc_insecure_credentials_create();
+          g_channel = grpc_channel_create(
+              action.create_channel().target().c_str(), creds, args);
+          grpc_channel_credentials_release(creds);
           g_channel_actions.clear();
           for (int i = 0; i < action.create_channel().channel_actions_size();
                i++) {

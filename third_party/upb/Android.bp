@@ -33,23 +33,17 @@ license {
 }
 
 cc_library_static {
-    name: "libgrpc_third_party_upb",
+    name: "libgrpc_third_party_upb_base",
     defaults: ["grpc_deps_defaults"],
     srcs: [
-        "cmake/google/protobuf/descriptor.upb.c",
         "third_party/utf8_range/naive.c",
         "third_party/utf8_range/range2-neon.c",
         "third_party/utf8_range/range2-sse.c",
         "upb/decode.c",
         "upb/decode_fast.c",
-        "upb/def.c",
         "upb/encode.c",
-        "upb/json_decode.c",
-        "upb/json_encode.c",
         "upb/msg.c",
-        "upb/reflection.c",
         "upb/table.c",
-        "upb/text_encode.c",
         "upb/upb.c",
     ],
     cflags: [
@@ -57,6 +51,29 @@ cc_library_static {
     ],
     export_include_dirs: [
         ".",
-        "cmake",
+    ],
+}
+
+cc_library_static {
+    name: "libgrpc_third_party_upb",
+    defaults: ["grpc_deps_defaults"],
+    srcs: [
+        "upb/def.c",
+        "upb/json_decode.c",
+        "upb/json_encode.c",
+        "upb/reflection.c",
+        "upb/text_encode.c",
+    ],
+    cflags: [
+        "-Wno-unused-parameter",
+    ],
+    whole_static_libs: [
+        "libgrpc_third_party_upb_base",
+    ],
+    static_libs: [
+        "libgrpc_upb_protos",
+    ],
+    export_include_dirs: [
+        ".",
     ],
 }

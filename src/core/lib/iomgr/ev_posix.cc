@@ -32,7 +32,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
-#include "src/core/lib/iomgr/ev_epollex_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
@@ -128,10 +127,10 @@ const grpc_event_engine_vtable* init_non_polling(bool explicit_request) {
 static event_engine_factory g_factories[] = {
     {ENGINE_HEAD_CUSTOM, nullptr},      {ENGINE_HEAD_CUSTOM, nullptr},
     {ENGINE_HEAD_CUSTOM, nullptr},      {ENGINE_HEAD_CUSTOM, nullptr},
-    {"epoll1", grpc_init_epoll1_linux}, {"epollex", grpc_init_epollex_linux},
-    {"poll", grpc_init_poll_posix},     {"none", init_non_polling},
+    {"epoll1", grpc_init_epoll1_linux}, {"poll", grpc_init_poll_posix},
+    {"none", init_non_polling},         {ENGINE_TAIL_CUSTOM, nullptr},
     {ENGINE_TAIL_CUSTOM, nullptr},      {ENGINE_TAIL_CUSTOM, nullptr},
-    {ENGINE_TAIL_CUSTOM, nullptr},      {ENGINE_TAIL_CUSTOM, nullptr},
+    {ENGINE_TAIL_CUSTOM, nullptr},
 };
 
 static void add(const char* beg, const char* end, char*** ss, size_t* ns) {

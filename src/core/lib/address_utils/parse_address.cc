@@ -21,26 +21,23 @@
 #include "src/core/lib/address_utils/parse_address.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #include <sys/un.h>
 #endif
-#ifdef GRPC_POSIX_SOCKET
-#include <errno.h>
-#include <net/if.h>
-#endif
+#include <string>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 
@@ -55,7 +52,7 @@ bool grpc_parse_unix(const grpc_core::URI& uri,
   }
   grpc_error_handle error =
       grpc_core::UnixSockaddrPopulate(uri.path(), resolved_addr);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "%s", grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
     return false;
@@ -72,7 +69,7 @@ bool grpc_parse_unix_abstract(const grpc_core::URI& uri,
   }
   grpc_error_handle error =
       grpc_core::UnixAbstractSockaddrPopulate(uri.path(), resolved_addr);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "%s", grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
     return false;
@@ -157,9 +154,8 @@ bool grpc_parse_vsock(const grpc_core::URI& uri,
   }
   grpc_error_handle error =
       grpc_core::VSockaddrPopulate(uri.path(), resolved_addr);
-  if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "%s", grpc_error_std_string(error).c_str());
-    GRPC_ERROR_UNREF(error);
+  if (!error.ok()) {
+    gpr_log(GPR_ERROR, "%s", grpc_core::StatusToString(error).c_str());
     return false;
   }
   return true;
@@ -170,17 +166,14 @@ namespace grpc_core {
 grpc_error_handle VSockaddrPopulate(absl::string_view path,
                                         grpc_resolved_address* resolved_addr) {
   memset(resolved_addr, 0, sizeof(*resolved_addr));
-  std::string path_string(path);
-  unsigned int cid = 0;
-  unsigned int port = 0;
-  if (sscanf(path_string.c_str(), "%u:%u", &cid, &port) != 2) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to parse cid:port pair");
-  }
   struct sockaddr_vm* vm =
       reinterpret_cast<struct sockaddr_vm*>(resolved_addr->addr);
   vm->svm_family = AF_VSOCK;
-  vm->svm_cid = cid;
-  vm->svm_port = port;
+  std::string s = std::string(path);
+  if (sscanf(s.c_str(), "%u:%u", &vm->svm_cid, &vm->svm_port) != 2) {
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("Failed to parse vsock cid/port: ", s));
+  }
   resolved_addr->len = static_cast<socklen_t>(sizeof(*vm));
   return GRPC_ERROR_NONE;
 }

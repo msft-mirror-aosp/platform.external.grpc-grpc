@@ -18,7 +18,6 @@
 
 #include <functional>
 #include <memory>
-#include <type_traits>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -38,7 +37,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
@@ -58,8 +56,8 @@ class ServerConfigSelectorFilter final : public ChannelFilter {
   ServerConfigSelectorFilter(ServerConfigSelectorFilter&&) = default;
   ServerConfigSelectorFilter& operator=(ServerConfigSelectorFilter&&) = default;
 
-  static absl::StatusOr<ServerConfigSelectorFilter> Create(ChannelArgs args,
-                                                           ChannelFilter::Args);
+  static absl::StatusOr<ServerConfigSelectorFilter> Create(
+      const ChannelArgs& args, ChannelFilter::Args);
 
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
@@ -99,7 +97,7 @@ class ServerConfigSelectorFilter final : public ChannelFilter {
 };
 
 absl::StatusOr<ServerConfigSelectorFilter> ServerConfigSelectorFilter::Create(
-    ChannelArgs args, ChannelFilter::Args) {
+    const ChannelArgs& args, ChannelFilter::Args) {
   ServerConfigSelectorProvider* server_config_selector_provider =
       args.GetObject<ServerConfigSelectorProvider>();
   if (server_config_selector_provider == nullptr) {

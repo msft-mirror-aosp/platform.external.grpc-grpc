@@ -105,7 +105,7 @@ gpr_timespec FuzzingEventEngine::GlobalNowImpl(gpr_clock_type clock_type) {
 }
 
 void FuzzingEventEngine::Tick() {
-  std::vector<std::function<void()>> to_run;
+  std::vector<absl::AnyInvocable<void()>> to_run;
   {
     grpc_core::MutexLock lock(&mu_);
     // Increment time
@@ -121,8 +121,11 @@ void FuzzingEventEngine::Tick() {
     ++current_tick_;
     // Find newly expired timers.
     while (!tasks_by_time_.empty() && tasks_by_time_.begin()->first <= now_) {
-      tasks_by_id_.erase(tasks_by_time_.begin()->second->id);
-      to_run.push_back(std::move(tasks_by_time_.begin()->second->closure));
+      auto& task = *tasks_by_time_.begin()->second;
+      tasks_by_id_.erase(task.id);
+      if (task.closure != nullptr) {
+        to_run.push_back(std::move(task.closure));
+      }
       tasks_by_time_.erase(tasks_by_time_.begin());
     }
   }
@@ -138,7 +141,7 @@ FuzzingEventEngine::Time FuzzingEventEngine::Now() {
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
 FuzzingEventEngine::CreateListener(Listener::AcceptCallback,
-                                   std::function<void(absl::Status)>,
+                                   absl::AnyInvocable<void(absl::Status)>,
                                    const EndpointConfig&,
                                    std::unique_ptr<MemoryAllocatorFactory>) {
   abort();
@@ -163,8 +166,8 @@ void FuzzingEventEngine::Run(Closure* closure) {
   RunAfter(Duration::zero(), closure);
 }
 
-void FuzzingEventEngine::Run(std::function<void()> closure) {
-  RunAfter(Duration::zero(), closure);
+void FuzzingEventEngine::Run(absl::AnyInvocable<void()> closure) {
+  RunAfter(Duration::zero(), std::move(closure));
 }
 
 EventEngine::TaskHandle FuzzingEventEngine::RunAfter(Duration when,
@@ -173,7 +176,7 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfter(Duration when,
 }
 
 EventEngine::TaskHandle FuzzingEventEngine::RunAfter(
-    Duration when, std::function<void()> closure) {
+    Duration when, absl::AnyInvocable<void()> closure) {
   grpc_core::MutexLock lock(&mu_);
   const intptr_t id = next_task_id_;
   ++next_task_id_;
@@ -197,10 +200,10 @@ bool FuzzingEventEngine::Cancel(TaskHandle handle) {
   if (it == tasks_by_id_.end()) {
     return false;
   }
-  if (it->second == nullptr) {
+  if (it->second->closure == nullptr) {
     return false;
   }
-  it->second = nullptr;
+  it->second->closure = nullptr;
   return true;
 }
 

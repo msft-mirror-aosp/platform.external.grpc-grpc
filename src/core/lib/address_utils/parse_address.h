@@ -21,11 +21,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
+#include <stdint.h>
 
 #include "absl/strings/string_view.h"
 
-#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 /** Populate \a resolved_addr from \a uri, whose path is expected to contain a
@@ -37,6 +38,11 @@ bool grpc_parse_unix(const grpc_core::URI& uri,
  * unix socket path in the abstract namespace. Returns true upon success. */
 bool grpc_parse_unix_abstract(const grpc_core::URI& uri,
                               grpc_resolved_address* resolved_addr);
+
+/// Populate \a resolved_addr from \a uri, whose path is expected to contain a
+/// vsock cid:port pair. Returns true upon success.
+bool grpc_parse_vsock(const grpc_core::URI& uri,
+                      grpc_resolved_address* resolved_addr);
 
 /** Populate \a resolved_addr from \a uri, whose path is expected to contain an
  * IPv4 host:port pair. Returns true upon success. */

@@ -85,18 +85,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "manual_constructor_test",
-    srcs = ["manual_constructor_test.cc"],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "bitset_test",
     srcs = ["bitset_test.cc"],
     external_deps = ["gtest"],
@@ -105,6 +93,19 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:bitset",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "no_destruct_test",
+    srcs = ["no_destruct_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:no_destruct",
         "//test/core/util:grpc_suppressions",
     ],
 )

@@ -131,10 +131,11 @@ class PythonArtifact:
             # building the native extension is the most time-consuming part of the build
             environ['GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS'] = str(inner_jobs)
 
-        if self.platform == "macos":
-            environ['ARCHFLAGS'] = "-arch arm64 -arch x86_64"
+        # This is necessary due to https://github.com/pypa/wheel/issues/406.
+        # distutils incorrectly generates a universal2 artifact that only contains
+        # x86_64 libraries.
+        if self.platform == "macos" and self.arch == "x64":
             environ["GRPC_UNIVERSAL2_REPAIR"] = "true"
-            environ['GRPC_BUILD_WITH_BORING_SSL_ASM'] = "false"
 
         if self.platform == 'linux_extra':
             # Crosscompilation build for armv7 (e.g. Raspberry Pi)
@@ -468,8 +469,7 @@ def targets():
         PythonArtifact('musllinux_1_1', 'x86', 'cp37-cp37m'),
         PythonArtifact('musllinux_1_1', 'x86', 'cp38-cp38'),
         PythonArtifact('musllinux_1_1', 'x86', 'cp39-cp39'),
-        PythonArtifact('macos', 'x64', 'python3.6', presubmit=True),
-        PythonArtifact('macos', 'x64', 'python3.7'),
+        PythonArtifact('macos', 'x64', 'python3.7', presubmit=True),
         PythonArtifact('macos', 'x64', 'python3.8'),
         PythonArtifact('macos', 'x64', 'python3.9'),
         PythonArtifact('macos', 'x64', 'python3.10', presubmit=True),

@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.47.5'
+  version = '1.48.4'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -46,7 +46,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '1.20211102.0'
+  abseil_version = '1.20220623.0'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -172,14 +172,13 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'BoringSSL-GRPC', '0.0.25'
-    ss.dependency 'Libuv-gRPC', '0.0.10'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
-    ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
+    ss.dependency 'abseil/functional/function_ref', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/meta/type_traits', abseil_version
@@ -519,6 +518,10 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c',
                       'src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h',
+                      'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c',
+                      'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h',
+                      'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c',
+                      'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c',
                       'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c',
@@ -972,6 +975,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_http_filters.h',
                       'src/core/ext/xds/xds_http_rbac_filter.cc',
                       'src/core/ext/xds/xds_http_rbac_filter.h',
+                      'src/core/ext/xds/xds_lb_policy_registry.cc',
+                      'src/core/ext/xds/xds_lb_policy_registry.h',
                       'src/core/ext/xds/xds_listener.cc',
                       'src/core/ext/xds/xds_listener.h',
                       'src/core/ext/xds/xds_resource_type.cc',
@@ -995,6 +1000,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/channel_args.h',
                       'src/core/lib/channel/channel_args_preconditioning.cc',
                       'src/core/lib/channel/channel_args_preconditioning.h',
+                      'src/core/lib/channel/channel_fwd.h',
                       'src/core/lib/channel/channel_stack.cc',
                       'src/core/lib/channel/channel_stack.h',
                       'src/core/lib/channel/channel_stack_builder.cc',
@@ -1032,10 +1038,23 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/default_event_engine_factory.cc',
                       'src/core/lib/event_engine/event_engine.cc',
                       'src/core/lib/event_engine/event_engine_factory.h',
+                      'src/core/lib/event_engine/forkable.cc',
+                      'src/core/lib/event_engine/forkable.h',
                       'src/core/lib/event_engine/handle_containers.h',
-                      'src/core/lib/event_engine/iomgr_engine.cc',
-                      'src/core/lib/event_engine/iomgr_engine.h',
+                      'src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc',
+                      'src/core/lib/event_engine/iomgr_engine/iomgr_engine.h',
+                      'src/core/lib/event_engine/iomgr_engine/thread_pool.cc',
+                      'src/core/lib/event_engine/iomgr_engine/thread_pool.h',
+                      'src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc',
+                      'src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h',
+                      'src/core/lib/event_engine/iomgr_engine/timer.cc',
+                      'src/core/lib/event_engine/iomgr_engine/timer.h',
+                      'src/core/lib/event_engine/iomgr_engine/timer_heap.cc',
+                      'src/core/lib/event_engine/iomgr_engine/timer_heap.h',
+                      'src/core/lib/event_engine/iomgr_engine/timer_manager.cc',
+                      'src/core/lib/event_engine/iomgr_engine/timer_manager.h',
                       'src/core/lib/event_engine/memory_allocator.cc',
+                      'src/core/lib/event_engine/promise.h',
                       'src/core/lib/event_engine/resolved_address.cc',
                       'src/core/lib/event_engine/slice.cc',
                       'src/core/lib/event_engine/slice_buffer.cc',
@@ -1105,6 +1124,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/memory.h',
                       'src/core/lib/gprpp/mpscq.cc',
                       'src/core/lib/gprpp/mpscq.h',
+                      'src/core/lib/gprpp/no_destruct.h',
                       'src/core/lib/gprpp/orphanable.h',
                       'src/core/lib/gprpp/overload.h',
                       'src/core/lib/gprpp/ref_counted.h',
@@ -1415,8 +1435,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/security_connector/insecure/insecure_security_connector.h',
                       'src/core/lib/security/security_connector/load_system_roots.h',
                       'src/core/lib/security/security_connector/load_system_roots_fallback.cc',
-                      'src/core/lib/security/security_connector/load_system_roots_linux.cc',
-                      'src/core/lib/security/security_connector/load_system_roots_linux.h',
+                      'src/core/lib/security/security_connector/load_system_roots_supported.cc',
+                      'src/core/lib/security/security_connector/load_system_roots_supported.h',
                       'src/core/lib/security/security_connector/local/local_security_connector.cc',
                       'src/core/lib/security/security_connector/local/local_security_connector.h',
                       'src/core/lib/security/security_connector/security_connector.cc',
@@ -1460,8 +1480,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_refcount.cc',
                       'src/core/lib/slice/slice_refcount.h',
                       'src/core/lib/slice/slice_refcount_base.h',
-                      'src/core/lib/slice/slice_split.cc',
-                      'src/core/lib/slice/slice_split.h',
                       'src/core/lib/slice/slice_string_helpers.cc',
                       'src/core/lib/slice/slice_string_helpers.h',
                       'src/core/lib/surface/api_trace.cc',
@@ -1500,8 +1518,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/version.cc',
                       'src/core/lib/transport/bdp_estimator.cc',
                       'src/core/lib/transport/bdp_estimator.h',
-                      'src/core/lib/transport/byte_stream.cc',
-                      'src/core/lib/transport/byte_stream.h',
                       'src/core/lib/transport/connectivity_state.cc',
                       'src/core/lib/transport/connectivity_state.h',
                       'src/core/lib/transport/error_utils.cc',
@@ -1528,6 +1544,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/timeout_encoding.h',
                       'src/core/lib/transport/transport.cc',
                       'src/core/lib/transport/transport.h',
+                      'src/core/lib/transport/transport_fwd.h',
                       'src/core/lib/transport/transport_impl.h',
                       'src/core/lib/transport/transport_op_string.cc',
                       'src/core/lib/uri/uri_parser.cc',
@@ -1826,6 +1843,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3/rbac.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h',
+                              'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h',
+                              'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/secret.upb.h',
@@ -2054,6 +2073,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_http_fault_filter.h',
                               'src/core/ext/xds/xds_http_filters.h',
                               'src/core/ext/xds/xds_http_rbac_filter.h',
+                              'src/core/ext/xds/xds_lb_policy_registry.h',
                               'src/core/ext/xds/xds_listener.h',
                               'src/core/ext/xds/xds_resource_type.h',
                               'src/core/ext/xds/xds_resource_type_impl.h',
@@ -2067,6 +2087,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/call_tracer.h',
                               'src/core/lib/channel/channel_args.h',
                               'src/core/lib/channel/channel_args_preconditioning.h',
+                              'src/core/lib/channel/channel_fwd.h',
                               'src/core/lib/channel/channel_stack.h',
                               'src/core/lib/channel/channel_stack_builder.h',
                               'src/core/lib/channel/channel_stack_builder_impl.h',
@@ -2085,8 +2106,15 @@ Pod::Spec.new do |s|
                               'src/core/lib/debug/trace.h',
                               'src/core/lib/event_engine/channel_args_endpoint_config.h',
                               'src/core/lib/event_engine/event_engine_factory.h',
+                              'src/core/lib/event_engine/forkable.h',
                               'src/core/lib/event_engine/handle_containers.h',
-                              'src/core/lib/event_engine/iomgr_engine.h',
+                              'src/core/lib/event_engine/iomgr_engine/iomgr_engine.h',
+                              'src/core/lib/event_engine/iomgr_engine/thread_pool.h',
+                              'src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h',
+                              'src/core/lib/event_engine/iomgr_engine/timer.h',
+                              'src/core/lib/event_engine/iomgr_engine/timer_heap.h',
+                              'src/core/lib/event_engine/iomgr_engine/timer_manager.h',
+                              'src/core/lib/event_engine/promise.h',
                               'src/core/lib/event_engine/trace.h',
                               'src/core/lib/gpr/alloc.h',
                               'src/core/lib/gpr/env.h',
@@ -2116,6 +2144,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/match.h',
                               'src/core/lib/gprpp/memory.h',
                               'src/core/lib/gprpp/mpscq.h',
+                              'src/core/lib/gprpp/no_destruct.h',
                               'src/core/lib/gprpp/orphanable.h',
                               'src/core/lib/gprpp/overload.h',
                               'src/core/lib/gprpp/ref_counted.h',
@@ -2275,7 +2304,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/security_connector/fake/fake_security_connector.h',
                               'src/core/lib/security/security_connector/insecure/insecure_security_connector.h',
                               'src/core/lib/security/security_connector/load_system_roots.h',
-                              'src/core/lib/security/security_connector/load_system_roots_linux.h',
+                              'src/core/lib/security/security_connector/load_system_roots_supported.h',
                               'src/core/lib/security/security_connector/local/local_security_connector.h',
                               'src/core/lib/security/security_connector/security_connector.h',
                               'src/core/lib/security/security_connector/ssl/ssl_security_connector.h',
@@ -2298,7 +2327,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_internal.h',
                               'src/core/lib/slice/slice_refcount.h',
                               'src/core/lib/slice/slice_refcount_base.h',
-                              'src/core/lib/slice/slice_split.h',
                               'src/core/lib/slice/slice_string_helpers.h',
                               'src/core/lib/surface/api_trace.h',
                               'src/core/lib/surface/builtins.h',
@@ -2315,7 +2343,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/server.h',
                               'src/core/lib/surface/validate_metadata.h',
                               'src/core/lib/transport/bdp_estimator.h',
-                              'src/core/lib/transport/byte_stream.h',
                               'src/core/lib/transport/connectivity_state.h',
                               'src/core/lib/transport/error_utils.h',
                               'src/core/lib/transport/handshaker.h',
@@ -2330,6 +2357,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/tcp_connect_handshaker.h',
                               'src/core/lib/transport/timeout_encoding.h',
                               'src/core/lib/transport/transport.h',
+                              'src/core/lib/transport/transport_fwd.h',
                               'src/core/lib/transport/transport_impl.h',
                               'src/core/lib/uri/uri_parser.h',
                               'src/core/tsi/alts/crypt/gsec.h',

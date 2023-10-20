@@ -165,7 +165,13 @@ GRPC_COMMON_SRCS = [
     "src/core/lib/event_engine/channel_args_endpoint_config.cc",
     "src/core/lib/event_engine/default_event_engine_factory.cc",
     "src/core/lib/event_engine/event_engine.cc",
-    "src/core/lib/event_engine/iomgr_engine.cc",
+    "src/core/lib/event_engine/forkable.cc",
+    "src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc",
+    "src/core/lib/event_engine/iomgr_engine/thread_pool.cc",
+    "src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc",
+    "src/core/lib/event_engine/iomgr_engine/timer.cc",
+    "src/core/lib/event_engine/iomgr_engine/timer_heap.cc",
+    "src/core/lib/event_engine/iomgr_engine/timer_manager.cc",
     "src/core/lib/event_engine/memory_allocator.cc",
     "src/core/lib/event_engine/resolved_address.cc",
     "src/core/lib/event_engine/slice_buffer.cc",
@@ -322,7 +328,7 @@ GRPC_COMMON_SRCS = [
     "src/core/lib/security/security_connector/fake/fake_security_connector.cc",
     "src/core/lib/security/security_connector/insecure/insecure_security_connector.cc",
     "src/core/lib/security/security_connector/load_system_roots_fallback.cc",
-    "src/core/lib/security/security_connector/load_system_roots_linux.cc",
+    "src/core/lib/security/security_connector/load_system_roots_supported.cc",
     "src/core/lib/security/security_connector/security_connector.cc",
     "src/core/lib/security/transport/client_auth_filter.cc",
     "src/core/lib/security/transport/secure_endpoint.cc",
@@ -339,7 +345,6 @@ GRPC_COMMON_SRCS = [
     "src/core/lib/slice/slice_buffer.cc",
     "src/core/lib/slice/slice.cc",
     "src/core/lib/slice/slice_refcount.cc",
-    "src/core/lib/slice/slice_split.cc",
     "src/core/lib/slice/slice_string_helpers.cc",
     "src/core/lib/surface/api_trace.cc",
     "src/core/lib/surface/builtins.cc",
@@ -362,7 +367,6 @@ GRPC_COMMON_SRCS = [
     "src/core/lib/surface/validate_metadata.cc",
     "src/core/lib/surface/version.cc",
     "src/core/lib/transport/bdp_estimator.cc",
-    "src/core/lib/transport/byte_stream.cc",
     "src/core/lib/transport/connectivity_state.cc",
     "src/core/lib/transport/error_utils.cc",
     "src/core/lib/transport/handshaker.cc",
@@ -469,6 +473,7 @@ GRPC_SECURE_SRCS = [
     "src/core/ext/xds/xds_http_fault_filter.cc",
     "src/core/ext/xds/xds_http_filters.cc",
     "src/core/ext/xds/xds_http_rbac_filter.cc",
+    "src/core/ext/xds/xds_lb_policy_registry.cc",
     "src/core/ext/xds/xds_listener.cc",
     "src/core/ext/xds/xds_resource_type.cc",
     "src/core/ext/xds/xds_route_config.cc",
@@ -605,7 +610,7 @@ cc_defaults {
     target: {
         vendor: {
             // Needs to be updated when a new version is imported.
-            suffix: "-1.47.5",
+            suffix: "-1.48.4",
         },
     },
 }
@@ -859,6 +864,24 @@ cc_test {
     test_suites: ["general-tests"],
     srcs: [
         "test/cpp/common/alarm_test.cc",
+    ],
+    header_libs: [
+        "libgrpc++_internal_headers",
+    ],
+    static_libs: [
+        "libgpr_test_util",
+    ],
+    shared_libs: [
+        "libgrpc++_unsecure",
+    ],
+}
+
+cc_test {
+    name: "grpc_sockaddr_utils_test",
+    defaults: ["grpc_defaults"],
+    test_suites: ["general-tests"],
+    srcs: [
+        "test/core/address_utils/sockaddr_utils_test.cc",
     ],
     header_libs: [
         "libgrpc++_internal_headers",

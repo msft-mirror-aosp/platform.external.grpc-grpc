@@ -49,10 +49,11 @@
 #endif  // GPR_ABSEIL_SYNC
 
 /*
- * Defines GRPC_ERROR_IS_ABSEIL_STATUS to use absl::Status for grpc_error_handle
+ * Defines GRPC_ERROR_IS_NOT_ABSEIL_STATUS to not use absl::Status for
+ * grpc_error_handle. This is a temporary knob for migration process.
  */
-#ifndef GRPC_ERROR_IS_ABSEIL_STATUS
-// #define GRPC_ERROR_IS_ABSEIL_STATUS 1
+#ifndef GRPC_ERROR_IS_NOT_ABSEIL_STATUS
+#define GRPC_ERROR_IS_ABSEIL_STATUS 1
 #endif
 
 /* Get windows.h included everywhere (we need it) */
@@ -214,6 +215,8 @@
 #define GRPC_TIMER_USE_GENERIC 1
 #define GRPC_POSIX_NO_SPECIAL_WAKEUP_FD 1
 #define GRPC_POSIX_WAKEUP_FD 1
+#define GRPC_HAVE_MSG_NOSIGNAL 1
+#define GRPC_HAVE_UNIX_SOCKET 1
 #define GRPC_ARES 0
 #define GPR_NO_AUTODETECT_PLATFORM 1
 #elif defined(__APPLE__)

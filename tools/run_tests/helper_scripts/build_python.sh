@@ -86,20 +86,6 @@ function toolchain() {
   fi
 }
 
-# TODO(jtattermusch): this adds dependency on grealpath on mac
-# (brew install coreutils) for little reason.
-# Command to invoke the linux command `realpath` or equivalent.
-function script_realpath() {
-  # Find `realpath`
-  if [ -x "$(command -v realpath)" ]; then
-    realpath "$@"
-  elif [ -x "$(command -v grealpath)" ]; then
-    grealpath "$@"
-  else
-    exit 1
-  fi
-}
-
 ####################
 # Script Arguments #
 ####################
@@ -125,17 +111,9 @@ export LANG=en_US.UTF-8
 DEFAULT_PARALLEL_JOBS=$(nproc) || DEFAULT_PARALLEL_JOBS=4
 export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=${GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS:-$DEFAULT_PARALLEL_JOBS}
 
-# If ccache is available on Linux, use it.
-if [ "$(is_linux)" ]; then
-  # We're not on Darwin (Mac OS X)
-  if [ -x "$(command -v ccache)" ]; then
-    if [ -x "$(command -v gcc)" ]; then
-      export CC='ccache gcc'
-    elif [ -x "$(command -v clang)" ]; then
-      export CC='ccache clang'
-    fi
-  fi
-fi
+# activate ccache if desired
+# shellcheck disable=SC1091
+source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
 ############################
 # Perform build operations #
@@ -145,9 +123,9 @@ if [[ "$(inside_venv)" ]]; then
   VENV_PYTHON="$PYTHON"
 else
   # Instantiate the virtualenv from the Python version passed in.
-  $PYTHON -m pip install --user virtualenv==16.7.9
+  $PYTHON -m pip install --user virtualenv==20.0.23
   $PYTHON -m virtualenv "$VENV"
-  VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
+  VENV_PYTHON="$(pwd)/$VENV/$VENV_RELATIVE_PYTHON"
 fi
 
 

@@ -21,6 +21,10 @@ export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export PYTHON=${PYTHON:-python}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 
+# activate ccache if desired
+# shellcheck disable=SC1091
+source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
+
 # Needed for building binary distribution wheels -- bdist_wheel
 "${PYTHON}" -m pip install --upgrade wheel
 
@@ -130,10 +134,11 @@ ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py bdist_whee
 # the artifacts output dir.
 if [ "$GRPC_SKIP_TWINE_CHECK" == "" ]
 then
-  # Ensure the generated artifacts are valid.
-  # TODO(jtattermusch): avoid the need for always re-installing virtualenv and twine
+  # Install virtualenv if it isn't already available.
+  # TODO(jtattermusch): cleanup the virtualenv version fallback logic.
   "${PYTHON}" -m pip install virtualenv
-  "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==16.7.9 && "${PYTHON}" -m virtualenv venv; }
+  "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
+  # Ensure the generated artifacts are valid using "twine check"
   venv/bin/python -m pip install "twine<=2.0"
   venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
   rm -rf venv/

@@ -20,17 +20,14 @@
 
 #include "src/core/lib/surface/validate_metadata.h"
 
-#include <stdlib.h>
-#include <string.h>
+#include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
 
 #if __cplusplus > 201103l
 #define GRPC_VALIDATE_METADATA_CONSTEXPR_FN constexpr
@@ -63,7 +60,7 @@ static grpc_error_handle conforms_to(const grpc_slice& slice,
 }
 
 static int error2int(grpc_error_handle error) {
-  int r = (error == GRPC_ERROR_NONE);
+  int r = (GRPC_ERROR_IS_NONE(error));
   GRPC_ERROR_UNREF(error);
   return r;
 }

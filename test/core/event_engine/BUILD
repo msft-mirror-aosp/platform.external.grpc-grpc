@@ -22,6 +22,22 @@ grpc_package(
 )
 
 grpc_cc_test(
+    name = "forkable_test",
+    srcs = ["forkable_test.cc"],
+    external_deps = [
+        "absl/time",
+        "gtest",
+    ],
+    deps = [
+        "//:forkable",
+        "//:gpr_base",
+        "//:gpr_platform",
+        "//:grpc_unsecure",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
     name = "endpoint_config_test",
     srcs = ["endpoint_config_test.cc"],
     external_deps = ["gtest"],
@@ -36,6 +52,16 @@ grpc_cc_test(
 grpc_cc_test(
     name = "smoke_test",
     srcs = ["smoke_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "slice_buffer_test",
+    srcs = ["slice_buffer_test.cc"],
     external_deps = ["gtest"],
     deps = [
         "//:grpc",

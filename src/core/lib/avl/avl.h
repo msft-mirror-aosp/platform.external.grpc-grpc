@@ -19,10 +19,10 @@
 
 #include <stdlib.h>
 
-#include <algorithm>
+#include <algorithm>  // IWYU pragma: keep
 #include <memory>
-
-#include "absl/container/inlined_vector.h"
+#include <utility>
+#include <vector>
 
 namespace grpc_core {
 
@@ -89,6 +89,7 @@ class AVL {
 
  private:
   struct Node;
+
   typedef std::shared_ptr<Node> NodePtr;
   struct Node : public std::enable_shared_from_this<Node> {
     Node(K k, V v, NodePtr l, NodePtr r, long h)
@@ -126,7 +127,7 @@ class AVL {
     }
 
    private:
-    absl::InlinedVector<Node*, 8> stack_;
+    std::vector<Node*> stack_;
   };
 
   explicit AVL(NodePtr root) : root_(std::move(root)) {}
@@ -309,6 +310,7 @@ class AVL<K, void> {
 
  private:
   struct Node;
+
   typedef std::shared_ptr<Node> NodePtr;
   struct Node : public std::enable_shared_from_this<Node> {
     Node(K k, NodePtr l, NodePtr r, long h)

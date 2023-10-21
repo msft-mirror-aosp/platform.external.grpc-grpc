@@ -22,54 +22,79 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <inttypes.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <algorithm>
 #include <deque>
-#include <functional>
 #include <list>
 #include <map>
+#include <memory>
 #include <random>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/hash/hash.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
+#include "absl/types/optional.h"
+#include "upb/upb.h"
 #include "upb/upb.hpp"
 
+#include <grpc/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/byte_buffer_reader.h>
+#include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/time.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_util.h"
 #include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/service_config/service_config_impl.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -269,7 +294,6 @@ class RlsLb : public LoadBalancingPolicy {
     //
     // Both methods grab the data they need from the parent object.
     void StartUpdate() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
-    // Does not take ownership of channel_args.
     void MaybeFinishUpdate() ABSL_LOCKS_EXCLUDED(&RlsLb::mu_);
 
     void ExitIdleLocked() {
@@ -668,6 +692,7 @@ class RlsLb : public LoadBalancingPolicy {
   // Mutex to guard LB policy state that is accessed by the picker.
   Mutex mu_;
   bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
+  bool update_in_progress_ = false;
   Cache cache_ ABSL_GUARDED_BY(mu_);
   // Maps an RLS request key to an RlsRequest object that represents a pending
   // RLS request.
@@ -758,7 +783,7 @@ void RlsLb::ChildPolicyWrapper::StartUpdate() {
   grpc_error_handle error = InsertOrUpdateChildPolicyField(
       lb_policy_->config_->child_policy_config_target_field_name(), target_,
       &child_policy_config);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(
         GPR_INFO,
@@ -769,7 +794,7 @@ void RlsLb::ChildPolicyWrapper::StartUpdate() {
   pending_config_ = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
       child_policy_config, &error);
   // Returned RLS target fails the validation.
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
       gpr_log(GPR_INFO,
               "[rlslb %p] ChildPolicyWrapper=%p [%s]: config failed to parse: "
@@ -1059,7 +1084,8 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
                 "[rlslb %p] picker=%p: RLS call in backoff; failing pick",
                 lb_policy_.get(), this);
       }
-      return PickResult::Fail(entry->status());
+      return PickResult::Fail(absl::UnavailableError(
+          absl::StrCat("RLS request failed: ", entry->status().ToString())));
     }
   }
   // RLS call pending.  Queue the pick.
@@ -1166,46 +1192,48 @@ size_t RlsLb::Cache::Entry::Size() const {
 }
 
 LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
-  for (const auto& child_policy_wrapper : child_policy_wrappers_) {
+  size_t i = 0;
+  ChildPolicyWrapper* child_policy_wrapper = nullptr;
+  // Skip targets before the last one that are in state TRANSIENT_FAILURE.
+  for (; i < child_policy_wrappers_.size(); ++i) {
+    child_policy_wrapper = child_policy_wrappers_[i].get();
     if (child_policy_wrapper->connectivity_state() ==
-        GRPC_CHANNEL_TRANSIENT_FAILURE) {
+            GRPC_CHANNEL_TRANSIENT_FAILURE &&
+        i < child_policy_wrappers_.size() - 1) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
         gpr_log(GPR_INFO,
-                "[rlslb %p] cache entry=%p %s: target %s in state "
-                "TRANSIENT_FAILURE; skipping",
+                "[rlslb %p] cache entry=%p %s: target %s (%" PRIuPTR
+                " of %" PRIuPTR ") in state TRANSIENT_FAILURE; skipping",
                 lb_policy_.get(), this, lru_iterator_->ToString().c_str(),
-                child_policy_wrapper->target().c_str());
+                child_policy_wrapper->target().c_str(), i,
+                child_policy_wrappers_.size());
       }
       continue;
     }
-    // Child policy not in TRANSIENT_FAILURE, so delegate.
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-      gpr_log(
-          GPR_INFO,
-          "[rlslb %p] cache entry=%p %s: target %s in state %s; "
-          "delegating",
-          lb_policy_.get(), this, lru_iterator_->ToString().c_str(),
-          child_policy_wrapper->target().c_str(),
-          ConnectivityStateName(child_policy_wrapper->connectivity_state()));
-    }
-    // Add header data.
-    if (!header_data_.empty()) {
-      char* copied_header_data =
-          static_cast<char*>(args.call_state->Alloc(header_data_.length() + 1));
-      strcpy(copied_header_data, header_data_.c_str());
-      args.initial_metadata->Add(kRlsHeaderKey, copied_header_data);
-    }
-    return child_policy_wrapper->Pick(args);
+    break;
   }
-  // No child policy found.
+  // Child policy not in TRANSIENT_FAILURE or is the last target in
+  // the list, so delegate.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO,
-            "[rlslb %p] cache entry=%p %s: no healthy target found; "
-            "failing pick",
-            lb_policy_.get(), this, lru_iterator_->ToString().c_str());
+            "[rlslb %p] cache entry=%p %s: target %s (%" PRIuPTR " of %" PRIuPTR
+            ") in state %s; delegating",
+            lb_policy_.get(), this, lru_iterator_->ToString().c_str(),
+            child_policy_wrapper->target().c_str(), i,
+            child_policy_wrappers_.size(),
+            ConnectivityStateName(child_policy_wrapper->connectivity_state()));
   }
-  return PickResult::Fail(
-      absl::UnavailableError("all RLS targets unreachable"));
+  // Add header data.
+  // Note that even if the target we're using is in TRANSIENT_FAILURE,
+  // the pick might still succeed (e.g., if the child is ring_hash), so
+  // we need to pass the right header info down in all cases.
+  if (!header_data_.empty()) {
+    char* copied_header_data =
+        static_cast<char*>(args.call_state->Alloc(header_data_.length() + 1));
+    strcpy(copied_header_data, header_data_.c_str());
+    args.initial_metadata->Add(kRlsHeaderKey, copied_header_data);
+  }
+  return child_policy_wrapper->Pick(args);
 }
 
 void RlsLb::Cache::Entry::ResetBackoff() {
@@ -1568,7 +1596,8 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
       parent_channelz_node_ = parent_channelz_node->Ref();
     }
     // Start connectivity watch.
-    ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
+    ClientChannel* client_channel =
+        ClientChannel::GetFromChannel(Channel::FromC(channel_));
     GPR_ASSERT(client_channel != nullptr);
     watcher_ = new StateWatcher(Ref(DEBUG_LOCATION, "StateWatcher"));
     client_channel->AddConnectivityWatcher(
@@ -1593,7 +1622,8 @@ void RlsLb::RlsChannel::Orphan() {
     }
     // Stop connectivity watch.
     if (watcher_ != nullptr) {
-      ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
+      ClientChannel* client_channel =
+          ClientChannel::GetFromChannel(Channel::FromC(channel_));
       GPR_ASSERT(client_channel != nullptr);
       client_channel->RemoveConnectivityWatcher(watcher_);
       watcher_ = nullptr;
@@ -1749,7 +1779,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   }
   // Parse response.
   ResponseInfo response;
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     grpc_status_code code;
     std::string message;
     grpc_error_get_status(error, deadline_, &code, &message,
@@ -1882,6 +1912,7 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy updated", this);
   }
+  update_in_progress_ = true;
   // Swap out config.
   RefCountedPtr<RlsLbConfig> old_config = std::move(config_);
   config_ = std::move(args.config);
@@ -1951,7 +1982,7 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
     // Resize cache if needed.
     if (old_config == nullptr ||
         config_->cache_size_bytes() != old_config->cache_size_bytes()) {
-      cache_.Resize(config_->cache_size_bytes());
+      cache_.Resize(static_cast<size_t>(config_->cache_size_bytes()));
     }
     // Start update of child policies if needed.
     if (update_child_policies) {
@@ -1984,6 +2015,7 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
     }
     default_child_policy_->MaybeFinishUpdate();
   }
+  update_in_progress_ = false;
   // In principle, we need to update the picker here only if the config
   // fields used by the picker have changed.  However, it seems fragile
   // to check individual fields, since the picker logic could change in
@@ -2051,6 +2083,12 @@ void RlsLb::UpdatePickerCallback(void* arg, grpc_error_handle /*error*/) {
 }
 
 void RlsLb::UpdatePickerLocked() {
+  // If we're in the process of propagating an update from our parent to
+  // our children, ignore any updates that come from the children.  We
+  // will instead return a new picker once the update has been seen by
+  // all children.  This avoids unnecessary picker churn while an update
+  // is being propagated to our children.
+  if (update_in_progress_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] updating picker", this);
   }
@@ -2195,7 +2233,7 @@ grpc_error_handle ParseGrpcKeybuilder(
         grpc_error_handle child_error = GRPC_ERROR_NONE;
         std::string name =
             ParseJsonMethodName(name_idx++, name_json, &child_error);
-        if (child_error != GRPC_ERROR_NONE) {
+        if (!GRPC_ERROR_IS_NONE(child_error)) {
           error_list.push_back(child_error);
         } else {
           bool inserted = names.insert(name).second;
@@ -2231,7 +2269,7 @@ grpc_error_handle ParseGrpcKeybuilder(
       std::vector<std::string> headers;
       grpc_error_handle child_error =
           ParseJsonHeaders(header_idx++, header_json, &key, &headers);
-      if (child_error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(child_error)) {
         error_list.push_back(child_error);
       } else {
         duplicate_key_check_func(key);
@@ -2324,7 +2362,7 @@ RlsLbConfig::KeyBuilderMap ParseGrpcKeybuilders(
   for (const Json& key_builder : key_builder_list) {
     grpc_error_handle child_error =
         ParseGrpcKeybuilder(idx++, key_builder, &key_builder_map);
-    if (child_error != GRPC_ERROR_NONE) error_list.push_back(child_error);
+    if (!GRPC_ERROR_IS_NONE(child_error)) error_list.push_back(child_error);
   }
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("field:grpcKeybuilders", &error_list);
   return key_builder_map;
@@ -2341,7 +2379,7 @@ RlsLbConfig::RouteLookupConfig ParseRouteLookupConfig(
     grpc_error_handle child_error = GRPC_ERROR_NONE;
     route_lookup_config.key_builder_map =
         ParseGrpcKeybuilders(*keybuilder_list, &child_error);
-    if (child_error != GRPC_ERROR_NONE) error_list.push_back(child_error);
+    if (!GRPC_ERROR_IS_NONE(child_error)) error_list.push_back(child_error);
   }
   // Parse lookupService.
   if (ParseJsonObjectField(json, "lookupService",
@@ -2417,12 +2455,12 @@ grpc_error_handle ValidateChildPolicyList(
       default_target.empty() ? kFakeTargetFieldValue : default_target;
   grpc_error_handle error = InsertOrUpdateChildPolicyField(
       child_policy_config_target_field_name, target, child_policy_config);
-  if (error != GRPC_ERROR_NONE) return error;
+  if (!GRPC_ERROR_IS_NONE(error)) return error;
   // Parse the config.
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_config =
       LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
           *child_policy_config, &error);
-  if (error != GRPC_ERROR_NONE) return error;
+  if (!GRPC_ERROR_IS_NONE(error)) return error;
   // Find the chosen config and return it in JSON form.
   // We remove all non-selected configs, and in the selected config, we leave
   // the target field in place, set to the default value.  This slightly
@@ -2465,7 +2503,7 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
       grpc_error_handle child_error = GRPC_ERROR_NONE;
       route_lookup_config =
           ParseRouteLookupConfig(*route_lookup_config_json, &child_error);
-      if (child_error != GRPC_ERROR_NONE) error_list.push_back(child_error);
+      if (!GRPC_ERROR_IS_NONE(child_error)) error_list.push_back(child_error);
     }
     // Parse routeLookupChannelServiceConfig.
     std::string rls_channel_service_config;
@@ -2481,7 +2519,7 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
       auto service_config = MakeRefCounted<ServiceConfigImpl>(
           /*args=*/nullptr, rls_channel_service_config,
           std::move(rls_channel_service_config_json), &child_error);
-      if (child_error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(child_error)) {
         error_list.push_back(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
             "field:routeLookupChannelServiceConfig", &child_error, 1));
         GRPC_ERROR_UNREF(child_error);
@@ -2513,7 +2551,7 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
           it->second, child_policy_config_target_field_name,
           route_lookup_config.default_target, &child_policy_config,
           &default_child_policy_parsed_config);
-      if (child_error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(child_error)) {
         error_list.push_back(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
             "field:childPolicy", &child_error, 1));
         GRPC_ERROR_UNREF(child_error);

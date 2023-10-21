@@ -18,13 +18,25 @@
 
 #include "src/core/ext/filters/client_channel/resolver/polling_resolver.h"
 
+#include <inttypes.h>
+
+#include <utility>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 
@@ -95,7 +107,7 @@ void PollingResolver::OnNextResolutionLocked(grpc_error_handle error) {
             this, grpc_error_std_string(error).c_str(), shutdown_);
   }
   have_next_resolution_timer_ = false;
-  if (error == GRPC_ERROR_NONE && !shutdown_) {
+  if (GRPC_ERROR_IS_NONE(error) && !shutdown_) {
     StartResolvingLocked();
   }
   Unref(DEBUG_LOCATION, "retry-timer");

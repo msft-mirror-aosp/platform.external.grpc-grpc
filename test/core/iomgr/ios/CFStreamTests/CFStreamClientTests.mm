@@ -48,7 +48,7 @@ static void finish_connection() {
 
 static void must_succeed(void* arg, grpc_error_handle error) {
   GPR_ASSERT(g_connecting != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   grpc_endpoint_shutdown(g_connecting, GRPC_ERROR_CREATE_FROM_STATIC_STRING("must_succeed called"));
   grpc_endpoint_destroy(g_connecting);
   g_connecting = nullptr;
@@ -57,7 +57,7 @@ static void must_succeed(void* arg, grpc_error_handle error) {
 
 static void must_fail(void* arg, grpc_error_handle error) {
   GPR_ASSERT(g_connecting == nullptr);
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
   NSLog(@"%s", grpc_error_std_string(error).c_str());
   finish_connection();
 }
@@ -103,9 +103,10 @@ static void must_fail(void* arg, grpc_error_handle error) {
   /* connect to it */
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr*)addr, (socklen_t*)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
-  const grpc_channel_args* args =
-      grpc_core::CoreConfiguration::Get().channel_args_preconditioning().PreconditionChannelArgs(
-          nullptr);
+  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
+                                      .channel_args_preconditioning()
+                                      .PreconditionChannelArgs(nullptr)
+                                      .ToC();
   grpc_tcp_client_connect(&done, &g_connecting, nullptr, args, &resolved_addr,
                           grpc_core::Timestamp::InfFuture());
   grpc_channel_args_destroy(args);
@@ -160,9 +161,10 @@ static void must_fail(void* arg, grpc_error_handle error) {
 
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
-  const grpc_channel_args* args =
-      grpc_core::CoreConfiguration::Get().channel_args_preconditioning().PreconditionChannelArgs(
-          nullptr);
+  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
+                                      .channel_args_preconditioning()
+                                      .PreconditionChannelArgs(nullptr)
+                                      .ToC();
   grpc_tcp_client_connect(&done, &g_connecting, nullptr, args, &resolved_addr,
                           grpc_core::Timestamp::InfFuture());
   grpc_channel_args_destroy(args);

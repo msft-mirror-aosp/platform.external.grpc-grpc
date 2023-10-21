@@ -253,6 +253,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
     XdsServingStatusNotifier* notifier() { return &notifier_; }
 
+    void set_allow_put_requests(bool allow_put_requests) {
+      allow_put_requests_ = allow_put_requests;
+    }
+
+    void StopListeningAndSendGoaways();
+
    private:
     class XdsChannelArgsServerBuilderOption;
 
@@ -270,6 +276,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     std::unique_ptr<std::thread> thread_;
     bool running_ = false;
     const bool use_xds_enabled_server_;
+    bool allow_put_requests_ = false;
   };
 
   // A server thread for a backend server.
@@ -395,6 +402,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       v2_ = true;
       return *this;
     }
+    BootstrapBuilder& SetIgnoreResourceDeletion() {
+      ignore_resource_deletion_ = true;
+      return *this;
+    }
     BootstrapBuilder& SetDefaultServer(const std::string& server) {
       top_server_ = server;
       return *this;
@@ -443,6 +454,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     std::string MakeAuthorityText();
 
     bool v2_ = false;
+    bool ignore_resource_deletion_ = false;
     std::string top_server_;
     std::string client_default_listener_resource_name_template_;
     std::map<std::string /*key*/, PluginInfo> plugins_;
@@ -791,11 +803,23 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       case METHOD_ECHO2:
         return stub->Echo2(context, request, response);
     }
-    GPR_UNREACHABLE_CODE();
+    GPR_UNREACHABLE_CODE(return grpc::Status::OK);
   }
 
+  // Send RPCs in a loop until either continue_predicate() returns false
+  // or timeout_ms elapses.
+  struct RpcResult {
+    Status status;
+    EchoResponse response;
+  };
+  void SendRpcsUntil(const grpc_core::DebugLocation& debug_location,
+                     std::function<bool(const RpcResult&)> continue_predicate,
+                     int timeout_ms = 5000,
+                     const RpcOptions& rpc_options = RpcOptions());
+
   // Sends the specified number of RPCs and fails if the RPC fails.
-  void CheckRpcSendOk(const size_t times = 1,
+  void CheckRpcSendOk(const grpc_core::DebugLocation& debug_location,
+                      const size_t times = 1,
                       const RpcOptions& rpc_options = RpcOptions());
 
   // Sends one RPC, which must fail with the specified status code and
@@ -805,47 +829,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
                            absl::string_view expected_message_regex,
                            const RpcOptions& rpc_options = RpcOptions());
 
-  // DEPRECATED -- USE THE ABOVE VARIANT INSTEAD.
-  // TODO(roth): Change all existing callers to use the above variant
-  // instead and then remove this.
-  struct CheckRpcSendFailureOptions {
-    std::function<bool(size_t)> continue_predicate = [](size_t i) {
-      return i < 1;
-    };
-    RpcOptions rpc_options;
-    StatusCode expected_error_code = StatusCode::OK;
-
-    CheckRpcSendFailureOptions() {}
-
-    CheckRpcSendFailureOptions& set_times(size_t times) {
-      continue_predicate = [times](size_t i) { return i < times; };
-      return *this;
-    }
-
-    CheckRpcSendFailureOptions& set_continue_predicate(
-        std::function<bool(size_t)> pred) {
-      continue_predicate = std::move(pred);
-      return *this;
-    }
-
-    CheckRpcSendFailureOptions& set_rpc_options(const RpcOptions& options) {
-      rpc_options = options;
-      return *this;
-    }
-
-    CheckRpcSendFailureOptions& set_expected_error_code(StatusCode code) {
-      expected_error_code = code;
-      return *this;
-    }
-  };
-  void CheckRpcSendFailure(
-      const CheckRpcSendFailureOptions& options = CheckRpcSendFailureOptions());
-
   // Sends num_rpcs RPCs, counting how many of them fail with a message
-  // matching the specfied drop_error_message_prefix.
-  // Any failure with a non-matching message is a test failure.
+  // matching the specfied expected_message_prefix.
+  // Any failure with a non-matching status or message is a test failure.
   size_t SendRpcsAndCountFailuresWithMessage(
-      size_t num_rpcs, const char* drop_error_message_prefix,
+      const grpc_core::DebugLocation& debug_location, size_t num_rpcs,
+      StatusCode expected_status, absl::string_view expected_message_prefix,
       const RpcOptions& rpc_options = RpcOptions());
 
   // A class for running a long-running RPC in its own thread.
@@ -880,6 +869,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     EchoResponse response;
   };
   std::vector<ConcurrentRpc> SendConcurrentRpcs(
+      const grpc_core::DebugLocation& debug_location,
       grpc::testing::EchoTestService::Stub* stub, size_t num_rpcs,
       const RpcOptions& rpc_options);
 
@@ -890,8 +880,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   struct WaitForBackendOptions {
     // If true, resets the backend counters before returning.
     bool reset_counters = true;
-    // If true, RPC failures will not cause the test to fail.
-    bool allow_failures = false;
     // How long to wait for the backend(s) to see requests.
     int timeout_ms = 5000;
 
@@ -902,11 +890,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       return *this;
     }
 
-    WaitForBackendOptions& set_allow_failures(bool enable) {
-      allow_failures = enable;
-      return *this;
-    }
-
     WaitForBackendOptions& set_timeout_ms(int ms) {
       timeout_ms = ms;
       return *this;
@@ -914,18 +897,24 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   };
 
   // Sends RPCs until all of the backends in the specified range see requests.
+  // The check_status callback will be invoked to check the status of
+  // every RPC; if null, the default is to check that the RPC succeeded.
   // Returns the total number of RPCs sent.
   size_t WaitForAllBackends(
-      size_t start_index = 0, size_t stop_index = 0,
+      const grpc_core::DebugLocation& debug_location, size_t start_index = 0,
+      size_t stop_index = 0,
+      std::function<void(const RpcResult&)> check_status = nullptr,
       const WaitForBackendOptions& wait_options = WaitForBackendOptions(),
       const RpcOptions& rpc_options = RpcOptions());
 
   // Sends RPCs until the backend at index backend_idx sees requests.
   void WaitForBackend(
-      size_t backend_idx,
+      const grpc_core::DebugLocation& debug_location, size_t backend_idx,
+      std::function<void(const RpcResult&)> check_status = nullptr,
       const WaitForBackendOptions& wait_options = WaitForBackendOptions(),
       const RpcOptions& rpc_options = RpcOptions()) {
-    WaitForAllBackends(backend_idx, backend_idx + 1, wait_options, rpc_options);
+    WaitForAllBackends(debug_location, backend_idx, backend_idx + 1,
+                       check_status, wait_options, rpc_options);
   }
 
   //
@@ -936,47 +925,57 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
   // Sends RPCs until get_state() returns a response.
   absl::optional<AdsServiceImpl::ResponseState> WaitForNack(
+      const grpc_core::DebugLocation& debug_location,
       std::function<absl::optional<AdsServiceImpl::ResponseState>()> get_state,
       StatusCode expected_status = StatusCode::UNAVAILABLE);
 
   // Sends RPCs until an LDS NACK is seen.
   absl::optional<AdsServiceImpl::ResponseState> WaitForLdsNack(
+      const grpc_core::DebugLocation& debug_location,
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
     return WaitForNack(
+        debug_location,
         [&]() { return balancer_->ads_service()->lds_response_state(); },
         expected_status);
   }
 
   // Sends RPCs until an RDS NACK is seen.
   absl::optional<AdsServiceImpl::ResponseState> WaitForRdsNack(
+      const grpc_core::DebugLocation& debug_location,
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
     return WaitForNack(
+        debug_location,
         [&]() { return RouteConfigurationResponseState(balancer_.get()); },
         expected_status);
   }
 
   // Sends RPCs until a CDS NACK is seen.
   absl::optional<AdsServiceImpl::ResponseState> WaitForCdsNack(
+      const grpc_core::DebugLocation& debug_location,
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
     return WaitForNack(
+        debug_location,
         [&]() { return balancer_->ads_service()->cds_response_state(); },
         expected_status);
   }
 
   // Sends RPCs until an EDS NACK is seen.
-  absl::optional<AdsServiceImpl::ResponseState> WaitForEdsNack() {
-    return WaitForNack(
-        [&]() { return balancer_->ads_service()->eds_response_state(); });
+  absl::optional<AdsServiceImpl::ResponseState> WaitForEdsNack(
+      const grpc_core::DebugLocation& debug_location) {
+    return WaitForNack(debug_location, [&]() {
+      return balancer_->ads_service()->eds_response_state();
+    });
   }
 
   // Convenient front-end to wait for RouteConfiguration to be NACKed,
   // regardless of whether it's sent in LDS or RDS.
   absl::optional<AdsServiceImpl::ResponseState> WaitForRouteConfigNack(
+      const grpc_core::DebugLocation& debug_location,
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
     if (GetParam().enable_rds_testing()) {
-      return WaitForRdsNack(expected_status);
+      return WaitForRdsNack(debug_location, expected_status);
     }
-    return WaitForLdsNack(expected_status);
+    return WaitForLdsNack(debug_location, expected_status);
   }
 
   // Convenient front-end for accessing xDS response state for a

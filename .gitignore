@@ -143,11 +143,15 @@ perf.data.old
 bm_diff_new/
 bm_diff_old/
 bm_*.json
+bloat_diff_new/
+bloat_diff_old/
+bloaty-build/
 
 # cmake build files
 **/cmake/build/
 
 # Visual Studio Code artifacts
+.cache/*
 .vscode/*
 .history/
 
@@ -167,3 +171,10 @@ compile_commands.json
 compile_commands_for_iwyu.json
 iwyu.out
 iwyu_files.txt
+iwyu_files0.txt
+iwyu/
+iwyu_build/
+
+# fuzzer logs
+fuzz-*.log
+

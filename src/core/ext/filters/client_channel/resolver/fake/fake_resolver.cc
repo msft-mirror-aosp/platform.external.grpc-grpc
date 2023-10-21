@@ -21,28 +21,27 @@
 
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 
-#include <limits.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <memory>
+#include <utility>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
-#include "src/core/lib/address_utils/parse_address.h"
+#include <grpc/support/log.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/service_config/service_config.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 
@@ -152,14 +151,14 @@ void FakeResolver::MaybeSendResultLocked() {
     result_handler_->ReportResult(std::move(result));
     return_failure_ = false;
   } else if (has_next_result_) {
-    Result result;
-    result.addresses = std::move(next_result_.addresses);
-    result.service_config = std::move(next_result_.service_config);
     // When both next_results_ and channel_args_ contain an arg with the same
     // name, only the one in next_results_ will be kept since next_results_ is
     // before channel_args_.
-    result.args = grpc_channel_args_union(next_result_.args, channel_args_);
-    result_handler_->ReportResult(std::move(result));
+    grpc_channel_args* new_args =
+        grpc_channel_args_union(next_result_.args, channel_args_);
+    grpc_channel_args_destroy(next_result_.args);
+    next_result_.args = new_args;
+    result_handler_->ReportResult(std::move(next_result_));
     has_next_result_ = false;
   }
 }

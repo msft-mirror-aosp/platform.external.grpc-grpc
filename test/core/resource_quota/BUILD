@@ -34,10 +34,26 @@ grpc_cc_test(
         "gtest",
     ],
     language = "c++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "call_checker",
         "//:memory_quota",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "periodic_update_test",
+    srcs = ["periodic_update_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:periodic_update",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -49,6 +65,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "c++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:thread_quota",
@@ -63,6 +80,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "c++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:resource_quota",
@@ -80,6 +98,7 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:memory_quota",
@@ -94,6 +113,7 @@ grpc_proto_fuzzer(
     language = "C++",
     proto = "memory_quota_fuzzer.proto",
     tags = ["no_windows"],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "call_checker",

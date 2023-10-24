@@ -20,24 +20,36 @@
 
 #include <string.h>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/handshaker.h"
 #include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 namespace grpc_core {
 
@@ -48,7 +60,7 @@ class grpc_httpcli_ssl_channel_security_connector final
  public:
   explicit grpc_httpcli_ssl_channel_security_connector(char* secure_peer_name)
       : grpc_channel_security_connector(
-            /*url_scheme=*/nullptr,
+            /*url_scheme=*/{},
             /*channel_creds=*/nullptr,
             /*request_metadata_creds=*/nullptr),
         secure_peer_name_(secure_peer_name) {}
@@ -77,7 +89,8 @@ class grpc_httpcli_ssl_channel_security_connector final
     tsi_handshaker* handshaker = nullptr;
     if (handshaker_factory_ != nullptr) {
       tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
-          handshaker_factory_, secure_peer_name_, &handshaker);
+          handshaker_factory_, secure_peer_name_, /*network_bio_buf_size=*/0,
+          /*ssl_bio_buf_size=*/0, &handshaker);
       if (result != TSI_OK) {
         gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
                 tsi_result_to_string(result));
@@ -152,9 +165,6 @@ httpcli_ssl_channel_security_connector_create(
 
 class HttpRequestSSLCredentials : public grpc_channel_credentials {
  public:
-  HttpRequestSSLCredentials() : grpc_channel_credentials("HttpRequestSSL") {}
-  ~HttpRequestSSLCredentials() override {}
-
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> /*call_creds*/, const char* target,
       const grpc_channel_args* args,
@@ -180,8 +190,9 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
     return Ref();
   }
 
-  grpc_channel_args* update_arguments(grpc_channel_args* args) override {
-    return args;
+  UniqueTypeName type() const override {
+    static UniqueTypeName::Factory kFactory("HttpRequestSSL");
+    return kFactory.Create();
   }
 
  private:

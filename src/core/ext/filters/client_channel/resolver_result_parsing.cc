@@ -19,25 +19,19 @@
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 
 #include <ctype.h>
-#include <stdio.h>
-#include <string.h>
 
+#include <algorithm>
+#include <map>
+#include <vector>
+
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/json/json_util.h"
-#include "src/core/lib/resolver/server_address.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 // As per the retry design, we do not allow more than 5 retry attempts.
 #define MAX_MAX_RETRY_ATTEMPTS 5
@@ -60,7 +54,7 @@ namespace {
 
 absl::optional<std::string> ParseHealthCheckConfig(const Json& field,
                                                    grpc_error_handle* error) {
-  GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+  GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
   if (field.type() != Json::Type::OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:healthCheckConfig error:should be of type object");
@@ -88,7 +82,7 @@ std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParseGlobalParams(
     const grpc_channel_args* /*args*/, const Json& json,
     grpc_error_handle* error) {
-  GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+  GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
   std::vector<grpc_error_handle> error_list;
   // Parse LB config.
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config;
@@ -97,7 +91,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(
     grpc_error_handle parse_error = GRPC_ERROR_NONE;
     parsed_lb_config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
         it->second, &parse_error);
-    if (parse_error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(parse_error)) {
       std::vector<grpc_error_handle> lb_errors;
       lb_errors.push_back(parse_error);
       error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
@@ -136,13 +130,13 @@ ClientChannelServiceConfigParser::ParseGlobalParams(
     grpc_error_handle parsing_error = GRPC_ERROR_NONE;
     health_check_service_name =
         ParseHealthCheckConfig(it->second, &parsing_error);
-    if (parsing_error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(parsing_error)) {
       error_list.push_back(parsing_error);
     }
   }
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("Client channel global parser",
                                          &error_list);
-  if (*error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(*error)) {
     return absl::make_unique<ClientChannelGlobalParsedConfig>(
         std::move(parsed_lb_config), std::move(lb_policy_name),
         std::move(health_check_service_name));
@@ -154,7 +148,7 @@ std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParsePerMethodParams(
     const grpc_channel_args* /*args*/, const Json& json,
     grpc_error_handle* error) {
-  GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+  GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
   std::vector<grpc_error_handle> error_list;
   // Parse waitForReady.
   absl::optional<bool> wait_for_ready;
@@ -175,7 +169,7 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(
                                  &error_list, false);
   // Return result.
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("Client channel parser", &error_list);
-  if (*error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(*error)) {
     return absl::make_unique<ClientChannelMethodParsedConfig>(timeout,
                                                               wait_for_ready);
   }

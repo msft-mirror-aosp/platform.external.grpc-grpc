@@ -219,7 +219,7 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   absl::string_view string = grpc_core::StringViewFromSlice(slice);
   Json json = Json::Parse(string, &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
             grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
@@ -433,7 +433,7 @@ static void test_parse_refresh_token_failure_no_refresh_token(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   test_parse_json_key_success();
   test_parse_json_key_failure_bad_json();

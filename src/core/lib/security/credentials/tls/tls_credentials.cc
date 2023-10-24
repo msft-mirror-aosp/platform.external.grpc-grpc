@@ -21,17 +21,20 @@
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 
 #include <cstring>
+#include <utility>
+
+#include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
+#include <grpc/grpc_security_constants.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
-
-#define GRPC_CREDENTIALS_TYPE_TLS "Tls"
+#include "src/core/tsi/ssl_transport_security.h"
 
 namespace {
 
@@ -70,8 +73,7 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
 
 TlsCredentials::TlsCredentials(
     grpc_core::RefCountedPtr<grpc_tls_credentials_options> options)
-    : grpc_channel_credentials(GRPC_CREDENTIALS_TYPE_TLS),
-      options_(std::move(options)) {}
+    : options_(std::move(options)) {}
 
 TlsCredentials::~TlsCredentials() {}
 
@@ -109,10 +111,21 @@ TlsCredentials::create_security_connector(
   return sc;
 }
 
+grpc_core::UniqueTypeName TlsCredentials::type() const {
+  static grpc_core::UniqueTypeName::Factory kFactory("Tls");
+  return kFactory.Create();
+}
+
+int TlsCredentials::cmp_impl(const grpc_channel_credentials* other) const {
+  const TlsCredentials* o = static_cast<const TlsCredentials*>(other);
+  if (*options_ == *o->options_) return 0;
+  return grpc_core::QsortCompare(
+      static_cast<const grpc_channel_credentials*>(this), other);
+}
+
 TlsServerCredentials::TlsServerCredentials(
     grpc_core::RefCountedPtr<grpc_tls_credentials_options> options)
-    : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_TLS),
-      options_(std::move(options)) {}
+    : options_(std::move(options)) {}
 
 TlsServerCredentials::~TlsServerCredentials() {}
 
@@ -121,6 +134,11 @@ TlsServerCredentials::create_security_connector(
     const grpc_channel_args* /* args */) {
   return grpc_core::TlsServerSecurityConnector::
       CreateTlsServerSecurityConnector(this->Ref(), options_);
+}
+
+grpc_core::UniqueTypeName TlsServerCredentials::type() const {
+  static grpc_core::UniqueTypeName::Factory kFactory("Tls");
+  return kFactory.Create();
 }
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/

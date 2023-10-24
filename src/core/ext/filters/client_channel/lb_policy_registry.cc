@@ -22,12 +22,18 @@
 
 #include <string.h>
 
-#include "absl/container/inlined_vector.h"
+#include <algorithm>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
-#include "src/core/lib/gpr/string.h"
+#include <grpc/support/log.h>
 
 namespace grpc_core {
 
@@ -58,8 +64,7 @@ class RegistryState {
   }
 
  private:
-  absl::InlinedVector<std::unique_ptr<LoadBalancingPolicyFactory>, 10>
-      factories_;
+  std::vector<std::unique_ptr<LoadBalancingPolicyFactory>> factories_;
 };
 
 RegistryState* g_state = nullptr;
@@ -163,11 +168,11 @@ grpc_error_handle ParseLoadBalancingConfigHelper(
 RefCountedPtr<LoadBalancingPolicy::Config>
 LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
     const Json& json, grpc_error_handle* error) {
-  GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+  GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
   GPR_ASSERT(g_state != nullptr);
   Json::Object::const_iterator policy;
   *error = ParseLoadBalancingConfigHelper(json, &policy);
-  if (*error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(*error)) {
     return nullptr;
   }
   // Find factory.

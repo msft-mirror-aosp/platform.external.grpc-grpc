@@ -32,16 +32,23 @@ license {
     ],
 }
 
+cc_library_headers {
+    name: "libgrpc_third_party_upb_headers",
+    defaults: ["grpc_deps_defaults"],
+    export_include_dirs: [
+        ".",
+    ],
+}
+
 cc_library_static {
     name: "libgrpc_third_party_upb",
     defaults: ["grpc_deps_defaults"],
     srcs: [
-        "cmake/google/protobuf/descriptor.upb.c",
         "third_party/utf8_range/naive.c",
         "third_party/utf8_range/range2-neon.c",
         "third_party/utf8_range/range2-sse.c",
-        "upb/decode.c",
         "upb/decode_fast.c",
+        "upb/decode.c",
         "upb/def.c",
         "upb/encode.c",
         "upb/json_decode.c",
@@ -55,8 +62,10 @@ cc_library_static {
     cflags: [
         "-Wno-unused-parameter",
     ],
+    static_libs: [
+        "libgrpc_upb_protos",
+    ],
     export_include_dirs: [
         ".",
-        "cmake",
     ],
 }

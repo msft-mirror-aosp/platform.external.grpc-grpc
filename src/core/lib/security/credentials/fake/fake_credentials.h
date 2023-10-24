@@ -21,9 +21,21 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
+#include <string>
 
+#include "absl/status/statusor.h"
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/codegen/grpc_types.h>
+
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/transport.h"
 
 #define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
   "grpc.fake_security.expected_targets"
@@ -60,16 +72,19 @@ const char* grpc_fake_transport_get_expected_targets(
 class grpc_md_only_test_credentials : public grpc_call_credentials {
  public:
   grpc_md_only_test_credentials(const char* md_key, const char* md_value)
-      : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_OAUTH2,
-                              GRPC_SECURITY_NONE),
+      : grpc_call_credentials(GRPC_SECURITY_NONE),
         key_(grpc_core::Slice::FromCopiedString(md_key)),
         value_(grpc_core::Slice::FromCopiedString(md_value)) {}
 
-  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
-  GetRequestMetadata(grpc_core::ClientInitialMetadata initial_metadata,
+  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
+  GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
                      const GetRequestMetadataArgs* args) override;
 
-  std::string debug_string() override { return "MD only Test Credentials"; };
+  std::string debug_string() override { return "MD only Test Credentials"; }
+
+  static grpc_core::UniqueTypeName Type();
+
+  grpc_core::UniqueTypeName type() const override { return Type(); }
 
  private:
   int cmp_impl(const grpc_call_credentials* other) const override {

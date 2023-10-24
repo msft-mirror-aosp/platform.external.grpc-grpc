@@ -17,38 +17,60 @@
 #include <grpc/support/port_platform.h>
 
 #include <inttypes.h>
-#include <limits.h>
+#include <stddef.h>
 
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/container/inlined_vector.h"
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
+#include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
-#include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_endpoint.h"
+#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
-#include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/lib/transport/connectivity_state.h"
 
 #define GRPC_EDS_DEFAULT_FALLBACK_TIMEOUT 10000
 
@@ -76,6 +98,7 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
     DiscoveryMechanismType type;
     std::string eds_service_name;
     std::string dns_hostname;
+    absl::optional<Json::Object> outlier_detection_lb_config;
 
     bool operator==(const DiscoveryMechanism& other) const {
       return (cluster_name == other.cluster_name &&
@@ -83,7 +106,8 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
               max_concurrent_requests == other.max_concurrent_requests &&
               type == other.type &&
               eds_service_name == other.eds_service_name &&
-              dns_hostname == other.dns_hostname);
+              dns_hostname == other.dns_hostname &&
+              outlier_detection_lb_config == other.outlier_detection_lb_config);
     }
   };
 
@@ -176,11 +200,11 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
             },
             DEBUG_LOCATION);
       }
-      void OnError(grpc_error_handle error) override {
+      void OnError(absl::Status status) override {
         Ref().release();  // ref held by callback
         discovery_mechanism_->parent()->work_serializer()->Run(
-            [this, error]() {
-              OnErrorHelper(error);
+            [this, status]() {
+              OnErrorHelper(status);
               Unref();
             },
             DEBUG_LOCATION);
@@ -203,9 +227,9 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         discovery_mechanism_->parent()->OnEndpointChanged(
             discovery_mechanism_->index(), std::move(update));
       }
-      void OnErrorHelper(grpc_error_handle error) {
+      void OnErrorHelper(absl::Status status) {
         discovery_mechanism_->parent()->OnError(discovery_mechanism_->index(),
-                                                error);
+                                                status);
       }
       void OnResourceDoesNotExistHelper() {
         discovery_mechanism_->parent()->OnResourceDoesNotExist(
@@ -312,7 +336,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   void OnEndpointChanged(size_t index, XdsEndpointResource update);
-  void OnError(size_t index, grpc_error_handle error);
+  void OnError(size_t index, absl::Status status);
   void OnResourceDoesNotExist(size_t index);
 
   void MaybeDestroyChildPolicyLocked();
@@ -471,9 +495,8 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Orphan() {
 void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler::
     ReportResult(Resolver::Result result) {
   if (!result.addresses.ok()) {
-    discovery_mechanism_->parent()->OnError(
-        discovery_mechanism_->index(),
-        absl_status_to_grpc_error(result.addresses.status()));
+    discovery_mechanism_->parent()->OnError(discovery_mechanism_->index(),
+                                            result.addresses.status());
     return;
   }
   // Convert resolver result to EDS update.
@@ -698,12 +721,11 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
   UpdateChildPolicyLocked();
 }
 
-void XdsClusterResolverLb::OnError(size_t index, grpc_error_handle error) {
+void XdsClusterResolverLb::OnError(size_t index, absl::Status status) {
   gpr_log(GPR_ERROR,
           "[xds_cluster_resolver_lb %p] discovery mechanism %" PRIuPTR
           " xds watcher reported error: %s",
-          this, index, grpc_error_std_string(error).c_str());
-  GRPC_ERROR_UNREF(error);
+          this, index, status.ToString().c_str());
   if (shutting_down_) return;
   if (!discovery_mechanisms_[index].latest_update.has_value()) {
     // Call OnEndpointChanged with an empty update just like
@@ -857,9 +879,31 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         xds_cluster_impl_config["lrsLoadReportingServer"] =
             discovery_config.lrs_load_reporting_server->ToJson();
       }
-      Json locality_picking_policy = Json::Array{Json::Object{
-          {"xds_cluster_impl_experimental", std::move(xds_cluster_impl_config)},
-      }};
+      Json locality_picking_policy;
+      if (XdsOutlierDetectionEnabled()) {
+        Json::Object outlier_detection_config;
+        if (discovery_entry.config().outlier_detection_lb_config.has_value()) {
+          outlier_detection_config =
+              discovery_entry.config().outlier_detection_lb_config.value();
+        } else {
+          // outlier detection will be a no-op
+          outlier_detection_config["interval"] =
+              Duration::Infinity().ToJsonString();
+        }
+        outlier_detection_config["childPolicy"] = Json::Array{Json::Object{
+            {"xds_cluster_impl_experimental",
+             std::move(xds_cluster_impl_config)},
+        }};
+        locality_picking_policy = Json::Array{Json::Object{
+            {"outlier_detection_experimental",
+             std::move(outlier_detection_config)},
+        }};
+      } else {
+        locality_picking_policy = Json::Array{Json::Object{
+            {"xds_cluster_impl_experimental",
+             std::move(xds_cluster_impl_config)},
+        }};
+      }
       // Add priority entry, with the appropriate child name.
       std::string child_name = discovery_entry.GetChildPolicyName(priority);
       priority_priorities.emplace_back(child_name);
@@ -889,7 +933,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
   grpc_error_handle error = GRPC_ERROR_NONE;
   RefCountedPtr<LoadBalancingPolicy::Config> config =
       LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json, &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     // This should never happen, but if it does, we basically have no
     // way to fix it, so we put the channel in TRANSIENT_FAILURE.
     gpr_log(GPR_ERROR,
@@ -988,7 +1032,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
       const Json& json, grpc_error_handle* error) const override {
-    GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+    GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
     if (json.type() == Json::Type::JSON_NULL) {
       // xds_cluster_resolver was mentioned as a policy in the deprecated
       // loadBalancingPolicy field or in the client API.
@@ -1108,7 +1152,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
         grpc_error_handle parse_error;
         discovery_mechanism->lrs_load_reporting_server.emplace(
             XdsBootstrap::XdsServer::Parse(it->second, &parse_error));
-        if (parse_error != GRPC_ERROR_NONE) {
+        if (!GRPC_ERROR_IS_NONE(parse_error)) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
               absl::StrCat("errors parsing lrs_load_reporting_server")));
           error_list.push_back(parse_error);
@@ -1125,6 +1169,24 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
       } else {
         discovery_mechanism->max_concurrent_requests =
             gpr_parse_nonnegative_int(it->second.string_value().c_str());
+      }
+    }
+    if (XdsOutlierDetectionEnabled()) {
+      it = json.object_value().find("outlierDetection");
+      if (it != json.object_value().end()) {
+        if (it->second.type() != Json::Type::OBJECT) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:outlierDetection error:type should be object"));
+        } else {
+          // No need to validate the contents of the outlier detection config,
+          // because in this particular case, the JSON is generated by the CDS
+          // policy instead of coming from service config, so it's not actually
+          // any better to catch the problem here than it is to catch it in the
+          // outlier_detection policy itself, so here we just act as a
+          // pass-through.
+          discovery_mechanism->outlier_detection_lb_config =
+              it->second.object_value();
+        }
       }
     }
     // Discovery Mechanism type

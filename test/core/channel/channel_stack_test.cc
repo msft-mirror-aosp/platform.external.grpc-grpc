@@ -20,6 +20,7 @@
 
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -85,6 +86,7 @@ static void test_create_channel_stack(void) {
       call_destroy_func,
       sizeof(int),
       channel_init_func,
+      grpc_channel_stack_no_post_init,
       channel_destroy_func,
       grpc_channel_next_get_info,
       "some_test_filter"};
@@ -132,7 +134,7 @@ static void test_create_channel_stack(void) {
   };
   grpc_error_handle error =
       grpc_call_stack_init(channel_stack, 1, free_call, call_stack, &args);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(call_stack->count == 1);
   call_elem = grpc_call_stack_element(call_stack, 0);
   GPR_ASSERT(call_elem->filter == channel_elem->filter);
@@ -151,7 +153,7 @@ static void test_create_channel_stack(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   test_create_channel_stack();
   grpc_shutdown();

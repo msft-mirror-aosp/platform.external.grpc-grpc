@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
@@ -311,7 +312,7 @@ int main(int argc, char** argv) {
                                                     GRPC_SLICE_SPLIT_IDENTITY,
                                                     GRPC_SLICE_SPLIT_ONE_BYTE};
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   for (i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {

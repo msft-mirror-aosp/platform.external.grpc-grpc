@@ -208,11 +208,11 @@ static void test_claims_success(void) {
   grpc_jwt_claims* claims;
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(claims_without_time_constraint, &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
             grpc_error_std_string(error).c_str());
   }
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(json.type() == Json::Type::OBJECT);
   grpc_core::ExecCtx exec_ctx;
   claims = grpc_jwt_claims_from_json(json);
@@ -231,11 +231,11 @@ static void test_expired_claims_failure(void) {
   grpc_jwt_claims* claims;
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(expired_claims, &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
             grpc_error_std_string(error).c_str());
   }
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(json.type() == Json::Type::OBJECT);
   gpr_timespec exp_iat = {100, 0, GPR_CLOCK_REALTIME};
   gpr_timespec exp_exp = {120, 0, GPR_CLOCK_REALTIME};
@@ -260,11 +260,11 @@ static void test_expired_claims_failure(void) {
 static void test_invalid_claims_failure(void) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(invalid_claims, &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
             grpc_error_std_string(error).c_str());
   }
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(json.type() == Json::Type::OBJECT);
   grpc_core::ExecCtx exec_ctx;
   GPR_ASSERT(grpc_jwt_claims_from_json(json) == nullptr);
@@ -274,11 +274,11 @@ static void test_bad_audience_claims_failure(void) {
   grpc_jwt_claims* claims;
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(claims_without_time_constraint, &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
             grpc_error_std_string(error).c_str());
   }
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(json.type() == Json::Type::OBJECT);
   grpc_core::ExecCtx exec_ctx;
   claims = grpc_jwt_claims_from_json(json);
@@ -292,11 +292,11 @@ static void test_bad_subject_claims_failure(void) {
   grpc_jwt_claims* claims;
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(claims_with_bad_subject, &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
             grpc_error_std_string(error).c_str());
   }
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(json.type() == Json::Type::OBJECT);
   grpc_core::ExecCtx exec_ctx;
   claims = grpc_jwt_claims_from_json(json);
@@ -348,6 +348,15 @@ static int httpcli_post_should_not_be_called(
   return 1;
 }
 
+static int httpcli_put_should_not_be_called(
+    const grpc_http_request* /*request*/, const char* /*host*/,
+    const char* /*path*/, const char* /*body_bytes*/, size_t /*body_size*/,
+    grpc_core::Timestamp /*deadline*/, grpc_closure* /*on_done*/,
+    grpc_http_response* /*response*/) {
+  GPR_ASSERT("HTTP PUT should not be called" == nullptr);
+  return 1;
+}
+
 static int httpcli_get_google_keys_for_email(
     const grpc_http_request* /*request*/, const char* host, const char* path,
     grpc_core::Timestamp /*deadline*/, grpc_closure* on_done,
@@ -381,7 +390,8 @@ static void test_jwt_verifier_google_email_issuer_success(void) {
   gpr_free(key_str);
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
   grpc_core::HttpRequest::SetOverride(httpcli_get_google_keys_for_email,
-                                      httpcli_post_should_not_be_called);
+                                      httpcli_post_should_not_be_called,
+                                      httpcli_put_should_not_be_called);
   jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
                                  nullptr);
   grpc_auth_json_key_destruct(&key);
@@ -392,7 +402,7 @@ static void test_jwt_verifier_google_email_issuer_success(void) {
   grpc_jwt_verifier_destroy(verifier);
   grpc_core::ExecCtx::Get()->Flush();
   gpr_free(jwt);
-  grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
+  grpc_core::HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
 static int httpcli_get_custom_keys_for_email(
@@ -415,7 +425,8 @@ static void test_jwt_verifier_custom_email_issuer_success(void) {
   gpr_free(key_str);
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
   grpc_core::HttpRequest::SetOverride(httpcli_get_custom_keys_for_email,
-                                      httpcli_post_should_not_be_called);
+                                      httpcli_post_should_not_be_called,
+                                      httpcli_put_should_not_be_called);
   jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
                                  nullptr);
   grpc_auth_json_key_destruct(&key);
@@ -426,7 +437,7 @@ static void test_jwt_verifier_custom_email_issuer_success(void) {
   grpc_jwt_verifier_destroy(verifier);
   grpc_core::ExecCtx::Get()->Flush();
   gpr_free(jwt);
-  grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
+  grpc_core::HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
 static int httpcli_get_jwk_set(const grpc_http_request* /*request*/,
@@ -450,7 +461,8 @@ static int httpcli_get_openid_config(const grpc_http_request* /*request*/,
   GPR_ASSERT(strcmp(host, "accounts.google.com") == 0);
   GPR_ASSERT(strcmp(path, GRPC_OPENID_CONFIG_URL_SUFFIX) == 0);
   grpc_core::HttpRequest::SetOverride(httpcli_get_jwk_set,
-                                      httpcli_post_should_not_be_called);
+                                      httpcli_post_should_not_be_called,
+                                      httpcli_put_should_not_be_called);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
@@ -464,7 +476,8 @@ static void test_jwt_verifier_url_issuer_success(void) {
   gpr_free(key_str);
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
   grpc_core::HttpRequest::SetOverride(httpcli_get_openid_config,
-                                      httpcli_post_should_not_be_called);
+                                      httpcli_post_should_not_be_called,
+                                      httpcli_put_should_not_be_called);
   jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
                                  nullptr);
   grpc_auth_json_key_destruct(&key);
@@ -475,7 +488,7 @@ static void test_jwt_verifier_url_issuer_success(void) {
   grpc_jwt_verifier_destroy(verifier);
   grpc_core::ExecCtx::Get()->Flush();
   gpr_free(jwt);
-  grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
+  grpc_core::HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
 static void on_verification_key_retrieval_error(void* user_data,
@@ -505,7 +518,8 @@ static void test_jwt_verifier_url_issuer_bad_config(void) {
   gpr_free(key_str);
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
   grpc_core::HttpRequest::SetOverride(httpcli_get_bad_json,
-                                      httpcli_post_should_not_be_called);
+                                      httpcli_post_should_not_be_called,
+                                      httpcli_put_should_not_be_called);
   jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
                                  nullptr);
   grpc_auth_json_key_destruct(&key);
@@ -516,7 +530,7 @@ static void test_jwt_verifier_url_issuer_bad_config(void) {
   grpc_jwt_verifier_destroy(verifier);
   grpc_core::ExecCtx::Get()->Flush();
   gpr_free(jwt);
-  grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
+  grpc_core::HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
 static void test_jwt_verifier_bad_json_key(void) {
@@ -528,7 +542,8 @@ static void test_jwt_verifier_bad_json_key(void) {
   gpr_free(key_str);
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
   grpc_core::HttpRequest::SetOverride(httpcli_get_bad_json,
-                                      httpcli_post_should_not_be_called);
+                                      httpcli_post_should_not_be_called,
+                                      httpcli_put_should_not_be_called);
   jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
                                  nullptr);
   grpc_auth_json_key_destruct(&key);
@@ -539,7 +554,7 @@ static void test_jwt_verifier_bad_json_key(void) {
   grpc_jwt_verifier_destroy(verifier);
   grpc_core::ExecCtx::Get()->Flush();
   gpr_free(jwt);
-  grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
+  grpc_core::HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
 static void corrupt_jwt_sig(char* jwt) {
@@ -579,7 +594,8 @@ static void test_jwt_verifier_bad_signature(void) {
   gpr_free(key_str);
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
   grpc_core::HttpRequest::SetOverride(httpcli_get_openid_config,
-                                      httpcli_post_should_not_be_called);
+                                      httpcli_post_should_not_be_called,
+                                      httpcli_put_should_not_be_called);
   jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
                                  nullptr);
   grpc_auth_json_key_destruct(&key);
@@ -591,7 +607,7 @@ static void test_jwt_verifier_bad_signature(void) {
   gpr_free(jwt);
   grpc_jwt_verifier_destroy(verifier);
   grpc_core::ExecCtx::Get()->Flush();
-  grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
+  grpc_core::HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
 static int httpcli_get_should_not_be_called(
@@ -614,13 +630,14 @@ static void test_jwt_verifier_bad_format(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_jwt_verifier* verifier = grpc_jwt_verifier_create(nullptr, 0);
   grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                      httpcli_post_should_not_be_called);
+                                      httpcli_post_should_not_be_called,
+                                      httpcli_put_should_not_be_called);
   grpc_jwt_verifier_verify(verifier, nullptr, "bad jwt", expected_audience,
                            on_verification_bad_format,
                            const_cast<char*>(expected_user_data));
   grpc_jwt_verifier_destroy(verifier);
   grpc_core::ExecCtx::Get()->Flush();
-  grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
+  grpc_core::HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
 /* find verification key: bad jks, cannot find key in jks */
@@ -628,7 +645,7 @@ static void test_jwt_verifier_bad_format(void) {
 /* bad key */
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   test_jwt_issuer_email_domain();
   test_claims_success();

@@ -66,7 +66,6 @@ GRPC_COMMON_SRCS = [
     "src/core/ext/filters/client_channel/health/health_check_client.cc",
     "src/core/ext/filters/client_channel/http_proxy.cc",
     "src/core/ext/filters/client_channel/lb_policy/address_filtering.cc",
-    "src/core/ext/filters/client_channel/lb_policy.cc",
     "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc",
     "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc",
     "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc",
@@ -77,7 +76,6 @@ GRPC_COMMON_SRCS = [
     "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc",
     "src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc",
     "src/core/ext/filters/client_channel/lb_policy/priority/priority.cc",
-    "src/core/ext/filters/client_channel/lb_policy_registry.cc",
     "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc",
     "src/core/ext/filters/client_channel/lb_policy/rls/rls.cc",
     "src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc",
@@ -114,7 +112,6 @@ GRPC_COMMON_SRCS = [
     "src/core/ext/filters/http/message_compress/message_decompress_filter.cc",
     "src/core/ext/filters/http/server/http_server_filter.cc",
     "src/core/ext/filters/message_size/message_size_filter.cc",
-    "src/core/ext/transport/chttp2/alpn/alpn.cc",
     "src/core/ext/transport/chttp2/client/chttp2_connector.cc",
     "src/core/ext/transport/chttp2/server/chttp2_server.cc",
     "src/core/ext/transport/chttp2/transport/bin_decoder.cc",
@@ -163,20 +160,21 @@ GRPC_COMMON_SRCS = [
     "src/core/lib/debug/stats_data.cc",
     "src/core/lib/debug/trace.cc",
     "src/core/lib/event_engine/channel_args_endpoint_config.cc",
+    "src/core/lib/event_engine/default_event_engine.cc",
     "src/core/lib/event_engine/default_event_engine_factory.cc",
-    "src/core/lib/event_engine/event_engine.cc",
+    "src/core/lib/event_engine/executor/threaded_executor.cc",
     "src/core/lib/event_engine/forkable.cc",
-    "src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc",
-    "src/core/lib/event_engine/iomgr_engine/thread_pool.cc",
-    "src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc",
-    "src/core/lib/event_engine/iomgr_engine/timer.cc",
-    "src/core/lib/event_engine/iomgr_engine/timer_heap.cc",
-    "src/core/lib/event_engine/iomgr_engine/timer_manager.cc",
     "src/core/lib/event_engine/memory_allocator.cc",
+    "src/core/lib/event_engine/posix_engine/posix_engine.cc",
+    "src/core/lib/event_engine/posix_engine/timer.cc",
+    "src/core/lib/event_engine/posix_engine/timer_heap.cc",
+    "src/core/lib/event_engine/posix_engine/timer_manager.cc",
     "src/core/lib/event_engine/resolved_address.cc",
     "src/core/lib/event_engine/slice_buffer.cc",
     "src/core/lib/event_engine/slice.cc",
+    "src/core/lib/event_engine/thread_pool.cc",
     "src/core/lib/event_engine/trace.cc",
+    "src/core/lib/event_engine/utils.cc",
     "src/core/lib/gpr/alloc.cc",
     "src/core/lib/gpr/atm.cc",
     "src/core/lib/gpr/cpu_iphone.cc",
@@ -202,8 +200,10 @@ GRPC_COMMON_SRCS = [
     "src/core/lib/gprpp/stat_windows.cc",
     "src/core/lib/gprpp/thd_posix.cc",
     "src/core/lib/gprpp/thd_windows.cc",
+    "src/core/lib/gprpp/time_averaged_stats.cc",
     "src/core/lib/gprpp/time.cc",
     "src/core/lib/gprpp/time_util.cc",
+    "src/core/lib/gprpp/work_serializer.cc",
     "src/core/lib/gpr/string.cc",
     "src/core/lib/gpr/string_posix.cc",
     "src/core/lib/gpr/string_util_windows.cc",
@@ -240,8 +240,6 @@ GRPC_COMMON_SRCS = [
     "src/core/lib/iomgr/ev_windows.cc",
     "src/core/lib/iomgr/exec_ctx.cc",
     "src/core/lib/iomgr/executor.cc",
-    "src/core/lib/iomgr/executor/mpmcqueue.cc",
-    "src/core/lib/iomgr/executor/threadpool.cc",
     "src/core/lib/iomgr/fork_posix.cc",
     "src/core/lib/iomgr/fork_windows.cc",
     "src/core/lib/iomgr/gethostname_fallback.cc",
@@ -286,7 +284,6 @@ GRPC_COMMON_SRCS = [
     "src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc",
     "src/core/lib/iomgr/tcp_server_windows.cc",
     "src/core/lib/iomgr/tcp_windows.cc",
-    "src/core/lib/iomgr/time_averaged_stats.cc",
     "src/core/lib/iomgr/timer.cc",
     "src/core/lib/iomgr/timer_generic.cc",
     "src/core/lib/iomgr/timer_heap.cc",
@@ -297,10 +294,12 @@ GRPC_COMMON_SRCS = [
     "src/core/lib/iomgr/wakeup_fd_nospecial.cc",
     "src/core/lib/iomgr/wakeup_fd_pipe.cc",
     "src/core/lib/iomgr/wakeup_fd_posix.cc",
-    "src/core/lib/iomgr/work_serializer.cc",
+    "src/core/lib/json/json_object_loader.cc",
     "src/core/lib/json/json_reader.cc",
     "src/core/lib/json/json_util.cc",
     "src/core/lib/json/json_writer.cc",
+    "src/core/lib/load_balancing/lb_policy.cc",
+    "src/core/lib/load_balancing/lb_policy_registry.cc",
     "src/core/lib/profiling/basic_timers.cc",
     "src/core/lib/profiling/stap_timers.cc",
     "src/core/lib/promise/activity.cc",
@@ -311,6 +310,7 @@ GRPC_COMMON_SRCS = [
     "src/core/lib/resource_quota/api.cc",
     "src/core/lib/resource_quota/arena.cc",
     "src/core/lib/resource_quota/memory_quota.cc",
+    "src/core/lib/resource_quota/periodic_update.cc",
     "src/core/lib/resource_quota/resource_quota.cc",
     "src/core/lib/resource_quota/thread_quota.cc",
     "src/core/lib/resource_quota/trace.cc",
@@ -457,6 +457,7 @@ GRPC_SECURE_SRCS = [
     "src/core/ext/transport/binder/wire_format/transaction.cc",
     "src/core/ext/transport/binder/wire_format/wire_reader_impl.cc",
     "src/core/ext/transport/binder/wire_format/wire_writer.cc",
+    "src/core/ext/transport/chttp2/alpn/alpn.cc",
     "src/core/ext/xds/certificate_provider_registry.cc",
     "src/core/ext/xds/certificate_provider_store.cc",
     "src/core/ext/xds/file_watcher_certificate_provider_factory.cc",
@@ -465,6 +466,7 @@ GRPC_SECURE_SRCS = [
     "src/core/ext/xds/xds_certificate_provider.cc",
     "src/core/ext/xds/xds_channel_stack_modifier.cc",
     "src/core/ext/xds/xds_client.cc",
+    "src/core/ext/xds/xds_client_grpc.cc",
     "src/core/ext/xds/xds_client_stats.cc",
     "src/core/ext/xds/xds_cluster.cc",
     "src/core/ext/xds/xds_cluster_specifier_plugin.cc",
@@ -479,6 +481,7 @@ GRPC_SECURE_SRCS = [
     "src/core/ext/xds/xds_route_config.cc",
     "src/core/ext/xds/xds_routing.cc",
     "src/core/ext/xds/xds_server_config_fetcher.cc",
+    "src/core/ext/xds/xds_transport_grpc.cc",
     "src/core/lib/http/httpcli_security_connector.cc",
     "src/core/lib/matchers/matchers.cc",
     "src/core/lib/security/authorization/grpc_authorization_engine.cc",
@@ -610,7 +613,7 @@ cc_defaults {
     target: {
         vendor: {
             // Needs to be updated when a new version is imported.
-            suffix: "-1.48.4",
+            suffix: "-1.49.3",
         },
     },
 }
@@ -858,61 +861,29 @@ cc_library_static {
     ],
 }
 
-cc_test {
-    name: "grpc_alarm_test",
+cc_defaults {
+    name: "grpc_test_defaults",
     defaults: ["grpc_defaults"],
     test_suites: ["general-tests"],
-    srcs: [
-        "test/cpp/common/alarm_test.cc",
-    ],
-    header_libs: [
-        "libgrpc++_internal_headers",
-    ],
-    static_libs: [
-        "libgpr_test_util",
-    ],
-    shared_libs: [
-        "libgrpc++_unsecure",
-    ],
+    header_libs: ["libgrpc++_internal_headers"],
+    static_libs: ["libgpr_test_util"],
+    shared_libs: ["libgrpc++_unsecure"],
+}
+
+cc_test {
+    name: "grpc_alarm_test",
+    defaults: ["grpc_test_defaults"],
+    srcs: ["test/cpp/common/alarm_test.cc"],
 }
 
 cc_test {
     name: "grpc_sockaddr_utils_test",
-    defaults: ["grpc_defaults"],
-    test_suites: ["general-tests"],
-    srcs: [
-        "test/core/address_utils/sockaddr_utils_test.cc",
-    ],
-    header_libs: [
-        "libgrpc++_internal_headers",
-    ],
-    static_libs: [
-        "libgpr_test_util",
-    ],
-    shared_libs: [
-        "libgrpc++_unsecure",
-    ],
+    defaults: ["grpc_test_defaults"],
+    srcs: ["test/core/address_utils/sockaddr_utils_test.cc"],
 }
 
-// This test does not use GTest and needs to be run manually.
-// It succeeds if the exit status is 0.
 cc_test {
     name: "grpc_parse_address_test",
-    defaults: ["grpc_defaults"],
-    gtest: false,
-    srcs: [
-        "test/core/address_utils/parse_address_test.cc",
-    ],
-    header_libs: [
-        "libgrpc++_internal_headers",
-    ],
-    static_libs: [
-        "libgpr_test_util",
-    ],
-    shared_libs: [
-        "libgrpc++_unsecure",
-    ],
-    test_options: {
-        unit_test: false,
-    },
+    defaults: ["grpc_test_defaults"],
+    srcs: ["test/core/address_utils/parse_address_test.cc"],
 }

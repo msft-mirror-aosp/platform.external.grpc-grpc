@@ -38,10 +38,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -330,7 +330,7 @@ TlsChannelSecurityConnector::~TlsChannelSecurityConnector() {
 }
 
 void TlsChannelSecurityConnector::add_handshakers(
-    const grpc_channel_args* args, grpc_pollset_set* /*interested_parties*/,
+    const ChannelArgs& args, grpc_pollset_set* /*interested_parties*/,
     HandshakeManager* handshake_mgr) {
   MutexLock lock(&mu_);
   tsi_handshaker* tsi_hs = nullptr;
@@ -352,7 +352,7 @@ void TlsChannelSecurityConnector::add_handshakers(
 }
 
 void TlsChannelSecurityConnector::check_peer(
-    tsi_peer peer, grpc_endpoint* /*ep*/,
+    tsi_peer peer, grpc_endpoint* /*ep*/, const ChannelArgs& /*args*/,
     RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   const char* target_name = overridden_target_name_.empty()
@@ -620,7 +620,7 @@ TlsServerSecurityConnector::~TlsServerSecurityConnector() {
 }
 
 void TlsServerSecurityConnector::add_handshakers(
-    const grpc_channel_args* args, grpc_pollset_set* /*interested_parties*/,
+    const ChannelArgs& args, grpc_pollset_set* /*interested_parties*/,
     HandshakeManager* handshake_mgr) {
   MutexLock lock(&mu_);
   tsi_handshaker* tsi_hs = nullptr;
@@ -639,7 +639,7 @@ void TlsServerSecurityConnector::add_handshakers(
 }
 
 void TlsServerSecurityConnector::check_peer(
-    tsi_peer peer, grpc_endpoint* /*ep*/,
+    tsi_peer peer, grpc_endpoint* /*ep*/, const ChannelArgs& /*args*/,
     RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   grpc_error_handle error = grpc_ssl_check_alpn(&peer);

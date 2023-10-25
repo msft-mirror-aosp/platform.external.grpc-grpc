@@ -25,7 +25,6 @@
 #include <atomic>
 #include <functional>
 #include <string>
-#include <type_traits>
 #include <utility>
 
 #include "absl/status/status.h"
@@ -47,7 +46,6 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
@@ -132,7 +130,7 @@ class FaultInjectionFilter::InjectionDecision {
 };
 
 absl::StatusOr<FaultInjectionFilter> FaultInjectionFilter::Create(
-    ChannelArgs, ChannelFilter::Args filter_args) {
+    const ChannelArgs&, ChannelFilter::Args filter_args) {
   return FaultInjectionFilter(filter_args);
 }
 

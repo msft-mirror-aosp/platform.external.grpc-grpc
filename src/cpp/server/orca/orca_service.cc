@@ -43,7 +43,7 @@
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
 
-#include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -123,8 +123,6 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
   }
 
   bool MaybeScheduleTimer() {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-    grpc_core::ExecCtx exec_ctx;
     grpc::internal::MutexLock lock(&timer_mu_);
     if (cancelled_) return false;
     timer_handle_ = GetDefaultEventEngine()->RunAfter(

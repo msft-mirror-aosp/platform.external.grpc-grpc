@@ -244,8 +244,7 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
   // Create second channel and tell it to connect to kNewServerName.
   auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
   channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  ASSERT_TRUE(channel2->WaitForConnected(grpc_timeout_seconds_to_deadline(1)));
   // Make sure there's only one client connected.
   EXPECT_EQ(1UL, balancer_->ads_service()->clients().size());
 }
@@ -269,8 +268,7 @@ TEST_P(
   // Create second channel and tell it to connect to kNewServerName.
   auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
   channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  ASSERT_TRUE(channel2->WaitForConnected(grpc_timeout_seconds_to_deadline(1)));
   // Now, destroy the new channel, send an EDS update to use a different backend
   // and test that the channel switches to that backend.
   channel2.reset();
@@ -541,21 +539,21 @@ TEST_P(TimeoutTest, CdsSecondResourceNotPresentInRequest) {
 
 TEST_P(TimeoutTest, EdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kEdsTypeUrl);
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      // TODO(roth): Improve this error message as part of
-                      // https://github.com/grpc/grpc/issues/22883.
-                      "no children in weighted_target policy: ",
-                      RpcOptions().set_timeout_ms(4000));
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      "no children in weighted_target policy: EDS resource eds_service_name "
+      "does not exist",
+      RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, EdsResourceNotPresentInRequest) {
   // No need to remove EDS resource, since the test suite does not add it
   // by default.
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      // TODO(roth): Improve this error message as part of
-                      // https://github.com/grpc/grpc/issues/22883.
-                      "no children in weighted_target policy: ",
-                      RpcOptions().set_timeout_ms(4000));
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      "no children in weighted_target policy: EDS resource eds_service_name "
+      "does not exist",
+      RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
@@ -585,9 +583,8 @@ TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
         if (result.status.ok()) return true;  // Keep going.
         EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
         EXPECT_EQ(result.status.error_message(),
-                  // TODO(roth): Improve this error message as part of
-                  // https://github.com/grpc/grpc/issues/22883.
-                  "no children in weighted_target policy: ");
+                  "no children in weighted_target policy: EDS resource "
+                  "eds_service_name_does_not_exist does not exist");
         return false;
       },
       /*timeout_ms=*/30000,
@@ -1048,10 +1045,12 @@ TEST_P(XdsFederationTest, EdsResourceNameAuthorityUnknown) {
   EchoResponse response;
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
-  EXPECT_EQ(status.error_message(),
-            // TODO(roth): Improve this error message as part of
-            // https://github.com/grpc/grpc/issues/22883.
-            "no children in weighted_target policy: ");
+  EXPECT_EQ(
+      status.error_message(),
+      "no children in weighted_target policy: EDS watcher error for resource "
+      "xdstp://xds.unknown.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
+      "edsservice_name (UNAVAILABLE: authority \"xds.unknown.com\" not "
+      "present in bootstrap config)");
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
 }
 

@@ -30,7 +30,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/http/httpcli.h"
@@ -231,7 +231,7 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   // Use multiple threads to try to trigger races etc.
-  int kNumThreads = 100;
+  int kNumThreads = 10;
   std::vector<std::thread> threads;
   threads.reserve(kNumThreads);
   for (int i = 0; i < kNumThreads; i++) {

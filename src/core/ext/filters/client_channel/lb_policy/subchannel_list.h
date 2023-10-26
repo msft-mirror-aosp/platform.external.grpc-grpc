@@ -31,16 +31,16 @@
 #include "absl/types/optional.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
+#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -209,7 +209,7 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
   SubchannelList(LoadBalancingPolicy* policy, const char* tracer,
                  ServerAddressList addresses,
                  LoadBalancingPolicy::ChannelControlHelper* helper,
-                 const grpc_channel_args& args);
+                 const ChannelArgs& args);
 
   virtual ~SubchannelList();
 
@@ -364,8 +364,7 @@ template <typename SubchannelListType, typename SubchannelDataType>
 SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     LoadBalancingPolicy* policy, const char* tracer,
     ServerAddressList addresses,
-    LoadBalancingPolicy::ChannelControlHelper* helper,
-    const grpc_channel_args& args)
+    LoadBalancingPolicy::ChannelControlHelper* helper, const ChannelArgs& args)
     : InternallyRefCounted<SubchannelListType>(tracer),
       policy_(policy),
       tracer_(tracer) {

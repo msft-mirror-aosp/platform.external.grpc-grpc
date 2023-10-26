@@ -43,6 +43,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "fork_test",
     srcs = ["fork_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
     uses_event_engine = True,  # engines should behave appropriately on Fork
@@ -93,7 +94,18 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:bitset",
-        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "no_destruct_test",
+    srcs = ["no_destruct_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:no_destruct",
     ],
 )
 
@@ -119,7 +131,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:match",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -132,7 +143,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:overload",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -148,13 +158,13 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:table",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
 grpc_cc_test(
     name = "host_port_test",
     srcs = ["host_port_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -168,6 +178,7 @@ grpc_cc_test(
     name = "mpscq_test",
     srcs = ["mpscq_test.cc"],
     exec_properties = LARGE_MACHINE,
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
     uses_event_engine = False,
@@ -235,6 +246,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "thd_test",
     srcs = ["thd_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -299,7 +311,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:cpp_impl_of",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -312,9 +323,8 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:chunked_vector",
-        "//:gpr_base",
+        "//:gpr",
         "//:resource_quota",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -343,7 +353,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:time",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -356,7 +365,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:single_set_ptr",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -372,6 +380,23 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:unique_type_name",
-        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "work_serializer_test",
+    srcs = ["work_serializer_test.cc"],
+    exec_properties = LARGE_MACHINE,
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    tags = [
+        "no_windows",  # LARGE_MACHINE is not configured for windows RBE
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
     ],
 )

@@ -119,6 +119,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.43.0', ReleaseInfo()),
             ('v1.44.0', ReleaseInfo()),
             ('v1.46.2', ReleaseInfo()),
+            ('v1.48.0', ReleaseInfo()),
         ]),
     'go':
         OrderedDict([
@@ -203,6 +204,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.45.0', ReleaseInfo(runtimes=['go1.16'])),
             ('v1.46.0', ReleaseInfo(runtimes=['go1.16'])),
             ('v1.47.0', ReleaseInfo(runtimes=['go1.16'])),
+            ('v1.48.0', ReleaseInfo(runtimes=['go1.16'])),
         ]),
     'java':
         OrderedDict([
@@ -284,6 +286,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.45.1', ReleaseInfo()),
             ('v1.46.0', ReleaseInfo()),
             ('v1.47.0', ReleaseInfo()),
+            ('v1.48.1', ReleaseInfo()),
         ]),
     'python':
         OrderedDict(
@@ -417,6 +420,9 @@ LANG_RELEASE_MATRIX = {
                 ('v1.46.2',
                  ReleaseInfo(runtimes=['python'],
                              testcases_file='python__master')),
+                ('v1.48.0',
+                 ReleaseInfo(runtimes=['python'],
+                             testcases_file='python__master')),
             ]),
     'node':
         OrderedDict([
@@ -490,6 +496,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.43.0', ReleaseInfo()),
             ('v1.44.0', ReleaseInfo()),
             ('v1.46.2', ReleaseInfo()),
+            ('v1.48.0', ReleaseInfo()),
         ]),
     'php':
         OrderedDict([
@@ -536,6 +543,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.43.0', ReleaseInfo()),
             ('v1.44.0', ReleaseInfo()),
             ('v1.46.2', ReleaseInfo()),
+            ('v1.48.0', ReleaseInfo()),
         ]),
     'csharp':
         OrderedDict([

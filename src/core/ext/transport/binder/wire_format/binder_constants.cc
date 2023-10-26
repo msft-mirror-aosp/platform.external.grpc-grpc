@@ -20,7 +20,7 @@
 
 namespace grpc_binder {
 
-const int kFirstCallId = FIRST_CALL_TRANSACTION + 1000;
+ABSL_CONST_INIT const int kFirstCallId = FIRST_CALL_TRANSACTION + 1000;
 
 }  // namespace grpc_binder
 #endif

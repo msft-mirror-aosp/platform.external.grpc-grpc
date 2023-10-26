@@ -27,12 +27,12 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -56,7 +56,8 @@ SubchannelStreamClient::SubchannelStreamClient(
       interested_parties_(interested_parties),
       tracer_(tracer),
       call_allocator_(
-          ResourceQuotaFromChannelArgs(connected_subchannel_->args())
+          connected_subchannel_->args()
+              .GetObject<ResourceQuota>()
               ->memory_quota()
               ->CreateMemoryAllocator(
                   (tracer != nullptr) ? tracer : "SubchannelStreamClient")),
@@ -243,7 +244,6 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   payload_.send_initial_metadata.send_initial_metadata =
       &send_initial_metadata_;
-  payload_.send_initial_metadata.send_initial_metadata_flags = 0;
   payload_.send_initial_metadata.peer_string = nullptr;
   batch_.send_initial_metadata = true;
   // Add send_message op.
@@ -258,7 +258,6 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   // Add recv_initial_metadata op.
   payload_.recv_initial_metadata.recv_initial_metadata =
       &recv_initial_metadata_;
-  payload_.recv_initial_metadata.recv_flags = nullptr;
   payload_.recv_initial_metadata.trailing_metadata_available = nullptr;
   payload_.recv_initial_metadata.peer_string = nullptr;
   // recv_initial_metadata_ready callback takes ref, handled manually.

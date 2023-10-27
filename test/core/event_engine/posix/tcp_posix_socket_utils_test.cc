@@ -12,11 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stdint.h>
 #include <sys/socket.h>
+#include <unistd.h>
+
+#include <string>
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/iomgr/port.h"
+
+// IWYU pragma: no_include <arpa/inet.h>
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
@@ -29,12 +42,10 @@
 #include <sys/un.h>
 #endif
 
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/sync.h>
 
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/gpr/useful.h"
@@ -199,6 +210,25 @@ absl::StatusOr<EventEngine::ResolvedAddress> UnixAbstractSockaddrPopulate(
 #endif
 }
 #endif
+
+#ifdef GRPC_HAVE_VSOCK
+absl::StatusOr<EventEngine::ResolvedAddress> VSockaddrPopulate(
+    absl::string_view path) {
+  EventEngine::ResolvedAddress resolved_addr;
+  memset(const_cast<sockaddr*>(resolved_addr.address()), 0,
+         resolved_addr.size());
+  struct sockaddr_vm* vm = reinterpret_cast<struct sockaddr_vm*>(
+      const_cast<sockaddr*>(resolved_addr.address()));
+  vm->svm_family = AF_VSOCK;
+  std::string s = std::string(path);
+  if (sscanf(s.c_str(), "%u:%u", &vm->svm_cid, &vm->svm_port) != 2) {
+    return absl::InternalError(
+        absl::StrCat("Failed to parse vsock cid/port: ", s));
+  }
+  return EventEngine::ResolvedAddress(reinterpret_cast<sockaddr*>(vm),
+                                      static_cast<socklen_t>(sizeof(*vm)));
+}
+#endif  //  GRPC_HAVE_VSOCK
 
 }  // namespace
 
@@ -373,6 +403,30 @@ TEST(TcpPosixSocketUtilsTest, SockAddrToStringTest) {
   EXPECT_EQ(SockaddrToString(&inputun3, true).value(),
             absl::StrCat(std::string(1, '\0'), max_abspath));
 #endif
+
+#ifdef GRPC_HAVE_VSOCK
+  EventEngine::ResolvedAddress inputvm = *VSockaddrPopulate("-1:12345");
+  EXPECT_EQ(ResolvedAddressToNormalizedString(inputvm).value(),
+            absl::StrCat((uint32_t)-1, ":12345"));
+#endif
+}
+
+TEST(TcpPosixSocketUtilsTest, SockAddrPortTest) {
+  EventEngine::ResolvedAddress wild6 = SockaddrMakeWild6(20);
+  EventEngine::ResolvedAddress wild4 = SockaddrMakeWild4(20);
+  // Verify the string description matches the expected wildcard address with
+  // correct port number.
+  EXPECT_EQ(SockaddrToString(&wild6, true).value(), "[::]:20");
+  EXPECT_EQ(SockaddrToString(&wild4, true).value(), "0.0.0.0:20");
+  // Update the port values.
+  SockaddrSetPort(wild4, 21);
+  SockaddrSetPort(wild6, 22);
+  // Read back the port values.
+  EXPECT_EQ(SockaddrGetPort(wild4), 21);
+  EXPECT_EQ(SockaddrGetPort(wild6), 22);
+  // Ensure the string description reflects the updated port values.
+  EXPECT_EQ(SockaddrToString(&wild4, true).value(), "0.0.0.0:21");
+  EXPECT_EQ(SockaddrToString(&wild6, true).value(), "[::]:22");
 }
 
 }  // namespace posix_engine
@@ -385,6 +439,6 @@ int main(int argc, char** argv) {
 
 #else /* GRPC_POSIX_SOCKET_UTILS_COMMON */
 
-int main(int argc, char** argv) { return 1; }
+int main(int argc, char** argv) { return 0; }
 
 #endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */

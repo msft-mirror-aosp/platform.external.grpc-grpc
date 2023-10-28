@@ -17,7 +17,6 @@
 #include <stdlib.h>
 
 #include <algorithm>
-#include <cstdint>
 #include <deque>
 #include <functional>
 #include <limits>
@@ -29,7 +28,6 @@
 #include <vector>
 
 #include "absl/base/attributes.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
@@ -77,8 +75,8 @@ class FlowControlFuzzer {
  public:
   explicit FlowControlFuzzer(bool enable_bdp) {
     ExecCtx exec_ctx;
-    tfc_ = absl::make_unique<TransportFlowControl>("fuzzer", enable_bdp,
-                                                   &memory_owner_);
+    tfc_ = std::make_unique<TransportFlowControl>("fuzzer", enable_bdp,
+                                                  &memory_owner_);
   }
 
   ~FlowControlFuzzer() {

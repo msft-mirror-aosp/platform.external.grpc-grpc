@@ -80,7 +80,7 @@ static void test_grpc_parse_unix_abstract(const char* uri_text,
 
 #endif /* GRPC_HAVE_UNIX_SOCKET */
 
-#ifdef GRPC_HAVE_LINUX_VSOCK
+#ifdef GRPC_HAVE_VSOCK
 
 static void test_grpc_parse_vsock(const char* uri_text, uint32_t cid,
                                   uint32_t port) {
@@ -100,11 +100,11 @@ static void test_grpc_parse_vsock(const char* uri_text, uint32_t cid,
   ASSERT_EQ(addr_vm->svm_port, port);
 }
 
-#else  // GRPC_HAVE_LINUX_VSOCK
+#else  // GRPC_HAVE_VSOCK
 
 static void test_grpc_parse_vsock(const char* /* uri_text */, ...) {}
 
-#endif  // GRPC_HAVE_LINUX_VSOCK
+#endif  // GRPC_HAVE_VSOCK
 
 static void test_grpc_parse_ipv4(const char* uri_text, const char* host,
                                  unsigned short port) {

@@ -144,7 +144,7 @@ grpc_error_handle UnixAbstractSockaddrPopulate(
 }  // namespace grpc_core
 #endif /* GRPC_HAVE_UNIX_SOCKET */
 
-#ifdef GRPC_HAVE_LINUX_VSOCK
+#ifdef GRPC_HAVE_VSOCK
 
 bool grpc_parse_vsock(const grpc_core::URI& uri,
                       grpc_resolved_address* resolved_addr) {
@@ -181,7 +181,7 @@ grpc_error_handle VSockaddrPopulate(absl::string_view path,
 
 }  // namespace grpc_core
 
-#else /* GRPC_HAVE_LINUX_VSOCK */
+#else /* GRPC_HAVE_VSOCK */
 
 bool grpc_parse_vsock(const grpc_core::URI& /* uri */,
                       grpc_resolved_address* /* resolved_addr */) {
@@ -195,7 +195,7 @@ grpc_error_handle VSockaddrPopulate(
   abort();
 }
 
-#endif /* GRPC_HAVE_LINUX_VSOCK */
+#endif /* GRPC_HAVE_VSOCK */
 
 bool grpc_parse_ipv4_hostport(absl::string_view hostport,
                               grpc_resolved_address* addr, bool log_errors) {

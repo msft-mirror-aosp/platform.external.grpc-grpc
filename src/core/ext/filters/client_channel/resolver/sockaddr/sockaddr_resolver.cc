@@ -172,7 +172,7 @@ class UnixAbstractResolverFactory : public ResolverFactory {
 };
 #endif  // GRPC_HAVE_UNIX_SOCKET
 
-#ifdef GRPC_HAVE_LINUX_VSOCK
+#ifdef GRPC_HAVE_VSOCK
 class VSockResolverFactory : public ResolverFactory {
  public:
   absl::string_view scheme() const override { return "vsock"; }
@@ -204,7 +204,7 @@ void RegisterSockaddrResolver(CoreConfiguration::Builder* builder) {
   builder->resolver_registry()->RegisterResolverFactory(
       std::make_unique<UnixAbstractResolverFactory>());
 #endif
-#ifdef GRPC_HAVE_LINUX_VSOCK
+#ifdef GRPC_HAVE_VSOCK
   builder->resolver_registry()->RegisterResolverFactory(
       std::make_unique<grpc_core::VSockResolverFactory>());
 #endif

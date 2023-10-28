@@ -324,10 +324,10 @@ absl::StatusOr<std::string> SockaddrToString(
   }
 #endif
 
-#ifdef GRPC_HAVE_LINUX_VSOCK
+#ifdef GRPC_HAVE_VSOCK
   if (addr->sa_family == AF_VSOCK) {
     const sockaddr_vm* addr_vm = reinterpret_cast<const sockaddr_vm*>(addr);
-    return absl::StrCat("vsock:", addr_vm->svm_cid, ":", addr_vm->svm_port);
+    return absl::StrCat(addr_vm->svm_cid, ":", addr_vm->svm_port);
   }
 #endif
 
@@ -403,7 +403,7 @@ int SockaddrGetPort(const EventEngine::ResolvedAddress& resolved_addr) {
     case AF_UNIX:
       return 1;
 #endif
-#ifdef GRPC_HAVE_LINUX_VSOCK
+#ifdef GRPC_HAVE_VSOCK
     case AF_VSOCK:
       return 1;
 #endif

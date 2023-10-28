@@ -42,6 +42,7 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/posix_engine/traced_buffer_list.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
@@ -61,7 +62,7 @@ typedef size_t msg_iovlen_type;
 #endif  //  GRPC_POSIX_SOCKET_TCP
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
@@ -344,7 +345,7 @@ class TcpZerocopySendCtx {
       // state was CHECK and is_in_write is false. This means that after the
       // previous sendmsg returned and set is_in_write to false, it did
       // not update the z-copy change from CHECK to OPEN.
-      GPR_ASSERT(false && "OMem state error!");
+      grpc_core::Crash("OMem state error!");
     }
   }
 
@@ -513,6 +514,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   bool WriteWithTimestamps(struct msghdr* msg, size_t sending_length,
                            ssize_t* sent_length, int* saved_errno,
                            int additional_flags);
+  absl::Status TcpAnnotateError(absl::Status src_error);
 #ifdef GRPC_LINUX_ERRQUEUE
   bool ProcessErrors();
   // Reads a cmsg to process zerocopy control messages.
@@ -640,25 +642,25 @@ class PosixEndpoint
             grpc_event_engine::experimental::SliceBuffer* /*buffer*/,
             const grpc_event_engine::experimental::EventEngine::Endpoint::
                 ReadArgs* /*args*/) override {
-    GPR_ASSERT(false && "PosixEndpoint::Read not supported on this platform");
+    grpc_core::Crash("PosixEndpoint::Read not supported on this platform");
   }
 
   void Write(absl::AnyInvocable<void(absl::Status)> /*on_writable*/,
              grpc_event_engine::experimental::SliceBuffer* /*data*/,
              const grpc_event_engine::experimental::EventEngine::Endpoint::
                  WriteArgs* /*args*/) override {
-    GPR_ASSERT(false && "PosixEndpoint::Write not supported on this platform");
+    grpc_core::Crash("PosixEndpoint::Write not supported on this platform");
   }
 
   const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
   GetPeerAddress() const override {
-    GPR_ASSERT(false &&
-               "PosixEndpoint::GetPeerAddress not supported on this platform");
+    grpc_core::Crash(
+        "PosixEndpoint::GetPeerAddress not supported on this platform");
   }
   const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
   GetLocalAddress() const override {
-    GPR_ASSERT(false &&
-               "PosixEndpoint::GetLocalAddress not supported on this platform");
+    grpc_core::Crash(
+        "PosixEndpoint::GetLocalAddress not supported on this platform");
   }
 
   ~PosixEndpoint() override = default;
@@ -676,7 +678,7 @@ std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     grpc_event_engine::experimental::MemoryAllocator&& allocator,
     const PosixTcpOptions& options);
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H

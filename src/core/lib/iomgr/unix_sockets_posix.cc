@@ -85,13 +85,13 @@ int grpc_is_unix_socket(const grpc_resolved_address* resolved_addr) {
 }
 
 int grpc_is_vsock(const grpc_resolved_address* resolved_addr) {
-#ifdef GRPC_HAVE_LINUX_VSOCK
+#ifdef GRPC_HAVE_VSOCK
   const grpc_sockaddr* addr =
       reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   return addr->sa_family == AF_VSOCK;
-#else  /* GRPC_HAVE_LINUX_VSOCK */
+#else  /* GRPC_HAVE_VSOCK */
   return 0;
-#endif /* GRPC_HAVE_LINUX_VSOCK */
+#endif /* GRPC_HAVE_VSOCK */
 }
 
 void grpc_unlink_if_unix_domain_socket(

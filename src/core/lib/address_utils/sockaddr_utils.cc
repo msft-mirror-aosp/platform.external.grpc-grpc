@@ -75,7 +75,7 @@ static absl::StatusOr<std::string> grpc_sockaddr_to_uri_unix_if_possible(
 }
 #endif
 
-#ifdef GRPC_HAVE_LINUX_VSOCK
+#ifdef GRPC_HAVE_VSOCK
 static absl::StatusOr<std::string> grpc_sockaddr_to_uri_vsock_if_possible(
     const grpc_resolved_address* resolved_addr) {
   const grpc_sockaddr* addr =
@@ -87,12 +87,12 @@ static absl::StatusOr<std::string> grpc_sockaddr_to_uri_vsock_if_possible(
   const auto* vsock_addr = reinterpret_cast<const struct sockaddr_vm*>(addr);
   return absl::StrCat("vsock:", vsock_addr->svm_cid, ":", vsock_addr->svm_port);
 }
-#else  /* GRPC_HAVE_LINUX_VSOCK */
+#else  /* GRPC_HAVE_VSOCK */
 static absl::StatusOr<std::string> grpc_sockaddr_to_uri_vsock_if_possible(
     const grpc_resolved_address* /* addr */) {
   return absl::InvalidArgumentError("VSOCK is not supported.");
 }
-#endif /* GRPC_HAVE_LINUX_VSOCK */
+#endif /* GRPC_HAVE_VSOCK */
 
 static const uint8_t kV4MappedPrefix[] = {0, 0, 0, 0, 0,    0,
                                           0, 0, 0, 0, 0xff, 0xff};
@@ -241,7 +241,7 @@ absl::StatusOr<std::string> grpc_sockaddr_to_string(
   }
 #endif
 
-#ifdef GRPC_HAVE_LINUX_VSOCK
+#ifdef GRPC_HAVE_VSOCK
   if (addr->sa_family == GRPC_AF_VSOCK) {
     const sockaddr_vm* addr_vm = reinterpret_cast<const sockaddr_vm*>(addr);
     out = absl::StrCat(addr_vm->svm_cid, ":", addr_vm->svm_port);
@@ -348,10 +348,10 @@ int grpc_sockaddr_get_port(const grpc_resolved_address* resolved_addr) {
     case AF_UNIX:
       return 1;
 #endif
-#ifdef GRPC_HAVE_LINUX_VSOCK
+#ifdef GRPC_HAVE_VSOCK
     case GRPC_AF_VSOCK:
       return 1;
-#endif /* GRPC_HAVE_LINUX_VSOCK */
+#endif /* GRPC_HAVE_VSOCK */
     default:
       gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_get_port",
               addr->sa_family);

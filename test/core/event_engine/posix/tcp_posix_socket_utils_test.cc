@@ -28,6 +28,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 
@@ -406,7 +407,7 @@ TEST(TcpPosixSocketUtilsTest, SockAddrToStringTest) {
 
 #ifdef GRPC_HAVE_VSOCK
   EventEngine::ResolvedAddress inputvm = *VSockaddrPopulate("-1:12345");
-  EXPECT_EQ(ResolvedAddressToNormalizedString(inputvm).value(),
+  EXPECT_EQ(SockaddrToString(&inputvm, true).value(),
             absl::StrCat((uint32_t)-1, ":12345"));
 #endif
 }

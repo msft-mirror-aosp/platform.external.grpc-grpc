@@ -265,7 +265,7 @@ TEST(SockAddrUtilsTest, SockAddrToString) {
             absl::InvalidArgumentError("empty UDS abstract path"));
 #endif
 
-#ifdef GRPC_HAVE_LINUX_VSOCK
+#ifdef GRPC_HAVE_VSOCK
   grpc_resolved_address inputvm;
   ASSERT_EQ(grpc_core::VSockaddrPopulate("-1:12345", &inputvm),
             absl::OkStatus());
@@ -295,7 +295,7 @@ TEST(SockAddrUtilsTest, UnixSockAddrToUri) {
 
 #endif /* GRPC_HAVE_UNIX_SOCKET */
 
-#ifdef GRPC_HAVE_LINUX_VSOCK
+#ifdef GRPC_HAVE_VSOCK
 
 TEST(SockAddrUtilsTest, VSockAddrToUri) {
   grpc_resolved_address addr;
@@ -305,7 +305,7 @@ TEST(SockAddrUtilsTest, VSockAddrToUri) {
             absl::StrCat("vsock:", (uint32_t)-1, ":12345"));
 }
 
-#endif  // GRPC_HAVE_LINUX_VSOCK
+#endif  // GRPC_HAVE_VSOCK
 
 TEST(SockAddrUtilsTest, SockAddrSetGetPort) {
   grpc_resolved_address input4 = MakeAddr4(kIPv4, sizeof(kIPv4));

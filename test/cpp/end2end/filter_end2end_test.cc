@@ -20,6 +20,10 @@
 #include <mutex>
 #include <thread>
 
+#include <gtest/gtest.h>
+
+#include "absl/memory/memory.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
@@ -34,18 +38,11 @@
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/slice.h>
 
-#include "absl/memory/memory.h"
-
 #include "src/cpp/common/channel_filter.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
-
-#include <gtest/gtest.h>
-
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
 
 namespace grpc {
 namespace testing {
@@ -104,7 +101,7 @@ class ChannelDataImpl : public ChannelData {
   grpc_error_handle Init(grpc_channel_element* /*elem*/,
                          grpc_channel_element_args* /*args*/) override {
     IncrementConnectionCounter();
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 };
 
@@ -161,7 +158,7 @@ class FilterEnd2endTest : public ::testing::Test {
   void ResetStub() {
     std::shared_ptr<Channel> channel = grpc::CreateChannel(
         server_address_.str(), InsecureChannelCredentials());
-    generic_stub_ = absl::make_unique<GenericStub>(channel);
+    generic_stub_ = std::make_unique<GenericStub>(channel);
     ResetConnectionCounter();
     ResetCallCounter();
   }
@@ -341,7 +338,7 @@ TEST_F(FilterEnd2endTest, SimpleBidiStreaming) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

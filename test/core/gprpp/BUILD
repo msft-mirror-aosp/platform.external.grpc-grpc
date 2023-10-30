@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 grpc_package(name = "test/core/gprpp")
 
@@ -30,6 +31,7 @@ grpc_cc_test(
     language = "C++",
     # TODO(https://github.com/grpc/grpc/issues/24627): Disable this on Windows
     tags = ["no_windows"],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -37,11 +39,14 @@ grpc_cc_test(
     ],
 )
 
+# TODO(hork): solidify fork support requirements for EventEngines
 grpc_cc_test(
     name = "fork_test",
     srcs = ["fork_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
+    uses_event_engine = True,  # engines should behave appropriately on Fork
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -56,6 +61,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -71,17 +77,7 @@ grpc_cc_test(
     ],
     language = "C++",
     tags = ["no_windows"],  # TODO(jtattermusch): fix the failure on windows
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "manual_constructor_test",
-    srcs = ["manual_constructor_test.cc"],
-    language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -94,9 +90,34 @@ grpc_cc_test(
     srcs = ["bitset_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:bitset",
+        "//src/core:bitset",
+    ],
+)
+
+grpc_cc_test(
+    name = "no_destruct_test",
+    srcs = ["no_destruct_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:no_destruct",
+    ],
+)
+
+grpc_cc_test(
+    name = "no_destruct_test",
+    srcs = ["no_destruct_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:no_destruct",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -106,10 +127,10 @@ grpc_cc_test(
     srcs = ["match_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:match",
-        "//test/core/util:grpc_suppressions",
+        "//src/core:match",
     ],
 )
 
@@ -118,10 +139,10 @@ grpc_cc_test(
     srcs = ["overload_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:overload",
-        "//test/core/util:grpc_suppressions",
+        "//src/core:overload",
     ],
 )
 
@@ -133,17 +154,19 @@ grpc_cc_test(
         "absl/types:optional",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:table",
-        "//test/core/util:grpc_suppressions",
+        "//src/core:table",
     ],
 )
 
 grpc_cc_test(
     name = "host_port_test",
     srcs = ["host_port_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -155,8 +178,10 @@ grpc_cc_test(
     name = "mpscq_test",
     srcs = ["mpscq_test.cc"],
     exec_properties = LARGE_MACHINE,
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -185,7 +210,7 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//:ref_counted",
+        "//src/core:ref_counted",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -198,7 +223,7 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//:dual_ref_counted",
+        "//src/core:dual_ref_counted",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -211,9 +236,9 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//:dual_ref_counted",
-        "//:ref_counted",
         "//:ref_counted_ptr",
+        "//src/core:dual_ref_counted",
+        "//src/core:ref_counted",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -221,7 +246,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "thd_test",
     srcs = ["thd_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -236,6 +263,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -251,6 +279,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -265,9 +294,166 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "cpp_impl_of_test",
+    srcs = ["cpp_impl_of_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:cpp_impl_of",
+    ],
+)
+
+grpc_cc_test(
+    name = "chunked_vector_test",
+    srcs = ["chunked_vector_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    tags = [
+        "resource_quota_test",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//src/core:chunked_vector",
+        "//src/core:resource_quota",
+    ],
+)
+
+grpc_proto_fuzzer(
+    name = "chunked_vector_fuzzer",
+    srcs = ["chunked_vector_fuzzer.cc"],
+    corpus = "chunked_vector_corpora",
+    language = "C++",
+    proto = "chunked_vector_fuzzer.proto",
+    tags = ["no_windows"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:chunked_vector",
+        "//src/core:resource_quota",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "time_test",
+    srcs = ["time_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:time",
+    ],
+)
+
+grpc_cc_test(
+    name = "single_set_ptr_test",
+    srcs = ["single_set_ptr_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:single_set_ptr",
+    ],
+)
+
+grpc_cc_test(
+    name = "sorted_pack_test",
+    srcs = ["sorted_pack_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:sorted_pack",
+    ],
+)
+
+grpc_cc_test(
+    name = "unique_type_name_test",
+    srcs = ["unique_type_name_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/strings:str_format",
+    ],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:unique_type_name",
+    ],
+)
+
+grpc_cc_test(
+    name = "work_serializer_test",
+    srcs = ["work_serializer_test.cc"],
+    exec_properties = LARGE_MACHINE,
+    external_deps = [
+        "gtest",
+    ],
+    flaky = True,
+    language = "C++",
+    shard_count = 5,
+    tags = [
+        "no_windows",  # LARGE_MACHINE is not configured for windows RBE
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "validation_errors_test",
+    srcs = ["validation_errors_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//src/core:validation_errors",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "notification_test",
+    srcs = ["notification_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = ["//src/core:notification"],
+)
+
+grpc_cc_test(
+    name = "load_file_test",
+    srcs = ["load_file_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:load_file",
         "//test/core/util:grpc_test_util",
     ],
 )

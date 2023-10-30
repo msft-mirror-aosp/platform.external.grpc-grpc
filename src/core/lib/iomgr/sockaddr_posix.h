@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_POSIX_H
 #define GRPC_CORE_LIB_IOMGR_SOCKADDR_POSIX_H
 
+// IWYU pragma: private, include "src/core/lib/iomgr/sockaddr.h"
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
@@ -48,14 +50,10 @@ typedef struct in6_addr grpc_in6_addr;
 #define GRPC_AF_INET AF_INET
 #define GRPC_AF_INET6 AF_INET6
 
-#ifdef GRPC_HAVE_LINUX_VSOCK
-#include <linux/vm_sockets.h>  // Needs to come after sys/socket.h
-#define GRPC_AF_VSOCK AF_VSOCK
-#elif GPR_ANDROID
+#ifdef GRPC_HAVE_VSOCK
 // HACK(chenhaosjtuacm): when building host services for run_cvd, the glibc version of Android
 // toolchain is too low, using the header copied from bionic libc instead
-#include "vm_sockets.h"
-#define GRPC_HAVE_LINUX_VSOCK
+#include "src/core/lib/iomgr/vm_sockets.h"
 #define GRPC_AF_VSOCK AF_VSOCK
 #endif
 

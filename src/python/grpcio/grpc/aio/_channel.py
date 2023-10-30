@@ -80,6 +80,7 @@ class _BaseMultiCallable:
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
     _interceptors: Optional[Sequence[ClientInterceptor]]
+    _references: List[Any]
     _loop: asyncio.AbstractEventLoop
 
     # pylint: disable=too-many-arguments
@@ -90,6 +91,7 @@ class _BaseMultiCallable:
         request_serializer: SerializingFunction,
         response_deserializer: DeserializingFunction,
         interceptors: Optional[Sequence[ClientInterceptor]],
+        references: List[Any],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
@@ -98,6 +100,7 @@ class _BaseMultiCallable:
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
         self._interceptors = interceptors
+        self._references = references
 
     @staticmethod
     def _init_metadata(
@@ -358,7 +361,7 @@ class Channel(_base_channel.Channel):
         # If needed, try to wait for them to finish.
         # Call objects are not always awaitables.
         if grace and call_tasks:
-            await asyncio.wait(call_tasks, timeout=grace, loop=self._loop)
+            await asyncio.wait(call_tasks, timeout=grace)
 
         # Time to cancel existing calls.
         for call in calls:
@@ -369,6 +372,11 @@ class Channel(_base_channel.Channel):
 
     async def close(self, grace: Optional[float] = None):
         await self._close(grace)
+
+    def __del__(self):
+        if hasattr(self, '_channel'):
+            if not self._channel.closed():
+                self._channel.close()
 
     def get_state(self,
                   try_to_connect: bool = False) -> grpc.ChannelConnectivity:
@@ -397,7 +405,7 @@ class Channel(_base_channel.Channel):
         return UnaryUnaryMultiCallable(self._channel, _common.encode(method),
                                        request_serializer,
                                        response_deserializer,
-                                       self._unary_unary_interceptors,
+                                       self._unary_unary_interceptors, [self],
                                        self._loop)
 
     def unary_stream(
@@ -409,7 +417,7 @@ class Channel(_base_channel.Channel):
         return UnaryStreamMultiCallable(self._channel, _common.encode(method),
                                         request_serializer,
                                         response_deserializer,
-                                        self._unary_stream_interceptors,
+                                        self._unary_stream_interceptors, [self],
                                         self._loop)
 
     def stream_unary(
@@ -421,7 +429,7 @@ class Channel(_base_channel.Channel):
         return StreamUnaryMultiCallable(self._channel, _common.encode(method),
                                         request_serializer,
                                         response_deserializer,
-                                        self._stream_unary_interceptors,
+                                        self._stream_unary_interceptors, [self],
                                         self._loop)
 
     def stream_stream(
@@ -434,7 +442,7 @@ class Channel(_base_channel.Channel):
                                          request_serializer,
                                          response_deserializer,
                                          self._stream_stream_interceptors,
-                                         self._loop)
+                                         [self], self._loop)
 
 
 def insecure_channel(

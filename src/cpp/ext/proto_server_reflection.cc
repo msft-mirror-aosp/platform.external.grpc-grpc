@@ -16,15 +16,16 @@
  *
  */
 
+#include "src/cpp/ext/proto_server_reflection.h"
+
 #include <unordered_set>
 #include <vector>
 
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/support/interceptor.h>
 
-#include "src/cpp/ext/proto_server_reflection.h"
+// IWYU pragma: no_include <google/protobuf/descriptor.h>
 
-using grpc::Status;
-using grpc::StatusCode;
 using grpc::reflection::v1alpha::ErrorResponse;
 using grpc::reflection::v1alpha::ExtensionNumberResponse;
 using grpc::reflection::v1alpha::ExtensionRequest;

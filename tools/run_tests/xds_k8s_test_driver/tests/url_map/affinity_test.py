@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-import time
 from typing import Tuple
 
 from absl import flags
 from absl.testing import absltest
 
-from framework import xds_k8s_flags
 from framework import xds_url_map_testcase
+from framework.helpers import skips
 from framework.infrastructure import traffic_director
 from framework.rpc import grpc_channelz
 from framework.test_app import client_app
@@ -32,6 +31,7 @@ DumpedXdsConfig = xds_url_map_testcase.DumpedXdsConfig
 RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 RpcTypeEmptyCall = xds_url_map_testcase.RpcTypeEmptyCall
 XdsTestClient = client_app.XdsTestClient
+_Lang = skips.Lang
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_url_map_testcase)
@@ -53,10 +53,27 @@ _TEST_METADATA = (
 _ChannelzChannelState = grpc_channelz.ChannelState
 
 
-@absltest.skipUnless('cpp-client' in xds_k8s_flags.CLIENT_IMAGE.value or \
-                     'java-client' in xds_k8s_flags.CLIENT_IMAGE.value,
-                     'Affinity is currently only implemented in C++ and Java.')
+def _is_supported(config: skips.TestConfig) -> bool:
+    # Per "Ring hash" in
+    # https://github.com/grpc/grpc/blob/master/doc/grpc_xds_features.md
+    if config.client_lang in _Lang.CPP | _Lang.JAVA:
+        return config.version_gte('v1.40.x')
+    elif config.client_lang == _Lang.GO:
+        return config.version_gte('v1.41.x')
+    elif config.client_lang == _Lang.PYTHON:
+        # TODO(https://github.com/grpc/grpc/issues/27430): supported after
+        #      the issue is fixed.
+        return False
+    elif config.client_lang == _Lang.NODE:
+        return False
+    return True
+
+
 class TestHeaderBasedAffinity(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def client_init_config(rpc: str, metadata: str):
@@ -116,11 +133,12 @@ class TestHeaderBasedAffinity(xds_url_map_testcase.XdsUrlMapTestCase):
         )
 
 
-@absltest.skipUnless('cpp-client' in xds_k8s_flags.CLIENT_IMAGE.value or \
-                     'java-client' in xds_k8s_flags.CLIENT_IMAGE.value,
-                     'Affinity is currently only implemented in C++ and Java.')
 class TestHeaderBasedAffinityMultipleHeaders(
         xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def client_init_config(rpc: str, metadata: str):
@@ -199,8 +217,8 @@ class TestHeaderBasedAffinityMultipleHeaders(
                 break
         self.assertTrue(
             different_peer_picked,
-            "the same endpoint was picked for all the headers, expect a different endpoint to be picked"
-        )
+            ("the same endpoint was picked for all the headers, expect a "
+             "different endpoint to be picked"))
         self.assertLen(
             test_client.find_subchannels_with_state(
                 _ChannelzChannelState.READY),
@@ -215,3 +233,6 @@ class TestHeaderBasedAffinityMultipleHeaders(
 # TODO: add more test cases
 # 1. based on the basic test, turn down the backend in use, then verify that all
 #    RPCs are sent to another backend
+
+if __name__ == '__main__':
+    absltest.main()

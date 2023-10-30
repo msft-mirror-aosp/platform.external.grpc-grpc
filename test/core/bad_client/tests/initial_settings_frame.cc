@@ -16,15 +16,19 @@
  *
  */
 
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"
+#include "test/core/util/test_config.h"
 
 #define PFX_STR "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 #define ONE_SETTING_HDR "\x00\x00\x06\x04\x00\x00\x00\x00\x00"
 
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* /*registered_method*/) {
-  while (server->core_server->HasOpenConnections()) {
+  while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
     GPR_ASSERT(grpc_completion_queue_next(
                    cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
                    .type == GRPC_QUEUE_TIMEOUT);
@@ -32,7 +36,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   /* various partial prefixes */

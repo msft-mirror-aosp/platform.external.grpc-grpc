@@ -20,6 +20,9 @@
 #include <memory>
 #include <thread>
 
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -32,14 +35,13 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "absl/memory/memory.h"
-
 #include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/lib/gpr/tls.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/build.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/string_ref_helper.h"
@@ -67,23 +69,29 @@ class Verifier {
  public:
   Verifier() : lambda_run_(false) {}
   // Expect sets the expected ok value for a specific tag
-  Verifier& Expect(int i, bool expect_ok) {
-    return ExpectUnless(i, expect_ok, false);
+  Verifier& Expect(
+      int i, bool expect_ok,
+      grpc_core::SourceLocation whence = grpc_core::SourceLocation()) {
+    return ExpectUnless(i, expect_ok, false, whence);
   }
   // ExpectUnless sets the expected ok value for a specific tag
   // unless the tag was already marked seen (as a result of ExpectMaybe)
-  Verifier& ExpectUnless(int i, bool expect_ok, bool seen) {
+  Verifier& ExpectUnless(
+      int i, bool expect_ok, bool seen,
+      grpc_core::SourceLocation whence = grpc_core::SourceLocation()) {
     if (!seen) {
-      expectations_[tag(i)] = expect_ok;
+      expectations_[tag(i)] = {expect_ok, whence};
     }
     return *this;
   }
   // ExpectMaybe sets the expected ok value for a specific tag, but does not
   // require it to appear
   // If it does, sets *seen to true
-  Verifier& ExpectMaybe(int i, bool expect_ok, bool* seen) {
+  Verifier& ExpectMaybe(
+      int i, bool expect_ok, bool* seen,
+      grpc_core::SourceLocation whence = grpc_core::SourceLocation()) {
     if (!*seen) {
-      maybe_expectations_[tag(i)] = MaybeExpect{expect_ok, seen};
+      maybe_expectations_[tag(i)] = MaybeExpect{expect_ok, seen, whence};
     }
     return *this;
   }
@@ -172,7 +180,7 @@ class Verifier {
     auto it = expectations_.find(got_tag);
     if (it != expectations_.end()) {
       if (!ignore_ok) {
-        EXPECT_EQ(it->second, ok);
+        EXPECT_EQ(it->second.ok, ok) << it->second.ToString(it->first);
       }
       expectations_.erase(it);
     } else {
@@ -183,7 +191,7 @@ class Verifier {
           *it2->second.seen = true;
         }
         if (!ignore_ok) {
-          EXPECT_EQ(it2->second.ok, ok);
+          EXPECT_EQ(it2->second.ok, ok) << it->second.ToString(it->first);
         }
         maybe_expectations_.erase(it2);
       } else {
@@ -196,9 +204,25 @@ class Verifier {
   struct MaybeExpect {
     bool ok;
     bool* seen;
+    grpc_core::SourceLocation whence;
+    std::string ToString(void* tag) const {
+      return absl::StrCat(
+          "[MaybeExpect] tag=", reinterpret_cast<uintptr_t>(tag),
+          " expect_ok=", ok, " whence=", whence.file(), ":", whence.line());
+    }
   };
 
-  std::map<void*, bool> expectations_;
+  struct DefinitelyExpect {
+    bool ok;
+    grpc_core::SourceLocation whence;
+    std::string ToString(void* tag) const {
+      return absl::StrCat("[Expect] tag=", reinterpret_cast<uintptr_t>(tag),
+                          " expect_ok=", ok, " whence=", whence.file(), ":",
+                          whence.line());
+    }
+  };
+
+  std::map<void*, DefinitelyExpect> expectations_;
   std::map<void*, MaybeExpect> maybe_expectations_;
   bool lambda_run_;
 };
@@ -211,7 +235,7 @@ bool plugin_has_sync_methods(std::unique_ptr<ServerBuilderPlugin>& plugin) {
 // the server. If there are sync services, UnimplementedRpc test will triger
 // the sync unknown rpc routine on the server side, rather than the async one
 // that needs to be tested here.
-class ServerBuilderSyncPluginDisabler : public ::grpc::ServerBuilderOption {
+class ServerBuilderSyncPluginDisabler : public grpc::ServerBuilderOption {
  public:
   void UpdateArguments(ChannelArguments* /*arg*/) override {}
 
@@ -238,8 +262,7 @@ class TestScenario {
   const std::string message_content;
 };
 
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
+std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
   return out << "TestScenario{inproc=" << (scenario.inproc ? "true" : "false")
              << ", credentials='" << scenario.credentials_type
              << ", health_check_service="
@@ -268,14 +291,21 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
   }
 
   void TearDown() override {
-    server_->Shutdown();
-    void* ignored_tag;
-    bool ignored_ok;
-    cq_->Shutdown();
-    while (cq_->Next(&ignored_tag, &ignored_ok)) {
-    }
     stub_.reset();
+    ServerShutdown();
     grpc_recycle_unused_port(port_);
+  }
+
+  void ServerShutdown() {
+    std::thread t([this]() {
+      void* ignored_tag;
+      bool ignored_ok;
+      while (cq_->Next(&ignored_tag, &ignored_ok)) {
+      }
+    });
+    server_->Shutdown();
+    cq_->Shutdown();
+    t.join();
   }
 
   void BuildAndStartServer() {
@@ -283,8 +313,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
         GetParam().credentials_type);
     builder.AddListeningPort(server_address_.str(), server_creds);
-    service_ =
-        absl::make_unique<grpc::testing::EchoTestService::AsyncService>();
+    service_ = std::make_unique<grpc::testing::EchoTestService::AsyncService>();
     builder.RegisterService(service_.get());
     if (GetParam().health_check_service) {
       builder.RegisterService(&health_check_);
@@ -304,8 +333,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
         GetParam().credentials_type, &args);
     std::shared_ptr<Channel> channel =
-        !(GetParam().inproc) ? ::grpc::CreateCustomChannel(
-                                   server_address_.str(), channel_creds, args)
+        !(GetParam().inproc) ? grpc::CreateCustomChannel(server_address_.str(),
+                                                         channel_creds, args)
                              : server_->InProcessChannel(args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
@@ -424,12 +453,7 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
 #endif  // GRPC_POSIX_SOCKET_EV
   ResetStub();
   SendRpc(1);
-  server_->Shutdown();
-  void* ignored_tag;
-  bool ignored_ok;
-  cq_->Shutdown();
-  while (cq_->Next(&ignored_tag, &ignored_ok)) {
-  }
+  ServerShutdown();
   BuildAndStartServer();
   // It needs more than GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS time to
   // reconnect the channel.
@@ -452,7 +476,7 @@ TEST_P(AsyncEnd2endTest, WaitAndShutdownTest) {
   ResetStub();
   SendRpc(1);
   EXPECT_EQ(0, notify);
-  server_->Shutdown();
+  ServerShutdown();
   wait_thread.join();
   EXPECT_EQ(1, notify);
 }
@@ -460,7 +484,7 @@ TEST_P(AsyncEnd2endTest, WaitAndShutdownTest) {
 TEST_P(AsyncEnd2endTest, ShutdownThenWait) {
   ResetStub();
   SendRpc(1);
-  std::thread t([this]() { server_->Shutdown(); });
+  std::thread t([this]() { ServerShutdown(); });
   server_->Wait();
   t.join();
 }
@@ -1312,8 +1336,8 @@ TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
   const auto& channel_creds = GetCredentialsProvider()->GetChannelCredentials(
       GetParam().credentials_type, &args);
   std::shared_ptr<Channel> channel =
-      !(GetParam().inproc) ? ::grpc::CreateCustomChannel(server_address_.str(),
-                                                         channel_creds, args)
+      !(GetParam().inproc) ? grpc::CreateCustomChannel(server_address_.str(),
+                                                       channel_creds, args)
                            : server_->InProcessChannel(args);
   std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
   stub = grpc::testing::UnimplementedEchoService::NewStub(channel);
@@ -1492,7 +1516,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     cli_stream->Finish(&recv_status, tag(10));
     Verifier().Expect(10, true).Verify(&cli_cq);
     EXPECT_FALSE(recv_status.ok());
-    EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
+    EXPECT_EQ(grpc::StatusCode::CANCELLED, recv_status.error_code());
 
     cli_cq.Shutdown();
     void* phony_tag;
@@ -1641,7 +1665,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     cli_stream->Finish(&recv_status, tag(10));
     Verifier().Expect(10, true).Verify(&cli_cq);
     EXPECT_FALSE(recv_status.ok());
-    EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
+    EXPECT_EQ(grpc::StatusCode::CANCELLED, recv_status.error_code());
 
     cli_cq.Shutdown();
     void* phony_tag;
@@ -1947,7 +1971,7 @@ int main(int argc, char** argv) {
   // Change the backup poll interval from 5s to 100ms to speed up the
   // ReconnectChannel test
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 100);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

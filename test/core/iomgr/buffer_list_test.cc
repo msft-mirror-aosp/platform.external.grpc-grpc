@@ -16,12 +16,13 @@
  *
  */
 
-#include "src/core/lib/iomgr/port.h"
-
 #include "src/core/lib/iomgr/buffer_list.h"
+
+#include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/iomgr/port.h"
 #include "test/core/util/test_config.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -29,8 +30,8 @@
 static void TestShutdownFlushesListVerifier(void* arg,
                                             grpc_core::Timestamps* /*ts*/,
                                             grpc_error_handle error) {
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
-  GPR_ASSERT(arg != nullptr);
+  ASSERT_TRUE(error.ok());
+  ASSERT_NE(arg, nullptr);
   gpr_atm* done = reinterpret_cast<gpr_atm*>(arg);
   gpr_atm_rel_store(done, static_cast<gpr_atm>(1));
 }
@@ -39,41 +40,38 @@ static void TestShutdownFlushesListVerifier(void* arg,
  * shutdown.
  * Also tests that arg is passed correctly.
  */
-static void TestShutdownFlushesList() {
+TEST(BufferListTest, Testshutdownflusheslist) {
   grpc_core::grpc_tcp_set_write_timestamps_callback(
       TestShutdownFlushesListVerifier);
-  grpc_core::TracedBuffer* list = nullptr;
+  grpc_core::TracedBufferList tb_list;
 #define NUM_ELEM 5
   gpr_atm verifier_called[NUM_ELEM];
   for (auto i = 0; i < NUM_ELEM; i++) {
     gpr_atm_rel_store(&verifier_called[i], static_cast<gpr_atm>(0));
-    grpc_core::TracedBuffer::AddNewEntry(
-        &list, i, 0, static_cast<void*>(&verifier_called[i]));
+    tb_list.AddNewEntry(i, 0, static_cast<void*>(&verifier_called[i]));
   }
-  grpc_core::TracedBuffer::Shutdown(&list, nullptr, GRPC_ERROR_NONE);
-  GPR_ASSERT(list == nullptr);
+  tb_list.Shutdown(nullptr, absl::OkStatus());
   for (auto i = 0; i < NUM_ELEM; i++) {
-    GPR_ASSERT(gpr_atm_acq_load(&verifier_called[i]) ==
-               static_cast<gpr_atm>(1));
+    ASSERT_EQ(gpr_atm_acq_load(&verifier_called[i]), static_cast<gpr_atm>(1));
   }
 }
 
 static void TestVerifierCalledOnAckVerifier(void* arg,
                                             grpc_core::Timestamps* ts,
                                             grpc_error_handle error) {
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
-  GPR_ASSERT(arg != nullptr);
-  GPR_ASSERT(ts->acked_time.time.clock_type == GPR_CLOCK_REALTIME);
-  GPR_ASSERT(ts->acked_time.time.tv_sec == 123);
-  GPR_ASSERT(ts->acked_time.time.tv_nsec == 456);
-  GPR_ASSERT(ts->info.length > 0);
+  ASSERT_TRUE(error.ok());
+  ASSERT_NE(arg, nullptr);
+  ASSERT_EQ(ts->acked_time.time.clock_type, GPR_CLOCK_REALTIME);
+  ASSERT_EQ(ts->acked_time.time.tv_sec, 123);
+  ASSERT_EQ(ts->acked_time.time.tv_nsec, 456);
+  ASSERT_GT(ts->info.length, 0);
   gpr_atm* done = reinterpret_cast<gpr_atm*>(arg);
   gpr_atm_rel_store(done, static_cast<gpr_atm>(1));
 }
 
 /** Tests that the timestamp verifier is called on an ACK timestamp.
  */
-static void TestVerifierCalledOnAck() {
+TEST(BufferListTest, Testverifiercalledonack) {
   struct sock_extended_err serr;
   serr.ee_data = 213;
   serr.ee_info = grpc_core::SCM_TSTAMP_ACK;
@@ -82,19 +80,18 @@ static void TestVerifierCalledOnAck() {
   tss.ts[0].tv_nsec = 456;
   grpc_core::grpc_tcp_set_write_timestamps_callback(
       TestVerifierCalledOnAckVerifier);
-  grpc_core::TracedBuffer* list = nullptr;
+  grpc_core::TracedBufferList tb_list;
   gpr_atm verifier_called;
   gpr_atm_rel_store(&verifier_called, static_cast<gpr_atm>(0));
-  grpc_core::TracedBuffer::AddNewEntry(&list, 213, 0, &verifier_called);
-  grpc_core::TracedBuffer::ProcessTimestamp(&list, &serr, nullptr, &tss);
-  GPR_ASSERT(gpr_atm_acq_load(&verifier_called) == static_cast<gpr_atm>(1));
-  GPR_ASSERT(list == nullptr);
-  grpc_core::TracedBuffer::Shutdown(&list, nullptr, GRPC_ERROR_NONE);
+  tb_list.AddNewEntry(213, 0, &verifier_called);
+  tb_list.ProcessTimestamp(&serr, nullptr, &tss);
+  ASSERT_EQ(gpr_atm_acq_load(&verifier_called), static_cast<gpr_atm>(1));
+  tb_list.Shutdown(nullptr, absl::OkStatus());
 }
 
 /** Tests that shutdown can be called repeatedly.
  */
-static void TestRepeatedShutdown() {
+TEST(BufferListTest, Testrepeatedshutdown) {
   struct sock_extended_err serr;
   serr.ee_data = 213;
   serr.ee_info = grpc_core::SCM_TSTAMP_ACK;
@@ -103,30 +100,22 @@ static void TestRepeatedShutdown() {
   tss.ts[0].tv_nsec = 456;
   grpc_core::grpc_tcp_set_write_timestamps_callback(
       TestVerifierCalledOnAckVerifier);
-  grpc_core::TracedBuffer* list = nullptr;
+  grpc_core::TracedBufferList tb_list;
   gpr_atm verifier_called;
   gpr_atm_rel_store(&verifier_called, static_cast<gpr_atm>(0));
-  grpc_core::TracedBuffer::AddNewEntry(&list, 213, 0, &verifier_called);
-  grpc_core::TracedBuffer::ProcessTimestamp(&list, &serr, nullptr, &tss);
-  GPR_ASSERT(gpr_atm_acq_load(&verifier_called) == static_cast<gpr_atm>(1));
-  GPR_ASSERT(list == nullptr);
-  grpc_core::TracedBuffer::Shutdown(&list, nullptr, GRPC_ERROR_NONE);
-  grpc_core::TracedBuffer::Shutdown(&list, nullptr, GRPC_ERROR_NONE);
-  grpc_core::TracedBuffer::Shutdown(&list, nullptr, GRPC_ERROR_NONE);
-}
-
-static void TestTcpBufferList() {
-  TestVerifierCalledOnAck();
-  TestShutdownFlushesList();
-  TestRepeatedShutdown();
+  tb_list.AddNewEntry(213, 0, &verifier_called);
+  tb_list.ProcessTimestamp(&serr, nullptr, &tss);
+  ASSERT_EQ(gpr_atm_acq_load(&verifier_called), static_cast<gpr_atm>(1));
+  tb_list.Shutdown(nullptr, absl::OkStatus());
+  tb_list.Shutdown(nullptr, absl::OkStatus());
+  tb_list.Shutdown(nullptr, absl::OkStatus());
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
-  grpc_init();
-  TestTcpBufferList();
-  grpc_shutdown();
-  return 0;
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestGrpcScope grpc_scope;
+  return RUN_ALL_TESTS();
 }
 
 #else /* GRPC_LINUX_ERRQUEUE */

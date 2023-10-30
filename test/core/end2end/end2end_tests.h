@@ -19,7 +19,10 @@
 #ifndef GRPC_TEST_CORE_END2END_END2END_TESTS_H
 #define GRPC_TEST_CORE_END2END_END2END_TESTS_H
 
+#include <stdint.h>
+
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
 
 typedef struct grpc_end2end_test_fixture grpc_end2end_test_fixture;
 typedef struct grpc_end2end_test_config grpc_end2end_test_config;
@@ -36,16 +39,13 @@ typedef struct grpc_end2end_test_config grpc_end2end_test_config;
 #define FEATURE_MASK_SUPPORTS_REQUEST_PROXYING 16
 #define FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL 32
 #define FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER 64
-#define FEATURE_MASK_DOES_NOT_SUPPORT_RESOURCE_QUOTA_SERVER 128
-#define FEATURE_MASK_DOES_NOT_SUPPORT_NETWORK_STATUS_CHANGE 256
-#define FEATURE_MASK_SUPPORTS_WORKAROUNDS 512
 #define FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST 1024
+#define FEATURE_MASK_DOES_NOT_SUPPORT_DEADLINES 2048
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
 struct grpc_end2end_test_fixture {
   grpc_completion_queue* cq;
-  grpc_completion_queue* shutdown_cq;
   grpc_server* server;
   grpc_channel* client;
   void* fixture_data;
@@ -63,12 +63,13 @@ struct grpc_end2end_test_config {
    * expect to find in call_details.host */
   const char* overridden_call_host;
 
-  grpc_end2end_test_fixture (*create_fixture)(grpc_channel_args* client_args,
-                                              grpc_channel_args* server_args);
+  grpc_end2end_test_fixture (*create_fixture)(
+      const grpc_channel_args* client_args,
+      const grpc_channel_args* server_args);
   void (*init_client)(grpc_end2end_test_fixture* f,
-                      grpc_channel_args* client_args);
+                      const grpc_channel_args* client_args);
   void (*init_server)(grpc_end2end_test_fixture* f,
-                      grpc_channel_args* server_args);
+                      const grpc_channel_args* server_args);
   void (*tear_down_data)(grpc_end2end_test_fixture* f);
 };
 

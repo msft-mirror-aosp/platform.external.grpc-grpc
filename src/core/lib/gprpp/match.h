@@ -15,9 +15,12 @@
 #ifndef GRPC_CORE_LIB_GPRPP_MATCH_H
 #define GRPC_CORE_LIB_GPRPP_MATCH_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
+
+#include <type_traits>
 
 #include "absl/types/variant.h"
+
 #include "src/core/lib/gprpp/overload.h"
 
 namespace grpc_core {

@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 package(
     features = [
@@ -30,10 +30,12 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
-        "//:grpc",
+        "//:backoff",
+        "//:exec_ctx",
+        "//src/core:time",
         "//test/core/util:grpc_test_util",
     ],
 )

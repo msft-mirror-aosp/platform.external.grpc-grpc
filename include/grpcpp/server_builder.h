@@ -19,23 +19,23 @@
 #ifndef GRPCPP_SERVER_BUILDER_H
 #define GRPCPP_SERVER_BUILDER_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <climits>
 #include <map>
 #include <memory>
 #include <vector>
 
-#include <grpc/impl/codegen/port_platform.h>
-
 #include <grpc/compression.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/workaround_list.h>
 #include <grpcpp/impl/channel_argument_option.h>
-#include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/impl/server_builder_option.h>
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/security/authorization_policy_provider.h>
 #include <grpcpp/server.h>
 #include <grpcpp/support/config.h>
+#include <grpcpp/support/server_interceptor.h>
 
 struct grpc_resource_quota;
 
@@ -59,6 +59,7 @@ class ExternalConnectionAcceptorImpl;
 class CallbackGenericService;
 
 namespace experimental {
+class OrcaServerInterceptorFactory;
 // EXPERIMENTAL API:
 // Interface for a grpc server to build transports with connections created out
 // of band.
@@ -327,6 +328,7 @@ class ServerBuilder {
   /// Experimental, to be deprecated
   std::vector<NamedService*> services() {
     std::vector<NamedService*> service_refs;
+    service_refs.reserve(services_.size());
     for (auto& ptr : services_) {
       service_refs.push_back(ptr.get());
     }
@@ -336,6 +338,7 @@ class ServerBuilder {
   /// Experimental, to be deprecated
   std::vector<grpc::ServerBuilderOption*> options() {
     std::vector<grpc::ServerBuilderOption*> option_refs;
+    option_refs.reserve(options_.size());
     for (auto& ptr : options_) {
       option_refs.push_back(ptr.get());
     }
@@ -351,7 +354,8 @@ class ServerBuilder {
   virtual ChannelArguments BuildChannelArgs();
 
  private:
-  friend class ::grpc::testing::ServerBuilderPluginTest;
+  friend class grpc::testing::ServerBuilderPluginTest;
+  friend class grpc::experimental::OrcaServerInterceptorFactory;
 
   struct SyncServerSettings {
     SyncServerSettings()
@@ -402,6 +406,9 @@ class ServerBuilder {
   std::vector<
       std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>
       interceptor_creators_;
+  std::vector<
+      std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>
+      internal_interceptor_creators_;
   std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
       acceptors_;
   grpc_server_config_fetcher* server_config_fetcher_ = nullptr;

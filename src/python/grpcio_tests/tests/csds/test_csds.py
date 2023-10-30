@@ -16,20 +16,16 @@
 from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
+import queue
+import sys
 import time
 import unittest
 
+from envoy.service.status.v3 import csds_pb2
+from envoy.service.status.v3 import csds_pb2_grpc
 from google.protobuf import json_format
 import grpc
 import grpc_csds
-from six.moves import queue
-
-try:
-    from envoy.service.status.v3 import csds_pb2
-    from envoy.service.status.v3 import csds_pb2_grpc
-except ImportError:
-    from src.proto.grpc.testing.xds.v3 import csds_pb2
-    from src.proto.grpc.testing.xds.v3 import csds_pb2_grpc
 
 _DUMMY_XDS_ADDRESS = 'xds:///foo.bar'
 _DUMMY_BOOTSTRAP_FILE = """
@@ -61,6 +57,8 @@ _DUMMY_BOOTSTRAP_FILE = """
 """
 
 
+@unittest.skipIf(sys.version_info[0] < 3,
+                 'ProtoBuf descriptor has moved on from Python2')
 class TestCsds(unittest.TestCase):
 
     def setUp(self):
@@ -85,7 +83,6 @@ class TestCsds(unittest.TestCase):
     def test_has_node(self):
         resp = self.get_xds_config_dump()
         self.assertEqual(1, len(resp.config))
-        self.assertEqual(4, len(resp.config[0].xds_config))
         self.assertEqual('python_test_csds', resp.config[0].node.id)
         self.assertEqual('test', resp.config[0].node.cluster)
 
@@ -94,8 +91,8 @@ class TestCsds(unittest.TestCase):
 
         # Force the XdsClient to initialize and request a resource
         with self.assertRaises(grpc.RpcError) as rpc_error:
-            dummy_channel.unary_unary('')(b'', wait_for_ready=False)
-        self.assertEqual(grpc.StatusCode.UNAVAILABLE,
+            dummy_channel.unary_unary('')(b'', wait_for_ready=False, timeout=1)
+        self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED,
                          rpc_error.exception.code())
 
         # The resource request will fail with DOES_NOT_EXIST (after 15s)
@@ -104,11 +101,17 @@ class TestCsds(unittest.TestCase):
             config = json_format.MessageToDict(resp)
             ok = False
             try:
-                for xds_config in config["config"][0]["xdsConfig"]:
+                for xds_config in config["config"][0].get("xdsConfig", []):
                     if "listenerConfig" in xds_config:
                         listener = xds_config["listenerConfig"][
                             "dynamicListeners"][0]
-                        if listener['clientStatus'] == 'DOES_NOT_EXIST':
+                        if listener['clientStatus'] == 'REQUESTED':
+                            ok = True
+                            break
+                for generic_xds_config in config["config"][0].get(
+                        "genericXdsConfigs", []):
+                    if "Listener" in generic_xds_config["typeUrl"]:
+                        if generic_xds_config['clientStatus'] == 'REQUESTED':
                             ok = True
                             break
             except KeyError as e:
@@ -120,6 +123,8 @@ class TestCsds(unittest.TestCase):
         dummy_channel.close()
 
 
+@unittest.skipIf(sys.version_info[0] < 3,
+                 'ProtoBuf descriptor has moved on from Python2')
 class TestCsdsStream(TestCsds):
 
     def get_xds_config_dump(self):

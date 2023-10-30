@@ -21,9 +21,10 @@
 #ifndef TEST_CPP_MICROBENCHMARKS_FULLSTACK_UNARY_PING_PONG_H
 #define TEST_CPP_MICROBENCHMARKS_FULLSTACK_UNARY_PING_PONG_H
 
-#include <benchmark/benchmark.h>
 #include <sstream>
-#include "src/core/lib/profiling/timers.h"
+
+#include <benchmark/benchmark.h>
+
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
@@ -72,7 +73,6 @@ static void BM_UnaryPingPong(benchmark::State& state) {
   std::unique_ptr<EchoTestService::Stub> stub(
       EchoTestService::NewStub(fixture->channel()));
   for (auto _ : state) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     recv_response.Clear();
     ClientContext cli_ctx;
     ClientContextMutator cli_ctx_mut(&cli_ctx);
@@ -102,7 +102,6 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     service.RequestEcho(&senv->ctx, &senv->recv_request, &senv->response_writer,
                         fixture->cq(), fixture->cq(), tag(slot));
   }
-  fixture->Finish(state);
   fixture.reset();
   server_env[0]->~ServerEnv();
   server_env[1]->~ServerEnv();

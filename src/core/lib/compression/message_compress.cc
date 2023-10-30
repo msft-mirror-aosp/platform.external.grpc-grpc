@@ -22,12 +22,14 @@
 
 #include <string.h>
 
+#include <zconf.h>
+#include <zlib.h>
+
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include <zlib.h>
-
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice.h"
 
 #define OUTPUT_BLOCK_SIZE 1024
 
@@ -80,7 +82,7 @@ static int zlib_body(z_stream* zs, grpc_slice_buffer* input,
   return 1;
 
 error:
-  grpc_slice_unref_internal(outbuf);
+  grpc_core::CSliceUnref(outbuf);
   return 0;
 }
 
@@ -107,7 +109,7 @@ static int zlib_compress(grpc_slice_buffer* input, grpc_slice_buffer* output,
   r = zlib_body(&zs, input, output, deflate) && output->length < input->length;
   if (!r) {
     for (i = count_before; i < output->count; i++) {
-      grpc_slice_unref_internal(output->slices[i]);
+      grpc_core::CSliceUnref(output->slices[i]);
     }
     output->count = count_before;
     output->length = length_before;
@@ -131,7 +133,7 @@ static int zlib_decompress(grpc_slice_buffer* input, grpc_slice_buffer* output,
   r = zlib_body(&zs, input, output, inflate);
   if (!r) {
     for (i = count_before; i < output->count; i++) {
-      grpc_slice_unref_internal(output->slices[i]);
+      grpc_core::CSliceUnref(output->slices[i]);
     }
     output->count = count_before;
     output->length = length_before;
@@ -143,30 +145,30 @@ static int zlib_decompress(grpc_slice_buffer* input, grpc_slice_buffer* output,
 static int copy(grpc_slice_buffer* input, grpc_slice_buffer* output) {
   size_t i;
   for (i = 0; i < input->count; i++) {
-    grpc_slice_buffer_add(output, grpc_slice_ref_internal(input->slices[i]));
+    grpc_slice_buffer_add(output, grpc_core::CSliceRef(input->slices[i]));
   }
   return 1;
 }
 
-static int compress_inner(grpc_message_compression_algorithm algorithm,
+static int compress_inner(grpc_compression_algorithm algorithm,
                           grpc_slice_buffer* input, grpc_slice_buffer* output) {
   switch (algorithm) {
-    case GRPC_MESSAGE_COMPRESS_NONE:
+    case GRPC_COMPRESS_NONE:
       /* the fallback path always needs to be send uncompressed: we simply
          rely on that here */
       return 0;
-    case GRPC_MESSAGE_COMPRESS_DEFLATE:
+    case GRPC_COMPRESS_DEFLATE:
       return zlib_compress(input, output, 0);
-    case GRPC_MESSAGE_COMPRESS_GZIP:
+    case GRPC_COMPRESS_GZIP:
       return zlib_compress(input, output, 1);
-    case GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT:
+    case GRPC_COMPRESS_ALGORITHMS_COUNT:
       break;
   }
   gpr_log(GPR_ERROR, "invalid compression algorithm %d", algorithm);
   return 0;
 }
 
-int grpc_msg_compress(grpc_message_compression_algorithm algorithm,
+int grpc_msg_compress(grpc_compression_algorithm algorithm,
                       grpc_slice_buffer* input, grpc_slice_buffer* output) {
   if (!compress_inner(algorithm, input, output)) {
     copy(input, output);
@@ -175,16 +177,16 @@ int grpc_msg_compress(grpc_message_compression_algorithm algorithm,
   return 1;
 }
 
-int grpc_msg_decompress(grpc_message_compression_algorithm algorithm,
+int grpc_msg_decompress(grpc_compression_algorithm algorithm,
                         grpc_slice_buffer* input, grpc_slice_buffer* output) {
   switch (algorithm) {
-    case GRPC_MESSAGE_COMPRESS_NONE:
+    case GRPC_COMPRESS_NONE:
       return copy(input, output);
-    case GRPC_MESSAGE_COMPRESS_DEFLATE:
+    case GRPC_COMPRESS_DEFLATE:
       return zlib_decompress(input, output, 0);
-    case GRPC_MESSAGE_COMPRESS_GZIP:
+    case GRPC_COMPRESS_GZIP:
       return zlib_decompress(input, output, 1);
-    case GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT:
+    case GRPC_COMPRESS_ALGORITHMS_COUNT:
       break;
   }
   gpr_log(GPR_ERROR, "invalid compression algorithm %d", algorithm);

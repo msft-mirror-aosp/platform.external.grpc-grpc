@@ -16,13 +16,14 @@
  *
  */
 
-#include <string>
-
 #include <gtest/gtest.h>
 
-#include <grpc/support/string_util.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"
+#include "test/core/util/test_config.h"
 
 #define HEADER_FRAME_ID_1                                                  \
   "\x00\x00\xc9\x01\x05\x00\x00\x00\x01" /* headers: generated from        \
@@ -76,7 +77,7 @@ namespace {
 
 void verifier(grpc_server* server, grpc_completion_queue* cq,
               void* /*registered_method*/) {
-  while (server->core_server->HasOpenConnections()) {
+  while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
     GPR_ASSERT(grpc_completion_queue_next(
                    cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
                    .type == GRPC_QUEUE_TIMEOUT);
@@ -123,9 +124,9 @@ TEST(BadStreamingId, ClosedStreamId) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc_init();
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  grpc_init();
   int retval = RUN_ALL_TESTS();
   grpc_shutdown();
   return retval;

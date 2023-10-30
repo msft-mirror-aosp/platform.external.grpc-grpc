@@ -14,7 +14,7 @@
 import functools
 import logging
 import random
-from typing import Any, Dict, Iterable, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 from framework import xds_flags
 from framework.infrastructure import gcp
@@ -32,19 +32,23 @@ _BackendGRPC = BackendServiceProtocol.GRPC
 _HealthCheckGRPC = HealthCheckProtocol.GRPC
 
 # Network Security
-_NetworkSecurityV1Alpha1 = gcp.network_security.NetworkSecurityV1Alpha1
-ServerTlsPolicy = _NetworkSecurityV1Alpha1.ServerTlsPolicy
-ClientTlsPolicy = _NetworkSecurityV1Alpha1.ClientTlsPolicy
+_NetworkSecurityV1Beta1 = gcp.network_security.NetworkSecurityV1Beta1
+ServerTlsPolicy = gcp.network_security.ServerTlsPolicy
+ClientTlsPolicy = gcp.network_security.ClientTlsPolicy
+AuthorizationPolicy = gcp.network_security.AuthorizationPolicy
 
 # Network Services
 _NetworkServicesV1Alpha1 = gcp.network_services.NetworkServicesV1Alpha1
-EndpointConfigSelector = _NetworkServicesV1Alpha1.EndpointConfigSelector
+_NetworkServicesV1Beta1 = gcp.network_services.NetworkServicesV1Beta1
+EndpointPolicy = gcp.network_services.EndpointPolicy
+GrpcRoute = gcp.network_services.GrpcRoute
+Mesh = gcp.network_services.Mesh
 
 # Testing metadata consts
 TEST_AFFINITY_METADATA_KEY = 'xds_md'
 
 
-class TrafficDirectorManager:
+class TrafficDirectorManager:  # pylint: disable=too-many-public-methods
     compute: _ComputeV1
     resource_prefix: str
     resource_suffix: str
@@ -54,9 +58,12 @@ class TrafficDirectorManager:
     AFFINITY_BACKEND_SERVICE_NAME = "backend-service-affinity"
     HEALTH_CHECK_NAME = "health-check"
     URL_MAP_NAME = "url-map"
+    ALTERNATIVE_URL_MAP_NAME = "url-map-alt"
     URL_MAP_PATH_MATCHER_NAME = "path-matcher"
     TARGET_PROXY_NAME = "target-proxy"
+    ALTERNATIVE_TARGET_PROXY_NAME = "target-proxy-alt"
     FORWARDING_RULE_NAME = "forwarding-rule"
+    ALTERNATIVE_FORWARDING_RULE_NAME = "forwarding-rule-alt"
     FIREWALL_RULE_NAME = "allow-health-checks"
 
     def __init__(
@@ -67,9 +74,12 @@ class TrafficDirectorManager:
         resource_prefix: str,
         resource_suffix: str,
         network: str = 'default',
+        compute_api_version: str = 'v1',
     ):
         # API
-        self.compute = _ComputeV1(gcp_api_manager, project)
+        self.compute = _ComputeV1(gcp_api_manager,
+                                  project,
+                                  version=compute_api_version)
 
         # Settings
         self.project: str = project
@@ -83,11 +93,14 @@ class TrafficDirectorManager:
         # TODO(sergiitk): remove this flag once backend service resource loaded
         self.backend_service_protocol: Optional[BackendServiceProtocol] = None
         self.url_map: Optional[GcpResource] = None
+        self.alternative_url_map: Optional[GcpResource] = None
         self.firewall_rule: Optional[GcpResource] = None
         self.target_proxy: Optional[GcpResource] = None
         # TODO(sergiitk): remove this flag once target proxy resource loaded
         self.target_proxy_is_http: bool = False
+        self.alternative_target_proxy: Optional[GcpResource] = None
         self.forwarding_rule: Optional[GcpResource] = None
+        self.alternative_forwarding_rule: Optional[GcpResource] = None
         self.backends: Set[ZonalGcpResource] = set()
         self.alternative_backend_service: Optional[GcpResource] = None
         # TODO(sergiitk): remove this flag once backend service resource loaded
@@ -131,9 +144,12 @@ class TrafficDirectorManager:
     def cleanup(self, *, force=False):
         # Cleanup in the reverse order of creation
         self.delete_forwarding_rule(force=force)
+        self.delete_alternative_forwarding_rule(force=force)
         self.delete_target_http_proxy(force=force)
         self.delete_target_grpc_proxy(force=force)
+        self.delete_alternative_target_grpc_proxy(force=force)
         self.delete_url_map(force=force)
+        self.delete_alternative_url_map(force=force)
         self.delete_backend_service(force=force)
         self.delete_alternative_backend_service(force=force)
         self.delete_affinity_backend_service(force=force)
@@ -176,14 +192,25 @@ class TrafficDirectorManager:
         self.health_check = None
 
     def create_backend_service(
-            self, protocol: Optional[BackendServiceProtocol] = _BackendGRPC):
+            self,
+            protocol: Optional[BackendServiceProtocol] = _BackendGRPC,
+            subset_size: Optional[int] = None,
+            affinity_header: Optional[str] = None,
+            locality_lb_policies: Optional[List[dict]] = None,
+            outlier_detection: Optional[dict] = None):
         if protocol is None:
             protocol = _BackendGRPC
 
         name = self.make_resource_name(self.BACKEND_SERVICE_NAME)
         logger.info('Creating %s Backend Service "%s"', protocol.name, name)
         resource = self.compute.create_backend_service_traffic_director(
-            name, health_check=self.health_check, protocol=protocol)
+            name,
+            health_check=self.health_check,
+            protocol=protocol,
+            subset_size=subset_size,
+            affinity_header=affinity_header,
+            locality_lb_policies=locality_lb_policies,
+            outlier_detection=outlier_detection)
         self.backend_service = resource
         self.backend_service_protocol = protocol
 
@@ -362,8 +389,8 @@ class TrafficDirectorManager:
         self.compute.wait_for_backends_healthy_status(
             self.affinity_backend_service, self.affinity_backends)
 
+    @staticmethod
     def _generate_url_map_body(
-        self,
         name: str,
         matcher_name: str,
         src_hosts,
@@ -387,11 +414,7 @@ class TrafficDirectorManager:
             }],
         }
 
-    def create_url_map(
-        self,
-        src_host: str,
-        src_port: int,
-    ) -> GcpResource:
+    def create_url_map(self, src_host: str, src_port: int) -> GcpResource:
         src_address = f'{src_host}:{src_port}'
         name = self.make_resource_name(self.URL_MAP_NAME)
         matcher_name = self.make_resource_name(self.URL_MAP_PATH_MATCHER_NAME)
@@ -429,6 +452,35 @@ class TrafficDirectorManager:
         else:
             return
         logger.info('Deleting URL Map "%s"', name)
+        self.compute.delete_url_map(name)
+        self.url_map = None
+
+    def create_alternative_url_map(
+            self,
+            src_host: str,
+            src_port: int,
+            backend_service: Optional[GcpResource] = None) -> GcpResource:
+        name = self.make_resource_name(self.ALTERNATIVE_URL_MAP_NAME)
+        src_address = f'{src_host}:{src_port}'
+        matcher_name = self.make_resource_name(self.URL_MAP_PATH_MATCHER_NAME)
+        if backend_service is None:
+            backend_service = self.alternative_backend_service
+        logger.info('Creating alternative URL map "%s": %s -> %s', name,
+                    src_address, backend_service.name)
+        resource = self.compute.create_url_map_with_content(
+            self._generate_url_map_body(name, matcher_name, [src_address],
+                                        backend_service))
+        self.alternative_url_map = resource
+        return resource
+
+    def delete_alternative_url_map(self, force=False):
+        if force:
+            name = self.make_resource_name(self.ALTERNATIVE_URL_MAP_NAME)
+        elif self.alternative_url_map:
+            name = self.alternative_url_map.name
+        else:
+            return
+        logger.info('Deleting alternative URL Map "%s"', name)
         self.compute.delete_url_map(name)
         self.url_map = None
 
@@ -473,15 +525,37 @@ class TrafficDirectorManager:
         self.target_proxy = None
         self.target_proxy_is_http = False
 
+    def create_alternative_target_proxy(self):
+        name = self.make_resource_name(self.ALTERNATIVE_TARGET_PROXY_NAME)
+        if self.backend_service_protocol is BackendServiceProtocol.GRPC:
+            logger.info(
+                'Creating alternative target GRPC proxy "%s" to URL map %s',
+                name, self.alternative_url_map.name)
+            self.alternative_target_proxy = self.compute.create_target_grpc_proxy(
+                name, self.alternative_url_map, False)
+        else:
+            raise TypeError('Unexpected backend service protocol')
+
+    def delete_alternative_target_grpc_proxy(self, force=False):
+        if force:
+            name = self.make_resource_name(self.ALTERNATIVE_TARGET_PROXY_NAME)
+        elif self.alternative_target_proxy:
+            name = self.alternative_target_proxy.name
+        else:
+            return
+        logger.info('Deleting alternative Target GRPC proxy "%s"', name)
+        self.compute.delete_target_grpc_proxy(name)
+        self.alternative_target_proxy = None
+
     def find_unused_forwarding_rule_port(
             self,
             *,
             lo: int = 1024,  # To avoid confusion, skip well-known ports.
             hi: int = 65535,
             attempts: int = 25) -> int:
-        for attempts in range(attempts):
+        for _ in range(attempts):
             src_port = random.randint(lo, hi)
-            if not (self.compute.exists_forwarding_rule(src_port)):
+            if not self.compute.exists_forwarding_rule(src_port):
                 return src_port
         # TODO(sergiitk): custom exception
         raise RuntimeError("Couldn't find unused forwarding rule port")
@@ -509,6 +583,36 @@ class TrafficDirectorManager:
         self.compute.delete_forwarding_rule(name)
         self.forwarding_rule = None
 
+    def create_alternative_forwarding_rule(self,
+                                           src_port: int,
+                                           ip_address='0.0.0.0'):
+        name = self.make_resource_name(self.ALTERNATIVE_FORWARDING_RULE_NAME)
+        src_port = int(src_port)
+        logging.info(
+            'Creating alternative forwarding rule "%s" in network "%s": %s:%s -> %s',
+            name, self.network, ip_address, src_port,
+            self.alternative_target_proxy.url)
+        resource = self.compute.create_forwarding_rule(
+            name,
+            src_port,
+            self.alternative_target_proxy,
+            self.network_url,
+            ip_address=ip_address)
+        self.alternative_forwarding_rule = resource
+        return resource
+
+    def delete_alternative_forwarding_rule(self, force=False):
+        if force:
+            name = self.make_resource_name(
+                self.ALTERNATIVE_FORWARDING_RULE_NAME)
+        elif self.alternative_forwarding_rule:
+            name = self.alternative_forwarding_rule.name
+        else:
+            return
+        logger.info('Deleting alternative Forwarding rule "%s"', name)
+        self.compute.delete_forwarding_rule(name)
+        self.alternative_forwarding_rule = None
+
     def create_firewall_rule(self, allowed_ports: List[str]):
         name = self.make_resource_name(self.FIREWALL_RULE_NAME)
         logging.info(
@@ -535,7 +639,9 @@ class TrafficDirectorManager:
 class TrafficDirectorAppNetManager(TrafficDirectorManager):
 
     GRPC_ROUTE_NAME = "grpc-route"
-    ROUTER_NAME = "router"
+    MESH_NAME = "mesh"
+
+    netsvc: _NetworkServicesV1Alpha1
 
     def __init__(self,
                  gcp_api_manager: gcp.api.GcpApiManager,
@@ -543,54 +649,56 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
                  *,
                  resource_prefix: str,
                  resource_suffix: Optional[str] = None,
-                 network: str = 'default'):
+                 network: str = 'default',
+                 compute_api_version: str = 'v1'):
         super().__init__(gcp_api_manager,
                          project,
                          resource_prefix=resource_prefix,
                          resource_suffix=resource_suffix,
-                         network=network)
+                         network=network,
+                         compute_api_version=compute_api_version)
 
         # API
         self.netsvc = _NetworkServicesV1Alpha1(gcp_api_manager, project)
 
         # Managed resources
-        self.grpc_route: Optional[_NetworkServicesV1Alpha1.GrpcRoute] = None
-        self.router: Optional[_NetworkServicesV1Alpha1.Router] = None
+        # TODO(gnossen) PTAL at the pylint error
+        self.grpc_route: Optional[GrpcRoute] = None
+        self.mesh: Optional[Mesh] = None
 
-    def create_router(self) -> GcpResource:
-        name = self.make_resource_name(self.ROUTER_NAME)
-        logger.info("Creating Router %s", name)
-        body = {
-            "type": "PROXYLESS_GRPC",
-            "routes": [self.grpc_route.url],
-            "network": "default",
-        }
-        resource = self.netsvc.create_router(name, body)
-        self.router = self.netsvc.get_router(name)
-        logger.debug("Loaded Router: %s", self.router)
+    def create_mesh(self) -> GcpResource:
+        name = self.make_resource_name(self.MESH_NAME)
+        logger.info("Creating Mesh %s", name)
+        body = {}
+        resource = self.netsvc.create_mesh(name, body)
+        self.mesh = self.netsvc.get_mesh(name)
+        logger.debug("Loaded Mesh: %s", self.mesh)
         return resource
 
-    def delete_router(self, force=False):
+    def delete_mesh(self, force=False):
         if force:
-            name = self.make_resource_name(self.ROUTER_NAME)
-        elif self.router:
-            name = self.router.name
+            name = self.make_resource_name(self.MESH_NAME)
+        elif self.mesh:
+            name = self.mesh.name
         else:
             return
-        logger.info('Deleting Router %s', name)
-        self.netsvc.delete_router(name)
-        self.router = None
+        logger.info('Deleting Mesh %s', name)
+        self.netsvc.delete_mesh(name)
+        self.mesh = None
 
     def create_grpc_route(self, src_host: str, src_port: int) -> GcpResource:
         host = f'{src_host}:{src_port}'
+        service_name = self.netsvc.resource_full_name(self.backend_service.name,
+                                                      "backendServices")
         body = {
+            "meshes": [self.mesh.url],
             "hostnames":
                 host,
             "rules": [{
                 "action": {
-                    "destination": {
-                        "serviceName": self.backend_service.name
-                    }
+                    "destinations": [{
+                        "serviceName": service_name
+                    }]
                 }
             }],
         }
@@ -621,18 +729,20 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
         self.grpc_route = None
 
     def cleanup(self, *, force=False):
-        self.delete_router(force=force)
         self.delete_grpc_route(force=force)
+        self.delete_mesh(force=force)
         super().cleanup(force=force)
 
 
 class TrafficDirectorSecureManager(TrafficDirectorManager):
-    netsec: Optional[_NetworkSecurityV1Alpha1]
     SERVER_TLS_POLICY_NAME = "server-tls-policy"
     CLIENT_TLS_POLICY_NAME = "client-tls-policy"
-    # TODO(sergiitk): Rename to ENDPOINT_POLICY_NAME when upgraded to v1beta
-    ENDPOINT_CONFIG_SELECTOR_NAME = "endpoint-policy"
+    AUTHZ_POLICY_NAME = "authz-policy"
+    ENDPOINT_POLICY = "endpoint-policy"
     CERTIFICATE_PROVIDER_INSTANCE = "google_cloud_private_spiffe"
+
+    netsec: _NetworkSecurityV1Beta1
+    netsvc: _NetworkServicesV1Beta1
 
     def __init__(
         self,
@@ -642,21 +752,24 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         resource_prefix: str,
         resource_suffix: Optional[str] = None,
         network: str = 'default',
+        compute_api_version: str = 'v1',
     ):
         super().__init__(gcp_api_manager,
                          project,
                          resource_prefix=resource_prefix,
                          resource_suffix=resource_suffix,
-                         network=network)
+                         network=network,
+                         compute_api_version=compute_api_version)
 
         # API
-        self.netsec = _NetworkSecurityV1Alpha1(gcp_api_manager, project)
-        self.netsvc = _NetworkServicesV1Alpha1(gcp_api_manager, project)
+        self.netsec = _NetworkSecurityV1Beta1(gcp_api_manager, project)
+        self.netsvc = _NetworkServicesV1Beta1(gcp_api_manager, project)
 
         # Managed resources
         self.server_tls_policy: Optional[ServerTlsPolicy] = None
-        self.ecs: Optional[EndpointConfigSelector] = None
         self.client_tls_policy: Optional[ClientTlsPolicy] = None
+        self.authz_policy: Optional[AuthorizationPolicy] = None
+        self.endpoint_policy: Optional[EndpointPolicy] = None
 
     def setup_server_security(self,
                               *,
@@ -666,9 +779,9 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
                               tls=True,
                               mtls=True):
         self.create_server_tls_policy(tls=tls, mtls=mtls)
-        self.create_endpoint_config_selector(server_namespace=server_namespace,
-                                             server_name=server_name,
-                                             server_port=server_port)
+        self.create_endpoint_policy(server_namespace=server_namespace,
+                                    server_name=server_name,
+                                    server_port=server_port)
 
     def setup_client_security(self,
                               *,
@@ -683,9 +796,10 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
     def cleanup(self, *, force=False):
         # Cleanup in the reverse order of creation
         super().cleanup(force=force)
-        self.delete_endpoint_config_selector(force=force)
+        self.delete_endpoint_policy(force=force)
         self.delete_server_tls_policy(force=force)
         self.delete_client_tls_policy(force=force)
+        self.delete_authz_policy(force=force)
 
     def create_server_tls_policy(self, *, tls, mtls):
         name = self.make_resource_name(self.SERVER_TLS_POLICY_NAME)
@@ -720,10 +834,33 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         self.netsec.delete_server_tls_policy(name)
         self.server_tls_policy = None
 
-    def create_endpoint_config_selector(self, server_namespace, server_name,
-                                        server_port):
-        name = self.make_resource_name(self.ENDPOINT_CONFIG_SELECTOR_NAME)
-        logger.info('Creating Endpoint Config Selector %s', name)
+    def create_authz_policy(self, *, action: str, rules: list):
+        name = self.make_resource_name(self.AUTHZ_POLICY_NAME)
+        logger.info('Creating Authz Policy %s', name)
+        policy = {
+            "action": action,
+            "rules": rules,
+        }
+
+        self.netsec.create_authz_policy(name, policy)
+        self.authz_policy = self.netsec.get_authz_policy(name)
+        logger.debug('Authz Policy loaded: %r', self.authz_policy)
+
+    def delete_authz_policy(self, force=False):
+        if force:
+            name = self.make_resource_name(self.AUTHZ_POLICY_NAME)
+        elif self.authz_policy:
+            name = self.authz_policy.name
+        else:
+            return
+        logger.info('Deleting Authz Policy %s', name)
+        self.netsec.delete_authz_policy(name)
+        self.authz_policy = None
+
+    def create_endpoint_policy(self, *, server_namespace: str, server_name: str,
+                               server_port: int) -> None:
+        name = self.make_resource_name(self.ENDPOINT_POLICY)
+        logger.info('Creating Endpoint Policy %s', name)
         endpoint_matcher_labels = [{
             "labelName": "app",
             "labelValue": f"{server_namespace}-{server_name}"
@@ -731,37 +868,38 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         port_selector = {"ports": [str(server_port)]}
         label_matcher_all = {
             "metadataLabelMatchCriteria": "MATCH_ALL",
-            "metadataLabels": endpoint_matcher_labels
+            "metadataLabels": endpoint_matcher_labels,
         }
         config = {
             "type": "GRPC_SERVER",
-            "httpFilters": {},
             "trafficPortSelector": port_selector,
             "endpointMatcher": {
-                "metadataLabelMatcher": label_matcher_all
+                "metadataLabelMatcher": label_matcher_all,
             },
         }
         if self.server_tls_policy:
             config["serverTlsPolicy"] = self.server_tls_policy.name
         else:
             logger.warning(
-                'Creating Endpoint Config Selector %s with '
+                'Creating Endpoint Policy %s with '
                 'no Server TLS policy attached', name)
+        if self.authz_policy:
+            config["authorizationPolicy"] = self.authz_policy.name
 
-        self.netsvc.create_endpoint_config_selector(name, config)
-        self.ecs = self.netsvc.get_endpoint_config_selector(name)
-        logger.debug('Loaded Endpoint Config Selector: %r', self.ecs)
+        self.netsvc.create_endpoint_policy(name, config)
+        self.endpoint_policy = self.netsvc.get_endpoint_policy(name)
+        logger.debug('Loaded Endpoint Policy: %r', self.endpoint_policy)
 
-    def delete_endpoint_config_selector(self, force=False):
+    def delete_endpoint_policy(self, force: bool = False) -> None:
         if force:
-            name = self.make_resource_name(self.ENDPOINT_CONFIG_SELECTOR_NAME)
-        elif self.ecs:
-            name = self.ecs.name
+            name = self.make_resource_name(self.ENDPOINT_POLICY)
+        elif self.endpoint_policy:
+            name = self.endpoint_policy.name
         else:
             return
-        logger.info('Deleting Endpoint Config Selector %s', name)
-        self.netsvc.delete_endpoint_config_selector(name)
-        self.ecs = None
+        logger.info('Deleting Endpoint Policy %s', name)
+        self.netsvc.delete_endpoint_policy(name)
+        self.endpoint_policy = None
 
     def create_client_tls_policy(self, *, tls, mtls):
         name = self.make_resource_name(self.CLIENT_TLS_POLICY_NAME)

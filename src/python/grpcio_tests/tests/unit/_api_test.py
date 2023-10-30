@@ -17,7 +17,6 @@ import logging
 import unittest
 
 import grpc
-import six
 
 from tests.unit import _from_grpc_import_star
 
@@ -75,6 +74,7 @@ class AllTest(unittest.TestCase):
             'access_token_call_credentials',
             'composite_call_credentials',
             'composite_channel_credentials',
+            'compute_engine_channel_credentials',
             'ssl_server_credentials',
             'ssl_server_certificate_configuration',
             'dynamic_ssl_server_credentials',
@@ -91,8 +91,8 @@ class AllTest(unittest.TestCase):
             'insecure_server_credentials',
         )
 
-        six.assertCountEqual(self, expected_grpc_code_elements,
-                             _from_grpc_import_star.GRPC_ELEMENTS)
+        self.assertCountEqual(expected_grpc_code_elements,
+                              _from_grpc_import_star.GRPC_ELEMENTS)
 
 
 class ChannelConnectivityTest(unittest.TestCase):

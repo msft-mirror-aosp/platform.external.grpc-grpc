@@ -20,19 +20,21 @@
 
 #include "src/core/lib/gprpp/global_config_env.h"
 
-#include <grpc/support/alloc.h>
+#include <ctype.h>
+#include <stdlib.h>
+
+#include <memory>
+#include <string>
+#include <type_traits>
+
+#include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
-
-#include <ctype.h>
-#include <string.h>
-
-#include <string>
-
-#include "absl/strings/str_format.h"
+#include "src/core/lib/gprpp/env.h"
 
 namespace grpc_core {
 
@@ -58,15 +60,15 @@ void SetGlobalConfigEnvErrorFunction(GlobalConfigEnvErrorFunctionType func) {
   g_global_config_env_error_func = func;
 }
 
-grpc_core::UniquePtr<char> GlobalConfigEnv::GetValue() {
-  return grpc_core::UniquePtr<char>(gpr_getenv(GetName()));
+UniquePtr<char> GlobalConfigEnv::GetValue() {
+  auto env = GetEnv(GetName());
+  return UniquePtr<char>(env.has_value() ? gpr_strdup(env.value().c_str())
+                                         : nullptr);
 }
 
-void GlobalConfigEnv::SetValue(const char* value) {
-  gpr_setenv(GetName(), value);
-}
+void GlobalConfigEnv::SetValue(const char* value) { SetEnv(GetName(), value); }
 
-void GlobalConfigEnv::Unset() { gpr_unsetenv(GetName()); }
+void GlobalConfigEnv::Unset() { UnsetEnv(GetName()); }
 
 char* GlobalConfigEnv::GetName() {
   // This makes sure that name_ is in a canonical form having uppercase
@@ -80,7 +82,7 @@ static_assert(std::is_trivially_destructible<GlobalConfigEnvBool>::value,
               "GlobalConfigEnvBool needs to be trivially destructible.");
 
 bool GlobalConfigEnvBool::Get() {
-  grpc_core::UniquePtr<char> str = GetValue();
+  UniquePtr<char> str = GetValue();
   if (str == nullptr) {
     return default_value_;
   }
@@ -101,7 +103,7 @@ static_assert(std::is_trivially_destructible<GlobalConfigEnvInt32>::value,
               "GlobalConfigEnvInt32 needs to be trivially destructible.");
 
 int32_t GlobalConfigEnvInt32::Get() {
-  grpc_core::UniquePtr<char> str = GetValue();
+  UniquePtr<char> str = GetValue();
   if (str == nullptr) {
     return default_value_;
   }
@@ -124,10 +126,10 @@ void GlobalConfigEnvInt32::Set(int32_t value) {
 static_assert(std::is_trivially_destructible<GlobalConfigEnvString>::value,
               "GlobalConfigEnvString needs to be trivially destructible.");
 
-grpc_core::UniquePtr<char> GlobalConfigEnvString::Get() {
-  grpc_core::UniquePtr<char> str = GetValue();
+UniquePtr<char> GlobalConfigEnvString::Get() {
+  UniquePtr<char> str = GetValue();
   if (str == nullptr) {
-    return grpc_core::UniquePtr<char>(gpr_strdup(default_value_));
+    return UniquePtr<char>(gpr_strdup(default_value_));
   }
   return str;
 }

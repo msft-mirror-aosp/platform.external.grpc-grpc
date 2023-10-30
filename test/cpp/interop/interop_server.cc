@@ -16,6 +16,13 @@
  *
  */
 
+#include <fstream>
+#include <memory>
+#include <sstream>
+#include <thread>
+
+#include "absl/flags/flag.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -24,12 +31,6 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include <fstream>
-#include <memory>
-#include <sstream>
-#include <thread>
-
-#include "absl/flags/flag.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
@@ -46,7 +47,6 @@ ABSL_FLAG(int32_t, port, 0, "Server port.");
 ABSL_FLAG(int32_t, max_send_message_size, -1, "The maximum send message size.");
 
 using grpc::Server;
-using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::ServerCredentials;
 using grpc::ServerReader;

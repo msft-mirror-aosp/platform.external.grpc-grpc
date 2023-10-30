@@ -21,10 +21,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <vector>
+
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
-
-#include <vector>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -63,9 +64,10 @@ class TcpServerFdHandler {
 }  // namespace grpc_core
 
 typedef struct grpc_tcp_server_vtable {
-  grpc_error_handle (*create)(grpc_closure* shutdown_complete,
-                              const grpc_channel_args* args,
-                              grpc_tcp_server** server);
+  grpc_error_handle (*create)(
+      grpc_closure* shutdown_complete,
+      const grpc_event_engine::experimental::EndpointConfig& config,
+      grpc_tcp_server** server);
   void (*start)(grpc_tcp_server* server,
                 const std::vector<grpc_pollset*>* pollsets,
                 grpc_tcp_server_cb on_accept_cb, void* cb_arg);
@@ -84,10 +86,12 @@ typedef struct grpc_tcp_server_vtable {
 
 /* Create a server, initially not bound to any ports. The caller owns one ref.
    If shutdown_complete is not NULL, it will be used by
-   grpc_tcp_server_unref() when the ref count reaches zero. */
-grpc_error_handle grpc_tcp_server_create(grpc_closure* shutdown_complete,
-                                         const grpc_channel_args* args,
-                                         grpc_tcp_server** server);
+   grpc_tcp_server_unref() when the ref count reaches zero.
+   Takes ownership of the slice_allocator_factory. */
+grpc_error_handle grpc_tcp_server_create(
+    grpc_closure* shutdown_complete,
+    const grpc_event_engine::experimental::EndpointConfig& config,
+    grpc_tcp_server** server);
 
 /* Start listening to bound ports */
 void grpc_tcp_server_start(grpc_tcp_server* server,

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import abc
 import dataclasses
 import logging
 from typing import Any, Dict, List, Optional, Tuple
@@ -23,26 +24,48 @@ from framework.infrastructure import gcp
 
 logger = logging.getLogger(__name__)
 
-_ComputeV1 = gcp.compute.ComputeV1
-GcpResource = _ComputeV1.GcpResource
+# Type aliases
+GcpResource = gcp.compute.ComputeV1.GcpResource
 
 
 @dataclasses.dataclass(frozen=True)
-class Router:
+class EndpointPolicy:
+    url: str
+    name: str
+    type: str
+    traffic_port_selector: dict
+    endpoint_matcher: dict
+    update_time: str
+    create_time: str
+    http_filters: Optional[dict] = None
+    server_tls_policy: Optional[str] = None
+
+    @classmethod
+    def from_response(cls, name: str, response: Dict[str,
+                                                     Any]) -> 'EndpointPolicy':
+        return cls(name=name,
+                   url=response['name'],
+                   type=response['type'],
+                   server_tls_policy=response.get('serverTlsPolicy', None),
+                   traffic_port_selector=response['trafficPortSelector'],
+                   endpoint_matcher=response['endpointMatcher'],
+                   http_filters=response.get('httpFilters', None),
+                   update_time=response['updateTime'],
+                   create_time=response['createTime'])
+
+
+@dataclasses.dataclass(frozen=True)
+class Mesh:
 
     name: str
     url: str
-    type: str
-    network: Optional[str]
     routes: Optional[List[str]]
 
     @classmethod
-    def from_response(cls, name: str, d: Dict[str, Any]) -> 'Router':
+    def from_response(cls, name: str, d: Dict[str, Any]) -> 'Mesh':
         return cls(
             name=name,
             url=d["name"],
-            type=d["type"],
-            network=d.get("network"),
             routes=list(d["routes"]) if "routes" in d else None,
         )
 
@@ -58,7 +81,7 @@ class GrpcRoute:
         case_sensitive: Optional[bool]
 
         @classmethod
-        def from_response(cls, d: Dict[str, Any]) -> 'MethodMatch':
+        def from_response(cls, d: Dict[str, Any]) -> 'GrpcRoute.MethodMatch':
             return cls(
                 type=d.get("type"),
                 grpc_service=d.get("grpcService"),
@@ -73,7 +96,7 @@ class GrpcRoute:
         value: str
 
         @classmethod
-        def from_response(cls, d: Dict[str, Any]) -> 'HeaderMatch':
+        def from_response(cls, d: Dict[str, Any]) -> 'GrpcRoute.HeaderMatch':
             return cls(
                 type=d.get("type"),
                 key=d["key"],
@@ -82,17 +105,17 @@ class GrpcRoute:
 
     @dataclasses.dataclass(frozen=True)
     class RouteMatch:
-        method: Optional['MethodMatch']
-        headers: Tuple['HeaderMatch']
+        method: Optional['GrpcRoute.MethodMatch']
+        headers: Tuple['GrpcRoute.HeaderMatch']
 
         @classmethod
-        def from_response(cls, d: Dict[str, Any]) -> 'RouteMatch':
+        def from_response(cls, d: Dict[str, Any]) -> 'GrpcRoute.RouteMatch':
             return cls(
-                method=MethodMatch.from_response(d["method"])
+                method=GrpcRoute.MethodMatch.from_response(d["method"])
                 if "method" in d else None,
                 headers=tuple(
-                    HeaderMatch.from_response(h) for h in d["headers"])
-                if "headers" in d else (),
+                    GrpcRoute.HeaderMatch.from_response(h)
+                    for h in d["headers"]) if "headers" in d else (),
             )
 
     @dataclasses.dataclass(frozen=True)
@@ -101,7 +124,7 @@ class GrpcRoute:
         weight: Optional[int]
 
         @classmethod
-        def from_response(cls, d: Dict[str, Any]) -> 'Destination':
+        def from_response(cls, d: Dict[str, Any]) -> 'GrpcRoute.Destination':
             return cls(
                 service_name=d["serviceName"],
                 weight=d.get("weight"),
@@ -109,61 +132,54 @@ class GrpcRoute:
 
     @dataclasses.dataclass(frozen=True)
     class RouteAction:
-        destination: Optional['Destination']
-        drop: Optional[int]
 
         @classmethod
-        def from_response(cls, d: Dict[str, Any]) -> 'RouteAction':
-            return cls(
-                destination=Destination.from_response(d["destination"])
-                if "destination" in d else None,
-                drop=d.get("drop"),
-            )
+        def from_response(cls, d: Dict[str, Any]) -> 'GrpcRoute.RouteAction':
+            destinations = [
+                GrpcRoute.Destination.from_response(dest)
+                for dest in d["destinations"]
+            ] if "destinations" in d else []
+            return cls(destinations=destinations)
 
     @dataclasses.dataclass(frozen=True)
     class RouteRule:
-        match: Optional['RouteMatch']
-        action: 'RouteAction'
+        matches: List['GrpcRoute.RouteMatch']
+        action: 'GrpcRoute.RouteAction'
 
         @classmethod
-        def from_response(cls, d: Dict[str, Any]) -> 'RouteRule':
+        def from_response(cls, d: Dict[str, Any]) -> 'GrpcRoute.RouteRule':
+            matches = [
+                GrpcRoute.RouteMatch.from_response(m) for m in d["matches"]
+            ] if "matches" in d else []
             return cls(
-                match=RouteMatch.from_response(d["match"])
-                if "match" in d else "",
-                action=RouteAction.from_response(d["action"]),
+                matches=matches,
+                action=GrpcRoute.RouteAction.from_response(d["action"]),
             )
 
     name: str
     url: str
     hostnames: Tuple[str]
-    rules: Tuple['RouteRule']
+    rules: Tuple['GrpcRoute.RouteRule']
+    meshes: Optional[Tuple[str]]
 
     @classmethod
-    def from_response(cls, name: str, d: Dict[str, Any]) -> 'RouteRule':
+    def from_response(cls, name: str, d: Dict[str,
+                                              Any]) -> 'GrpcRoute.RouteRule':
         return cls(
             name=name,
             url=d["name"],
             hostnames=tuple(d["hostnames"]),
             rules=tuple(d["rules"]),
+            meshes=None if d.get("meshes") is None else tuple(d["meshes"]),
         )
 
 
-class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
-    ENDPOINT_CONFIG_SELECTORS = 'endpointConfigSelectors'
-    GRPC_ROUTES = 'grpcRoutes'
-    ROUTERS = 'routers'
+class _NetworkServicesBase(gcp.api.GcpStandardCloudApiResource,
+                           metaclass=abc.ABCMeta):
+    """Base class for NetworkServices APIs."""
 
-    @dataclasses.dataclass(frozen=True)
-    class EndpointConfigSelector:
-        url: str
-        name: str
-        type: str
-        server_tls_policy: Optional[str]
-        traffic_port_selector: dict
-        endpoint_matcher: dict
-        http_filters: dict
-        update_time: str
-        create_time: str
+    # TODO(https://github.com/grpc/grpc/issues/29532) remove pylint disable
+    # pylint: disable=abstract-method
 
     def __init__(self, api_manager: gcp.api.GcpApiManager, project: str):
         super().__init__(api_manager.networkservices(self.api_version), project)
@@ -174,39 +190,7 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
     def api_name(self) -> str:
         return 'networkservices'
 
-    @property
-    def api_version(self) -> str:
-        return 'v1alpha1'
-
-    def create_endpoint_config_selector(self, name, body: dict):
-        return self._create_resource(
-            self._api_locations.endpointConfigSelectors(),
-            body,
-            endpointConfigSelectorId=name)
-
-    def get_endpoint_config_selector(self, name: str) -> EndpointConfigSelector:
-        result = self._get_resource(
-            collection=self._api_locations.endpointConfigSelectors(),
-            full_name=self.resource_full_name(name,
-                                              self.ENDPOINT_CONFIG_SELECTORS))
-        return self.EndpointConfigSelector(
-            name=name,
-            url=result['name'],
-            type=result['type'],
-            server_tls_policy=result.get('serverTlsPolicy', None),
-            traffic_port_selector=result['trafficPortSelector'],
-            endpoint_matcher=result['endpointMatcher'],
-            http_filters=result['httpFilters'],
-            update_time=result['updateTime'],
-            create_time=result['createTime'])
-
-    def delete_endpoint_config_selector(self, name):
-        return self._delete_resource(
-            collection=self._api_locations.endpointConfigSelectors(),
-            full_name=self.resource_full_name(name,
-                                              self.ENDPOINT_CONFIG_SELECTORS))
-
-    def _execute(self, *args, **kwargs):  # pylint: disable=signature-differs
+    def _execute(self, *args, **kwargs):  # pylint: disable=signature-differs,arguments-differ
         # Workaround TD bug: throttled operations are reported as internal.
         # Ref b/175345578
         retryer = tenacity.Retrying(
@@ -217,41 +201,82 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
             reraise=True)
         retryer(super()._execute, *args, **kwargs)
 
-    def create_router(self, name: str, body: dict) -> GcpResource:
+    @staticmethod
+    def _operation_internal_error(exception):
+        return (isinstance(exception, gcp.api.OperationError) and
+                exception.error.code == code_pb2.INTERNAL)
+
+
+class NetworkServicesV1Beta1(_NetworkServicesBase):
+    """NetworkServices API v1beta1."""
+    ENDPOINT_POLICIES = 'endpointPolicies'
+
+    @property
+    def api_version(self) -> str:
+        return 'v1beta1'
+
+    def create_endpoint_policy(self, name, body: dict) -> GcpResource:
         return self._create_resource(
-            self._api_locations.routers(),
-            body,
-            routerId=name,
-        )
+            collection=self._api_locations.endpointPolicies(),
+            body=body,
+            endpointPolicyId=name)
 
-    def get_router(self, name: str) -> Router:
-        result = self._get_resource(collection=self._api_locations.routers(),
-                                    full_name=self.resource_full_name(
-                                        name, self.ROUTERS))
-        return Router.from_response(name, result)
+    def get_endpoint_policy(self, name: str) -> EndpointPolicy:
+        response = self._get_resource(
+            collection=self._api_locations.endpointPolicies(),
+            full_name=self.resource_full_name(name, self.ENDPOINT_POLICIES))
+        return EndpointPolicy.from_response(name, response)
 
-    def delete_router(self, name: str) -> bool:
-        return self._delete_resource(collection=self._api_locations.routers(),
+    def delete_endpoint_policy(self, name: str) -> bool:
+        return self._delete_resource(
+            collection=self._api_locations.endpointPolicies(),
+            full_name=self.resource_full_name(name, self.ENDPOINT_POLICIES))
+
+
+class NetworkServicesV1Alpha1(NetworkServicesV1Beta1):
+    """NetworkServices API v1alpha1.
+
+    Note: extending v1beta1 class presumes that v1beta1 is just a v1alpha1 API
+    graduated into a more stable version. This is true in most cases. However,
+    v1alpha1 class can always override and reimplement incompatible methods.
+    """
+
+    GRPC_ROUTES = 'grpcRoutes'
+    MESHES = 'meshes'
+
+    @property
+    def api_version(self) -> str:
+        return 'v1alpha1'
+
+    def create_mesh(self, name: str, body: dict) -> GcpResource:
+        return self._create_resource(collection=self._api_locations.meshes(),
+                                     body=body,
+                                     meshId=name)
+
+    def get_mesh(self, name: str) -> Mesh:
+        full_name = self.resource_full_name(name, self.MESHES)
+        result = self._get_resource(collection=self._api_locations.meshes(),
+                                    full_name=full_name)
+        return Mesh.from_response(name, result)
+
+    def delete_mesh(self, name: str) -> bool:
+        return self._delete_resource(collection=self._api_locations.meshes(),
                                      full_name=self.resource_full_name(
-                                         name, self.ROUTERS))
+                                         name, self.MESHES))
 
     def create_grpc_route(self, name: str, body: dict) -> GcpResource:
-        return self._create_resource(self._api_locations.grpcRoutes(),
-                                     body,
-                                     grpcRouteId=name)
+        return self._create_resource(
+            collection=self._api_locations.grpcRoutes(),
+            body=body,
+            grpcRouteId=name)
 
     def get_grpc_route(self, name: str) -> GrpcRoute:
+        full_name = self.resource_full_name(name, self.GRPC_ROUTES)
         result = self._get_resource(collection=self._api_locations.grpcRoutes(),
-                                    full_name=self.resource_full_name(
-                                        name, self.GRPC_ROUTES))
+                                    full_name=full_name)
         return GrpcRoute.from_response(name, result)
 
     def delete_grpc_route(self, name: str) -> bool:
         return self._delete_resource(
             collection=self._api_locations.grpcRoutes(),
             full_name=self.resource_full_name(name, self.GRPC_ROUTES))
-
-    @staticmethod
-    def _operation_internal_error(exception):
-        return (isinstance(exception, gcp.api.OperationError) and
-                exception.error.code == code_pb2.INTERNAL)

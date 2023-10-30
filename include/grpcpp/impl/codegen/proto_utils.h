@@ -19,12 +19,13 @@
 #ifndef GRPCPP_IMPL_CODEGEN_PROTO_UTILS_H
 #define GRPCPP_IMPL_CODEGEN_PROTO_UTILS_H
 
+// IWYU pragma: private
+
 #include <type_traits>
 
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/slice.h>
-#include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/proto_buffer_reader.h>
@@ -32,6 +33,7 @@
 #include <grpcpp/impl/codegen/serialization_traits.h>
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/impl/codegen/status.h>
+#include <grpcpp/support/byte_buffer.h>
 
 /// This header provides serialization and deserialization between gRPC
 /// messages serialized using protobuf and the C++ objects they represent.

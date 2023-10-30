@@ -9,6 +9,43 @@ This section describes how to add gRPC as a dependency to your C++ project.
 In the C++ world, there's no universally accepted standard for managing project dependencies.
 Therefore, gRPC supports several major build systems, which should satisfy most users.
 
+## Supported Platforms
+
+* Officially Supported: These platforms are officially supported. We follow
+  [the OSS Foundational C++ Support Policy](https://opensource.google/documentation/policies/cplusplus-support)
+  to choose platforms to support.
+  We test our code on these platform and have automated continuous integration tests for
+  them.
+  .
+
+* Best Effort: We do not have continous integration tests for these, but we are
+  fairly confident that gRPC C++ would work on them. We will make our best
+  effort to support them, and we welcome patches for such platforms, but we
+  might need to declare bankruptcy on some issues.
+
+* Community Supported: These platforms are supported by contributions from the
+  open source community, there is no official support for them. Breakages on
+  these platforms may go unnoticed, and the community is responsible for all
+  maintenance. Unmaintained code for these platforms may be deleted.
+
+| Operating System | Architectures | Versions | Support Level |
+|------------------|---------------|----------|---------------|
+| Linux - Debian, Ubuntu, CentOS | x86, x64      | clang 6+, GCC 7.3+     | Officially Supported |
+| Windows 10+                    | x86, x64      | Visual Studio 2017+    | Officially Supported |
+| MacOS                          | x86, x64      | XCode 12+              | Officially Supported |
+| Linux - Others                 | x86, x64      | clang 6+, GCC 7.3+     | Best Effort          |
+| Linux                          | ARM           |                        | Best Effort          |
+| iOS                            |               |                        | Best Effort          |
+| Android                        |               |                        | Best Effort          |
+| Asylo                          |               |                        | Best Effort          |
+| FreeBSD                        |               |                        | Community Supported  |
+| NetBSD                         |               |                        | Community Supported  |
+| OpenBSD                        |               |                        | Community Supported  |
+| AIX                            |               |                        | Community Supported  |
+| Solaris                        |               |                        | Community Supported  |
+| NaCL                           |               |                        | Community Supported  |
+| Fuchsia                        |               |                        | Community Supported  |
+
 ## Bazel
 
 Bazel is the primary build system used by the core gRPC development team. Bazel

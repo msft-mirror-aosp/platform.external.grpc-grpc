@@ -15,8 +15,7 @@
 
 import functools
 import inspect
-import time
-from typing import Any, Iterable, List, Mapping, Tuple
+from typing import Any, Iterable, Mapping, Tuple
 
 from absl import flags
 from absl import logging
@@ -27,8 +26,8 @@ import framework.helpers.rand
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
-from framework.test_app import client_app
-from framework.test_app import server_app
+from framework.test_app.runners.k8s import k8s_xds_client_runner
+from framework.test_app.runners.k8s import k8s_xds_server_runner
 
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
@@ -39,12 +38,11 @@ STRATEGY = flags.DEFINE_enum('strategy',
                              help='Strategy of GCP resources management')
 
 # Type alias
+_KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
+_KubernetesClientRunner = k8s_xds_client_runner.KubernetesClientRunner
 UrlMapType = Any
 HostRule = Any
 PathMatcher = Any
-
-_BackendHTTP2 = gcp.compute.ComputeV1.BackendServiceProtocol.HTTP2
-_COMPUTE_V1_URL_PREFIX = 'https://www.googleapis.com/compute/v1'
 
 
 class _UrlMapChangeAggregator:
@@ -68,8 +66,8 @@ class _UrlMapChangeAggregator:
             *self._get_test_case_url_map(test_case))
         self._set_test_case_url_map(*url_map_parts)
 
+    @staticmethod
     def _get_test_case_url_map(
-            self,
             test_case: 'XdsUrlMapTestCase') -> Tuple[HostRule, PathMatcher]:
         host_rule = {
             "hosts": [test_case.hostname()],
@@ -143,16 +141,17 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             for key in absl_flags:
                 setattr(self, key, absl_flags[key])
         # Pick a client_namespace_suffix if not set
-        if self.resource_suffix is None:
+        if getattr(self, 'resource_suffix', None) is None:
             self.resource_suffix = ""
-            self.client_namespace_suffix = framework.helpers.rand.random_resource_suffix(
-            )
         else:
-            self.client_namespace_suffix = self.resource_suffix
-        logging.info(
-            'GcpResourceManager: resource prefix=%s, suffix=%s, client_namespace_suffix=%s',
-            self.resource_prefix, self.resource_suffix,
-            self.client_namespace_suffix)
+            raise NotImplementedError(
+                'Predefined resource_suffix is not supported for UrlMap tests')
+        logging.info('GcpResourceManager: resource prefix=%s, suffix=%s',
+                     self.resource_prefix, self.resource_suffix)
+
+        # Must be called before KubernetesApiManager or GcpApiManager init.
+        xds_flags.set_socket_default_timeout_from_flag()
+
         # API managers
         self.k8s_api_manager = k8s.KubernetesApiManager(self.kube_context)
         self.gcp_api_manager = gcp.api.GcpApiManager()
@@ -162,33 +161,13 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             resource_prefix=self.resource_prefix,
             resource_suffix=(self.resource_suffix or ""),
             network=self.network,
+            compute_api_version=self.compute_api_version,
         )
         # Kubernetes namespace
         self.k8s_namespace = k8s.KubernetesNamespace(self.k8s_api_manager,
                                                      self.resource_prefix)
-        if self.client_namespace_suffix != self.resource_suffix:
-            self.k8s_client_namespace = k8s.KubernetesNamespace(
-                self.k8s_api_manager,
-                client_app.KubernetesClientRunner.make_namespace_name(
-                    self.resource_prefix, self.client_namespace_suffix))
-        else:
-            self.k8s_client_namespace = self.k8s_namespace
-        # Kubernetes Test Client
-        self.test_client_runner = client_app.KubernetesClientRunner(
-            self.k8s_client_namespace,
-            deployment_name=self.client_name,
-            image_name=self.client_image,
-            gcp_project=self.project,
-            gcp_api_manager=self.gcp_api_manager,
-            gcp_service_account=self.gcp_service_account,
-            td_bootstrap_image=self.td_bootstrap_image,
-            xds_server_uri=self.xds_server_uri,
-            network=self.network,
-            debug_use_port_forwarding=self.debug_use_port_forwarding,
-            stats_port=self.client_port,
-            reuse_namespace=True)
         # Kubernetes Test Servers
-        self.test_server_runner = server_app.KubernetesServerRunner(
+        self.test_server_runner = _KubernetesServerRunner(
             self.k8s_namespace,
             deployment_name=self.server_name,
             image_name=self.server_image,
@@ -197,8 +176,9 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             gcp_service_account=self.gcp_service_account,
             td_bootstrap_image=self.td_bootstrap_image,
             xds_server_uri=self.xds_server_uri,
-            network=self.network)
-        self.test_server_alternative_runner = server_app.KubernetesServerRunner(
+            network=self.network,
+            enable_workload_identity=self.enable_workload_identity)
+        self.test_server_alternative_runner = _KubernetesServerRunner(
             self.k8s_namespace,
             deployment_name=self.server_name + '-alternative',
             image_name=self.server_image,
@@ -208,8 +188,9 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             td_bootstrap_image=self.td_bootstrap_image,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
+            enable_workload_identity=self.enable_workload_identity,
             reuse_namespace=True)
-        self.test_server_affinity_runner = server_app.KubernetesServerRunner(
+        self.test_server_affinity_runner = _KubernetesServerRunner(
             self.k8s_namespace,
             deployment_name=self.server_name + '-affinity',
             image_name=self.server_image,
@@ -219,17 +200,42 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             td_bootstrap_image=self.td_bootstrap_image,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
+            enable_workload_identity=self.enable_workload_identity,
             reuse_namespace=True)
         logging.info('Strategy of GCP resources management: %s', self.strategy)
+
+    def create_test_client_runner(self):
+        if self.resource_suffix:
+            client_namespace_suffix = self.resource_suffix
+        else:
+            client_namespace_suffix = framework.helpers.rand.random_resource_suffix(
+            )
+        logging.info('GcpResourceManager: client_namespace_suffix=%s',
+                     client_namespace_suffix)
+        # Kubernetes Test Client
+        namespace_name = _KubernetesClientRunner.make_namespace_name(
+            self.resource_prefix, client_namespace_suffix)
+        return _KubernetesClientRunner(
+            k8s.KubernetesNamespace(self.k8s_api_manager, namespace_name),
+            deployment_name=self.client_name,
+            image_name=self.client_image,
+            gcp_project=self.project,
+            gcp_api_manager=self.gcp_api_manager,
+            gcp_service_account=self.gcp_service_account,
+            td_bootstrap_image=self.td_bootstrap_image,
+            xds_server_uri=self.xds_server_uri,
+            network=self.network,
+            debug_use_port_forwarding=self.debug_use_port_forwarding,
+            enable_workload_identity=self.enable_workload_identity,
+            stats_port=self.client_port)
 
     def _pre_cleanup(self):
         # Cleanup existing debris
         logging.info('GcpResourceManager: pre clean-up')
         self.td.cleanup(force=True)
-        self.test_client_runner.delete_namespace()
         self.test_server_runner.delete_namespace()
 
-    def setup(self, test_case_classes: 'Iterable[XdsUrlMapTestCase]') -> None:
+    def setup(self, test_case_classes: Iterable['XdsUrlMapTestCase']) -> None:
         if self.strategy not in ['create', 'keep']:
             logging.info('GcpResourceManager: skipping setup for strategy [%s]',
                          self.strategy)
@@ -245,16 +251,9 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         # Health Checks
         self.td.create_health_check()
         # Backend Services
-        #
-        # The backend services are created with HTTP2 instead of GRPC (the
-        # default) to disable validate-for-proxyless, because the affinity
-        # settings are not accepted by RCTH yet.
-        #
-        # TODO: delete _BackendHTTP2 from the parameters, to use the default
-        # GRPC.
-        self.td.create_backend_service(_BackendHTTP2)
-        self.td.create_alternative_backend_service(_BackendHTTP2)
-        self.td.create_affinity_backend_service(_BackendHTTP2)
+        self.td.create_backend_service()
+        self.td.create_alternative_backend_service()
+        self.td.create_affinity_backend_service()
         # Construct UrlMap from test classes
         aggregator = _UrlMapChangeAggregator(
             url_map_name=self.td.make_resource_name(self.td.URL_MAP_NAME))
@@ -301,11 +300,6 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         self.td.wait_for_affinity_backends_healthy_status()
 
     def cleanup(self) -> None:
-        if hasattr(self, 'test_client_runner'):
-            self.test_client_runner.cleanup(
-                force=True,
-                # Clean-up ephemeral client namespace
-                force_namespace=self.k8s_client_namespace != self.k8s_namespace)
         if self.strategy not in ['create']:
             logging.info(
                 'GcpResourceManager: skipping tear down for strategy [%s]',

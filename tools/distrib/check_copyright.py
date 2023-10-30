@@ -140,7 +140,7 @@ RE_LICENSE = dict(
     (k, r'\n'.join(LICENSE_PREFIX_RE[k] +
                    (RE_YEAR if re.search(RE_YEAR, line) else re.escape(line))
                    for line in LICENSE_NOTICE))
-    for k, v in LICENSE_PREFIX_RE.items())
+    for k, v in list(LICENSE_PREFIX_RE.items()))
 
 YEAR = datetime.datetime.now().year
 
@@ -168,7 +168,7 @@ LICENSE_TEXT = dict(
     (k,
      join_license_text(LICENSE_PREFIX_TEXT[k][0], LICENSE_PREFIX_TEXT[k][1],
                        LICENSE_PREFIX_TEXT[k][2], LICENSE_NOTICE))
-    for k, v in LICENSE_PREFIX_TEXT.items())
+    for k, v in list(LICENSE_PREFIX_TEXT.items()))
 
 if args.precommit:
     FILE_LIST_COMMAND = 'git status -z | grep -Poz \'(?<=^[MARC][MARCD ] )[^\s]+\''
@@ -195,9 +195,21 @@ def log(cond, why, filename):
     if not cond:
         return
     if args.output == 'details':
-        print('%s: %s' % (why, filename))
+        print(('%s: %s' % (why, filename)))
     else:
         print(filename)
+
+
+def write_copyright(license_text, file_text, filename):
+    shebang = ""
+    lines = file_text.split("\n")
+    if lines and lines[0].startswith("#!"):
+        shebang = lines[0] + "\n"
+        file_text = file_text[len(shebang):]
+
+    rewritten_text = shebang + license_text + "\n" + file_text
+    with open(filename, 'w') as f:
+        f.write(rewritten_text)
 
 
 # scan files, validate the text
@@ -236,8 +248,7 @@ for filename in filename_list:
         pass
     elif 'DO NOT EDIT' not in text:
         if args.fix:
-            text = license_text + '\n' + text
-            open(filename, 'w').write(text)
+            write_copyright(license_text, text, filename)
             log(1, 'copyright missing (fixed)', filename)
         else:
             log(1, 'copyright missing', filename)

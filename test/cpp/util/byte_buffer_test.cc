@@ -16,16 +16,16 @@
  *
  */
 
-#include <grpc++/support/byte_buffer.h>
-#include <grpcpp/impl/grpc_library.h>
-
 #include <cstring>
 #include <vector>
 
+#include <gtest/gtest.h>
+
+#include <grpc++/support/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/slice.h>
-#include <gtest/gtest.h>
 
 #include "test/core/util/test_config.h"
 
@@ -116,8 +116,8 @@ TEST_F(ByteBufferTest, SerializationMakesCopy) {
   bool owned = false;
   ByteBuffer buffer(&slices[0], 2);
   slices.clear();
-  auto status = SerializationTraits<ByteBuffer, void>::Serialize(
-      buffer, &send_buffer, &owned);
+  auto status =
+      SerializationTraits<ByteBuffer>::Serialize(buffer, &send_buffer, &owned);
   EXPECT_TRUE(status.ok());
   EXPECT_TRUE(owned);
   EXPECT_TRUE(send_buffer.Valid());
@@ -156,7 +156,7 @@ TEST_F(ByteBufferTest, DumpToSingleSlice) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

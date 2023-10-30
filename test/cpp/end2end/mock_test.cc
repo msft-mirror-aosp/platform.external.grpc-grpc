@@ -17,6 +17,12 @@
  */
 
 #include <climits>
+#include <iostream>
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
@@ -28,8 +34,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/test/default_reactor_test_peer.h>
-
-#include "absl/types/optional.h"
+#include <grpcpp/test/mock_stream.h>
 
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -37,18 +42,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-#include <grpcpp/test/mock_stream.h>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include <iostream>
-
-using grpc::testing::DefaultReactorTestPeer;
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-using grpc::testing::EchoTestService;
-using grpc::testing::MockClientReaderWriter;
 using std::vector;
 using ::testing::_;
 using ::testing::AtLeast;
@@ -198,7 +191,7 @@ TEST_F(MockCallbackTest, MockedCallSucceedsWithWait) {
     grpc::internal::CondVar cv;
     absl::optional<grpc::Status> ABSL_GUARDED_BY(mu) status;
   } status;
-  DefaultReactorTestPeer peer(&ctx, [&](::grpc::Status s) {
+  DefaultReactorTestPeer peer(&ctx, [&](grpc::Status s) {
     grpc::internal::MutexLock l(&status.mu);
     status.status = std::move(s);
     status.cv.Signal();
@@ -429,7 +422,7 @@ TEST_F(MockTest, BidiStream) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

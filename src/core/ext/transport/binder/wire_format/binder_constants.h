@@ -15,29 +15,16 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_CONSTANTS_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_CONSTANTS_H
 
-#include <grpc/impl/codegen/port_platform.h>
-
-#include "absl/base/attributes.h"
-
-#if defined(ANDROID) || defined(__ANDROID__)
-
-#include <android/binder_auto_utils.h>
 #include <android/binder_ibinder.h>
-
-#else
+#include <grpc/support/port_platform.h>
 
 #include <cstdint>
 
-using transaction_code_t = uint32_t;
-
-ABSL_CONST_INIT extern const int FIRST_CALL_TRANSACTION;
-ABSL_CONST_INIT extern const int LAST_CALL_TRANSACTION;
-
-#endif  // defined(ANDROID) || defined(__ANDROID__)
+#include "absl/base/attributes.h"
 
 namespace grpc_binder {
 
-enum class BinderTransportTxCode {
+enum class BinderTransportTxCode : int32_t {
   SETUP_TRANSPORT = 1,
   SHUTDOWN_TRANSPORT = 2,
   ACKNOWLEDGE_BYTES = 3,

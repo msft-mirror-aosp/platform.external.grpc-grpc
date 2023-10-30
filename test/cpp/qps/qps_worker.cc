@@ -25,6 +25,8 @@
 #include <thread>
 #include <vector>
 
+#include "absl/memory/memory.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
@@ -33,8 +35,6 @@
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
-
-#include "absl/memory/memory.h"
 
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/proto/grpc/testing/worker_service.grpc.pb.h"
@@ -67,7 +67,6 @@ static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
     default:
       abort();
   }
-  abort();
 }
 
 static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
@@ -86,7 +85,6 @@ static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
     default:
       abort();
   }
-  abort();
 }
 
 class ScopedProfile final {
@@ -278,7 +276,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
 
 QpsWorker::QpsWorker(int driver_port, int server_port,
                      const std::string& credential_type) {
-  impl_ = absl::make_unique<WorkerServiceImpl>(server_port, this);
+  impl_ = std::make_unique<WorkerServiceImpl>(server_port, this);
   gpr_atm_rel_store(&done_, static_cast<gpr_atm>(0));
 
   std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();

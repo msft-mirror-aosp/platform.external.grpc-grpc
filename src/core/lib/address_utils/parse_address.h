@@ -21,11 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
+#include <stdint.h>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 /** Populate \a resolved_addr from \a uri, whose path is expected to contain a
@@ -37,6 +39,11 @@ bool grpc_parse_unix(const grpc_core::URI& uri,
  * unix socket path in the abstract namespace. Returns true upon success. */
 bool grpc_parse_unix_abstract(const grpc_core::URI& uri,
                               grpc_resolved_address* resolved_addr);
+
+/// Populate \a resolved_addr from \a uri, whose path is expected to contain a
+/// vsock cid:port pair. Returns true upon success.
+bool grpc_parse_vsock(const grpc_core::URI& uri,
+                      grpc_resolved_address* resolved_addr);
 
 /** Populate \a resolved_addr from \a uri, whose path is expected to contain an
  * IPv4 host:port pair. Returns true upon success. */
@@ -63,6 +70,13 @@ uint16_t grpc_strhtons(const char* port);
 
 namespace grpc_core {
 
+// Parses an IPv4 or IPv6 address string and returns a sockaddr with the
+// specified address and port.
+absl::StatusOr<grpc_resolved_address> StringToSockaddr(
+    absl::string_view address_and_port);
+absl::StatusOr<grpc_resolved_address> StringToSockaddr(
+    absl::string_view address, int port);
+
 /** Populate \a resolved_addr to be a unix socket at |path| */
 grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
                                        grpc_resolved_address* resolved_addr);
@@ -71,6 +85,9 @@ grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
  * at |path| */
 grpc_error_handle UnixAbstractSockaddrPopulate(
     absl::string_view path, grpc_resolved_address* resolved_addr);
+
+grpc_error_handle VSockaddrPopulate(absl::string_view path,
+                                    grpc_resolved_address* resolved_addr);
 
 }  // namespace grpc_core
 

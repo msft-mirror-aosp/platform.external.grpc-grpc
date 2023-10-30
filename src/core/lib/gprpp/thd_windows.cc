@@ -22,22 +22,16 @@
 
 #ifdef GPR_WINDOWS
 
-#include "src/core/lib/gprpp/thd.h"
+#include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
-#include <string.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/memory.h"
-
-#if defined(_MSC_VER)
-#define thread_local __declspec(thread)
-#elif defined(__GNUC__)
-#define thread_local __thread
-#else
-#error "Unknown compiler - please file a bug report"
-#endif
+#include "src/core/lib/gprpp/thd.h"
 
 namespace {
 class ThreadInternalsWindows;

@@ -22,10 +22,6 @@
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-#include "src/core/lib/iomgr/endpoint_pair.h"
-#include "src/core/lib/iomgr/socket_utils_posix.h"
-#include "src/core/lib/iomgr/unix_sockets_posix.h"
-
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -38,8 +34,14 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
+#include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/resource_quota/api.h"
 
 static void create_sockets(int sv[2]) {
   int flags;
@@ -48,8 +50,8 @@ static void create_sockets(int sv[2]) {
   GPR_ASSERT(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
   flags = fcntl(sv[1], F_GETFL, 0);
   GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
-  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == GRPC_ERROR_NONE);
-  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == GRPC_ERROR_NONE);
+  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == absl::OkStatus());
+  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == absl::OkStatus());
 }
 
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
@@ -57,16 +59,22 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
   int sv[2];
   grpc_endpoint_pair p;
   create_sockets(sv);
-
   grpc_core::ExecCtx exec_ctx;
-
   std::string final_name = absl::StrCat(name, ":client");
-  p.client = grpc_tcp_create(grpc_fd_create(sv[1], final_name.c_str(), false),
-                             args, "socketpair-server");
+  auto new_args = grpc_core::CoreConfiguration::Get()
+                      .channel_args_preconditioning()
+                      .PreconditionChannelArgs(args);
+  p.client = grpc_tcp_create(
+      grpc_fd_create(sv[1], final_name.c_str(), false),
+      TcpOptionsFromEndpointConfig(
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(new_args)),
+      "socketpair-server");
   final_name = absl::StrCat(name, ":server");
-  p.server = grpc_tcp_create(grpc_fd_create(sv[0], final_name.c_str(), false),
-                             args, "socketpair-client");
-
+  p.server = grpc_tcp_create(
+      grpc_fd_create(sv[0], final_name.c_str(), false),
+      TcpOptionsFromEndpointConfig(
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(new_args)),
+      "socketpair-client");
   return p;
 }
 

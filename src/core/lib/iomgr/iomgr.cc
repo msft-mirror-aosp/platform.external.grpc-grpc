@@ -53,7 +53,9 @@ static bool g_grpc_abort_on_leaks;
 
 void grpc_iomgr_init() {
   grpc_core::ExecCtx exec_ctx;
-  grpc_determine_iomgr_platform();
+  if (!grpc_have_determined_iomgr_platform()) {
+    grpc_set_default_iomgr_platform();
+  }
   g_shutdown = 0;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);
@@ -62,7 +64,6 @@ void grpc_iomgr_init() {
   g_root_object.name = const_cast<char*>("root");
   grpc_iomgr_platform_init();
   grpc_timer_list_init();
-  grpc_core::grpc_errqueue_init();
   g_grpc_abort_on_leaks = GPR_GLOBAL_CONFIG_GET(grpc_abort_on_leaks);
 }
 
@@ -77,7 +78,12 @@ static size_t count_objects(void) {
   return n;
 }
 
-size_t grpc_iomgr_count_objects_for_testing(void) { return count_objects(); }
+size_t grpc_iomgr_count_objects_for_testing(void) {
+  gpr_mu_lock(&g_mu);
+  size_t ret = count_objects();
+  gpr_mu_unlock(&g_mu);
+  return ret;
+}
 
 static void dump_objects(const char* kind) {
   grpc_iomgr_object* obj;

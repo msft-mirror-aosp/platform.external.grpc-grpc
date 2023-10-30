@@ -19,10 +19,23 @@ grpc_package(name = "test/core/client_channel")
 licenses(["notice"])
 
 grpc_cc_test(
-    name = "certificate_provider_registry_test",
-    srcs = ["certificate_provider_registry_test.cc"],
+    name = "client_channel_test",
+    srcs = ["client_channel_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    deps = [
+        "//:grpc_client_channel",
+        "//src/core:channel_args",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "http_proxy_mapper_test",
+    srcs = ["http_proxy_mapper_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -37,6 +50,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -46,8 +60,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "service_config_test",
-    srcs = ["service_config_test.cc"],
+    name = "client_channel_service_config_test",
+    srcs = ["client_channel_service_config_test.cc"],
     external_deps = [
         "gtest",
     ],
@@ -56,5 +70,48 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "retry_service_config_test",
+    srcs = ["retry_service_config_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "rls_lb_config_parser_test",
+    srcs = ["rls_lb_config_parser_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    tags = ["no_test_ios"],
+    deps = [
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "outlier_detection_lb_config_parser_test",
+    srcs = ["outlier_detection_lb_config_parser_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    tags = ["no_test_ios"],
+    deps = [
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
     ],
 )

@@ -33,7 +33,8 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/connectivity_state.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -255,10 +256,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Currently, pickers are always accessed from within the
   /// client_channel data plane mutex, so they do not have to be
   /// thread-safe.
-  class SubchannelPicker {
+  class SubchannelPicker : public RefCounted<SubchannelPicker> {
    public:
     SubchannelPicker() = default;
-    virtual ~SubchannelPicker() = default;
 
     virtual PickResult Pick(PickArgs args) = 0;
   };
@@ -283,13 +283,16 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// by the client channel.
     virtual void UpdateState(grpc_connectivity_state state,
                              const absl::Status& status,
-                             std::unique_ptr<SubchannelPicker>) = 0;
+                             RefCountedPtr<SubchannelPicker> picker) = 0;
 
     /// Requests that the resolver re-resolve.
     virtual void RequestReresolution() = 0;
 
     /// Returns the channel authority.
     virtual absl::string_view GetAuthority() = 0;
+
+    /// Returns the EventEngine to use for timers and async work.
+    virtual grpc_event_engine::experimental::EventEngine* GetEventEngine() = 0;
 
     /// Adds a trace message associated with the channel.
     enum TraceSeverity { TRACE_INFO, TRACE_WARNING, TRACE_ERROR };
@@ -353,11 +356,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// Updates the policy with new data from the resolver.  Will be invoked
   /// immediately after LB policy is constructed, and then again whenever
-  /// the resolver returns a new result.
-  // TODO(roth): Change this to return some indication as to whether the
-  // update has been accepted, so that we can indicate to the resolver
-  // whether it should go into backoff to retry the resolution.
-  virtual void UpdateLocked(UpdateArgs) = 0;  // NOLINT
+  /// the resolver returns a new result.  The returned status indicates
+  /// whether the LB policy accepted the update; if non-OK, informs
+  /// polling-based resolvers that they should go into backoff delay and
+  /// eventually reattempt the resolution.
+  virtual absl::Status UpdateLocked(UpdateArgs) = 0;  // NOLINT
 
   /// Tries to enter a READY connectivity state.
   /// This is a no-op by default, since most LB policies never go into

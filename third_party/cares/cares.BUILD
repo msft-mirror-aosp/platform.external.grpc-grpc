@@ -56,6 +56,11 @@ config_setting(
     values = {"cpu": "ios_arm64"},
 )
 
+config_setting(
+    name = "ios_sim_arm64",
+    values = {"cpu": "ios_sim_arm64"},
+)
+
 # The following architectures are found in 
 # https://github.com/bazelbuild/bazel/blob/master/src/main/java/com/google/devtools/build/lib/rules/apple/ApplePlatform.java
 config_setting(
@@ -88,6 +93,11 @@ config_setting(
     values = {"cpu": "watchos_arm64_32"}
 )
 
+config_setting(
+    name = "openbsd",
+    values = {"cpu": "openbsd"},
+)
+
 copy_file(
     name = "ares_build_h",
     src = "@com_github_grpc_grpc//third_party/cares:ares_build.h",
@@ -101,6 +111,7 @@ copy_file(
         ":ios_armv7": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
         ":ios_armv7s": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
         ":ios_arm64": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
+        ":ios_sim_arm64": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
         ":tvos_x86_64": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
         ":tvos_arm64": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
         ":watchos_i386": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
@@ -113,6 +124,7 @@ copy_file(
         ":darwin_arm64e": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
         ":windows": "@com_github_grpc_grpc//third_party/cares:config_windows/ares_config.h",
         ":android": "@com_github_grpc_grpc//third_party/cares:config_android/ares_config.h",
+        ":openbsd": "@com_github_grpc_grpc//third_party/cares:config_openbsd/ares_config.h",
         "//conditions:default": "@com_github_grpc_grpc//third_party/cares:config_linux/ares_config.h",
     }),
     out = "ares_config.h",

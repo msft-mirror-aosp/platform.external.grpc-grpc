@@ -15,23 +15,25 @@
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_ORACLE_EVENT_ENGINE_POSIX_H_
 #define GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_ORACLE_EVENT_ENGINE_POSIX_H_
 
-#include <functional>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
+#include <vector>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/time/time.h"
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
-#include <grpc/support/log.h>
 
-#include "src/core/lib/event_engine/promise.h"
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/notification.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
 #include "test/core/event_engine/test_suite/event_engine_test_utils.h"
 
 namespace grpc_event_engine {
@@ -48,10 +50,10 @@ class PosixOracleEndpoint : public EventEngine::Endpoint {
              SliceBuffer* data, const WriteArgs* args) override;
   void Shutdown();
   EventEngine::ResolvedAddress& GetPeerAddress() const override {
-    GPR_ASSERT(false && "unimplemented");
+    grpc_core::Crash("unimplemented");
   }
   EventEngine::ResolvedAddress& GetLocalAddress() const override {
-    GPR_ASSERT(false && "unimplemented");
+    grpc_core::Crash("unimplemented");
   }
 
  private:
@@ -70,8 +72,8 @@ class PosixOracleEndpoint : public EventEngine::Endpoint {
     int GetNumBytesToRead() const { return num_bytes_to_read_; }
     void operator()(std::string read_data, absl::Status status) {
       if (on_complete_ != nullptr) {
-        AppendStringToSliceBuffer(absl::exchange(buffer_, nullptr), read_data);
-        absl::exchange(on_complete_, nullptr)(status);
+        AppendStringToSliceBuffer(std::exchange(buffer_, nullptr), read_data);
+        std::exchange(on_complete_, nullptr)(status);
       }
     }
 
@@ -94,7 +96,7 @@ class PosixOracleEndpoint : public EventEngine::Endpoint {
     std::string GetBytesToWrite() const { return bytes_to_write_; }
     void operator()(absl::Status status) {
       if (on_complete_ != nullptr) {
-        absl::exchange(on_complete_, nullptr)(status);
+        std::exchange(on_complete_, nullptr)(status);
       }
     }
 
@@ -106,11 +108,15 @@ class PosixOracleEndpoint : public EventEngine::Endpoint {
   void ProcessReadOperations();
   void ProcessWriteOperations();
 
-  mutable absl::Mutex mu_;
+  mutable grpc_core::Mutex mu_;
   bool is_shutdown_ = false;
   int socket_fd_;
-  Promise<ReadOperation> read_ops_channel_;
-  Promise<WriteOperation> write_ops_channel_;
+  ReadOperation read_ops_channel_;
+  WriteOperation write_ops_channel_;
+  std::unique_ptr<grpc_core::Notification> read_op_signal_{
+      new grpc_core::Notification()};
+  std::unique_ptr<grpc_core::Notification> write_op_signal_{
+      new grpc_core::Notification()};
   grpc_core::Thread read_ops_ ABSL_GUARDED_BY(mu_);
   grpc_core::Thread write_ops_ ABSL_GUARDED_BY(mu_);
 };
@@ -128,7 +134,7 @@ class PosixOracleListener : public EventEngine::Listener {
  private:
   void HandleIncomingConnections();
 
-  mutable absl::Mutex mu_;
+  mutable grpc_core::Mutex mu_;
   EventEngine::Listener::AcceptCallback on_accept_;
   absl::AnyInvocable<void(absl::Status)> on_shutdown_;
   std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory_;
@@ -162,29 +168,27 @@ class PosixOracleEventEngine final : public EventEngine {
                            EventEngine::Duration timeout) override;
 
   bool CancelConnect(ConnectionHandle /*handle*/) override {
-    GPR_ASSERT(false && "unimplemented");
+    grpc_core::Crash("unimplemented");
   }
   bool IsWorkerThread() override { return false; };
   std::unique_ptr<DNSResolver> GetDNSResolver(
       const DNSResolver::ResolverOptions& /*options*/) override {
-    GPR_ASSERT(false && "unimplemented");
+    grpc_core::Crash("unimplemented");
   }
-  void Run(Closure* /*closure*/) override {
-    GPR_ASSERT(false && "unimplemented");
-  }
+  void Run(Closure* /*closure*/) override { grpc_core::Crash("unimplemented"); }
   void Run(absl::AnyInvocable<void()> /*closure*/) override {
-    GPR_ASSERT(false && "unimplemented");
+    grpc_core::Crash("unimplemented");
   }
   TaskHandle RunAfter(EventEngine::Duration /*duration*/,
                       Closure* /*closure*/) override {
-    GPR_ASSERT(false && "unimplemented");
+    grpc_core::Crash("unimplemented");
   }
   TaskHandle RunAfter(EventEngine::Duration /*duration*/,
                       absl::AnyInvocable<void()> /*closure*/) override {
-    GPR_ASSERT(false && "unimplemented");
+    grpc_core::Crash("unimplemented");
   }
   bool Cancel(TaskHandle /*handle*/) override {
-    GPR_ASSERT(false && "unimplemented");
+    grpc_core::Crash("unimplemented");
   }
 };
 

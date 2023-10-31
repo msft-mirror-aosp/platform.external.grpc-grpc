@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <net/if.h>
 #include <string.h>
@@ -35,13 +35,15 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/test_config.h"
@@ -102,8 +104,7 @@ static void actually_poll(void* argsp) {
       if (args->done) {
         break;
       }
-      grpc_core::Duration time_left =
-          deadline - grpc_core::ExecCtx::Get()->Now();
+      grpc_core::Duration time_left = deadline - grpc_core::Timestamp::Now();
       gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, args->done,
               time_left.millis());
       ASSERT_GE(time_left, grpc_core::Duration::Zero());

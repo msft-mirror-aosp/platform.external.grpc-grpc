@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPC_CORE_LIB_GPRPP_FORK_H
 #define GRPC_CORE_LIB_GPRPP_FORK_H
@@ -23,24 +23,18 @@
 
 #include <atomic>
 
-/*
- * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
- *       AROUND VERY SPECIFIC USE CASES.
- */
+//
+// NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
+//       AROUND VERY SPECIFIC USE CASES.
+//
 
 namespace grpc_core {
-
-namespace internal {
-class ExecCtxState;
-class ThreadState;
-}  // namespace internal
 
 class Fork {
  public:
   typedef void (*child_postfork_func)(void);
 
   static void GlobalInit();
-  static void GlobalShutdown();
 
   // Returns true if fork suppport is enabled, false otherwise
   static bool Enabled();
@@ -91,8 +85,6 @@ class Fork {
   static void DoIncExecCtxCount();
   static void DoDecExecCtxCount();
 
-  static internal::ExecCtxState* exec_ctx_state_;
-  static internal::ThreadState* thread_state_;
   static std::atomic<bool> support_enabled_;
   static bool override_enabled_;
   static child_postfork_func reset_child_polling_engine_;
@@ -100,4 +92,4 @@ class Fork {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRPP_FORK_H */
+#endif  // GRPC_CORE_LIB_GPRPP_FORK_H

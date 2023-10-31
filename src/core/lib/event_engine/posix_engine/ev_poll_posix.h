@@ -19,34 +19,39 @@
 
 #include <atomic>
 #include <memory>
-#include <vector>
+#include <string>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
+#include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
-#include "absl/synchronization/mutex.h"
 
+#include <grpc/event_engine/event_engine.h>
+
+#include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 class PollEventHandle;
 
 // Definition of poll based poller.
-class PollPoller : public EventPoller {
+class PollPoller : public PosixEventPoller {
  public:
   explicit PollPoller(Scheduler* scheduler);
   PollPoller(Scheduler* scheduler, bool use_phony_poll);
   EventHandle* CreateHandle(int fd, absl::string_view name,
                             bool track_err) override;
-  absl::Status Work(grpc_core::Timestamp deadline,
-                    std::vector<EventHandle*>& pending_events) override;
+  Poller::WorkResult Work(
+      grpc_event_engine::experimental::EventEngine::Duration timeout,
+      absl::FunctionRef<void()> schedule_poll_again) override;
+  std::string Name() override { return "poll"; }
   void Kick() override;
   Scheduler* GetScheduler() { return scheduler_; }
   void Shutdown() override;
+  bool CanTrackErrors() const override { return false; }
   ~PollPoller() override;
 
  private:
@@ -62,12 +67,14 @@ class PollPoller : public EventPoller {
   void PollerHandlesListRemoveHandle(PollEventHandle* handle)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   friend class PollEventHandle;
-  struct HandlesList {
+  class HandlesList {
+   public:
+    explicit HandlesList(PollEventHandle* handle) : handle(handle) {}
     PollEventHandle* handle;
-    PollEventHandle* next;
-    PollEventHandle* prev;
+    PollEventHandle* next = nullptr;
+    PollEventHandle* prev = nullptr;
   };
-  absl::Mutex mu_;
+  grpc_core::Mutex mu_;
   Scheduler* scheduler_;
   std::atomic<int> ref_count_{1};
   bool use_phony_poll_;
@@ -79,11 +86,12 @@ class PollPoller : public EventPoller {
 };
 
 // Return an instance of a poll based poller tied to the specified scheduler.
-// It use_phony_poll is true, it implies that the poller is declared non-polling
-// and any attempt to schedule a blocking poll will result in a crash failure.
-PollPoller* GetPollPoller(Scheduler* scheduler, bool use_phony_poll);
+// It use_phony_poll is true, it implies that the poller is declared
+// non-polling and any attempt to schedule a blocking poll will result in a
+// crash failure.
+PollPoller* MakePollPoller(Scheduler* scheduler, bool use_phony_poll);
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EV_POLL_POSIX_H

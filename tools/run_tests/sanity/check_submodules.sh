@@ -26,7 +26,7 @@ want_submodules=$(mktemp /tmp/submXXXXXX)
 git submodule | awk '{ print $2 " " $1 }' | sort >"$submodules"
 cat <<EOF | sort >"$want_submodules"
 third_party/abseil-cpp 273292d1cfc0a94a65082ee350509af1d113344d
-third_party/benchmark 0baacde3618ca617da95375e0af13ce1baadea47
+third_party/benchmark 361e8d1cfe0c6c36d30b39f1b61302ece5507320
 third_party/bloaty 60209eb1ccc34d5deefb002d1b7f37545204f7f2
 third_party/boringssl-with-bazel 6195bf8242156c9a2fa75702eee058f91b86a88b
 third_party/cares/cares 6654436a307a5a686b008c1d4c93b0085da6e6d8
@@ -37,8 +37,8 @@ third_party/libuv 02a9e1be252b623ee032a3137c0b0c94afbe6809
 third_party/opencensus-proto 4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89
 third_party/opentelemetry 60fa8754d890b5c55949a8c68dcfd7ab5c2395df
 third_party/protobuf 24487dd1045c7f3d64a21f38a3f0c06cc4cf2edb
-third_party/re2 8e08f47b11b413302749c0d8b17a1c94777495d5
-third_party/xds cb28da3451f158a947dfc45090fe92b07b243bc1
+third_party/re2 0c5616df9c0aaa44c9440d87422012423d91c7d1
+third_party/xds 06c439db220b89134a8a49bad41994560d6537c6
 third_party/zlib 04f42ceca40f73e2978b50e93806c2a18c1281fc
 EOF
 

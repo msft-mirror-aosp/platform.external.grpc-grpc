@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <mutex>
 #include <thread>
@@ -42,7 +42,8 @@
 #include <grpcpp/test/channel_test_peer.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
@@ -60,9 +61,6 @@
 
 #include <gtest/gtest.h>
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-using grpc::testing::kTlsCredentialsType;
 using std::chrono::system_clock;
 
 namespace grpc {
@@ -321,8 +319,8 @@ std::string TestScenario::AsString() const {
 
 class End2endTest : public ::testing::TestWithParam<TestScenario> {
  protected:
-  static void SetUpTestCase() { grpc_init(); }
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void SetUpTestSuite() { grpc_init(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
   End2endTest()
       : is_server_started_(false),
         kMaxMessageSize_(8192),
@@ -370,7 +368,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       // Add 20 phony server interceptors
       creators.reserve(20);
       for (auto i = 0; i < 20; i++) {
-        creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
+        creators.push_back(std::make_unique<PhonyInterceptorFactory>());
       }
       builder.experimental().SetInterceptorCreators(std::move(creators));
     }
@@ -440,7 +438,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
           interceptor_creators = {}) {
     ResetChannel(std::move(interceptor_creators));
     if (GetParam().use_proxy()) {
-      proxy_service_ = absl::make_unique<Proxy>(channel_);
+      proxy_service_ = std::make_unique<Proxy>(channel_);
       int port = grpc_pick_unused_port_or_die();
       std::ostringstream proxyaddr;
       proxyaddr << "localhost:" << port;
@@ -1512,7 +1510,7 @@ TEST_P(End2endTest, ExpectErrorTest) {
     EXPECT_EQ(iter->binary_error_details(), s.error_details());
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "created"));
 #ifndef NDEBUG
-    // GRPC_ERROR_INT_FILE_LINE is for debug only
+    // grpc_core::StatusIntProperty::kFileLine is for debug only
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "file"));
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "line"));
 #endif
@@ -1561,15 +1559,15 @@ TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
   EchoResponse response;
   request.set_message("Hello");
   request.mutable_param()->set_skip_cancelled_check(true);
-  // Let server sleep for 40 ms first to guarantee expiry.
-  // 40 ms might seem a bit extreme but the timer manager would have been just
+  // Let server sleep for 4 secs first to guarantee expiry.
+  // 4 secs might seem a bit extreme but the timer manager would have been just
   // initialized (when ResetStub() was called) and there are some warmup costs
   // i.e the timer thread many not have even started. There might also be other
   // delays in the timer manager thread (in acquiring locks, timer data
   // structure manipulations, starting backup timer threads) that add to the
-  // delays. 40ms is still not enough in some cases but this significantly
-  // reduces the test flakes
-  request.mutable_param()->set_server_sleep_us(40 * 1000);
+  // delays. 4 secs might be still not enough in some cases but this
+  // significantly reduces the test flakes
+  request.mutable_param()->set_server_sleep_us(4 * 1000 * 1000);
 
   ClientContext context;
   std::chrono::system_clock::time_point deadline =
@@ -1873,7 +1871,7 @@ TEST_P(SecureEnd2endTest, CallCredentialsInterception) {
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       interceptor_creators;
   interceptor_creators.push_back(
-      absl::make_unique<CredentialsInterceptorFactory>());
+      std::make_unique<CredentialsInterceptorFactory>());
   ResetStub(std::move(interceptor_creators));
   EchoRequest request;
   EchoResponse response;
@@ -1902,7 +1900,7 @@ TEST_P(SecureEnd2endTest, CallCredentialsInterceptionWithSetCredentials) {
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       interceptor_creators;
   interceptor_creators.push_back(
-      absl::make_unique<CredentialsInterceptorFactory>());
+      std::make_unique<CredentialsInterceptorFactory>());
   ResetStub(std::move(interceptor_creators));
   EchoRequest request;
   EchoResponse response;
@@ -2252,7 +2250,7 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
                         kClientChannelBackupPollIntervalMs);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  gpr_setenv("grpc_cfstream", "0");
+  grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
 
   if (test_secure) {

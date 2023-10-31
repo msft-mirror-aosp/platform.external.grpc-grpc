@@ -71,7 +71,7 @@ def _is_supported(config: skips.TestConfig) -> bool:
     elif config.client_lang == _Lang.GO:
         return config.version_gte('v1.41.x')
     elif config.client_lang == _Lang.NODE:
-        return False
+        return config.version_gte('v1.8.x')
     return True
 
 
@@ -104,7 +104,7 @@ class TestRetryUpTo3AttemptsAndFail(xds_url_map_testcase.XdsUrlMapTestCase):
                                 metadata=[
                                     (RpcTypeUnaryCall,
                                      _RPC_BEHAVIOR_HEADER_NAME,
-                                     'error-code-14,succeed-on-retry-attempt-4')
+                                     'succeed-on-retry-attempt-4,error-code-14')
                                 ],
                                 num_rpcs=_NUM_RPCS)
         self.assertRpcStatusCode(test_client,
@@ -145,7 +145,7 @@ class TestRetryUpTo4AttemptsAndSucceed(xds_url_map_testcase.XdsUrlMapTestCase):
                                 metadata=[
                                     (RpcTypeUnaryCall,
                                      _RPC_BEHAVIOR_HEADER_NAME,
-                                     'error-code-14,succeed-on-retry-attempt-4')
+                                     'succeed-on-retry-attempt-4,error-code-14')
                                 ],
                                 num_rpcs=_NUM_RPCS)
         self.assertRpcStatusCode(test_client,

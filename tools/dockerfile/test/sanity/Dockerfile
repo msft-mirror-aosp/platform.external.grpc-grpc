@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:13
+FROM silkeh/clang:15-bullseye
 
 #=================
 # Basic C core dependencies
@@ -99,11 +99,14 @@ RUN python3 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
 # Install prerequisites for the clang-tidy script
 RUN apt-get update && apt-get install -y jq git
 
+# Install prerequisites for the iwyu script
+RUN apt-get update && apt-get install -y jq git cmake zlib1g-dev libtinfo-dev libclang-15-dev && apt-get clean
+
 #========================
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 4.2.1
+ENV BAZEL_VERSION 5.3.0
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1

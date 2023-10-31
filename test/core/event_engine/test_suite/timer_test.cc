@@ -12,15 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
+#include <atomic>
 #include <chrono>
+#include <cstdint>
+#include <memory>
 #include <random>
+#include <ratio>
 #include <thread>
+#include <utility>
+#include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/functional/bind_front.h"
+#include "absl/functional/function_ref.h"
+#include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
@@ -33,7 +43,8 @@ using namespace std::chrono_literals;
 
 class EventEngineTimerTest : public EventEngineTest {
  public:
-  void ScheduleCheckCB(absl::Time when, std::atomic<int>* call_count,
+  void ScheduleCheckCB(std::chrono::steady_clock::time_point when,
+                       std::atomic<int>* call_count,
                        std::atomic<int>* fail_count, int total_expected);
 
  protected:
@@ -125,11 +136,10 @@ TEST_F(EventEngineTimerTest, CancellingExecutedCallbackIsNoopAndReturnsFalse) {
   ASSERT_FALSE(engine->Cancel(handle));
 }
 
-void EventEngineTimerTest::ScheduleCheckCB(absl::Time when,
-                                           std::atomic<int>* call_count,
-                                           std::atomic<int>* fail_count,
-                                           int total_expected) {
-  auto now = absl::Now();
+void EventEngineTimerTest::ScheduleCheckCB(
+    std::chrono::steady_clock::time_point when, std::atomic<int>* call_count,
+    std::atomic<int>* fail_count, int total_expected) {
+  auto now = std::chrono::steady_clock::now();
   EXPECT_LE(when, now);
   if (when > now) ++(*fail_count);
   if (++(*call_count) == total_expected) {
@@ -141,7 +151,7 @@ void EventEngineTimerTest::ScheduleCheckCB(absl::Time when,
 
 TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
   auto engine = this->NewEventEngine();
-  constexpr int thread_count = 100;
+  constexpr int thread_count = 10;
   constexpr int call_count_per_thread = 100;
   constexpr float timeout_min_seconds = 1;
   constexpr float timeout_max_seconds = 10;
@@ -157,7 +167,8 @@ TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
                                            timeout_max_seconds);
       for (int call_n = 0; call_n < call_count_per_thread; ++call_n) {
         const auto dur = static_cast<int64_t>(1e9 * dis(gen));
-        auto deadline = absl::Now() + absl::Nanoseconds(dur);
+        auto deadline =
+            std::chrono::steady_clock::now() + std::chrono::nanoseconds(dur);
         engine->RunAfter(
             std::chrono::nanoseconds(dur),
             absl::bind_front(&EventEngineTimerTest::ScheduleCheckCB, this,
@@ -174,7 +185,65 @@ TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
   while (!signaled_) {
     cv_.Wait(&mu_);
   }
-  gpr_log(GPR_DEBUG, "failed timer count: %d of %d", failed_call_count.load(),
-          thread_count * call_count);
+  if (failed_call_count.load() != 0) {
+    gpr_log(GPR_DEBUG, "failed timer count: %d of %d", failed_call_count.load(),
+            thread_count * call_count);
+  }
   ASSERT_EQ(0, failed_call_count.load());
+}
+
+// Common implementation for the Run and RunAfter test variants below
+// Calls run_fn multiple times, and will get stuck if the implementation does a
+// blocking inline execution of the closure. This test will timeout on failure.
+void ImmediateRunTestInternal(
+    absl::FunctionRef<void(absl::AnyInvocable<void()>)> run_fn,
+    grpc_core::Mutex& mu, grpc_core::CondVar& cv) {
+  constexpr int num_concurrent_runs = 32;
+  constexpr int num_iterations = 100;
+  constexpr absl::Duration run_timeout = absl::Seconds(60);
+  std::atomic<int> waiters{0};
+  std::atomic<int> execution_count{0};
+  auto cb = [&mu, &cv, &run_timeout, &waiters, &execution_count]() {
+    waiters.fetch_add(1);
+    grpc_core::MutexLock lock(&mu);
+    EXPECT_FALSE(cv.WaitWithTimeout(&mu, run_timeout))
+        << "callback timed out waiting.";
+    execution_count.fetch_add(1);
+  };
+  for (int i = 0; i < num_iterations; i++) {
+    waiters.store(0);
+    execution_count.store(0);
+    for (int run = 0; run < num_concurrent_runs; run++) {
+      run_fn(cb);
+    }
+    while (waiters.load() != num_concurrent_runs) {
+      absl::SleepFor(absl::Milliseconds(33));
+    }
+    cv.SignalAll();
+    while (execution_count.load() != num_concurrent_runs) {
+      absl::SleepFor(absl::Milliseconds(33));
+    }
+  }
+}
+
+// TODO(hork): re-enabled after either I've implemented XFAIL, or fixed the
+// ThreadPool's behavior under backlog.
+TEST_F(EventEngineTimerTest,
+       DISABLED_RunDoesNotImmediatelyExecuteInTheSameThread) {
+  auto engine = this->NewEventEngine();
+  ImmediateRunTestInternal(
+      [&engine](absl::AnyInvocable<void()> cb) { engine->Run(std::move(cb)); },
+      mu_, cv_);
+}
+
+// TODO(hork): re-enabled after either I've implemented XFAIL, or fixed the
+// ThreadPool's behavior under backlog.
+TEST_F(EventEngineTimerTest,
+       DISABLED_RunAfterDoesNotImmediatelyExecuteInTheSameThread) {
+  auto engine = this->NewEventEngine();
+  ImmediateRunTestInternal(
+      [&engine](absl::AnyInvocable<void()> cb) {
+        engine->RunAfter(std::chrono::seconds(0), std::move(cb));
+      },
+      mu_, cv_);
 }

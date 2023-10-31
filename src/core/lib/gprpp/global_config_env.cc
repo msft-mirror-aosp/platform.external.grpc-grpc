@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2019 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2019 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -28,12 +28,13 @@
 #include <type_traits>
 
 #include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/env.h"
 
 namespace grpc_core {
 
@@ -60,14 +61,14 @@ void SetGlobalConfigEnvErrorFunction(GlobalConfigEnvErrorFunctionType func) {
 }
 
 UniquePtr<char> GlobalConfigEnv::GetValue() {
-  return UniquePtr<char>(gpr_getenv(GetName()));
+  auto env = GetEnv(GetName());
+  return UniquePtr<char>(env.has_value() ? gpr_strdup(env.value().c_str())
+                                         : nullptr);
 }
 
-void GlobalConfigEnv::SetValue(const char* value) {
-  gpr_setenv(GetName(), value);
-}
+void GlobalConfigEnv::SetValue(const char* value) { SetEnv(GetName(), value); }
 
-void GlobalConfigEnv::Unset() { gpr_unsetenv(GetName()); }
+void GlobalConfigEnv::Unset() { UnsetEnv(GetName()); }
 
 char* GlobalConfigEnv::GetName() {
   // This makes sure that name_ is in a canonical form having uppercase

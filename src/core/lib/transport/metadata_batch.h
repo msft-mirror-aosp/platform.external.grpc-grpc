@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
 #define GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
@@ -25,6 +25,7 @@
 
 #include <cstdint>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
@@ -34,19 +35,29 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/compression_types.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/gprpp/chunked_vector.h"
-#include "src/core/lib/gprpp/table.h"
+#include "src/core/lib/gprpp/packed_table.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/parsed_metadata.h"
 
 namespace grpc_core {
+
+// Given a metadata key and a value, return the encoded size.
+// Defaults to calling the key's Encode() method and then calculating the size
+// of that, but can be overridden for specific keys if there's a better way of
+// doing this.
+// May return 0 if the size is unknown/unknowable.
+template <typename Key>
+size_t EncodedSizeOfKey(Key, const typename Key::ValueType& value) {
+  return Key::Encode(value).size();
+}
 
 // grpc-timeout metadata trait.
 // ValueType is defined as Timestamp - an absolute timestamp (i.e. a
@@ -87,13 +98,17 @@ struct TeMetadata {
   static const char* DisplayValue(MementoType te);
 };
 
+inline size_t EncodedSizeOfKey(TeMetadata, TeMetadata::ValueType x) {
+  return x == TeMetadata::kTrailers ? 8 : 0;
+}
+
 // content-type metadata trait.
 struct ContentTypeMetadata {
   static constexpr bool kRepeatable = false;
   // gRPC says that content-type can be application/grpc[;something]
   // Core has only ever verified the prefix.
   // IF we want to start verifying more, we can expand this type.
-  enum ValueType {
+  enum ValueType : uint8_t {
     kApplicationGrpc,
     kEmpty,
     kInvalid,
@@ -112,7 +127,7 @@ struct ContentTypeMetadata {
 // scheme metadata trait.
 struct HttpSchemeMetadata {
   static constexpr bool kRepeatable = false;
-  enum ValueType {
+  enum ValueType : uint8_t {
     kHttp,
     kHttps,
     kInvalid,
@@ -131,10 +146,12 @@ struct HttpSchemeMetadata {
   static const char* DisplayValue(MementoType content_type);
 };
 
+size_t EncodedSizeOfKey(HttpSchemeMetadata, HttpSchemeMetadata::ValueType x);
+
 // method metadata trait.
 struct HttpMethodMetadata {
   static constexpr bool kRepeatable = false;
-  enum ValueType {
+  enum ValueType : uint8_t {
     kPost,
     kGet,
     kPut,
@@ -338,6 +355,11 @@ struct GrpcLbClientStatsMetadata {
   }
 };
 
+inline size_t EncodedSizeOfKey(GrpcLbClientStatsMetadata,
+                               GrpcLbClientStatsMetadata::ValueType) {
+  return 0;
+}
+
 // lb-token metadata
 struct LbTokenMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
@@ -387,6 +409,14 @@ struct GrpcStatusContext {
   static const std::string& DisplayValue(const std::string& x);
 };
 
+// Annotation added by a transport to note that the status came from the wire.
+struct GrpcStatusFromWire {
+  static absl::string_view DebugKey() { return "GrpcStatusFromWire"; }
+  static constexpr bool kRepeatable = false;
+  using ValueType = bool;
+  static absl::string_view DisplayValue(bool x) { return x ? "true" : "false"; }
+};
+
 // Annotation added by client surface code to denote wait-for-ready state
 struct WaitForReady {
   struct ValueType {
@@ -396,6 +426,15 @@ struct WaitForReady {
   static absl::string_view DebugKey() { return "WaitForReady"; }
   static constexpr bool kRepeatable = false;
   static std::string DisplayValue(ValueType x);
+};
+
+// Annotation added by a transport to note that server trailing metadata
+// is a Trailers-Only response.
+struct GrpcTrailersOnly {
+  static absl::string_view DebugKey() { return "GrpcTrailersOnly"; }
+  static constexpr bool kRepeatable = false;
+  using ValueType = bool;
+  static absl::string_view DisplayValue(bool x) { return x ? "true" : "false"; }
 };
 
 namespace metadata_detail {
@@ -498,7 +537,7 @@ class ParseHelper {
     return ParsedMetadata<Container>(
         trait,
         ParseValueToMemento<typename Trait::MementoType, Trait::ParseMemento>(),
-        transport_size_);
+        static_cast<uint32_t>(transport_size_));
   }
 
   GPR_ATTRIBUTE_NOINLINE ParsedMetadata<Container> NotFound(
@@ -643,6 +682,13 @@ struct AdaptDisplayValueToLog<std::string> {
 template <>
 struct AdaptDisplayValueToLog<const std::string&> {
   static std::string ToString(const std::string& value) { return value; }
+};
+
+template <>
+struct AdaptDisplayValueToLog<absl::string_view> {
+  static std::string ToString(absl::string_view value) {
+    return std::string(value);
+  }
 };
 
 template <>
@@ -1045,7 +1091,9 @@ class MetadataMap {
   //    void Encode(string_view key, Slice value);
   template <typename Encoder>
   void Encode(Encoder* encoder) const {
-    table_.ForEach(metadata_detail::EncodeWrapper<Encoder>{encoder});
+    table_.template ForEachIn<metadata_detail::EncodeWrapper<Encoder>,
+                              Value<Traits>...>(
+        metadata_detail::EncodeWrapper<Encoder>{encoder});
     for (const auto& unk : unknown_) {
       encoder->Encode(unk.first, unk.second);
     }
@@ -1222,7 +1270,7 @@ class MetadataMap {
   using Value = metadata_detail::Value<Which>;
 
   // Table of known metadata types.
-  Table<Value<Traits>...> table_;
+  PackedTable<Value<Traits>...> table_;
   metadata_detail::UnknownMap unknown_;
 };
 
@@ -1299,10 +1347,11 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata,
     // Non-encodable things
     grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
-    grpc_core::GrpcStatusContext, grpc_core::WaitForReady>;
+    grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,
+    grpc_core::WaitForReady, grpc_core::GrpcTrailersOnly>;
 
 struct grpc_metadata_batch : public grpc_metadata_batch_base {
   using grpc_metadata_batch_base::grpc_metadata_batch_base;
 };
 
-#endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H */
+#endif  // GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H

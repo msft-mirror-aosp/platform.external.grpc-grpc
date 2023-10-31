@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <string.h>
 
@@ -38,7 +38,7 @@ chttp2_create_fixture_async_verifier_cert_watcher(const grpc_channel_args*,
   fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
   memset(&f, 0, sizeof(f));
   ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
-  SetTlsVersion(ffd, SecurityPrimitives::TlsVersion::V_12);
+  SetTlsVersion(ffd, SecurityPrimitives::TlsVersion::V_13);
   SetCertificateProvider(ffd, SecurityPrimitives::ProviderType::FILE_PROVIDER);
   SetCertificateVerifier(
       ffd, SecurityPrimitives::VerifierType::EXTERNAL_ASYNC_VERIFIER);

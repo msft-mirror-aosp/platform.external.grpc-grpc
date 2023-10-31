@@ -15,8 +15,6 @@
 
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 
-#include <stdlib.h>
-
 #include <atomic>
 #include <cstdint>
 
@@ -27,6 +25,7 @@
 
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/status_helper.h"
 
 //  'state' holds the to call when the fd is readable or writable respectively.
@@ -61,7 +60,7 @@
 //     For 5,6,7: See SetShutdown() function
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 void LockfreeEvent::InitEvent() {
   // Perform an atomic store to start the state machine.
@@ -86,11 +85,11 @@ void LockfreeEvent::DestroyEvent() {
     // with post-deletion (see the note in the constructor) we want the bit
     // pattern to prevent error retention in a deleted object
   } while (!state_.compare_exchange_strong(curr, kShutdownBit,
-                                           std::memory_order_relaxed,
+                                           std::memory_order_acq_rel,
                                            std::memory_order_relaxed));
 }
 
-void LockfreeEvent::NotifyOn(IomgrEngineClosure* closure) {
+void LockfreeEvent::NotifyOn(PosixEngineClosure* closure) {
   // This load needs to be an acquire load because this can be a shutdown
   // error that we might need to reference. Adding acquire semantics makes
   // sure that the shutdown error has been initialized properly before us
@@ -111,7 +110,7 @@ void LockfreeEvent::NotifyOn(IomgrEngineClosure* closure) {
         // barrier.
         if (state_.compare_exchange_strong(
                 curr, reinterpret_cast<intptr_t>(closure),
-                std::memory_order_release, std::memory_order_relaxed)) {
+                std::memory_order_acq_rel, std::memory_order_relaxed)) {
           return;  // Successful. Return
         }
 
@@ -128,7 +127,7 @@ void LockfreeEvent::NotifyOn(IomgrEngineClosure* closure) {
         // closure when transitioning out of CLOSURE_NO_READY state (i.e there
         // is no other code that needs to 'happen-after' this)
         if (state_.compare_exchange_strong(curr, kClosureNotReady,
-                                           std::memory_order_relaxed,
+                                           std::memory_order_acq_rel,
                                            std::memory_order_relaxed)) {
           scheduler_->Run(closure);
           return;  // Successful. Return.
@@ -149,15 +148,14 @@ void LockfreeEvent::NotifyOn(IomgrEngineClosure* closure) {
         }
 
         // There is already a closure!. This indicates a bug in the code.
-        gpr_log(GPR_ERROR,
-                "LockfreeEvent::NotifyOn: notify_on called with a previous "
-                "callback still pending");
-        abort();
+        grpc_core::Crash(
+            "LockfreeEvent::NotifyOn: notify_on called with a previous "
+            "callback still pending");
       }
     }
   }
 
-  GPR_UNREACHABLE_CODE(return );
+  GPR_UNREACHABLE_CODE(return);
 }
 
 bool LockfreeEvent::SetShutdown(absl::Status shutdown_error) {
@@ -199,7 +197,7 @@ bool LockfreeEvent::SetShutdown(absl::Status shutdown_error) {
         if (state_.compare_exchange_strong(curr, new_state,
                                            std::memory_order_acq_rel,
                                            std::memory_order_relaxed)) {
-          auto closure = reinterpret_cast<IomgrEngineClosure*>(curr);
+          auto closure = reinterpret_cast<PosixEngineClosure*>(curr);
           closure->SetStatus(shutdown_error);
           scheduler_->Run(closure);
           return true;
@@ -230,7 +228,7 @@ void LockfreeEvent::SetReady() {
         // No barrier required as we're transitioning to a state that does not
         // involve a closure
         if (state_.compare_exchange_strong(curr, kClosureReady,
-                                           std::memory_order_relaxed,
+                                           std::memory_order_acq_rel,
                                            std::memory_order_relaxed)) {
           return;  // early out
         }
@@ -248,7 +246,7 @@ void LockfreeEvent::SetReady() {
           // Full cas: acquire pairs with this cas' release in the event of a
           // spurious set_ready; release pairs with this or the acquire in
           // notify_on (or set_shutdown)
-          auto closure = reinterpret_cast<IomgrEngineClosure*>(curr);
+          auto closure = reinterpret_cast<PosixEngineClosure*>(curr);
           closure->SetStatus(absl::OkStatus());
           scheduler_->Run(closure);
           return;
@@ -263,5 +261,5 @@ void LockfreeEvent::SetReady() {
   }
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine

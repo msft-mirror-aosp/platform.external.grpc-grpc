@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_TABLE_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_TABLE_H
@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
+#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/parsed_metadata.h"
@@ -35,8 +36,8 @@ namespace grpc_core {
 // HPACK header table
 class HPackTable {
  public:
-  HPackTable();
-  ~HPackTable();
+  HPackTable() = default;
+  ~HPackTable() = default;
 
   HPackTable(const HPackTable&) = delete;
   HPackTable& operator=(const HPackTable&) = delete;
@@ -55,7 +56,7 @@ class HPackTable {
     // reading the core static metadata table here; at that point we'd need our
     // own singleton static metadata in the correct order.
     if (index <= hpack_constants::kLastStaticEntry) {
-      return &static_metadata_.memento[index - 1];
+      return &static_mementos_->memento[index - 1];
     } else {
       return LookupDynamic(index);
     }
@@ -72,7 +73,6 @@ class HPackTable {
     StaticMementos();
     Memento memento[hpack_constants::kLastStaticEntry];
   };
-  static const StaticMementos& GetStaticMementos() GPR_ATTRIBUTE_NOINLINE;
 
   class MementoRingBuffer {
    public:
@@ -114,6 +114,11 @@ class HPackTable {
 
   void EvictOne();
 
+  static const StaticMementos* GetStaticMementos() {
+    static const NoDestruct<StaticMementos> static_mementos;
+    return static_mementos.get();
+  }
+
   // The amount of memory used by the table, according to the hpack algorithm
   uint32_t mem_used_ = 0;
   // The max memory allowed to be used by the table, according to the hpack
@@ -123,10 +128,10 @@ class HPackTable {
   uint32_t current_table_bytes_ = hpack_constants::kInitialTableSize;
   // HPack table entries
   MementoRingBuffer entries_;
-  // Mementos for static data
-  const StaticMementos& static_metadata_;
+  // Static mementos
+  const StaticMementos* const static_mementos_ = GetStaticMementos();
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_TABLE_H */
+#endif  // GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_TABLE_H

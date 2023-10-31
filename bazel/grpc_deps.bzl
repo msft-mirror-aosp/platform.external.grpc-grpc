@@ -171,6 +171,16 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "opencensus-trace-stackdriver_exporter",
+        actual = "@io_opencensus_cpp//opencensus/exporters/trace/stackdriver:stackdriver_exporter",
+    )
+
+    native.bind(
+        name = "opencensus-stats-stackdriver_exporter",
+        actual = "@io_opencensus_cpp//opencensus/exporters/stats/stackdriver:stackdriver_exporter",
+    )
+
+    native.bind(
         name = "libuv",
         actual = "@com_github_libuv_libuv//:libuv",
     )
@@ -178,6 +188,26 @@ def grpc_deps():
     native.bind(
         name = "libuv_test",
         actual = "@com_github_libuv_libuv//:libuv_test",
+    )
+
+    native.bind(
+        name = "googleapis_trace_grpc_service",
+        actual = "@com_google_googleapis//google/devtools/cloudtrace/v2:cloudtrace_cc_grpc",
+    )
+
+    native.bind(
+        name = "googleapis_monitoring_grpc_service",
+        actual = "@com_google_googleapis//google/monitoring/v3:monitoring_cc_grpc",
+    )
+
+    native.bind(
+        name = "googleapis_logging_grpc_service",
+        actual = "@com_google_googleapis//google/logging/v2:logging_cc_grpc",
+    )
+
+    native.bind(
+        name = "googleapis_logging_cc_proto",
+        actual = "@com_google_googleapis//google/logging/v2:logging_cc_proto",
     )
 
     if "boringssl" not in native.existing_rules():
@@ -244,23 +274,22 @@ def grpc_deps():
     if "com_github_google_benchmark" not in native.existing_rules():
         http_archive(
             name = "com_github_google_benchmark",
-            sha256 = "0b921a3bc39e35f4275c8dcc658af2391c150fb966102341287b0401ff2e6f21",
-            strip_prefix = "benchmark-0baacde3618ca617da95375e0af13ce1baadea47",
+            sha256 = "3a43368d3ec48afe784573cf962fe98c084e89a1e3d176c00715a84366316e7d",
+            strip_prefix = "benchmark-361e8d1cfe0c6c36d30b39f1b61302ece5507320",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/benchmark/archive/0baacde3618ca617da95375e0af13ce1baadea47.tar.gz",
-                "https://github.com/google/benchmark/archive/0baacde3618ca617da95375e0af13ce1baadea47.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/benchmark/archive/361e8d1cfe0c6c36d30b39f1b61302ece5507320.tar.gz",
+                "https://github.com/google/benchmark/archive/361e8d1cfe0c6c36d30b39f1b61302ece5507320.tar.gz",
             ],
         )
 
     if "com_googlesource_code_re2" not in native.existing_rules():
         http_archive(
             name = "com_googlesource_code_re2",
-            sha256 = "319a58a58d8af295db97dfeecc4e250179c5966beaa2d842a82f0a013b6a239b",
-            # Release 2021-09-01
-            strip_prefix = "re2-8e08f47b11b413302749c0d8b17a1c94777495d5",
+            sha256 = "1ae8ccfdb1066a731bba6ee0881baad5efd2cd661acd9569b689f2586e1a50e9",
+            strip_prefix = "re2-2022-04-01",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/archive/8e08f47b11b413302749c0d8b17a1c94777495d5.tar.gz",
-                "https://github.com/google/re2/archive/8e08f47b11b413302749c0d8b17a1c94777495d5.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/archive/2022-04-01.tar.gz",
+                "https://github.com/google/re2/archive/2022-04-01.tar.gz",
             ],
         )
 
@@ -366,10 +395,10 @@ def grpc_deps():
     if "build_bazel_rules_apple" not in native.existing_rules():
         http_archive(
             name = "build_bazel_rules_apple",
-            sha256 = "0052d452af7742c8f3a4e0929763388a66403de363775db7e90adecb2ba4944b",
+            sha256 = "77e8bf6fda706f420a55874ae6ee4df0c9d95da6c7838228b26910fc82eea5a2",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/rules_apple/releases/download/0.31.3/rules_apple.0.31.3.tar.gz",
-                "https://github.com/bazelbuild/rules_apple/releases/download/0.31.3/rules_apple.0.31.3.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/rules_apple/releases/download/0.32.0/rules_apple.0.32.0.tar.gz",
+                "https://github.com/bazelbuild/rules_apple/releases/download/0.32.0/rules_apple.0.32.0.tar.gz",
             ],
         )
 
@@ -442,11 +471,11 @@ def grpc_deps():
     if "com_github_cncf_udpa" not in native.existing_rules():
         http_archive(
             name = "com_github_cncf_udpa",
-            sha256 = "5bc8365613fe2f8ce6cc33959b7667b13b7fe56cb9d16ba740c06e1a7c4242fc",
-            strip_prefix = "xds-cb28da3451f158a947dfc45090fe92b07b243bc1",
+            sha256 = "41ea212940ab44bf7f8a8b4169cfbc612ed2166dafabc0a56a8820ef665fc6a4",
+            strip_prefix = "xds-06c439db220b89134a8a49bad41994560d6537c6",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/cb28da3451f158a947dfc45090fe92b07b243bc1.tar.gz",
-                "https://github.com/cncf/xds/archive/cb28da3451f158a947dfc45090fe92b07b243bc1.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/06c439db220b89134a8a49bad41994560d6537c6.tar.gz",
+                "https://github.com/cncf/xds/archive/06c439db220b89134a8a49bad41994560d6537c6.tar.gz",
             ],
         )
 

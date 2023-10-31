@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -22,8 +22,6 @@
 
 #include <atomic>
 #include <new>
-
-#include "absl/utility/utility.h"
 
 #include <grpc/support/alloc.h>
 
@@ -81,7 +79,7 @@ size_t Arena::Destroy() {
          nullptr) {
     // Inner loop: destruct a batch of objects.
     while (p != nullptr) {
-      Destruct(absl::exchange(p, p->next));
+      Destruct(std::exchange(p, p->next));
     }
   }
   size_t size = total_used_.load(std::memory_order_relaxed);
@@ -115,6 +113,25 @@ void Arena::ManagedNewObject::Link(std::atomic<ManagedNewObject*>* head) {
   next = head->load(std::memory_order_relaxed);
   while (!head->compare_exchange_weak(next, this, std::memory_order_acq_rel,
                                       std::memory_order_relaxed)) {
+  }
+}
+
+void* Arena::AllocPooled(size_t alloc_size, std::atomic<FreePoolNode*>* head) {
+  FreePoolNode* p = head->load(std::memory_order_acquire);
+  while (p != nullptr) {
+    if (head->compare_exchange_weak(p, p->next, std::memory_order_acq_rel,
+                                    std::memory_order_relaxed)) {
+      return p;
+    }
+  }
+  return Alloc(alloc_size);
+}
+
+void Arena::FreePooled(void* p, std::atomic<FreePoolNode*>* head) {
+  FreePoolNode* node = static_cast<FreePoolNode*>(p);
+  node->next = head->load(std::memory_order_acquire);
+  while (!head->compare_exchange_weak(
+      node->next, node, std::memory_order_acq_rel, std::memory_order_relaxed)) {
   }
 }
 

@@ -53,7 +53,7 @@ def should_build_docker_interop_image_from_release_tag(lang):
 # Dictionary of default runtimes per language
 LANG_RUNTIME_MATRIX = {
     'cxx': ['cxx'],  # This is actually debian8.
-    'go': ['go1.8', 'go1.11', 'go1.16'],
+    'go': ['go1.8', 'go1.11', 'go1.16', 'go1.19'],
     'java': ['java'],
     'python': ['python', 'pythonasyncio'],
     'node': ['node'],
@@ -119,7 +119,9 @@ LANG_RELEASE_MATRIX = {
             ('v1.43.0', ReleaseInfo()),
             ('v1.44.0', ReleaseInfo()),
             ('v1.46.2', ReleaseInfo()),
-            ('v1.48.0', ReleaseInfo()),
+            ('v1.47.1', ReleaseInfo()),
+            ('v1.48.1', ReleaseInfo()),
+            ('v1.49.1', ReleaseInfo()),
         ]),
     'go':
         OrderedDict([
@@ -205,6 +207,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.46.0', ReleaseInfo(runtimes=['go1.16'])),
             ('v1.47.0', ReleaseInfo(runtimes=['go1.16'])),
             ('v1.48.0', ReleaseInfo(runtimes=['go1.16'])),
+            ('v1.49.0', ReleaseInfo(runtimes=['go1.16'])),
         ]),
     'java':
         OrderedDict([
@@ -274,19 +277,23 @@ LANG_RELEASE_MATRIX = {
             ('v1.33.1', ReleaseInfo()),
             ('v1.34.1', ReleaseInfo()),
             ('v1.35.1', ReleaseInfo()),
-            ('v1.36.1', ReleaseInfo()),
+            ('v1.36.3', ReleaseInfo()),
             ('v1.37.1', ReleaseInfo()),
             ('v1.38.1', ReleaseInfo()),
             ('v1.39.0', ReleaseInfo()),
             ('v1.40.2', ReleaseInfo()),
-            ('v1.41.1', ReleaseInfo()),
-            ('v1.42.1', ReleaseInfo()),
-            ('v1.43.2', ReleaseInfo()),
-            ('v1.44.1', ReleaseInfo()),
-            ('v1.45.1', ReleaseInfo()),
-            ('v1.46.0', ReleaseInfo()),
-            ('v1.47.0', ReleaseInfo()),
-            ('v1.48.1', ReleaseInfo()),
+            ('v1.41.3', ReleaseInfo()),
+            ('v1.42.3', ReleaseInfo()),
+            ('v1.43.3', ReleaseInfo()),
+            ('v1.44.2', ReleaseInfo()),
+            ('v1.45.2', ReleaseInfo()),
+            ('v1.46.1', ReleaseInfo()),
+            ('v1.47.1', ReleaseInfo()),
+            ('v1.48.2', ReleaseInfo()),
+            ('v1.49.2', ReleaseInfo()),
+            ('v1.50.2', ReleaseInfo()),
+            ('v1.51.1', ReleaseInfo()),
+            ('v1.52.0', ReleaseInfo()),
         ]),
     'python':
         OrderedDict(
@@ -420,7 +427,13 @@ LANG_RELEASE_MATRIX = {
                 ('v1.46.2',
                  ReleaseInfo(runtimes=['python'],
                              testcases_file='python__master')),
-                ('v1.48.0',
+                ('v1.47.1',
+                 ReleaseInfo(runtimes=['python'],
+                             testcases_file='python__master')),
+                ('v1.48.1',
+                 ReleaseInfo(runtimes=['python'],
+                             testcases_file='python__master')),
+                ('v1.49.1',
                  ReleaseInfo(runtimes=['python'],
                              testcases_file='python__master')),
             ]),
@@ -496,7 +509,9 @@ LANG_RELEASE_MATRIX = {
             ('v1.43.0', ReleaseInfo()),
             ('v1.44.0', ReleaseInfo()),
             ('v1.46.2', ReleaseInfo()),
-            ('v1.48.0', ReleaseInfo()),
+            ('v1.47.1', ReleaseInfo()),
+            ('v1.48.1', ReleaseInfo()),
+            ('v1.49.1', ReleaseInfo()),
         ]),
     'php':
         OrderedDict([
@@ -543,7 +558,9 @@ LANG_RELEASE_MATRIX = {
             ('v1.43.0', ReleaseInfo()),
             ('v1.44.0', ReleaseInfo()),
             ('v1.46.2', ReleaseInfo()),
-            ('v1.48.0', ReleaseInfo()),
+            ('v1.47.1', ReleaseInfo()),
+            ('v1.48.1', ReleaseInfo()),
+            ('v1.49.1', ReleaseInfo()),
         ]),
     'csharp':
         OrderedDict([

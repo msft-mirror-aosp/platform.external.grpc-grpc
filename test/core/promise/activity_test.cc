@@ -344,6 +344,7 @@ class TestWakeable final : public Wakeable {
     drops_->fetch_add(1, std::memory_order_relaxed);
     delete this;
   }
+  std::string ActivityDebugTag() const override { return "TestWakeable"; }
 
  private:
   std::atomic<int>* const wakeups_;
@@ -359,7 +360,7 @@ TEST(AtomicWakerTest, ThreadStress) {
   std::atomic<int> not_armed{0};
   AtomicWaker waker;
 
-  threads.reserve(90);
+  threads.reserve(15);
   for (int i = 0; i < 5; i++) {
     threads.emplace_back([&] {
       while (!done.load(std::memory_order_relaxed)) {

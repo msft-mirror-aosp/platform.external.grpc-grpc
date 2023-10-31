@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -29,13 +29,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/profiling/timers.h"
-
-#ifdef GPR_LOW_LEVEL_COUNTERS
-gpr_atm gpr_mu_locks = 0;
-gpr_atm gpr_counter_atm_cas = 0;
-gpr_atm gpr_counter_atm_add = 0;
-#endif
+#include "src/core/lib/gprpp/crash.h"
 
 void gpr_mu_init(gpr_mu* mu) {
 #ifdef GRPC_ASAN_ENABLED
@@ -57,10 +51,6 @@ void gpr_mu_destroy(gpr_mu* mu) {
 }
 
 void gpr_mu_lock(gpr_mu* mu) {
-#ifdef GPR_LOW_LEVEL_COUNTERS
-  GPR_ATM_INC_COUNTER(gpr_mu_locks);
-#endif
-  GPR_TIMER_SCOPE("gpr_mu_lock", 0);
 #ifdef GRPC_ASAN_ENABLED
   GPR_ASSERT(pthread_mutex_lock(&mu->mutex) == 0);
 #else
@@ -69,7 +59,6 @@ void gpr_mu_lock(gpr_mu* mu) {
 }
 
 void gpr_mu_unlock(gpr_mu* mu) {
-  GPR_TIMER_SCOPE("gpr_mu_unlock", 0);
 #ifdef GRPC_ASAN_ENABLED
   GPR_ASSERT(pthread_mutex_unlock(&mu->mutex) == 0);
 #else
@@ -78,7 +67,6 @@ void gpr_mu_unlock(gpr_mu* mu) {
 }
 
 int gpr_mu_trylock(gpr_mu* mu) {
-  GPR_TIMER_SCOPE("gpr_mu_trylock", 0);
   int err = 0;
 #ifdef GRPC_ASAN_ENABLED
   err = pthread_mutex_trylock(&mu->mutex);
@@ -89,7 +77,7 @@ int gpr_mu_trylock(gpr_mu* mu) {
   return err == 0;
 }
 
-/*----------------------------------------*/
+//----------------------------------------
 
 void gpr_cv_init(gpr_cv* cv) {
   pthread_condattr_t attr;
@@ -161,11 +149,11 @@ void gpr_cv_broadcast(gpr_cv* cv) {
 #endif
 }
 
-/*----------------------------------------*/
+//----------------------------------------
 
 void gpr_once_init(gpr_once* once, void (*init_function)(void)) {
   GPR_ASSERT(pthread_once(once, init_function) == 0);
 }
 
-#endif /* defined(GPR_POSIX_SYNC) && !defined(GPR_ABSEIL_SYNC) && \
-          !defined(GPR_CUSTOM_SYNC) */
+#endif  // defined(GPR_POSIX_SYNC) && !defined(GPR_ABSEIL_SYNC) && \
+       // !defined(GPR_CUSTOM_SYNC)

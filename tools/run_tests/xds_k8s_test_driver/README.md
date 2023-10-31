@@ -7,7 +7,7 @@ Work in progress. Internal APIs may and will change. Please refrain from making
 changes to this codebase at the moment.
 
 ### Stabilization roadmap 
-- [ ] Replace retrying with tenacity
+- [x] Replace retrying with tenacity
 - [x] Generate namespace for each test to prevent resource name conflicts and
       allow running tests in parallel
 - [x] Security: run server and client in separate namespaces
@@ -24,7 +24,7 @@ changes to this codebase at the moment.
 ## Installation
 
 #### Requirements
-1. Python v3.6+
+1. Python v3.7+
 2. [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
 3. `kubectl`
 
@@ -174,7 +174,7 @@ export KUBE_CONTEXT="$(kubectl config current-context)"
 
 ```shell
 # Create python virtual environment
-python3.6 -m venv venv
+python3.7 -m venv venv
 
 # Activate virtual environment
 . ./venv/bin/activate

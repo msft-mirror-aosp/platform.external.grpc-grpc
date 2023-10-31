@@ -23,7 +23,9 @@ cd build
 
 @rem Workaround a bug where VS150COMNTOOLS is not set due to a bug in VS 2017 installer
 @rem see https://developercommunity.visualstudio.com/t/installing-visualstudio-build-tools-doesnt-add-env/17435
-set "VS150COMNTOOLS=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\"
+If "%VS150COMNTOOLS%" == "" (
+  set "VS150COMNTOOLS=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\"
+)
 
 If "%GRPC_BUILD_ACTIVATE_VS_TOOLS%" == "2017" (
   @rem set cl.exe build environment to build with VS2017 tooling
@@ -45,7 +47,7 @@ If "%GRPC_CMAKE_GENERATOR%" == "Ninja" (
 ) else (
   @rem Use one of the Visual Studio generators.
 
-  cmake -G "%GRPC_CMAKE_GENERATOR%" -A "%GRPC_CMAKE_ARCHITECTURE%" -DgRPC_BUILD_TESTS=ON -DgRPC_BUILD_MSVC_MP_COUNT=%GRPC_RUN_TESTS_JOBS% %* ../.. || goto :error
+  cmake -G "%GRPC_CMAKE_GENERATOR%" -A "%GRPC_CMAKE_ARCHITECTURE%" -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 -DgRPC_BUILD_TESTS=ON -DgRPC_BUILD_MSVC_MP_COUNT=%GRPC_RUN_TESTS_JOBS% %* ../.. || goto :error
 
   @rem GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX will be set to either "c" or "cxx"
   cmake --build . --target buildtests_%GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX% --config %MSBUILD_CONFIG% || goto :error

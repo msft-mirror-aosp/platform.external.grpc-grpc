@@ -22,26 +22,26 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
@@ -58,9 +58,10 @@ class DropPolicy : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kDropPolicyName; }
 
-  void UpdateLocked(UpdateArgs) override {
+  absl::Status UpdateLocked(UpdateArgs) override {
     channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
-                                          absl::make_unique<DropPicker>());
+                                          MakeRefCounted<DropPicker>());
+    return absl::OkStatus();
   }
 
   void ResetBackoffLocked() override {}
@@ -98,15 +99,9 @@ class DropPolicyFactory : public LoadBalancingPolicyFactory {
 
 std::vector<PickArgsSeen>* g_pick_args_vector = nullptr;
 
-void RegisterDropPolicy() {
-  LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<DropPolicyFactory>());
-  RegisterTestPickArgsLoadBalancingPolicy(
-      [](const PickArgsSeen& pick_args) {
-        GPR_ASSERT(g_pick_args_vector != nullptr);
-        g_pick_args_vector->push_back(pick_args);
-      },
-      kDropPolicyName);
+void RegisterDropPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      std::make_unique<DropPolicyFactory>());
 }
 
 }  // namespace
@@ -280,4 +275,16 @@ void retry_lb_drop(grpc_end2end_test_config config) {
   test_retry_lb_drop(config);
 }
 
-void retry_lb_drop_pre_init(void) { grpc_core::RegisterDropPolicy(); }
+void retry_lb_drop_pre_init(void) {
+  grpc_core::CoreConfiguration::RegisterBuilder(
+      [](grpc_core::CoreConfiguration::Builder* builder) {
+        grpc_core::RegisterTestPickArgsLoadBalancingPolicy(
+            builder,
+            [](const grpc_core::PickArgsSeen& pick_args) {
+              GPR_ASSERT(grpc_core::g_pick_args_vector != nullptr);
+              grpc_core::g_pick_args_vector->push_back(pick_args);
+            },
+            grpc_core::kDropPolicyName);
+      });
+  grpc_core::CoreConfiguration::RegisterBuilder(grpc_core::RegisterDropPolicy);
+}

@@ -42,10 +42,11 @@ class IOCP final : public Poller {
 
   // interface methods
   void Shutdown();
-  WorkResult Work(EventEngine::Duration timeout) override;
+  WorkResult Work(EventEngine::Duration timeout,
+                  absl::FunctionRef<void()> schedule_poll_again) override;
   void Kick() override;
 
-  WinSocket* Watch(SOCKET socket);
+  std::unique_ptr<WinSocket> Watch(SOCKET socket);
   // Return the set of default flags
   static DWORD GetDefaultSocketFlags();
 

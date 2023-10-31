@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -53,7 +53,7 @@ XdsClusterDropStats::XdsClusterDropStats(
       eds_service_name_(eds_service_name) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] created drop stats %p for {%s, %s, %s}",
-            xds_client_.get(), this, lrs_server_.server_uri.c_str(),
+            xds_client_.get(), this, lrs_server_.server_uri().c_str(),
             std::string(cluster_name_).c_str(),
             std::string(eds_service_name_).c_str());
   }
@@ -63,7 +63,7 @@ XdsClusterDropStats::~XdsClusterDropStats() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] destroying drop stats %p for {%s, %s, %s}",
-            xds_client_.get(), this, lrs_server_.server_uri.c_str(),
+            xds_client_.get(), this, lrs_server_.server_uri().c_str(),
             std::string(cluster_name_).c_str(),
             std::string(eds_service_name_).c_str());
   }
@@ -108,7 +108,7 @@ XdsClusterLocalityStats::XdsClusterLocalityStats(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] created locality stats %p for {%s, %s, %s, %s}",
-            xds_client_.get(), this, lrs_server_.server_uri.c_str(),
+            xds_client_.get(), this, lrs_server_.server_uri().c_str(),
             std::string(cluster_name_).c_str(),
             std::string(eds_service_name_).c_str(),
             name_->AsHumanReadableString().c_str());
@@ -119,7 +119,7 @@ XdsClusterLocalityStats::~XdsClusterLocalityStats() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] destroying locality stats %p for {%s, %s, %s, %s}",
-            xds_client_.get(), this, lrs_server_.server_uri.c_str(),
+            xds_client_.get(), this, lrs_server_.server_uri().c_str(),
             std::string(cluster_name_).c_str(),
             std::string(eds_service_name_).c_str(),
             name_->AsHumanReadableString().c_str());

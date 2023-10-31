@@ -78,6 +78,6 @@ using ::AIBinder_toJavaBinder;
 
 }  // namespace grpc_binder
 
-#endif /*GPR_SUPPORT_BINDER_TRANSPORT*/
+#endif  // GPR_SUPPORT_BINDER_TRANSPORT
 
 #endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_UTILS_NDK_BINDER_H

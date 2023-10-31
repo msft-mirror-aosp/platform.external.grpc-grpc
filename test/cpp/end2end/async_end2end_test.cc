@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <cinttypes>
 #include <memory>
@@ -22,6 +22,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -36,6 +37,7 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
@@ -195,8 +197,7 @@ class Verifier {
         }
         maybe_expectations_.erase(it2);
       } else {
-        gpr_log(GPR_ERROR, "Unexpected tag: %p", got_tag);
-        abort();
+        grpc_core::Crash(absl::StrFormat("Unexpected tag: %p", got_tag));
       }
     }
   }
@@ -979,7 +980,7 @@ TEST_P(AsyncEnd2endTest, ClientInitialMetadataRpc) {
             ToString(client_initial_metadata.find(meta2.first)->second));
   EXPECT_EQ(meta3.second,
             ToString(client_initial_metadata.find(meta3.first)->second));
-  EXPECT_GE(client_initial_metadata.size(), static_cast<size_t>(2));
+  EXPECT_GE(client_initial_metadata.size(), 2);
 
   send_response.set_message(recv_request.message());
   response_writer.Finish(send_response, Status::OK, tag(3));
@@ -1023,7 +1024,7 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataRpc) {
             ToString(server_initial_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
             ToString(server_initial_metadata.find(meta2.first)->second));
-  EXPECT_EQ(static_cast<size_t>(2), server_initial_metadata.size());
+  EXPECT_EQ(2, server_initial_metadata.size());
 
   send_response.set_message(recv_request.message());
   response_writer.Finish(send_response, Status::OK, tag(5));
@@ -1066,7 +1067,7 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreaming) {
             ToString(server_initial_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
             ToString(server_initial_metadata.find(meta2.first)->second));
-  EXPECT_EQ(static_cast<size_t>(2), server_initial_metadata.size());
+  EXPECT_EQ(2, server_initial_metadata.size());
 
   srv_stream.Write(send_response, tag(3));
 
@@ -1126,7 +1127,7 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreamingImplicit) {
             ToString(server_initial_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
             ToString(server_initial_metadata.find(meta2.first)->second));
-  EXPECT_EQ(static_cast<size_t>(2), server_initial_metadata.size());
+  EXPECT_EQ(2, server_initial_metadata.size());
 
   srv_stream.Write(send_response, tag(5));
   cli_stream->Read(&recv_response, tag(6));
@@ -1184,7 +1185,7 @@ TEST_P(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
             ToString(server_trailing_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
             ToString(server_trailing_metadata.find(meta2.first)->second));
-  EXPECT_EQ(static_cast<size_t>(2), server_trailing_metadata.size());
+  EXPECT_EQ(2, server_trailing_metadata.size());
 }
 
 TEST_P(AsyncEnd2endTest, MetadataRpc) {
@@ -1232,7 +1233,7 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
             ToString(client_initial_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
             ToString(client_initial_metadata.find(meta2.first)->second));
-  EXPECT_GE(client_initial_metadata.size(), static_cast<size_t>(2));
+  EXPECT_GE(client_initial_metadata.size(), 2);
 
   srv_ctx.AddInitialMetadata(meta3.first, meta3.second);
   srv_ctx.AddInitialMetadata(meta4.first, meta4.second);
@@ -1243,7 +1244,7 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
             ToString(server_initial_metadata.find(meta3.first)->second));
   EXPECT_EQ(meta4.second,
             ToString(server_initial_metadata.find(meta4.first)->second));
-  EXPECT_GE(server_initial_metadata.size(), static_cast<size_t>(2));
+  EXPECT_GE(server_initial_metadata.size(), 2);
 
   send_response.set_message(recv_request.message());
   srv_ctx.AddTrailingMetadata(meta5.first, meta5.second);
@@ -1260,7 +1261,7 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
             ToString(server_trailing_metadata.find(meta5.first)->second));
   EXPECT_EQ(meta6.second,
             ToString(server_trailing_metadata.find(meta6.first)->second));
-  EXPECT_GE(server_trailing_metadata.size(), static_cast<size_t>(2));
+  EXPECT_GE(server_trailing_metadata.size(), 2);
 }
 
 // Server uses AsyncNotifyWhenDone API to check for cancellation

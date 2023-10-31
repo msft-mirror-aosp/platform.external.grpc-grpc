@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <initializer_list>
 #include <new>
 #include <string>
 #include <utility>
@@ -1461,6 +1462,7 @@ static void perform_op(grpc_transport* /*gt*/, grpc_transport_op* /*op*/) {}
 
 static const grpc_transport_vtable grpc_cronet_vtable = {
     sizeof(stream_obj),
+    false,
     "cronet_http",
     init_stream,
     nullptr,

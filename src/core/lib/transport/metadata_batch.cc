@@ -168,6 +168,17 @@ StaticSlice HttpSchemeMetadata::Encode(ValueType x) {
   }
 }
 
+size_t EncodedSizeOfKey(HttpSchemeMetadata, HttpSchemeMetadata::ValueType x) {
+  switch (x) {
+    case HttpSchemeMetadata::kHttp:
+      return 4;
+    case HttpSchemeMetadata::kHttps:
+      return 5;
+    default:
+      return 0;
+  }
+}
+
 const char* HttpSchemeMetadata::DisplayValue(MementoType content_type) {
   switch (content_type) {
     case kHttp:
@@ -204,7 +215,10 @@ StaticSlice HttpMethodMetadata::Encode(ValueType x) {
     case kGet:
       return StaticSlice::FromStaticString("GET");
     default:
-      abort();
+      // TODO(ctiller): this should be an abort, we should split up the debug
+      // string generation from the encode string generation so that debug
+      // strings can always succeed and encode strings can crash.
+      return StaticSlice::FromStaticString("<<INVALID METHOD>>");
   }
 }
 

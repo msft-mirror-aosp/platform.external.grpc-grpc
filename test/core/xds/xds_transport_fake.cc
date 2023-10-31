@@ -22,6 +22,7 @@
 
 #include <functional>
 #include <memory>
+#include <type_traits>
 #include <utility>
 
 #include <grpc/event_engine/event_engine.h>
@@ -205,7 +206,7 @@ FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
 //
 
 constexpr char FakeXdsTransportFactory::kAdsMethod[];
-constexpr char FakeXdsTransportFactory::kAdsV2Method[];
+constexpr char FakeXdsTransportFactory::kLrsMethod[];
 
 OrphanablePtr<XdsTransportFactory::XdsTransport>
 FakeXdsTransportFactory::Create(
@@ -224,6 +225,7 @@ FakeXdsTransportFactory::Create(
 void FakeXdsTransportFactory::TriggerConnectionFailure(
     const XdsBootstrap::XdsServer& server, absl::Status status) {
   auto transport = GetTransport(server);
+  if (transport == nullptr) return;
   transport->TriggerConnectionFailure(std::move(status));
 }
 
@@ -237,15 +239,14 @@ FakeXdsTransportFactory::WaitForStream(const XdsBootstrap::XdsServer& server,
                                        const char* method,
                                        absl::Duration timeout) {
   auto transport = GetTransport(server);
+  if (transport == nullptr) return nullptr;
   return transport->WaitForStream(method, timeout);
 }
 
 RefCountedPtr<FakeXdsTransportFactory::FakeXdsTransport>
 FakeXdsTransportFactory::GetTransport(const XdsBootstrap::XdsServer& server) {
   MutexLock lock(&mu_);
-  RefCountedPtr<FakeXdsTransport> transport = transport_map_[&server];
-  GPR_ASSERT(transport != nullptr);
-  return transport;
+  return transport_map_[&server];
 }
 
 }  // namespace grpc_core

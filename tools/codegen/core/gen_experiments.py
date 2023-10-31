@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Generate experiment related code artifacts. 
+Generate experiment related code artifacts.
 
 Invoke as: tools/codegen/core/gen_experiments.py
 Experiment definitions are in src/core/lib/experiments/experiments.yaml
@@ -39,7 +39,7 @@ if sys.argv[1:] == ["--check"]:
     check_dates = False  # for formatting checks we don't verify expiry dates
 
 with open('src/core/lib/experiments/experiments.yaml') as f:
-    attrs = yaml.load(f.read(), Loader=yaml.FullLoader)
+    attrs = yaml.safe_load(f.read())
 
 DEFAULTS = {
     'broken': 'false',

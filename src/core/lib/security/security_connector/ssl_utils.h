@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H
-#define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H
+#define GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -93,7 +93,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     grpc_ssl_client_certificate_request_type client_certificate_request,
     tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
-    const char* crl_directory,
+    const char* crl_directory, bool send_client_ca_list,
     tsi_ssl_server_handshaker_factory** handshaker_factory);
 
 // Free the memory occupied by key cert pairs.
@@ -184,4 +184,4 @@ using PemKeyCertPairList = std::vector<PemKeyCertPair>;
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H

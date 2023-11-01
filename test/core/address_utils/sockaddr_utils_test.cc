@@ -35,8 +35,6 @@
 
 #include <string>
 
-#include <gtest/gtest.h>
-
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
@@ -293,7 +291,7 @@ TEST(SockAddrUtilsTest, UnixSockAddrToUri) {
             "unix-abstract:path_%00with_null");
 }
 
-#endif /* GRPC_HAVE_UNIX_SOCKET */
+#endif  // GRPC_HAVE_UNIX_SOCKET
 
 #ifdef GRPC_HAVE_VSOCK
 

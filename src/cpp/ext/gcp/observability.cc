@@ -40,7 +40,9 @@
 
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
+#include "src/cpp/ext/filters/logging/logging_filter.h"
 #include "src/cpp/ext/gcp/observability_config.h"
+#include "src/cpp/ext/gcp/observability_logging_sink.h"
 
 namespace grpc {
 namespace experimental {
@@ -59,11 +61,17 @@ constexpr char kGoogleStackdriverStatsAddress[] = "monitoring.googleapis.com";
 
 void RegisterOpenCensusViewsForGcpObservability() {
   // Register client default views for GCP observability
-  ClientStartedRpcsCumulative().RegisterForExport();
-  ClientCompletedRpcsCumulative().RegisterForExport();
+  ClientStartedRpcs().RegisterForExport();
+  ClientCompletedRpcs().RegisterForExport();
+  ClientRoundtripLatency().RegisterForExport();
+  ClientSentCompressedMessageBytesPerRpc().RegisterForExport();
+  ClientReceivedCompressedMessageBytesPerRpc().RegisterForExport();
   // Register server default views for GCP observability
-  ServerStartedRpcsCumulative().RegisterForExport();
-  ServerCompletedRpcsCumulative().RegisterForExport();
+  ServerStartedRpcs().RegisterForExport();
+  ServerCompletedRpcs().RegisterForExport();
+  ServerSentCompressedMessageBytesPerRpc().RegisterForExport();
+  ServerReceivedCompressedMessageBytesPerRpc().RegisterForExport();
+  ServerServerLatency().RegisterForExport();
 }
 
 }  // namespace
@@ -74,7 +82,8 @@ absl::Status GcpObservabilityInit() {
     return config.status();
   }
   if (!config->cloud_trace.has_value() &&
-      !config->cloud_monitoring.has_value()) {
+      !config->cloud_monitoring.has_value() &&
+      !config->cloud_logging.has_value()) {
     return absl::OkStatus();
   }
   grpc::RegisterOpenCensusPlugin();
@@ -109,6 +118,11 @@ absl::Status GcpObservabilityInit() {
   } else {
     // Disable OpenCensus stats
     EnableOpenCensusStats(false);
+  }
+  if (config->cloud_logging.has_value()) {
+    grpc::internal::RegisterLoggingFilter(
+        new grpc::internal::ObservabilityLoggingSink(
+            config->cloud_logging.value(), config->project_id));
   }
   return absl::OkStatus();
 }

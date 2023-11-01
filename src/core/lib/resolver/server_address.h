@@ -16,12 +16,11 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_RESOLVER_SERVER_ADDRESS_H
-#define GRPC_CORE_LIB_RESOLVER_SERVER_ADDRESS_H
+#ifndef GRPC_SRC_CORE_LIB_RESOLVER_SERVER_ADDRESS_H
+#define GRPC_SRC_CORE_LIB_RESOLVER_SERVER_ADDRESS_H
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
 #include <stdint.h>
 
 #include <map>
@@ -65,12 +64,7 @@ class ServerAddress {
     virtual std::string ToString() const = 0;
   };
 
-  // Takes ownership of args.
   ServerAddress(const grpc_resolved_address& address, const ChannelArgs& args,
-                std::map<const char*, std::unique_ptr<AttributeInterface>>
-                    attributes = {});
-  ServerAddress(const void* address, size_t address_len,
-                const ChannelArgs& args,
                 std::map<const char*, std::unique_ptr<AttributeInterface>>
                     attributes = {});
 
@@ -142,4 +136,4 @@ class ServerAddressWeightAttribute : public ServerAddress::AttributeInterface {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_RESOLVER_SERVER_ADDRESS_H
+#endif  // GRPC_SRC_CORE_LIB_RESOLVER_SERVER_ADDRESS_H

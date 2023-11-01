@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include <atomic>
+#include <initializer_list>
 #include <list>
 #include <memory>
 #include <utility>
@@ -39,7 +40,6 @@
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV_POLL
@@ -57,13 +57,10 @@
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/fork.h"
-#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
-
-GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
 static const intptr_t kClosureNotReady = 0;
 static const intptr_t kClosureReady = 1;
@@ -378,12 +375,12 @@ void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
       grpc_core::StatusSetInt(&shutdown_error_,
                               grpc_core::StatusIntProperty::kRpcStatus,
                               GRPC_STATUS_UNAVAILABLE);
-      // signal read/write closed to OS so that future operations fail.
-      if (!released_) {
-        shutdown(fd_, SHUT_RDWR);
-      }
       SetReadyLocked(&read_closure_);
       SetReadyLocked(&write_closure_);
+    }
+    // signal read/write closed to OS so that future operations fail.
+    if (!released_) {
+      shutdown(fd_, SHUT_RDWR);
     }
     if (!IsWatched()) {
       CloseFd();
@@ -455,8 +452,6 @@ void PollEventHandle::ShutdownHandle(absl::Status why) {
       grpc_core::StatusSetInt(&shutdown_error_,
                               grpc_core::StatusIntProperty::kRpcStatus,
                               GRPC_STATUS_UNAVAILABLE);
-      // signal read/write closed to OS so that future operations fail.
-      shutdown(fd_, SHUT_RDWR);
       SetReadyLocked(&read_closure_);
       SetReadyLocked(&write_closure_);
     }
@@ -715,7 +710,7 @@ Poller::WorkResult PollPoller::Work(
       // well instead of crashing. This is because the poller::Work is called
       // right after an event enging is constructed. Even if phony poll is
       // expected to be used, we dont want to check for it until some actual
-      // event handles are registered. Otherwise the event engine construction
+      // event handles are registered. Otherwise the EventEngine construction
       // may crash.
       r = poll(pfds, pfd_count, timeout_ms);
     } else {

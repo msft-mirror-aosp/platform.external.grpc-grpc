@@ -50,6 +50,7 @@ class End2EndBinderTransportTest
   ~End2EndBinderTransportTest() override {
     server_->Shutdown();
     service_.reset();
+    exec_ctx.Flush();
     delete end2end_testing::g_transaction_processor;
   }
 
@@ -121,7 +122,8 @@ TEST_P(End2EndBinderTransportTest, UnaryCallWithNonOkStatus) {
 TEST_P(End2EndBinderTransportTest, UnaryCallServerTimeout) {
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub = NewStub();
   grpc::ClientContext context;
-  context.set_deadline(absl::ToChronoTime(absl::Now() + absl::Seconds(1)));
+  context.set_deadline(absl::ToChronoTime(
+      absl::Now() + (absl::Seconds(1) * grpc_test_slowdown_factor())));
   grpc::testing::EchoRequest request;
   grpc::testing::EchoResponse response;
   request.set_message("UnaryCallServerTimeout");

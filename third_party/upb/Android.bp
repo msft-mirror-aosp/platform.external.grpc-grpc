@@ -2,25 +2,6 @@ package {
     default_applicable_licenses: ["external_grpc-grpc_third_party_upb_license"],
 }
 
-// Added automatically by a large-scale-change that took the approach of
-// 'apply every license found to every target'. While this makes sure we respect
-// every license restriction, it may not be entirely correct.
-//
-// e.g. GPL in an MIT project might only apply to the contrib/ directory.
-//
-// Please consider splitting the single license below into multiple licenses,
-// taking care not to lose any license_kind information, and overriding the
-// default license using the 'licenses: [...]' property on targets as needed.
-//
-// For unused files, consider creating a 'fileGroup' with "//visibility:private"
-// to attach the license to, and including a comment whether the files may be
-// used in the current project.
-//
-// large-scale-change included anything that looked like it might be a license
-// text as a license_text. e.g. LICENSE, NOTICE, COPYING etc.
-//
-// Please consider removing redundant or irrelevant files from 'license_text:'.
-// See: http://go/android-license-faq
 license {
     name: "external_grpc-grpc_third_party_upb_license",
     visibility: [":__subpackages__"],
@@ -44,33 +25,53 @@ cc_library_static {
     name: "libgrpc_third_party_upb",
     defaults: ["grpc_deps_defaults"],
     srcs: [
-        "third_party/utf8_range/naive.c",
-        "third_party/utf8_range/range2-neon.c",
-        "third_party/utf8_range/range2-sse.c",
-        "upb/arena.c",
-        "upb/array.c",
-        "upb/decode_fast.c",
-        "upb/decode.c",
-        "upb/def.c",
-        "upb/encode.c",
-        "upb/extension_registry.c",
-        "upb/json_decode.c",
-        "upb/json_encode.c",
-        "upb/map.c",
-        "upb/mini_descriptor.c",
-        "upb/mini_table_accessors.c",
-        "upb/mini_table.c",
-        "upb/msg.c",
-        "upb/reflection.c",
-        "upb/status.c",
-        "upb/table.c",
-        "upb/text_encode.c",
-        "upb/upb.c",
+        "upb/base/status.c",
+        "upb/collections/array.c",
+        "upb/collections/map.c",
+        "upb/collections/map_sorter.c",
+        "upb/hash/common.c",
+        "upb/json/decode.c",
+        "upb/json/encode.c",
+        "upb/lex/atoi.c",
+        "upb/lex/round_trip.c",
+        "upb/lex/strtod.c",
+        "upb/lex/unicode.c",
+        "upb/mem/alloc.c",
+        "upb/mem/arena.c",
+        "upb/message/accessors.c",
+        "upb/message/message.c",
+        "upb/mini_table/common.c",
+        "upb/mini_table/decode.c",
+        "upb/mini_table/encode.c",
+        "upb/mini_table/extension_registry.c",
+        "upb/reflection/def_builder.c",
+        "upb/reflection/def_pool.c",
+        "upb/reflection/def_type.c",
+        "upb/reflection/desc_state.c",
+        "upb/reflection/enum_def.c",
+        "upb/reflection/enum_reserved_range.c",
+        "upb/reflection/enum_value_def.c",
+        "upb/reflection/extension_range.c",
+        "upb/reflection/field_def.c",
+        "upb/reflection/file_def.c",
+        "upb/reflection/message.c",
+        "upb/reflection/message_def.c",
+        "upb/reflection/message_reserved_range.c",
+        "upb/reflection/method_def.c",
+        "upb/reflection/oneof_def.c",
+        "upb/reflection/service_def.c",
+        "upb/text/encode.c",
+        "upb/wire/decode.c",
+        "upb/wire/decode_fast.c",
+        "upb/wire/encode.c",
+        "upb/wire/eps_copy_input_stream.c",
+        "upb/wire/reader.c",
     ],
     cflags: [
         "-Wno-unused-parameter",
     ],
     static_libs: [
+        "libgrpc_third_party_utf8_range",
         "libgrpc_upb_protos",
     ],
     export_include_dirs: [

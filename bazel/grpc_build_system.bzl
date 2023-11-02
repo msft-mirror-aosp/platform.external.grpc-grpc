@@ -70,6 +70,8 @@ def _get_external_deps(external_deps):
             ret.append("//third_party/objective_c/Cronet:cronet_c_for_grpc")
         elif dep.startswith("absl/"):
             ret.append("@com_google_absl//" + dep)
+        elif dep.startswith("google/"):
+            ret.append("@com_google_googleapis//" + dep)
         else:
             ret.append("//external:" + dep)
     return ret
@@ -101,6 +103,9 @@ def _update_visibility(visibility):
         "http": PRIVATE,
         "httpcli": PRIVATE,
         "iomgr_timer": PRIVATE,
+        "iomgr_internal_errqueue": PRIVATE,
+        "iomgr_buffer_list": PRIVATE,
+        "json_reader_legacy": PRIVATE,
         "public": PUBLIC,
         "ref_counted_ptr": PRIVATE,
         "trace": PRIVATE,
@@ -264,7 +269,7 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, uses_event_engine):
+def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
     """Common logic used to parameterize tests for every poller and EventEngine and experiment.
 
     Args:
@@ -273,6 +278,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
         deps: base deps
         tags: base tags
         args: base args
+        flaky: base flaky
         exclude_pollers: list of poller names to exclude for this set of tests.
         uses_polling: set to False if the test is not sensitive to polling methodology.
         uses_event_engine: set to False if the test is not sensitive to
@@ -292,6 +298,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
             "deps": deps,
             "tags": tags,
             "args": args,
+            "flaky": flaky,
             "env": {},
         })
     else:
@@ -313,6 +320,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 "env": {
                     "GRPC_POLL_STRATEGY": poller,
                 },
+                "flaky": flaky,
             })
 
         # Now generate one test for each subsequent EventEngine, all using the
@@ -329,6 +337,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 "tags": tags + ["no_linux"],
                 "args": args,
                 "env": {},
+                "flaky": flaky,
             })
         else:
             for engine_name, engine in EVENT_ENGINES.items():
@@ -348,6 +357,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     "tags": test_tags,
                     "args": test_args,
                     "env": {},
+                    "flaky": flaky,
                 })
 
     experiments = {}
@@ -363,7 +373,6 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
     mode_config = {
         # format: <mode>: (enabled_target_tags, disabled_target_tags)
         "dbg": (["noopt"], ["nodbg"]),
-        "opt": (["nodbg"], ["noopt"]),
         "on": (None, []),
         "off": ([], None),
     }
@@ -394,6 +403,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                         if tag not in tags:
                             tags = tags + [tag]
                     config["tags"] = tags
+                    config["flaky"] = True
                     experiment_config.append(config)
         if disabled_tags != None:
             for experiment in experiments[mode]:
@@ -453,21 +463,21 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "exec_compatible_with": exec_compatible_with,
         "exec_properties": exec_properties,
         "shard_count": shard_count,
-        "flaky": flaky,
         "linkstatic": linkstatic,
     }
 
-    if "grpc-fuzzer" not in tags:
+    if "grpc-fuzzer" not in tags and "no_test_ios" not in tags:
         ios_cc_test(
             name = name,
             srcs = srcs,
             tags = tags,
             deps = core_deps,
             args = args,
+            flaky = flaky,
             **test_args
         )
 
-    for poller_config in expand_tests(name, srcs, core_deps, tags, args, exclude_pollers, uses_polling, uses_event_engine):
+    for poller_config in expand_tests(name, srcs, core_deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
         native.cc_test(
             name = poller_config["name"],
             srcs = poller_config["srcs"],
@@ -475,6 +485,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             tags = poller_config["tags"],
             args = poller_config["args"],
             env = poller_config["env"],
+            flaky = poller_config["flaky"],
             **test_args
         )
 
@@ -558,10 +569,9 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
         "exec_compatible_with": exec_compatible_with,
         "exec_properties": exec_properties,
         "shard_count": shard_count,
-        "flaky": flaky,
     }
 
-    for poller_config in expand_tests(name, srcs, [], tags, args, exclude_pollers, uses_polling, uses_event_engine):
+    for poller_config in expand_tests(name, srcs, [], tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
         native.sh_test(
             name = poller_config["name"],
             srcs = poller_config["srcs"],
@@ -569,6 +579,7 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
             tags = poller_config["tags"],
             args = poller_config["args"],
             env = poller_config["env"],
+            flaky = poller_config["flaky"],
             **test_args
         )
 

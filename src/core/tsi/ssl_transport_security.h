@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
-#define GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
+#ifndef GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
+#define GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -47,6 +47,8 @@
 #define TSI_X509_URI_PEER_PROPERTY "x509_uri"
 #define TSI_X509_EMAIL_PEER_PROPERTY "x509_email"
 #define TSI_X509_IP_PEER_PROPERTY "x509_ip"
+#define TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY \
+  "x509_verified_root_cert_subject"
 
 // --- tsi_ssl_root_certs_store object ---
 
@@ -323,6 +325,17 @@ struct tsi_ssl_server_handshaker_options {
   // crl checking. Only OpenSSL version > 1.1 is supported for CRL checking
   const char* crl_directory;
 
+  // If true, the SSL server sends a list of CA names to the client in the
+  // ServerHello. This list of CA names is extracted from the server's trust
+  // bundle, and the client may use this lint as a hint to decide which
+  // certificate it should send to the server.
+  //
+  // WARNING: This is an extremely dangerous option. If the server's trust
+  // bundle is sufficiently large, then setting this bit to true will result in
+  // the server being unable to generate a ServerHello, and hence the server
+  // will be unusable.
+  bool send_client_ca_list;
+
   tsi_ssl_server_handshaker_options()
       : pem_key_cert_pairs(nullptr),
         num_key_cert_pairs(0),
@@ -336,7 +349,8 @@ struct tsi_ssl_server_handshaker_options {
         min_tls_version(tsi_tls_version::TSI_TLS1_2),
         max_tls_version(tsi_tls_version::TSI_TLS1_3),
         key_logger(nullptr),
-        crl_directory(nullptr) {}
+        crl_directory(nullptr),
+        send_client_ca_list(true) {}
 };
 
 // Creates a server handshaker factory.
@@ -403,4 +417,4 @@ tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
 tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
                                            tsi_peer_property* property);
 
-#endif  // GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
+#endif  // GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H

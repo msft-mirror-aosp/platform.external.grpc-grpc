@@ -68,6 +68,9 @@ namespace grpc_core {
 
 TraceFlag grpc_outlier_detection_lb_trace(false, "outlier_detection_lb");
 
+const char* DisableOutlierDetectionAttribute::kName =
+    "disable_outlier_detection";
+
 namespace {
 
 using ::grpc_event_engine::experimental::EventEngine;
@@ -257,7 +260,12 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     void Eject(const Timestamp& time) {
       ejection_time_ = time;
       ++multiplier_;
-      for (auto& subchannel : subchannels_) {
+      // Ejecting the subchannel may cause the child policy to unref the
+      // subchannel, so we need to be prepared for the set to be modified
+      // while we are iterating.
+      for (auto it = subchannels_.begin(); it != subchannels_.end();) {
+        SubchannelWrapper* subchannel = *it;
+        ++it;
         subchannel->Eject();
       }
     }
@@ -291,7 +299,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     }
 
     void DisableEjection() {
-      Uneject();
+      if (ejection_time_.has_value()) Uneject();
       multiplier_ = 0;
     }
 
@@ -363,6 +371,8 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
   ~OutlierDetectionLb() override;
 
+  // Returns the address map key for an address, or the empty string if
+  // the address should be ignored.
   static std::string MakeKeyForAddress(const ServerAddress& address);
 
   void ShutdownLocked() override;
@@ -394,8 +404,13 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
 void OutlierDetectionLb::SubchannelWrapper::Eject() {
   ejected_ = true;
-  for (auto& watcher : watchers_) {
-    watcher.second->Eject();
+  // Ejecting the subchannel may cause the child policy to cancel the watch,
+  // so we need to be prepared for the map to be modified while we are
+  // iterating.
+  for (auto it = watchers_.begin(); it != watchers_.end();) {
+    WatcherWrapper* watcher = it->second;
+    ++it;
+    watcher->Eject();
   }
 }
 
@@ -536,9 +551,21 @@ OutlierDetectionLb::~OutlierDetectionLb() {
 
 std::string OutlierDetectionLb::MakeKeyForAddress(
     const ServerAddress& address) {
+  // If the address has the DisableOutlierDetectionAttribute attribute,
+  // ignore it.
+  // TODO(roth): This is a hack to prevent outlier_detection from
+  // working with pick_first, as per discussion in
+  // https://github.com/grpc/grpc/issues/32967.  Remove this as part of
+  // implementing dualstack backend support.
+  if (address.GetAttribute(DisableOutlierDetectionAttribute::kName) !=
+      nullptr) {
+    return "";
+  }
   // Use only the address, not the attributes.
   auto addr_str = grpc_sockaddr_to_string(&address.address(), false);
-  return addr_str.ok() ? addr_str.value() : addr_str.status().ToString();
+  // If address couldn't be stringified, ignore it.
+  if (!addr_str.ok()) return "";
+  return std::move(*addr_str);
 }
 
 void OutlierDetectionLb::ShutdownLocked() {
@@ -611,6 +638,7 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
     std::set<std::string> current_addresses;
     for (const ServerAddress& address : *args.addresses) {
       std::string address_key = MakeKeyForAddress(address);
+      if (address_key.empty()) continue;
       auto& subchannel_state = subchannel_state_map_[address_key];
       if (subchannel_state == nullptr) {
         subchannel_state = MakeRefCounted<SubchannelState>();
@@ -712,11 +740,19 @@ OrphanablePtr<LoadBalancingPolicy> OutlierDetectionLb::CreateChildPolicyLocked(
 RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
     ServerAddress address, const ChannelArgs& args) {
   if (outlier_detection_policy_->shutting_down_) return nullptr;
-  std::string key = MakeKeyForAddress(address);
   RefCountedPtr<SubchannelState> subchannel_state;
-  auto it = outlier_detection_policy_->subchannel_state_map_.find(key);
-  if (it != outlier_detection_policy_->subchannel_state_map_.end()) {
-    subchannel_state = it->second->Ref();
+  std::string key = MakeKeyForAddress(address);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+    gpr_log(GPR_INFO,
+            "[outlier_detection_lb %p] using key %s for subchannel address %s",
+            outlier_detection_policy_.get(), key.c_str(),
+            address.ToString().c_str());
+  }
+  if (!key.empty()) {
+    auto it = outlier_detection_policy_->subchannel_state_map_.find(key);
+    if (it != outlier_detection_policy_->subchannel_state_map_.end()) {
+      subchannel_state = it->second->Ref();
+    }
   }
   auto subchannel = MakeRefCounted<SubchannelWrapper>(
       subchannel_state,
@@ -858,8 +894,10 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
           config.success_rate_ejection->minimum_hosts) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO,
-              "[outlier_detection_lb %p] running success rate algorithm",
-              parent_.get());
+              "[outlier_detection_lb %p] running success rate algorithm: "
+              "stdev_factor=%d, enforcement_percentage=%d",
+              parent_.get(), config.success_rate_ejection->stdev_factor,
+              config.success_rate_ejection->enforcement_percentage);
     }
     // calculate ejection threshold: (mean - stdev *
     // (success_rate_ejection.stdev_factor / 1000))
@@ -917,8 +955,10 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
           config.failure_percentage_ejection->minimum_hosts) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO,
-              "[outlier_detection_lb %p] running failure percentage algorithm",
-              parent_.get());
+              "[outlier_detection_lb %p] running failure percentage algorithm: "
+              "threshold=%d, enforcement_percentage=%d",
+              parent_.get(), config.failure_percentage_ejection->threshold,
+              config.failure_percentage_ejection->enforcement_percentage);
     }
     for (auto& candidate : failure_percentage_ejection_candidates) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
@@ -992,14 +1032,6 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
-      // This policy was configured in the deprecated loadBalancingPolicy
-      // field or in the client API.
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:outlier_detection policy requires "
-          "configuration. Please use loadBalancingConfig field of service "
-          "config instead.");
-    }
     ValidationErrors errors;
     OutlierDetectionConfig outlier_detection_config;
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
@@ -1009,8 +1041,8 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
       // Parse childPolicy manually.
       {
         ValidationErrors::ScopedField field(&errors, ".childPolicy");
-        auto it = json.object_value().find("childPolicy");
-        if (it == json.object_value().end()) {
+        auto it = json.object().find("childPolicy");
+        if (it == json.object().end()) {
           errors.AddError("field not present");
         } else {
           auto child_policy_config = CoreConfiguration::Get()
@@ -1026,6 +1058,7 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
     }
     if (!errors.ok()) {
       return errors.status(
+          absl::StatusCode::kInvalidArgument,
           "errors validating outlier_detection LB policy config");
     }
     return MakeRefCounted<OutlierDetectionLbConfig>(outlier_detection_config,
@@ -1107,8 +1140,7 @@ const JsonLoaderInterface* OutlierDetectionConfig::JsonLoader(const JsonArgs&) {
 
 void OutlierDetectionConfig::JsonPostLoad(const Json& json, const JsonArgs&,
                                           ValidationErrors* errors) {
-  if (json.object_value().find("maxEjectionTime") ==
-      json.object_value().end()) {
+  if (json.object().find("maxEjectionTime") == json.object().end()) {
     max_ejection_time = std::max(base_ejection_time, Duration::Seconds(300));
   }
   if (max_ejection_percent > 100) {

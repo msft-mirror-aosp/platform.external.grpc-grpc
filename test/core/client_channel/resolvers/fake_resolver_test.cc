@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
@@ -112,7 +113,7 @@ static grpc_core::Resolver::Result create_new_resolver_result() {
     grpc_resolved_address address;
     EXPECT_TRUE(grpc_parse_uri(*uri, &address));
     absl::InlinedVector<grpc_arg, 2> args_to_add;
-    addresses.emplace_back(address.addr, address.len, grpc_core::ChannelArgs());
+    addresses.emplace_back(address, grpc_core::ChannelArgs());
   }
   ++test_counter;
   grpc_core::Resolver::Result result;

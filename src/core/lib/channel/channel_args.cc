@@ -189,25 +189,36 @@ ChannelArgs ChannelArgs::Set(absl::string_view name, int value) const {
   return Set(name, Value(value));
 }
 
-ChannelArgs ChannelArgs::Set(absl::string_view key, Value value) const {
-  return ChannelArgs(args_.Add(std::string(key), std::move(value)));
+ChannelArgs ChannelArgs::Set(absl::string_view name, Value value) const {
+  return ChannelArgs(args_.Add(std::string(name), std::move(value)));
 }
 
-ChannelArgs ChannelArgs::Set(absl::string_view key,
+ChannelArgs ChannelArgs::Set(absl::string_view name,
                              absl::string_view value) const {
-  return Set(key, std::string(value));
+  return Set(name, std::string(value));
 }
 
-ChannelArgs ChannelArgs::Set(absl::string_view key, const char* value) const {
-  return Set(key, std::string(value));
+ChannelArgs ChannelArgs::Set(absl::string_view name, const char* value) const {
+  return Set(name, std::string(value));
 }
 
-ChannelArgs ChannelArgs::Set(absl::string_view key, std::string value) const {
-  return Set(key, Value(std::move(value)));
+ChannelArgs ChannelArgs::Set(absl::string_view name, std::string value) const {
+  return Set(name, Value(std::move(value)));
 }
 
-ChannelArgs ChannelArgs::Remove(absl::string_view key) const {
-  return ChannelArgs(args_.Remove(key));
+ChannelArgs ChannelArgs::Remove(absl::string_view name) const {
+  return ChannelArgs(args_.Remove(name));
+}
+
+ChannelArgs ChannelArgs::RemoveAllKeysWithPrefix(
+    absl::string_view prefix) const {
+  ChannelArgs result;
+  args_.ForEach([&](const std::string& key, const Value& value) {
+    if (!absl::StartsWith(key, prefix)) {
+      result.args_ = result.args_.Add(key, value);
+    }
+  });
+  return result;
 }
 
 absl::optional<int> ChannelArgs::GetInt(absl::string_view name) const {

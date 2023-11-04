@@ -25,6 +25,7 @@
 #include <string>
 
 #include "absl/base/attributes.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -46,7 +47,6 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -54,6 +54,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/bdp_estimator.h"
@@ -63,6 +64,8 @@
 #include "src/core/lib/transport/transport.h"
 
 using grpc_core::HPackParser;
+
+grpc_core::TraceFlag grpc_trace_chttp2_new_stream(false, "chttp2_new_stream");
 
 static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t);
 static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
@@ -620,11 +623,13 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           t->incoming_stream_id));
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (GPR_UNLIKELY(
-                   grpc_chttp2_stream_map_size(&t->stream_map) >=
+                   t->stream_map.size() >=
                    t->settings[GRPC_ACKED_SETTINGS]
                               [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS])) {
       return GRPC_ERROR_CREATE("Max stream count exceeded");
-    } else if (t->sent_goaway_state == GRPC_CHTTP2_FINAL_GOAWAY_SENT) {
+    } else if (t->sent_goaway_state == GRPC_CHTTP2_FINAL_GOAWAY_SENT ||
+               t->sent_goaway_state ==
+                   GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED) {
       GRPC_CHTTP2_IF_TRACING(gpr_log(
           GPR_INFO,
           "transport:%p SERVER peer:%s Final GOAWAY sent. Ignoring new "
@@ -640,6 +645,12 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       GRPC_CHTTP2_IF_TRACING(
           gpr_log(GPR_ERROR, "grpc_chttp2_stream not accepted"));
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
+    }
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+        GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_new_stream)) {
+      gpr_log(GPR_INFO, "[t:%p fd:%d peer:%s] Accepting new stream", t,
+              grpc_endpoint_get_fd(t->ep),
+              std::string(t->peer_string.as_string_view()).c_str());
     }
     if (t->channelz_socket != nullptr) {
       t->channelz_socket->RecordStreamStartedFromRemote();
@@ -671,6 +682,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
         }
         s->parsed_trailers_only = true;
         s->trailing_metadata_buffer.Set(grpc_core::GrpcTrailersOnly(), true);
+        s->initial_metadata_buffer.Set(grpc_core::GrpcTrailersOnly(), true);
         incoming_metadata_buffer = &s->trailing_metadata_buffer;
         frame_type = HPackParser::LogInfo::kTrailers;
       } else {

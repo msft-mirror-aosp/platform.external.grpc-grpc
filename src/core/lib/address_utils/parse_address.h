@@ -86,9 +86,9 @@ grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
 grpc_error_handle UnixAbstractSockaddrPopulate(
     absl::string_view path, grpc_resolved_address* resolved_addr);
 
+/// Populate \a resolved_addr to be a vsock at \a path
 grpc_error_handle VSockaddrPopulate(absl::string_view path,
                                     grpc_resolved_address* resolved_addr);
-
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_ADDRESS_UTILS_PARSE_ADDRESS_H

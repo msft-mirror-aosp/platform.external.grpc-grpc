@@ -19,7 +19,6 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 #include <arpa/inet.h>  // IWYU pragma: keep
@@ -54,6 +53,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_event_engine {
@@ -71,6 +71,10 @@ absl::StatusOr<std::string> GetScheme(
       return "ipv6";
     case AF_UNIX:
       return "unix";
+#ifdef GRPC_HAVE_VSOCK
+    case AF_VSOCK:
+      return "vsock";
+#endif
     default:
       return absl::InvalidArgumentError(
           absl::StrFormat("Unknown sockaddr family: %d",
@@ -93,12 +97,11 @@ absl::StatusOr<std::string> ResolvedAddrToUnixPathIfPossible(
 #else
   int len = resolved_addr->size() - sizeof(unix_addr->sun_family) - 1;
 #endif
-  bool abstract = (len < 0 || unix_addr->sun_path[0] == '\0');
+  if (len <= 0) return "";
   std::string path;
-  if (abstract) {
-    if (len >= 0) {
-      path = std::string(unix_addr->sun_path + 1, len);
-    }
+  if (unix_addr->sun_path[0] == '\0') {
+    // unix-abstract socket processing.
+    path = std::string(unix_addr->sun_path + 1, len);
     path = absl::StrCat(std::string(1, '\0'), path);
   } else {
     size_t maxlen = sizeof(unix_addr->sun_path);
@@ -116,9 +119,9 @@ absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
   GRPC_RETURN_IF_ERROR(path.status());
   std::string scheme;
   std::string path_string;
-  if (path->at(0) == '\0') {
+  if (!path->empty() && path->at(0) == '\0' && path->length() > 1) {
     scheme = "unix-abstract";
-    path_string = path->length() > 1 ? path->substr(1, std::string::npos) : "";
+    path_string = path->substr(1, std::string::npos);
   } else {
     scheme = "unix";
     path_string = std::move(*path);

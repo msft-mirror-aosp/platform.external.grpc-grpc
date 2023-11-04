@@ -45,16 +45,7 @@ grpc_resolve_unix_abstract_domain_address(absl::string_view /* name */) {
   return absl::UnknownError("Unix domain sockets are not supported on Windows");
 }
 
-absl::StatusOr<std::vector<grpc_resolved_address>>
-grpc_resolve_vsock_address(absl::string_view /* name */) {
-  return absl::UnknownError("VSOCK sockets are not supported on Windows");
-}
-
 int grpc_is_unix_socket(const grpc_resolved_address* /* addr */) {
-  return false;
-}
-
-int grpc_is_vsock(const grpc_resolved_address* /* addr */) {
   return false;
 }
 

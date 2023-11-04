@@ -18,7 +18,6 @@
 #include <errno.h>
 
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
-#include "src/core/lib/iomgr/sockaddr.h"
 
 #include <stdint.h>
 #include <stdio.h>

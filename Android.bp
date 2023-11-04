@@ -99,6 +99,7 @@ GRPC_COMMON_SRCS = [
     "src/core/ext/filters/client_channel/resolver/polling_resolver.cc",
     "src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc",
     "src/core/ext/filters/client_channel/retry_filter.cc",
+    "src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc",
     "src/core/ext/filters/client_channel/retry_service_config.cc",
     "src/core/ext/filters/client_channel/retry_throttle.cc",
     "src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc",
@@ -137,7 +138,6 @@ GRPC_COMMON_SRCS = [
     "src/core/ext/transport/chttp2/transport/huffsyms.cc",
     "src/core/ext/transport/chttp2/transport/parsing.cc",
     "src/core/ext/transport/chttp2/transport/stream_lists.cc",
-    "src/core/ext/transport/chttp2/transport/stream_map.cc",
     "src/core/ext/transport/chttp2/transport/varint.cc",
     "src/core/ext/transport/chttp2/transport/writing.cc",
     "src/core/ext/transport/inproc/inproc_plugin.cc",
@@ -340,6 +340,7 @@ GRPC_COMMON_SRCS = [
     "src/core/lib/iomgr/timer_manager.cc",
     "src/core/lib/iomgr/unix_sockets_posix.cc",
     "src/core/lib/iomgr/unix_sockets_posix_noop.cc",
+    "src/core/lib/iomgr/vsock.cc",
     "src/core/lib/iomgr/wakeup_fd_eventfd.cc",
     "src/core/lib/iomgr/wakeup_fd_nospecial.cc",
     "src/core/lib/iomgr/wakeup_fd_pipe.cc",
@@ -487,7 +488,6 @@ GRPC_COMMON_SRCS = [
 GRPC_SECURE_SRCS = [
     "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc",
     "src/core/ext/filters/client_channel/lb_policy/xds/cds.cc",
-    "src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc",
     "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc",
     "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc",
     "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc",
@@ -671,7 +671,7 @@ cc_defaults {
     target: {
         vendor: {
             // Needs to be updated when a new version is imported.
-            suffix: "-1.56.3",
+            suffix: "-1.57.1",
         },
     },
 }

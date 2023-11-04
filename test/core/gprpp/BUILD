@@ -67,14 +67,14 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "no_destruct_test",
-    srcs = ["no_destruct_test.cc"],
+    name = "if_list_test",
+    srcs = ["if_list_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//src/core:no_destruct",
+        "//src/core:if_list",
     ],
 )
 
@@ -86,8 +86,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:no_destruct",
-        "//test/core/util:grpc_suppressions",
+        "//src/core:no_destruct",
     ],
 )
 

@@ -161,10 +161,10 @@ void HPackTable::AddLargerThanCurrentTableSize() {
 std::string HPackTable::TestOnlyDynamicTableAsString() const {
   std::string out;
   entries_.ForEach([&out](uint32_t i, const Memento& m) {
-    if (m.parse_status.ok()) {
+    if (m.parse_status == nullptr) {
       absl::StrAppend(&out, i, ": ", m.md.DebugString(), "\n");
     } else {
-      absl::StrAppend(&out, i, ": ", m.parse_status.Materialize().ToString(),
+      absl::StrAppend(&out, i, ": ", m.parse_status->Materialize().ToString(),
                       "\n");
     }
   });
@@ -245,12 +245,12 @@ HPackTable::Memento MakeMemento(size_t i) {
   auto sm = kStaticTable[i];
   return HPackTable::Memento{
       grpc_metadata_batch::Parse(
-          sm.key, Slice::FromStaticString(sm.value),
+          sm.key, Slice::FromStaticString(sm.value), true,
           strlen(sm.key) + strlen(sm.value) + hpack_constants::kEntryOverhead,
           [](absl::string_view, const Slice&) {
             abort();  // not expecting to see this
           }),
-      HpackParseResult()};
+      nullptr};
 }
 
 }  // namespace

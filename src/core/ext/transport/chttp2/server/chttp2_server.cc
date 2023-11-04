@@ -71,6 +71,7 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/iomgr/vsock.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -98,7 +99,7 @@ using ::grpc_event_engine::experimental::EventEngine;
 
 const char kUnixUriPrefix[] = "unix:";
 const char kUnixAbstractUriPrefix[] = "unix-abstract:";
-const char kVsockUriPrefix[] = "vsock:";
+const char kVSockUriPrefix[] = "vsock:";
 
 class Chttp2ServerListener : public Server::ListenerInterface {
  public:
@@ -245,13 +246,12 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     IncrementRefCount();
   }
 
-  RefCountedPtr<Chttp2ServerListener> Ref() GRPC_MUST_USE_RESULT {
+  GRPC_MUST_USE_RESULT RefCountedPtr<Chttp2ServerListener> Ref() {
     IncrementRefCount();
     return RefCountedPtr<Chttp2ServerListener>(this);
   }
-  RefCountedPtr<Chttp2ServerListener> Ref(const DebugLocation& /* location */,
-                                          const char* /* reason */)
-      GRPC_MUST_USE_RESULT {
+  GRPC_MUST_USE_RESULT RefCountedPtr<Chttp2ServerListener> Ref(
+      const DebugLocation& /* location */, const char* /* reason */) {
     return Ref();
   }
 
@@ -942,8 +942,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                                    kUnixAbstractUriPrefix)) {
       resolved_or =
           grpc_resolve_unix_abstract_domain_address(parsed_addr_unprefixed);
-    } else if (absl::ConsumePrefix(&parsed_addr_unprefixed,
-                                   kVsockUriPrefix)) {
+    } else if (absl::ConsumePrefix(&parsed_addr_unprefixed, kVSockUriPrefix)) {
       resolved_or = grpc_resolve_vsock_address(parsed_addr_unprefixed);
     } else {
       resolved_or =

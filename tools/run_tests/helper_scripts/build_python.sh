@@ -77,7 +77,7 @@ function venv_relative_python() {
   fi
 }
 
-# Distutils toolchain to use depending on the system.
+# Toolchain to use depending on the system.
 function toolchain() {
   if [ "$(is_mingw)" ]; then
     echo 'mingw32'
@@ -140,7 +140,6 @@ pip_install() {
 
 # Pin setuptools to < 60.0.0 to restore the distutil installation, see:
 # https://github.com/pypa/setuptools/pull/2896
-export SETUPTOOLS_USE_DISTUTILS=stdlib
 pip_install --upgrade pip==21.3.1
 pip_install --upgrade setuptools==59.6.0
 
@@ -197,6 +196,11 @@ $VENV_PYTHON "$ROOT/src/python/grpcio_status/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_status/setup.py" build_package_protos
 pip_install_dir "$ROOT/src/python/grpcio_status"
 
+
+# Build/install status proto mapping
+$VENV_PYTHON "$ROOT/tools/distrib/python/xds_protos/build.py"
+pip_install_dir "$ROOT/tools/distrib/python/xds_protos"
+
 # Build/install csds
 pip_install_dir "$ROOT/src/python/grpcio_csds"
 
@@ -208,8 +212,8 @@ pip_install_dir "$ROOT/src/python/grpcio_testing"
 
 # Build/install tests
 pip_install coverage==4.4 oauth2client==4.1.0 \
-            google-auth>=1.17.2 requests==2.14.2 \
-            googleapis-common-protos>=1.5.5 rsa==4.0
+            google-auth>=1.35.0 requests==2.31.0 \
+            googleapis-common-protos>=1.5.5 rsa==4.0 absl-py==1.4.0
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" build_package_protos
 pip_install_dir "$ROOT/src/python/grpcio_tests"

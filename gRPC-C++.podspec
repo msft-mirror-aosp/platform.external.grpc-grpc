@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.56.3'
+  version = '1.57.1'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -216,6 +216,7 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
     abseil_version = '1.20230125.3'
+    ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
@@ -272,10 +273,10 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h',
                       'src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h',
                       'src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h',
+                      'src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.h',
                       'src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h',
                       'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                       'src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h',
-                      'src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h',
                       'src/core/ext/filters/client_channel/local_subchannel_pool.h',
@@ -290,6 +291,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/polling_resolver.h',
                       'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h',
                       'src/core/ext/filters/client_channel/retry_filter.h',
+                      'src/core/ext/filters/client_channel/retry_filter_legacy_call_data.h',
                       'src/core/ext/filters/client_channel/retry_service_config.h',
                       'src/core/ext/filters/client_channel/retry_throttle.h',
                       'src/core/ext/filters/client_channel/subchannel.h',
@@ -375,7 +377,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/http_trace.h',
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
                       'src/core/ext/transport/chttp2/transport/internal.h',
-                      'src/core/ext/transport/chttp2/transport/stream_map.h',
                       'src/core/ext/transport/chttp2/transport/varint.h',
                       'src/core/ext/transport/inproc/inproc_transport.h',
                       'src/core/ext/upb-generated/envoy/admin/v3/certs.upb.h',
@@ -441,6 +442,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.h',
                       'src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.h',
                       'src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.h',
+                      'src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.h',
@@ -451,6 +453,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.h',
+                      'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h',
@@ -602,6 +605,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.h',
+                      'src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h',
@@ -819,6 +823,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/examine_stack.h',
                       'src/core/lib/gprpp/fork.h',
                       'src/core/lib/gprpp/host_port.h',
+                      'src/core/lib/gprpp/if_list.h',
                       'src/core/lib/gprpp/load_file.h',
                       'src/core/lib/gprpp/manual_constructor.h',
                       'src/core/lib/gprpp/match.h',
@@ -844,6 +849,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/time.h',
                       'src/core/lib/gprpp/time_averaged_stats.h',
                       'src/core/lib/gprpp/time_util.h',
+                      'src/core/lib/gprpp/type_list.h',
                       'src/core/lib/gprpp/unique_type_name.h',
                       'src/core/lib/gprpp/validation_errors.h',
                       'src/core/lib/gprpp/work_serializer.h',
@@ -916,6 +922,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/timer_heap.h',
                       'src/core/lib/iomgr/timer_manager.h',
                       'src/core/lib/iomgr/unix_sockets_posix.h',
+                      'src/core/lib/iomgr/vsock.h',
                       'src/core/lib/iomgr/wakeup_fd_pipe.h',
                       'src/core/lib/iomgr/wakeup_fd_posix.h',
                       'src/core/lib/json/json.h',
@@ -925,6 +932,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/json/json_reader.h',
                       'src/core/lib/json/json_util.h',
                       'src/core/lib/json/json_writer.h',
+                      'src/core/lib/load_balancing/delegating_helper.h',
                       'src/core/lib/load_balancing/lb_policy.h',
                       'src/core/lib/load_balancing/lb_policy_factory.h',
                       'src/core/lib/load_balancing/lb_policy_registry.h',
@@ -1329,10 +1337,10 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h',
                               'src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h',
                               'src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h',
+                              'src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.h',
                               'src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h',
                               'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                               'src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h',
-                              'src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h',
                               'src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h',
                               'src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h',
                               'src/core/ext/filters/client_channel/local_subchannel_pool.h',
@@ -1347,6 +1355,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/resolver/polling_resolver.h',
                               'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h',
                               'src/core/ext/filters/client_channel/retry_filter.h',
+                              'src/core/ext/filters/client_channel/retry_filter_legacy_call_data.h',
                               'src/core/ext/filters/client_channel/retry_service_config.h',
                               'src/core/ext/filters/client_channel/retry_throttle.h',
                               'src/core/ext/filters/client_channel/subchannel.h',
@@ -1414,7 +1423,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/http_trace.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/internal.h',
-                              'src/core/ext/transport/chttp2/transport/stream_map.h',
                               'src/core/ext/transport/chttp2/transport/varint.h',
                               'src/core/ext/transport/inproc/inproc_transport.h',
                               'src/core/ext/upb-generated/envoy/admin/v3/certs.upb.h',
@@ -1480,6 +1488,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.h',
                               'src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.h',
                               'src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.h',
+                              'src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.h',
@@ -1490,6 +1499,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.h',
+                              'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h',
@@ -1641,6 +1651,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.h',
+                              'src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h',
@@ -1858,6 +1869,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/examine_stack.h',
                               'src/core/lib/gprpp/fork.h',
                               'src/core/lib/gprpp/host_port.h',
+                              'src/core/lib/gprpp/if_list.h',
                               'src/core/lib/gprpp/load_file.h',
                               'src/core/lib/gprpp/manual_constructor.h',
                               'src/core/lib/gprpp/match.h',
@@ -1883,6 +1895,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/time.h',
                               'src/core/lib/gprpp/time_averaged_stats.h',
                               'src/core/lib/gprpp/time_util.h',
+                              'src/core/lib/gprpp/type_list.h',
                               'src/core/lib/gprpp/unique_type_name.h',
                               'src/core/lib/gprpp/validation_errors.h',
                               'src/core/lib/gprpp/work_serializer.h',
@@ -1955,6 +1968,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/timer_heap.h',
                               'src/core/lib/iomgr/timer_manager.h',
                               'src/core/lib/iomgr/unix_sockets_posix.h',
+                              'src/core/lib/iomgr/vsock.h',
                               'src/core/lib/iomgr/wakeup_fd_pipe.h',
                               'src/core/lib/iomgr/wakeup_fd_posix.h',
                               'src/core/lib/json/json.h',
@@ -1964,6 +1978,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/json/json_reader.h',
                               'src/core/lib/json/json_util.h',
                               'src/core/lib/json/json_writer.h',
+                              'src/core/lib/load_balancing/delegating_helper.h',
                               'src/core/lib/load_balancing/lb_policy.h',
                               'src/core/lib/load_balancing/lb_policy_factory.h',
                               'src/core/lib/load_balancing/lb_policy_registry.h',

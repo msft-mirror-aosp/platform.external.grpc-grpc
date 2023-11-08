@@ -20,6 +20,8 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 
+#include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,7 +40,6 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
-#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 
@@ -181,21 +182,22 @@ grpc_error_handle VSockaddrPopulate(absl::string_view path,
 
 }  // namespace grpc_core
 
-#else /* GRPC_HAVE_VSOCK */
+#else   // GRPC_HAVE_VSOCK
 
 bool grpc_parse_vsock(const grpc_core::URI& /* uri */,
                       grpc_resolved_address* /* resolved_addr */) {
-  abort();
+  GPR_UNREACHABLE_CODE(return false);
 }
 
 namespace grpc_core {
 
 grpc_error_handle VSockaddrPopulate(
     absl::string_view /* path */, grpc_resolved_address* /* resolved_addr */) {
-  abort();
+  GPR_UNREACHABLE_CODE(return absl::InvalidArgumentError("vsock unsupported."));
 }
 
-#endif /* GRPC_HAVE_VSOCK */
+}  // namespace grpc_core
+#endif  // GRPC_HAVE_VSOCK
 
 bool grpc_parse_ipv4_hostport(absl::string_view hostport,
                               grpc_resolved_address* addr, bool log_errors) {

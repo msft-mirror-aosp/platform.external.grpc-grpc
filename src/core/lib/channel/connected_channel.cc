@@ -57,7 +57,6 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
@@ -549,7 +548,7 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
         }
         if (!done_recv_messages) {
           auto p = recv_messages();
-          if (auto* r = p.value_if_ready()) {
+          if (p.ready()) {
             // NOTE: ignore errors here, they'll be collected in the
             // recv_trailing_metadata.
             done_recv_messages = true;

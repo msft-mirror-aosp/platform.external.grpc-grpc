@@ -64,6 +64,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:closure",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -93,6 +94,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:closure",
         "//test/core/end2end:cq_verifier",
         "//test/core/util:grpc_test_util",
     ],
@@ -109,18 +111,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "public_headers_must_be_c89",
-    srcs = ["public_headers_must_be_c89.c"],
-    language = "C",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:grpc_authorization_provider",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -150,6 +141,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -164,6 +156,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -176,6 +169,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
     ],
 )

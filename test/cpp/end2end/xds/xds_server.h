@@ -31,6 +31,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
@@ -76,11 +77,6 @@ class AdsServiceImpl
   void set_wrap_resources(bool wrap_resources) {
     grpc_core::MutexLock lock(&ads_mu_);
     wrap_resources_ = wrap_resources;
-  }
-
-  void set_inject_bad_resources_for_resource_type(const std::string& type_url) {
-    grpc_core::MutexLock lock(&ads_mu_);
-    inject_bad_resources_for_resource_type_ = type_url;
   }
 
   // Sets a resource to a particular value, overwriting any previous value.
@@ -391,22 +387,6 @@ class AdsServiceImpl
         resource_types_to_ignore_.end()) {
       return;
     }
-    // Inject bad resources if needed.
-    if (inject_bad_resources_for_resource_type_ == request.type_url()) {
-      response->emplace();
-      // Unparseable Resource wrapper.
-      auto* resource = (*response)->add_resources();
-      resource->set_type_url(
-          "type.googleapis.com/envoy.service.discovery.v3.Resource");
-      resource->set_value(std::string("\0", 1));
-      // Unparseable resource within Resource wrapper.
-      envoy::service::discovery::v3::Resource resource_wrapper;
-      resource_wrapper.set_name("foo");
-      resource = resource_wrapper.mutable_resource();
-      resource->set_type_url(request.type_url());
-      resource->set_value(std::string("\0", 1));
-      (*response)->add_resources()->PackFrom(resource_wrapper);
-    }
     // Look at all the resource names in the request.
     auto& subscription_name_map = (*subscription_map)[request.type_url()];
     auto& resource_type_state = resource_map_[request.type_url()];
@@ -594,7 +574,6 @@ class AdsServiceImpl
   ResourceMap resource_map_ ABSL_GUARDED_BY(ads_mu_);
   absl::optional<Status> forced_ads_failure_ ABSL_GUARDED_BY(ads_mu_);
   bool wrap_resources_ ABSL_GUARDED_BY(ads_mu_) = false;
-  std::string inject_bad_resources_for_resource_type_ ABSL_GUARDED_BY(ads_mu_);
 
   grpc_core::Mutex clients_mu_;
   std::set<std::string> clients_ ABSL_GUARDED_BY(clients_mu_);
@@ -611,6 +590,17 @@ class LrsServiceImpl
    public:
     // Stats for a given locality.
     struct LocalityStats {
+      struct LoadMetric {
+        uint64_t num_requests_finished_with_metric;
+        double total_metric_value;
+        LoadMetric& operator+=(const LoadMetric& other) {
+          num_requests_finished_with_metric +=
+              other.num_requests_finished_with_metric;
+          total_metric_value += other.total_metric_value;
+          return *this;
+        }
+      };
+
       LocalityStats() {}
 
       // Converts from proto message class.
@@ -624,13 +614,21 @@ class LrsServiceImpl
             total_error_requests(
                 upstream_locality_stats.total_error_requests()),
             total_issued_requests(
-                upstream_locality_stats.total_issued_requests()) {}
+                upstream_locality_stats.total_issued_requests()) {
+        for (const auto& s : upstream_locality_stats.load_metric_stats()) {
+          load_metrics[s.metric_name()] += LoadMetric{
+              s.num_requests_finished_with_metric(), s.total_metric_value()};
+        }
+      }
 
       LocalityStats& operator+=(const LocalityStats& other) {
         total_successful_requests += other.total_successful_requests;
         total_requests_in_progress += other.total_requests_in_progress;
         total_error_requests += other.total_error_requests;
         total_issued_requests += other.total_issued_requests;
+        for (const auto& p : other.load_metrics) {
+          load_metrics[p.first] += p.second;
+        }
         return *this;
       }
 
@@ -638,6 +636,7 @@ class LrsServiceImpl
       uint64_t total_requests_in_progress = 0;
       uint64_t total_error_requests = 0;
       uint64_t total_issued_requests = 0;
+      std::map<std::string, LoadMetric> load_metrics;
     };
 
     ClientStats() {}
@@ -704,7 +703,11 @@ class LrsServiceImpl
 
   void Shutdown();
 
-  std::vector<ClientStats> WaitForLoadReport();
+  // Returns an empty vector if the timeout elapses with no load report.
+  // TODO(roth): Change the default here to a finite duration and verify
+  // that it doesn't cause failures in any existing tests.
+  std::vector<ClientStats> WaitForLoadReport(
+      absl::Duration timeout = absl::InfiniteDuration());
 
  private:
   using LoadStatsRequest = ::envoy::service::load_stats::v3::LoadStatsRequest;

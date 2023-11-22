@@ -1,28 +1,33 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H
-#define GRPC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H
+#define GRPC_SRC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <iosfwd>
+#include <type_traits>
 #include <utility>
+
+#include "absl/hash/hash.h"
 
 #include "src/core/lib/gprpp/debug_location.h"
 
@@ -332,6 +337,65 @@ bool operator<(const WeakRefCountedPtr<T>& p1, const WeakRefCountedPtr<T>& p2) {
   return p1.get() < p2.get();
 }
 
+//
+// absl::Hash integration
+//
+
+template <typename H, typename T>
+H AbslHashValue(H h, const RefCountedPtr<T>& p) {
+  return H::combine(std::move(h), p.get());
+}
+
+template <typename H, typename T>
+H AbslHashValue(H h, const WeakRefCountedPtr<T>& p) {
+  return H::combine(std::move(h), p.get());
+}
+
+// Heterogenous lookup support.
+template <typename T>
+struct RefCountedPtrHash {
+  using is_transparent = void;
+  size_t operator()(const RefCountedPtr<T>& p) const {
+    return absl::Hash<RefCountedPtr<T>>{}(p);
+  }
+  size_t operator()(const WeakRefCountedPtr<T>& p) const {
+    return absl::Hash<WeakRefCountedPtr<T>>{}(p);
+  }
+  size_t operator()(T* p) const { return absl::Hash<T*>{}(p); }
+};
+template <typename T>
+struct RefCountedPtrEq {
+  using is_transparent = void;
+  bool operator()(const RefCountedPtr<T>& p1,
+                  const RefCountedPtr<T>& p2) const {
+    return p1 == p2;
+  }
+  bool operator()(const WeakRefCountedPtr<T>& p1,
+                  const WeakRefCountedPtr<T>& p2) const {
+    return p1 == p2;
+  }
+  bool operator()(const RefCountedPtr<T>& p1,
+                  const WeakRefCountedPtr<T>& p2) const {
+    return p1 == p2.get();
+  }
+  bool operator()(const WeakRefCountedPtr<T>& p1,
+                  const RefCountedPtr<T>& p2) const {
+    return p1 == p2.get();
+  }
+  bool operator()(const RefCountedPtr<T>& p1, const T* p2) const {
+    return p1 == p2;
+  }
+  bool operator()(const WeakRefCountedPtr<T>& p1, const T* p2) const {
+    return p1 == p2;
+  }
+  bool operator()(const T* p1, const RefCountedPtr<T>& p2) const {
+    return p2 == p1;
+  }
+  bool operator()(const T* p1, const WeakRefCountedPtr<T>& p2) const {
+    return p2 == p1;
+  }
+};
+
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H */
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H

@@ -51,14 +51,15 @@
 namespace grpc {
 namespace testing {
 
+using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::config::endpoint::v3::ClusterLoadAssignment;
-using ::envoy::config::endpoint::v3::HealthStatus;
 using ::envoy::config::listener::v3::Listener;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpConnectionManager;
 
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::IdentityKeyCertPair;
+using ::grpc::experimental::ServerMetricRecorder;
 using ::grpc::experimental::StaticDataCertificateProvider;
 
 //
@@ -251,6 +252,9 @@ XdsEnd2endTest::BackendServerThread::Credentials() {
 
 void XdsEnd2endTest::BackendServerThread::RegisterAllServices(
     ServerBuilder* builder) {
+  server_metric_recorder_ = ServerMetricRecorder::Create();
+  ServerBuilder::experimental_type(builder).EnableCallMetricRecording(
+      server_metric_recorder_.get());
   builder->RegisterService(&backend_service_);
   builder->RegisterService(&backend_service1_);
   builder->RegisterService(&backend_service2_);
@@ -276,10 +280,9 @@ XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
     XdsEnd2endTest* test_obj)
     : ServerThread(test_obj, /*use_xds_enabled_server=*/false),
       ads_service_(new AdsServiceImpl()),
-      lrs_service_(new LrsServiceImpl(
-          (GetParam().enable_load_reporting() ? 20 * grpc_test_slowdown_factor()
-                                              : 0),
-          {kDefaultClusterName})) {}
+      lrs_service_(
+          new LrsServiceImpl((GetParam().enable_load_reporting() ? 20 : 0),
+                             {kDefaultClusterName})) {}
 
 void XdsEnd2endTest::BalancerServerThread::RegisterAllServices(
     ServerBuilder* builder) {
@@ -430,6 +433,9 @@ void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
   }
   if (skip_cancelled_check) {
     request->mutable_param()->set_skip_cancelled_check(true);
+  }
+  if (backend_metrics.has_value()) {
+    *request->mutable_param()->mutable_backend_metrics() = *backend_metrics;
   }
 }
 
@@ -624,7 +630,7 @@ XdsEnd2endTest::CreateEndpointsForBackends(size_t start_index,
 }
 
 ClusterLoadAssignment XdsEnd2endTest::BuildEdsResource(
-    const EdsResourceArgs& args, const char* eds_service_name) {
+    const EdsResourceArgs& args, absl::string_view eds_service_name) {
   ClusterLoadAssignment assignment;
   assignment.set_cluster_name(eds_service_name);
   for (const auto& locality : args.locality_list) {
@@ -742,7 +748,8 @@ void XdsEnd2endTest::InitClient(BootstrapBuilder builder,
   xds_channel_args_.num_args = xds_channel_args_to_add_.size();
   xds_channel_args_.args = xds_channel_args_to_add_.data();
   // Initialize XdsClient state.
-  builder.SetDefaultServer(absl::StrCat("localhost:", balancer_->port()));
+  builder.SetDefaultServer(absl::StrCat("localhost:", balancer_->port()),
+                           /*ignore_if_set=*/true);
   bootstrap_ = builder.Build();
   if (GetParam().bootstrap_source() == XdsTestType::kBootstrapFromEnvVar) {
     grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
@@ -793,7 +800,7 @@ std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
     // same thing for the response generator to use for the xDS
     // channel and the xDS resource-does-not-exist timeout value.
     args->SetString(GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG,
-                    bootstrap_.c_str());
+                    bootstrap_);
     args->SetPointerWithVtable(
         GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS,
         &xds_channel_args_, &kChannelArgsArgVtable);
@@ -807,8 +814,9 @@ std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
   return grpc::CreateCustomChannel(uri, channel_creds, *args);
 }
 
-Status XdsEnd2endTest::SendRpc(const RpcOptions& rpc_options,
-                               EchoResponse* response) {
+Status XdsEnd2endTest::SendRpc(
+    const RpcOptions& rpc_options, EchoResponse* response,
+    std::multimap<std::string, std::string>* server_initial_metadata) {
   EchoResponse local_response;
   if (response == nullptr) response = &local_response;
   ClientContext context;
@@ -832,6 +840,15 @@ Status XdsEnd2endTest::SendRpc(const RpcOptions& rpc_options,
       status =
           SendRpcMethod(stub2_.get(), rpc_options, &context, request, response);
       break;
+  }
+  if (server_initial_metadata != nullptr) {
+    for (const auto& it : context.GetServerInitialMetadata()) {
+      std::string header(it.first.data(), it.first.size());
+      // Guard against implementation-specific header case - RFC 2616
+      absl::AsciiStrToLower(&header);
+      server_initial_metadata->emplace(
+          header, std::string(it.second.data(), it.second.size()));
+    }
   }
   return status;
 }
@@ -860,7 +877,7 @@ void XdsEnd2endTest::CheckRpcSendOk(
     const RpcOptions& rpc_options) {
   SendRpcsUntil(
       debug_location,
-      [debug_location, times, n = size_t(0)](const RpcResult& result) mutable {
+      [debug_location, times, n = size_t{0}](const RpcResult& result) mutable {
         EXPECT_TRUE(result.status.ok())
             << "code=" << result.status.error_code()
             << " message=" << result.status.error_message() << " at "
@@ -891,7 +908,7 @@ size_t XdsEnd2endTest::SendRpcsAndCountFailuresWithMessage(
   size_t num_failed = 0;
   SendRpcsUntil(
       debug_location,
-      [&, n = size_t(0)](const RpcResult& result) mutable {
+      [&, n = size_t{0}](const RpcResult& result) mutable {
         if (!result.status.ok()) {
           EXPECT_EQ(result.status.error_code(), expected_status)
               << debug_location.file() << ":" << debug_location.line();
@@ -1025,6 +1042,18 @@ void XdsEnd2endTest::SetProtoDuration(
   gpr_timespec ts = duration.as_timespec();
   duration_proto->set_seconds(ts.tv_sec);
   duration_proto->set_nanos(ts.tv_nsec);
+}
+
+std::string XdsEnd2endTest::MakeConnectionFailureRegex(
+    absl::string_view prefix) {
+  return absl::StrCat(
+      prefix,
+      "(UNKNOWN|UNAVAILABLE): (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      "(Failed to connect to remote host: )?"
+      "(Connection refused|Connection reset by peer|"
+      "recvmsg:Connection reset by peer|"
+      "getsockopt\\(SO\\_ERROR\\): Connection reset by peer|"
+      "Socket closed|FD shutdown)");
 }
 
 std::string XdsEnd2endTest::ReadFile(const char* file_path) {

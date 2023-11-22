@@ -37,22 +37,26 @@
 #include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 #include "test/core/xds/xds_transport_fake.h"
 
@@ -60,6 +64,8 @@
 // IWYU pragma: no_include <google/protobuf/stubs/status.h>
 // IWYU pragma: no_include <google/protobuf/unknown_field_set.h>
 // IWYU pragma: no_include <google/protobuf/util/json_util.h>
+// IWYU pragma: no_include "google/protobuf/json/json.h"
+// IWYU pragma: no_include "google/protobuf/util/json_util.h"
 
 using envoy::service::discovery::v3::DiscoveryRequest;
 using envoy::service::discovery::v3::DiscoveryResponse;
@@ -76,6 +82,7 @@ class XdsClientTest : public ::testing::Test {
    public:
     class FakeNode : public Node {
      public:
+      FakeNode() = default;
       const std::string& id() const override { return id_; }
       const std::string& cluster() const override { return cluster_; }
       const std::string& locality_region() const override {
@@ -228,8 +235,6 @@ class XdsClientTest : public ::testing::Test {
             XdsTestResourceType<ResourceStruct, all_resources_required_in_sotw>,
             ResourceStruct> {
    public:
-    using ResourceStructType = ResourceStruct;
-
     // A watcher implementation that queues delivered watches.
     class Watcher : public XdsResourceTypeImpl<
                         XdsTestResourceType<ResourceStruct,
@@ -247,24 +252,26 @@ class XdsClientTest : public ::testing::Test {
         return !queue_.empty();
       }
 
-      absl::optional<ResourceStruct> WaitForNextResource(
+      std::shared_ptr<const ResourceStruct> WaitForNextResource(
           absl::Duration timeout = absl::Seconds(1),
           SourceLocation location = SourceLocation()) {
         MutexLock lock(&mu_);
-        if (!WaitForEventLocked(timeout)) return absl::nullopt;
+        if (!WaitForEventLocked(timeout)) return nullptr;
         Event& event = queue_.front();
-        if (!absl::holds_alternative<ResourceStruct>(event)) {
+        if (!absl::holds_alternative<std::shared_ptr<const ResourceStruct>>(
+                event)) {
           EXPECT_TRUE(false)
               << "got unexpected event "
               << (absl::holds_alternative<absl::Status>(event)
                       ? "error"
                       : "does-not-exist")
               << " at " << location.file() << ":" << location.line();
-          return absl::nullopt;
+          return nullptr;
         }
-        ResourceStruct foo = std::move(absl::get<ResourceStruct>(event));
+        auto foo =
+            std::move(absl::get<std::shared_ptr<const ResourceStruct>>(event));
         queue_.pop_front();
-        return std::move(foo);
+        return foo;
       }
 
       absl::optional<absl::Status> WaitForNextError(
@@ -276,7 +283,8 @@ class XdsClientTest : public ::testing::Test {
         if (!absl::holds_alternative<absl::Status>(event)) {
           EXPECT_TRUE(false)
               << "got unexpected event "
-              << (absl::holds_alternative<ResourceStruct>(event)
+              << (absl::holds_alternative<
+                      std::shared_ptr<const ResourceStruct>>(event)
                       ? "resource"
                       : "does-not-exist")
               << " at " << location.file() << ":" << location.line();
@@ -295,8 +303,8 @@ class XdsClientTest : public ::testing::Test {
         if (!absl::holds_alternative<DoesNotExist>(event)) {
           EXPECT_TRUE(false)
               << "got unexpected event "
-              << (absl::holds_alternative<ResourceStruct>(event) ? "resource"
-                                                                 : "error")
+              << (absl::holds_alternative<absl::Status>(event) ? "error"
+                                                               : "resource")
               << " at " << location.file() << ":" << location.line();
           return false;
         }
@@ -306,9 +314,11 @@ class XdsClientTest : public ::testing::Test {
 
      private:
       struct DoesNotExist {};
-      using Event = absl::variant<ResourceStruct, absl::Status, DoesNotExist>;
+      using Event = absl::variant<std::shared_ptr<const ResourceStruct>,
+                                  absl::Status, DoesNotExist>;
 
-      void OnResourceChanged(ResourceStruct foo) override {
+      void OnResourceChanged(
+          std::shared_ptr<const ResourceStruct> foo) override {
         MutexLock lock(&mu_);
         queue_.push_back(std::move(foo));
         cv_.Signal();
@@ -348,7 +358,7 @@ class XdsClientTest : public ::testing::Test {
     XdsResourceType::DecodeResult Decode(
         const XdsResourceType::DecodeContext& /*context*/,
         absl::string_view serialized_resource) const override {
-      auto json = Json::Parse(serialized_resource);
+      auto json = JsonParse(serialized_resource);
       XdsResourceType::DecodeResult result;
       if (!json.ok()) {
         result.resource = json.status();
@@ -356,9 +366,9 @@ class XdsClientTest : public ::testing::Test {
         absl::StatusOr<ResourceStruct> foo =
             LoadFromJson<ResourceStruct>(*json);
         if (!foo.ok()) {
-          auto it = json->object_value().find("name");
-          if (it != json->object_value().end()) {
-            result.name = it->second.string_value();
+          auto it = json->object().find("name");
+          if (it != json->object().end()) {
+            result.name = it->second.string();
           }
           result.resource = foo.status();
         } else {
@@ -494,7 +504,7 @@ class XdsClientTest : public ::testing::Test {
 
     template <typename ResourceType>
     ResponseBuilder& AddResource(
-        const typename ResourceType::ResourceStructType& resource,
+        const typename ResourceType::ResourceType& resource,
         bool in_resource_wrapper = false) {
       auto* res = response_.add_resources();
       *res = ResourceType::EncodeAsAny(resource);
@@ -539,6 +549,19 @@ class XdsClientTest : public ::testing::Test {
       return *this;
     }
 
+    ResponseBuilder& AddInvalidResourceWrapper() {
+      auto* res = response_.add_resources();
+      res->set_type_url(
+          "type.googleapis.com/envoy.service.discovery.v3.Resource");
+      res->set_value(std::string("\0", 1));
+      return *this;
+    }
+
+    ResponseBuilder& AddEmptyResource() {
+      response_.add_resources();
+      return *this;
+    }
+
     std::string Serialize() {
       std::string serialized_response;
       EXPECT_TRUE(response_.SerializeToString(&serialized_response));
@@ -547,18 +570,6 @@ class XdsClientTest : public ::testing::Test {
 
    private:
     DiscoveryResponse response_;
-  };
-
-  class ScopedExperimentalEnvVar {
-   public:
-    explicit ScopedExperimentalEnvVar(const char* env_var) : env_var_(env_var) {
-      SetEnv(env_var_, "true");
-    }
-
-    ~ScopedExperimentalEnvVar() { UnsetEnv(env_var_); }
-
-   private:
-    const char* env_var_;
   };
 
   // Sets transport_factory_ and initializes xds_client_ with the
@@ -570,7 +581,8 @@ class XdsClientTest : public ::testing::Test {
     transport_factory_ = transport_factory->Ref();
     xds_client_ = MakeRefCounted<XdsClient>(
         bootstrap_builder.Build(), std::move(transport_factory),
-        resource_request_timeout * grpc_test_slowdown_factor());
+        grpc_event_engine::experimental::GetDefaultEventEngine(), "foo agent",
+        "foo version", resource_request_timeout * grpc_test_slowdown_factor());
   }
 
   // Starts and cancels a watch for a Foo resource.
@@ -712,21 +724,20 @@ class XdsClientTest : public ::testing::Test {
                               GRPC_CUSTOM_JSONUTIL::JsonPrintOptions());
       ASSERT_TRUE(status.ok())
           << status << " on " << location.file() << ":" << location.line();
-      auto metadata_json = Json::Parse(metadata_json_str);
+      auto metadata_json = JsonParse(metadata_json_str);
       ASSERT_TRUE(metadata_json.ok())
           << metadata_json.status() << " on " << location.file() << ":"
           << location.line();
-      EXPECT_EQ(*metadata_json, xds_client_->bootstrap().node()->metadata())
-          << location.file() << ":" << location.line() << ":\nexpected: "
-          << Json{xds_client_->bootstrap().node()->metadata()}.Dump()
-          << "\nactual: " << metadata_json->Dump();
+      Json expected =
+          Json::FromObject(xds_client_->bootstrap().node()->metadata());
+      EXPECT_EQ(*metadata_json, expected)
+          << location.file() << ":" << location.line()
+          << ":\nexpected: " << JsonDump(expected)
+          << "\nactual: " << JsonDump(*metadata_json);
     }
-    // These are hard-coded by XdsClient.
-    EXPECT_EQ(request.node().user_agent_name(),
-              absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING))
+    EXPECT_EQ(request.node().user_agent_name(), "foo agent")
         << location.file() << ":" << location.line();
-    EXPECT_EQ(request.node().user_agent_version(),
-              absl::StrCat("C-core ", grpc_version_string()))
+    EXPECT_EQ(request.node().user_agent_version(), "foo version")
         << location.file() << ":" << location.line();
   }
 
@@ -760,7 +771,7 @@ TEST_F(XdsClientTest, BasicWatch) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -772,14 +783,7 @@ TEST_F(XdsClientTest, BasicWatch) {
                /*resource_names=*/{"foo1"});
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, UpdateFromServer) {
@@ -808,7 +812,7 @@ TEST_F(XdsClientTest, UpdateFromServer) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -827,7 +831,7 @@ TEST_F(XdsClientTest, UpdateFromServer) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 9);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -839,14 +843,7 @@ TEST_F(XdsClientTest, UpdateFromServer) {
                /*resource_names=*/{"foo1"});
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"2", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
@@ -875,7 +872,7 @@ TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -890,7 +887,7 @@ TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
   // This watcher should get an immediate notification, because the
   // resource is already cached.
   resource = watcher2->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Server should not have seen another request from the client.
@@ -904,11 +901,11 @@ TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
           .Serialize());
   // XdsClient should deliver the response to both watchers.
   resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 9);
   resource = watcher2->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 9);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -924,14 +921,7 @@ TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
   ASSERT_FALSE(WaitForRequest(stream.get()));
   // Now cancel the second watcher.
   CancelFooWatch(watcher2.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"2", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, SubscribeToMultipleResources) {
@@ -960,7 +950,7 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -988,7 +978,7 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   resource = watcher2->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo2");
   EXPECT_EQ(resource->value, 7);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -1008,14 +998,7 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
                /*error_detail=*/absl::OkStatus(), /*resource_names=*/{"foo2"});
   // Now cancel watch for "foo2".
   CancelFooWatch(watcher2.get(), "foo2");
-  // The XdsClient may or may not send another unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
@@ -1044,7 +1027,7 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -1072,7 +1055,7 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   resource = watcher2->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo2");
   EXPECT_EQ(resource->value, 7);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -1091,7 +1074,7 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 9);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -1111,14 +1094,7 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
                /*error_detail=*/absl::OkStatus(), /*resource_names=*/{"foo2"});
   // Now cancel watch for "foo2".
   CancelFooWatch(watcher2.get(), "foo2");
-  // The XdsClient may or may not send another unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"2", /*response_nonce=*/"C",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, ResourceValidationFailure) {
@@ -1161,7 +1137,7 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
   CheckRequest(
       *request, XdsFooResourceType::Get()->type_url(),
       /*version_info=*/"", /*response_nonce=*/"A",
-      /*error_detail=*/
+      // error_detail=
       absl::InvalidArgumentError(
           "xDS response validation errors: ["
           "resource index 0: foo1: INVALID_ARGUMENT: errors validating JSON: "
@@ -1186,11 +1162,11 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
           .Serialize());
   // XdsClient should deliver the response to both watchers.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 9);
   resource = watcher2->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 9);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -1203,14 +1179,7 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"2", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
@@ -1271,6 +1240,12 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
           // wrapper, so we don't actually know the resource's name.
           .AddInvalidResource(XdsFooResourceType::Get()->type_url(),
                               "{\"name\":\"foo2,\"value\":6}")
+          // Empty resource.  Will be included in NACK but will not
+          // affect any watchers.
+          .AddEmptyResource()
+          // Invalid resource wrapper.  Will be included in NACK but
+          // will not affect any watchers.
+          .AddInvalidResourceWrapper()
           // foo3: JSON parsing fails, but it is wrapped in a Resource
           // wrapper, so we do know the resource's name.
           .AddInvalidResource(XdsFooResourceType::Get()->type_url(),
@@ -1299,7 +1274,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
   EXPECT_FALSE(watcher2->HasEvent());
   // It will delivery a valid resource update for foo4.
   auto resource = watcher4->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo4");
   EXPECT_EQ(resource->value, 5);
   // XdsClient should NACK the update.
@@ -1308,8 +1283,8 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
   ASSERT_TRUE(request.has_value());
   CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
                /*version_info=*/"1", /*response_nonce=*/"A",
-               /*error_detail=*/
-               absl::InvalidArgumentError(
+               // error_detail=
+               absl::InvalidArgumentError(absl::StrCat(
                    "xDS response validation errors: ["
                    // foo1
                    "resource index 0: foo1: "
@@ -1318,24 +1293,24 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
                    // foo2 (name not known)
                    "resource index 1: INVALID_ARGUMENT: JSON parsing failed: "
                    "[JSON parse error at index 15]; "
+                   // empty resource
+                   "resource index 2: incorrect resource type \"\" "
+                   "(should be \"",
+                   XdsFooResourceType::Get()->type_url(),
+                   "\"); "
+                   // invalid resource wrapper
+                   "resource index 3: Can't decode Resource proto wrapper; "
                    // foo3
-                   "resource index 2: foo3: "
+                   "resource index 4: foo3: "
                    "INVALID_ARGUMENT: JSON parsing failed: "
-                   "[JSON parse error at index 15]]"),
+                   "[JSON parse error at index 15]]")),
                /*resource_names=*/{"foo1", "foo2", "foo3", "foo4"});
   // Cancel watches.
   CancelFooWatch(watcher.get(), "foo1", /*delay_unsubscription=*/true);
-  CancelFooWatch(watcher.get(), "foo2", /*delay_unsubscription=*/true);
-  CancelFooWatch(watcher.get(), "foo3", /*delay_unsubscription=*/true);
-  CancelFooWatch(watcher.get(), "foo4");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  CancelFooWatch(watcher2.get(), "foo2", /*delay_unsubscription=*/true);
+  CancelFooWatch(watcher3.get(), "foo3", /*delay_unsubscription=*/true);
+  CancelFooWatch(watcher4.get(), "foo4");
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
@@ -1364,7 +1339,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -1398,7 +1373,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
   CheckRequest(
       *request, XdsFooResourceType::Get()->type_url(),
       /*version_info=*/"1", /*response_nonce=*/"B",
-      /*error_detail=*/
+      // error_detail=
       absl::InvalidArgumentError(
           "xDS response validation errors: ["
           "resource index 0: foo1: INVALID_ARGUMENT: errors validating JSON: "
@@ -1414,20 +1389,62 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
   // another option is to send the errors even for newly started watchers.
   auto watcher2 = StartFooWatch("foo1");
   resource = watcher2->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Cancel watches.
-  CancelFooWatch(watcher.get(), "foo1", /*delay_unsubscription=*/true);
+  CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
+  EXPECT_TRUE(stream->Orphaned());
+}
+
+TEST_F(XdsClientTest, WildcardCapableResponseWithEmptyResource) {
+  InitXdsClient();
+  // Start a watch for "wc1".
+  auto watcher = StartWildcardCapableWatch("wc1");
+  // Watcher should initially not see any resource reported.
+  EXPECT_FALSE(watcher->HasEvent());
+  // XdsClient should have created an ADS stream.
+  auto stream = WaitForAdsStream();
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"wc1"});
+  CheckRequestNode(*request);  // Should be present on the first request.
+  // Server sends a response containing the requested resources plus an
+  // empty resource.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsWildcardCapableResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddWildcardCapableResource(XdsWildcardCapableResource("wc1", 6))
+          .AddEmptyResource()
+          .Serialize());
+  // XdsClient will delivery a valid resource update for wc1.
+  auto resource = watcher->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "wc1");
+  EXPECT_EQ(resource->value, 6);
+  // XdsClient should NACK the update.
+  // There was one good resource, so the version will be updated.
   request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               // error_detail=
+               absl::InvalidArgumentError(absl::StrCat(
+                   "xDS response validation errors: ["
+                   "resource index 1: incorrect resource type \"\" "
+                   "(should be \"",
+                   XdsWildcardCapableResourceType::Get()->type_url(), "\")]")),
+               /*resource_names=*/{"wc1"});
+  // Cancel watch.
+  CancelWildcardCapableWatch(watcher.get(), "wc1");
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 // This tests resource removal triggered by the server when using a
@@ -1459,7 +1476,7 @@ TEST_F(XdsClientTest, ResourceDeletion) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "wc1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -1498,11 +1515,11 @@ TEST_F(XdsClientTest, ResourceDeletion) {
           .Serialize());
   // XdsClient should have delivered the response to the watchers.
   resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "wc1");
   EXPECT_EQ(resource->value, 7);
   resource = watcher2->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "wc1");
   EXPECT_EQ(resource->value, 7);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -1515,14 +1532,7 @@ TEST_F(XdsClientTest, ResourceDeletion) {
   // Cancel watch.
   CancelWildcardCapableWatch(watcher.get(), "wc1");
   CancelWildcardCapableWatch(watcher2.get(), "wc1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
-                 /*version_info=*/"3", /*response_nonce=*/"C",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 // This tests that when we ignore resource deletions from the server
@@ -1553,7 +1563,7 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "wc1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -1577,7 +1587,7 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
   // receive the cached resource.
   auto watcher2 = StartWildcardCapableWatch("wc1");
   resource = watcher2->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "wc1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -1596,11 +1606,11 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
           .Serialize());
   // XdsClient should have delivered the response to the watchers.
   resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "wc1");
   EXPECT_EQ(resource->value, 7);
   resource = watcher2->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "wc1");
   EXPECT_EQ(resource->value, 7);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -1613,14 +1623,7 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
   // Cancel watch.
   CancelWildcardCapableWatch(watcher.get(), "wc1");
   CancelWildcardCapableWatch(watcher2.get(), "wc1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
-                 /*version_info=*/"3", /*response_nonce=*/"C",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, StreamClosedByServer) {
@@ -1649,7 +1652,7 @@ TEST_F(XdsClientTest, StreamClosedByServer) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -1663,6 +1666,8 @@ TEST_F(XdsClientTest, StreamClosedByServer) {
   stream->MaybeSendStatusToClient(absl::OkStatus());
   // XdsClient should NOT report error to watcher, because we saw a
   // response on the stream before it failed.
+  // Stream should be orphaned.
+  EXPECT_TRUE(stream->Orphaned());
   // XdsClient should create a new stream.
   stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -1681,7 +1686,7 @@ TEST_F(XdsClientTest, StreamClosedByServer) {
   // resource.
   auto watcher2 = StartFooWatch("foo1");
   resource = watcher2->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Server now sends the requested resource.
@@ -1702,14 +1707,8 @@ TEST_F(XdsClientTest, StreamClosedByServer) {
                /*resource_names=*/{"foo1"});
   // Cancel watcher.
   CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  CancelFooWatch(watcher2.get(), "foo1");
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, StreamClosedByServerWithoutSeeingResponse) {
@@ -1760,7 +1759,7 @@ TEST_F(XdsClientTest, StreamClosedByServerWithoutSeeingResponse) {
           .Serialize());
   // Watcher gets the resource.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient sends an ACK.
@@ -1772,14 +1771,7 @@ TEST_F(XdsClientTest, StreamClosedByServerWithoutSeeingResponse) {
                /*resource_names=*/{"foo1"});
   // Cancel watcher.
   CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, ConnectionFails) {
@@ -1842,11 +1834,11 @@ TEST_F(XdsClientTest, ConnectionFails) {
           .Serialize());
   // XdsClient should have delivered the response to the watchers.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   resource = watcher2->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -1860,15 +1852,7 @@ TEST_F(XdsClientTest, ConnectionFails) {
   // Cancel watches.
   CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-    stream->CompleteSendMessageFromClient();
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
@@ -1904,11 +1888,11 @@ TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
           .Serialize());
   // XdsClient should have delivered the response to the watchers.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   resource = watcher2->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -1921,14 +1905,7 @@ TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
@@ -1983,7 +1960,7 @@ TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
           .Serialize());
   // The resource is delivered to the watcher.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient sends an ACK.
@@ -1995,14 +1972,7 @@ TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
                /*resource_names=*/{"foo1"});
   // Cancel watcher.
   CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, DoesNotExistTimerNotStartedUntilSendCompletes) {
@@ -2046,7 +2016,7 @@ TEST_F(XdsClientTest, DoesNotExistTimerNotStartedUntilSendCompletes) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -2059,15 +2029,7 @@ TEST_F(XdsClientTest, DoesNotExistTimerNotStartedUntilSendCompletes) {
   stream->CompleteSendMessageFromClient();
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-    stream->CompleteSendMessageFromClient();
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 // In https://github.com/grpc/grpc/issues/29583, we ran into a case
@@ -2107,7 +2069,7 @@ TEST_F(XdsClientTest,
           .Serialize());
   // XdsClient should have delivered the response to the watchers.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -2146,12 +2108,12 @@ TEST_F(XdsClientTest,
   // has not changed, since the previous value was removed from the
   // cache when we unsubscribed.
   resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // For foo2, the watcher should receive notification for the new resource.
   resource = watcher2->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo2");
   EXPECT_EQ(resource->value, 7);
   // Now we finally tell XdsClient that its previous send_message op is
@@ -2172,15 +2134,7 @@ TEST_F(XdsClientTest,
   // Cancel watches.
   CancelFooWatch(watcher.get(), "foo1", /*delay_unsubscription=*/true);
   CancelFooWatch(watcher2.get(), "foo2");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-    stream->CompleteSendMessageFromClient();
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
@@ -2211,7 +2165,7 @@ TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -2259,14 +2213,7 @@ TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
                /*resource_names=*/{"foo1"});
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, ResourceWrappedInResourceMessage) {
@@ -2296,7 +2243,7 @@ TEST_F(XdsClientTest, ResourceWrappedInResourceMessage) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -2308,14 +2255,7 @@ TEST_F(XdsClientTest, ResourceWrappedInResourceMessage) {
                /*resource_names=*/{"foo1"});
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, MultipleResourceTypes) {
@@ -2344,7 +2284,7 @@ TEST_F(XdsClientTest, MultipleResourceTypes) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -2374,7 +2314,7 @@ TEST_F(XdsClientTest, MultipleResourceTypes) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource2 = watcher2->WaitForNextResource();
-  ASSERT_TRUE(resource2.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource2->name, "bar1");
   EXPECT_EQ(resource2->value, "whee");
   // XdsClient should have sent an ACK message to the xDS server.
@@ -2394,18 +2334,10 @@ TEST_F(XdsClientTest, MultipleResourceTypes) {
                /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
   // Now cancel watch for "bar1".
   CancelBarWatch(watcher2.get(), "bar1");
-  // The XdsClient may or may not send another unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsBarResourceType::Get()->type_url(),
-                 /*version_info=*/"2", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, Federation) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   constexpr char kAuthority[] = "xds.example.com";
   const std::string kXdstpResourceName = absl::StrCat(
       "xdstp://", kAuthority, "/", XdsFooResource::TypeUrl(), "/foo2");
@@ -2439,7 +2371,7 @@ TEST_F(XdsClientTest, Federation) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -2475,7 +2407,7 @@ TEST_F(XdsClientTest, Federation) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   resource = watcher2->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, kXdstpResourceName);
   EXPECT_EQ(resource->value, 3);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -2487,28 +2419,13 @@ TEST_F(XdsClientTest, Federation) {
                /*resource_names=*/{kXdstpResourceName});
   // Cancel watch for "foo1".
   CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send the unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
   // Now cancel watch for xdstp resource name.
   CancelFooWatch(watcher2.get(), kXdstpResourceName);
-  // The XdsClient may or may not send the unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream2.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"2", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream2->Orphaned());
 }
 
 TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   constexpr char kAuthority[] = "xds.example.com";
   const std::string kXdstpResourceName = absl::StrCat(
       "xdstp://", kAuthority, "/", XdsFooResource::TypeUrl(), "/foo2");
@@ -2540,7 +2457,7 @@ TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -2572,7 +2489,7 @@ TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   resource = watcher2->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, kXdstpResourceName);
   EXPECT_EQ(resource->value, 3);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -2593,18 +2510,10 @@ TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
                /*resource_names=*/{kXdstpResourceName});
   // Now cancel watch for xdstp resource name.
   CancelFooWatch(watcher2.get(), kXdstpResourceName);
-  // The XdsClient may or may not send the unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"2", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, FederationWithUnknownAuthority) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   constexpr char kAuthority[] = "xds.example.com";
   const std::string kXdstpResourceName = absl::StrCat(
       "xdstp://", kAuthority, "/", XdsFooResource::TypeUrl(), "/foo2");
@@ -2622,7 +2531,6 @@ TEST_F(XdsClientTest, FederationWithUnknownAuthority) {
 }
 
 TEST_F(XdsClientTest, FederationWithUnparseableXdstpResourceName) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   // Note: Not adding authority to bootstrap config.
   InitXdsClient();
   // Start a watch for the xdstp resource name.
@@ -2635,7 +2543,10 @@ TEST_F(XdsClientTest, FederationWithUnparseableXdstpResourceName) {
       << *error;
 }
 
+// TODO(roth,apolcyn): remove this test when the
+// GRPC_EXPERIMENTAL_XDS_FEDERATION env var is removed.
 TEST_F(XdsClientTest, FederationDisabledWithNewStyleName) {
+  testing::ScopedEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION", "false");
   // We will use this xdstp name, whose authority is not present in
   // the bootstrap config.  But since federation is not enabled, we
   // will treat this as an opaque old-style name, so we'll send it to
@@ -2667,7 +2578,7 @@ TEST_F(XdsClientTest, FederationDisabledWithNewStyleName) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, kXdstpResourceName);
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -2679,18 +2590,10 @@ TEST_F(XdsClientTest, FederationDisabledWithNewStyleName) {
                /*resource_names=*/{kXdstpResourceName});
   // Cancel watch.
   CancelFooWatch(watcher.get(), kXdstpResourceName);
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   constexpr char kAuthority[] = "xds.example.com";
   const std::string kXdstpResourceName = absl::StrCat(
       "xdstp://", kAuthority, "/", XdsFooResource::TypeUrl(), "/foo2");
@@ -2724,7 +2627,7 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -2760,7 +2663,7 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   resource = watcher2->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
+  ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, kXdstpResourceName);
   EXPECT_EQ(resource->value, 3);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -2785,24 +2688,10 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
   EXPECT_FALSE(watcher->HasEvent());
   // Cancel watch for "foo1".
   CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send the unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
   // Now cancel watch for xdstp resource name.
   CancelFooWatch(watcher2.get(), kXdstpResourceName);
-  // The XdsClient may or may not send the unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream2.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"2", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream2->Orphaned());
 }
 
 }  // namespace

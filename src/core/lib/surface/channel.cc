@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -32,9 +32,10 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -283,7 +284,7 @@ static grpc_call* grpc_channel_create_call_internal(
     grpc_channel* c_channel, grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* cq, grpc_pollset_set* pollset_set_alternative,
     grpc_core::Slice path, absl::optional<grpc_core::Slice> authority,
-    grpc_core::Timestamp deadline) {
+    grpc_core::Timestamp deadline, bool registered_method) {
   auto channel = grpc_core::Channel::FromC(c_channel)->Ref();
   GPR_ASSERT(channel->is_client());
   GPR_ASSERT(!(cq != nullptr && pollset_set_alternative != nullptr));
@@ -299,6 +300,7 @@ static grpc_call* grpc_channel_create_call_internal(
   args.path = std::move(path);
   args.authority = std::move(authority);
   args.send_deadline = deadline;
+  args.registered_method = registered_method;
 
   grpc_call* call;
   GRPC_LOG_IF_ERROR("call_create", grpc_call_create(&args, &call));
@@ -320,7 +322,8 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
       host != nullptr
           ? absl::optional<grpc_core::Slice>(grpc_core::CSliceRef(*host))
           : absl::nullopt,
-      grpc_core::Timestamp::FromTimespecRoundUp(deadline));
+      grpc_core::Timestamp::FromTimespecRoundUp(deadline),
+      /*registered_method=*/false);
 
   return call;
 }
@@ -336,7 +339,7 @@ grpc_call* grpc_channel_create_pollset_set_call(
       host != nullptr
           ? absl::optional<grpc_core::Slice>(grpc_core::CSliceRef(*host))
           : absl::nullopt,
-      deadline);
+      deadline, /*registered_method=*/true);
 }
 
 namespace grpc_core {
@@ -414,7 +417,8 @@ grpc_call* grpc_channel_create_registered_call(
       rc->authority.has_value()
           ? absl::optional<grpc_core::Slice>(rc->authority->Ref())
           : absl::nullopt,
-      grpc_core::Timestamp::FromTimespecRoundUp(deadline));
+      grpc_core::Timestamp::FromTimespecRoundUp(deadline),
+      /*registered_method=*/true);
 
   return call;
 }

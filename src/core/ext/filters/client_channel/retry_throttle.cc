@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -88,8 +88,7 @@ bool ServerRetryThrottleData::RecordFailure() {
   // We decrement milli_tokens by 1000 (1 token) for each failure.
   const uintptr_t new_value =
       static_cast<uintptr_t>(gpr_atm_no_barrier_clamped_add(
-          &throttle_data->milli_tokens_, static_cast<gpr_atm>(-1000),
-          static_cast<gpr_atm>(0),
+          &throttle_data->milli_tokens_, gpr_atm{-1000}, gpr_atm{0},
           static_cast<gpr_atm>(throttle_data->max_milli_tokens_)));
   // Retries are allowed as long as the new value is above the threshold
   // (max_milli_tokens / 2).
@@ -103,8 +102,7 @@ void ServerRetryThrottleData::RecordSuccess() {
   // We increment milli_tokens by milli_token_ratio for each success.
   gpr_atm_no_barrier_clamped_add(
       &throttle_data->milli_tokens_,
-      static_cast<gpr_atm>(throttle_data->milli_token_ratio_),
-      static_cast<gpr_atm>(0),
+      static_cast<gpr_atm>(throttle_data->milli_token_ratio_), gpr_atm{0},
       static_cast<gpr_atm>(throttle_data->max_milli_tokens_));
 }
 

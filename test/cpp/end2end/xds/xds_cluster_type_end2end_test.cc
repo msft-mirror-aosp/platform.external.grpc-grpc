@@ -27,6 +27,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
@@ -63,8 +64,7 @@ class ClusterTypeTest : public XdsEnd2endTest {
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      addresses.emplace_back(address.addr, address.len,
-                             grpc_core::ChannelArgs());
+      addresses.emplace_back(address, grpc_core::ChannelArgs());
     }
     return addresses;
   }
@@ -101,7 +101,7 @@ TEST_P(LogicalDNSClusterTest, Basic) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
     result.addresses = CreateAddressListFromPortList(GetBackendPorts());
-    logical_dns_cluster_resolver_response_generator_->SetResponse(
+    logical_dns_cluster_resolver_response_generator_->SetResponseSynchronously(
         std::move(result));
   }
   // RPCs should succeed.
@@ -166,66 +166,6 @@ TEST_P(AggregateClusterTest, Basic) {
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 0 back and ensure all traffic goes back to it.
-  ShutdownBackend(0);
-  StartBackend(0);
-  WaitForBackend(DEBUG_LOCATION, 0);
-}
-
-TEST_P(AggregateClusterTest, DiamondDependency) {
-  const char* kNewClusterName1 = "new_cluster_1";
-  const char* kNewEdsServiceName1 = "new_eds_service_name_1";
-  const char* kNewClusterName2 = "new_cluster_2";
-  const char* kNewEdsServiceName2 = "new_eds_service_name_2";
-  const char* kNewAggregateClusterName = "new_aggregate_cluster";
-  // Populate new EDS resources.
-  CreateAndStartBackends(2);
-  EdsResourceArgs args1({{"locality0", CreateEndpointsForBackends(0, 1)}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args1, kNewEdsServiceName1));
-  EdsResourceArgs args2({{"locality0", CreateEndpointsForBackends(1, 2)}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args2, kNewEdsServiceName2));
-  // Populate new CDS resources.
-  Cluster new_cluster1 = default_cluster_;
-  new_cluster1.set_name(kNewClusterName1);
-  new_cluster1.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsServiceName1);
-  balancer_->ads_service()->SetCdsResource(new_cluster1);
-  Cluster new_cluster2 = default_cluster_;
-  new_cluster2.set_name(kNewClusterName2);
-  new_cluster2.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsServiceName2);
-  balancer_->ads_service()->SetCdsResource(new_cluster2);
-  // Populate top-level aggregate cluster pointing to kNewClusterName1
-  // and kNewAggregateClusterName.
-  auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
-  custom_cluster->set_name("envoy.clusters.aggregate");
-  ClusterConfig cluster_config;
-  cluster_config.add_clusters(kNewClusterName1);
-  cluster_config.add_clusters(kNewAggregateClusterName);
-  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  // Populate kNewAggregateClusterName aggregate cluster pointing to
-  // kNewClusterName1 and kNewClusterName2.
-  auto aggregate_cluster2 = default_cluster_;
-  aggregate_cluster2.set_name(kNewAggregateClusterName);
-  custom_cluster = aggregate_cluster2.mutable_cluster_type();
-  custom_cluster->set_name("envoy.clusters.aggregate");
-  cluster_config.Clear();
-  cluster_config.add_clusters(kNewClusterName1);
-  cluster_config.add_clusters(kNewClusterName2);
-  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
-  balancer_->ads_service()->SetCdsResource(aggregate_cluster2);
-  // Wait for traffic to go to backend 0.
-  WaitForBackend(DEBUG_LOCATION, 0);
-  // Shutdown backend 0 and wait for all traffic to go to backend 1.
-  backends_[0]->StopListeningAndSendGoaways();
-  WaitForBackend(DEBUG_LOCATION, 1);
-  auto response_state = balancer_->ads_service()->cds_response_state();
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-  // Bring backend 0 back and ensure all traffic go back to it.
   ShutdownBackend(0);
   StartBackend(0);
   WaitForBackend(DEBUG_LOCATION, 0);
@@ -347,7 +287,7 @@ TEST_P(AggregateClusterTest, EdsToLogicalDns) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
     result.addresses = CreateAddressListFromPortList(GetBackendPorts(1, 2));
-    logical_dns_cluster_resolver_response_generator_->SetResponse(
+    logical_dns_cluster_resolver_response_generator_->SetResponseSynchronously(
         std::move(result));
   }
   // Wait for traffic to go to backend 0.
@@ -408,7 +348,7 @@ TEST_P(AggregateClusterTest, LogicalDnsToEds) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
     result.addresses = CreateAddressListFromPortList(GetBackendPorts(0, 1));
-    logical_dns_cluster_resolver_response_generator_->SetResponse(
+    logical_dns_cluster_resolver_response_generator_->SetResponseSynchronously(
         std::move(result));
   }
   // Wait for traffic to go to backend 0.
@@ -479,7 +419,7 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
     result.addresses = absl::UnavailableError("injected error");
-    logical_dns_cluster_resolver_response_generator_->SetResponse(
+    logical_dns_cluster_resolver_response_generator_->SetResponseSynchronously(
         std::move(result));
   }
   // When an RPC fails, we know the channel has seen the update.
@@ -550,6 +490,164 @@ TEST_P(AggregateClusterTest, MultipleClustersWithSameLocalities) {
   WaitForBackend(DEBUG_LOCATION, 1);
 }
 
+// This tests a bug seen in the wild where the cds LB policy was
+// incorrectly modifying its copy of the XdsClusterResource for the root
+// cluster when generating the child policy config, so when we later
+// received an update for one of the underlying clusters, we were no
+// longer able to generate a valid child policy config.
+TEST_P(AggregateClusterTest, UpdateOfChildCluster) {
+  CreateAndStartBackends(2);
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  // Populate new EDS resources.
+  EdsResourceArgs args1({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  EdsResourceArgs args2({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+  });
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsService2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  balancer_->ads_service()->SetCdsResource(new_cluster1);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kNewCluster1Name);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Wait for traffic to go to backend 0.
+  WaitForBackend(DEBUG_LOCATION, 0);
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Now reconfigure the underlying cluster to point to a different EDS
+  // resource containing backend 1.
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService2Name);
+  balancer_->ads_service()->SetCdsResource(new_cluster1);
+  // Wait for traffic to go to backend 1.
+  WaitForBackend(DEBUG_LOCATION, 1);
+  response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+}
+
+TEST_P(AggregateClusterTest, DiamondDependency) {
+  const char* kNewClusterName1 = "new_cluster_1";
+  const char* kNewEdsServiceName1 = "new_eds_service_name_1";
+  const char* kNewClusterName2 = "new_cluster_2";
+  const char* kNewEdsServiceName2 = "new_eds_service_name_2";
+  const char* kNewAggregateClusterName = "new_aggregate_cluster";
+  // Populate new EDS resources.
+  CreateAndStartBackends(2);
+  EdsResourceArgs args1({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsServiceName1));
+  EdsResourceArgs args2({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsServiceName2));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewClusterName1);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName1);
+  balancer_->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = default_cluster_;
+  new_cluster2.set_name(kNewClusterName2);
+  new_cluster2.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName2);
+  balancer_->ads_service()->SetCdsResource(new_cluster2);
+  // Populate top-level aggregate cluster pointing to kNewClusterName1
+  // and kNewAggregateClusterName.
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kNewClusterName1);
+  cluster_config.add_clusters(kNewAggregateClusterName);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Populate kNewAggregateClusterName aggregate cluster pointing to
+  // kNewClusterName1 and kNewClusterName2.
+  auto aggregate_cluster2 = default_cluster_;
+  aggregate_cluster2.set_name(kNewAggregateClusterName);
+  custom_cluster = aggregate_cluster2.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  cluster_config.Clear();
+  cluster_config.add_clusters(kNewClusterName1);
+  cluster_config.add_clusters(kNewClusterName2);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(aggregate_cluster2);
+  // Wait for traffic to go to backend 0.
+  WaitForBackend(DEBUG_LOCATION, 0);
+  // Shutdown backend 0 and wait for all traffic to go to backend 1.
+  backends_[0]->StopListeningAndSendGoaways();
+  WaitForBackend(DEBUG_LOCATION, 1);
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Bring backend 0 back and ensure all traffic go back to it.
+  ShutdownBackend(0);
+  StartBackend(0);
+  WaitForBackend(DEBUG_LOCATION, 0);
+}
+
+TEST_P(AggregateClusterTest, DependencyLoopWithNoLeafClusters) {
+  const char* kNewClusterName1 = "new_cluster_1";
+  // Default cluster is an aggregate cluster pointing to kNewClusterName1.
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kNewClusterName1);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // kDefaultClusterName points to the default cluster.
+  cluster.set_name(kNewClusterName1);
+  cluster_config.Clear();
+  cluster_config.add_clusters(kDefaultClusterName);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // RPCs should fail.
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "new_cluster_1: FAILED_PRECONDITION: "
+                      "aggregate cluster graph has no leaf clusters");
+}
+
+TEST_P(AggregateClusterTest, DependencyLoopWithLeafClusters) {
+  const char* kNewClusterName1 = "new_cluster_1";
+  // Populate new EDS resource.
+  CreateAndStartBackends(1);
+  EdsResourceArgs args1({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args1));
+  // Populate new CDS resource.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewClusterName1);
+  balancer_->ads_service()->SetCdsResource(new_cluster1);
+  // Populate top-level aggregate cluster pointing to itself and the new
+  // CDS cluster.
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kNewClusterName1);
+  cluster_config.add_clusters(kDefaultClusterName);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // RPCs should work.
+  CheckRpcSendOk(DEBUG_LOCATION);
+}
+
 TEST_P(AggregateClusterTest, RecursionDepthJustBelowMax) {
   // Populate EDS resource.
   CreateAndStartBackends(1);
@@ -611,7 +709,9 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.client_channel_backup_poll_interval_ms = 1;
+  grpc_core::ConfigVars::SetOverrides(overrides);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   grpc_core::SetEnv("grpc_cfstream", "0");

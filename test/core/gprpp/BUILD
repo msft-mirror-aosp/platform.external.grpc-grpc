@@ -55,37 +55,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "global_config_test",
-    srcs = ["global_config_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "global_config_env_test",
-    srcs = ["global_config_env_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    tags = ["no_windows"],  # TODO(jtattermusch): fix the failure on windows
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "bitset_test",
     srcs = ["bitset_test.cc"],
     external_deps = ["gtest"],
@@ -98,14 +67,14 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "no_destruct_test",
-    srcs = ["no_destruct_test.cc"],
+    name = "if_list_test",
+    srcs = ["if_list_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//src/core:no_destruct",
+        "//src/core:if_list",
     ],
 )
 
@@ -117,8 +86,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:no_destruct",
-        "//test/core/util:grpc_suppressions",
+        "//src/core:no_destruct",
     ],
 )
 
@@ -232,6 +200,7 @@ grpc_cc_test(
     name = "ref_counted_ptr_test",
     srcs = ["ref_counted_ptr_test.cc"],
     external_deps = [
+        "absl/container:flat_hash_set",
         "gtest",
     ],
     language = "C++",
@@ -414,6 +383,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/event_engine:event_engine_test_utils",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -454,6 +424,21 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:load_file",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "uuid_v4_test",
+    srcs = ["uuid_v4_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:uuid_v4",
         "//test/core/util:grpc_test_util",
     ],
 )

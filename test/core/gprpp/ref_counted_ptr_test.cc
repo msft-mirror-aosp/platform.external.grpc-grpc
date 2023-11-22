@@ -1,23 +1,24 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 
+#include "absl/container/flat_hash_set.h"
 #include "gtest/gtest.h"
 
 #include <grpc/support/log.h>
@@ -509,6 +510,65 @@ TEST(WeakRefCountedPtr, CanPassWeakSubclassToFunctionExpectingWeakSubclass) {
   RefCountedPtr<WeakSubclass> strong(new WeakSubclass());
   WeakRefCountedPtr<WeakSubclass> p = strong->WeakRef();
   FunctionTakingWeakSubclass(p);
+}
+
+//
+// tests for absl hash integration
+//
+
+TEST(AbslHashIntegration, RefCountedPtr) {
+  absl::flat_hash_set<RefCountedPtr<Foo>> set;
+  auto p = MakeRefCounted<Foo>(5);
+  set.insert(p);
+  auto it = set.find(p);
+  ASSERT_NE(it, set.end());
+  EXPECT_EQ(*it, p);
+}
+
+TEST(AbslHashIntegration, WeakRefCountedPtr) {
+  absl::flat_hash_set<WeakRefCountedPtr<Bar>> set;
+  auto p = MakeRefCounted<Bar>(5);
+  auto q = p->WeakRef();
+  set.insert(q);
+  auto it = set.find(q);
+  ASSERT_NE(it, set.end());
+  EXPECT_EQ(*it, q);
+}
+
+TEST(AbslHashIntegration, RefCountedPtrHeterogenousLookup) {
+  absl::flat_hash_set<RefCountedPtr<Bar>, RefCountedPtrHash<Bar>,
+                      RefCountedPtrEq<Bar>>
+      set;
+  auto p = MakeRefCounted<Bar>(5);
+  set.insert(p);
+  auto it = set.find(p);
+  ASSERT_NE(it, set.end());
+  EXPECT_EQ(*it, p);
+  auto q = p->WeakRef();
+  it = set.find(q);
+  ASSERT_NE(it, set.end());
+  EXPECT_EQ(*it, p);
+  it = set.find(p.get());
+  ASSERT_NE(it, set.end());
+  EXPECT_EQ(*it, p);
+}
+
+TEST(AbslHashIntegration, WeakRefCountedPtrHeterogenousLookup) {
+  absl::flat_hash_set<WeakRefCountedPtr<Bar>, RefCountedPtrHash<Bar>,
+                      RefCountedPtrEq<Bar>>
+      set;
+  auto p = MakeRefCounted<Bar>(5);
+  auto q = p->WeakRef();
+  set.insert(q);
+  auto it = set.find(q);
+  ASSERT_NE(it, set.end());
+  EXPECT_EQ(*it, q);
+  it = set.find(p);
+  ASSERT_NE(it, set.end());
+  EXPECT_EQ(*it, q);
+  it = set.find(p.get());
+  ASSERT_NE(it, set.end());
+  EXPECT_EQ(*it, q);
 }
 
 }  // namespace

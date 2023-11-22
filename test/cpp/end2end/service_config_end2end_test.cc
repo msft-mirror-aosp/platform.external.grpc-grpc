@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <algorithm>
 #include <memory>
@@ -39,7 +39,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/health_check_service_interface.h>
-#include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/validate_service_config.h>
@@ -50,6 +50,8 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
@@ -120,10 +122,12 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
         creds_(new SecureChannelCredentials(
             grpc_fake_transport_security_credentials_create())) {}
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
-    GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+    grpc_core::ConfigVars::Overrides overrides;
+    overrides.client_channel_backup_poll_interval_ms = 1;
+    grpc_core::ConfigVars::SetOverrides(overrides);
   }
 
   void SetUp() override {
@@ -180,8 +184,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      result.addresses->emplace_back(address.addr, address.len,
-                                     grpc_core::ChannelArgs());
+      result.addresses->emplace_back(address, grpc_core::ChannelArgs());
     }
     return result;
   }
@@ -189,7 +192,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   void SetNextResolutionNoServiceConfig(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    response_generator_->SetResponse(result);
+    response_generator_->SetResponseSynchronously(result);
   }
 
   void SetNextResolutionValidServiceConfig(const std::vector<int>& ports) {
@@ -198,7 +201,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     result.service_config =
         grpc_core::ServiceConfigImpl::Create(grpc_core::ChannelArgs(), "{}");
     ASSERT_TRUE(result.service_config.ok()) << result.service_config.status();
-    response_generator_->SetResponse(result);
+    response_generator_->SetResponseSynchronously(result);
   }
 
   void SetNextResolutionInvalidServiceConfig(const std::vector<int>& ports) {
@@ -206,7 +209,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
     result.service_config =
         absl::InvalidArgumentError("error parsing service config");
-    response_generator_->SetResponse(result);
+    response_generator_->SetResponseSynchronously(result);
   }
 
   void SetNextResolutionWithServiceConfig(const std::vector<int>& ports,
@@ -215,7 +218,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
     result.service_config =
         grpc_core::ServiceConfigImpl::Create(grpc_core::ChannelArgs(), svc_cfg);
-    response_generator_->SetResponse(result);
+    response_generator_->SetResponseSynchronously(result);
   }
 
   std::vector<int> GetServersPorts(size_t start_index = 0) {

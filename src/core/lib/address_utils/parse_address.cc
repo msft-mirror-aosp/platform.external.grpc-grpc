@@ -1,24 +1,26 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
+
+#include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,7 +40,6 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
-#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 
@@ -117,7 +118,7 @@ grpc_error_handle UnixAbstractSockaddrPopulate(
 
 }  // namespace grpc_core
 
-#else  /* GRPC_HAVE_UNIX_SOCKET */
+#else   // GRPC_HAVE_UNIX_SOCKET
 
 bool grpc_parse_unix(const grpc_core::URI& /* uri */,
                      grpc_resolved_address* /* resolved_addr */) {
@@ -142,7 +143,7 @@ grpc_error_handle UnixAbstractSockaddrPopulate(
 }
 
 }  // namespace grpc_core
-#endif /* GRPC_HAVE_UNIX_SOCKET */
+#endif  // GRPC_HAVE_UNIX_SOCKET
 
 #ifdef GRPC_HAVE_VSOCK
 
@@ -181,21 +182,22 @@ grpc_error_handle VSockaddrPopulate(absl::string_view path,
 
 }  // namespace grpc_core
 
-#else /* GRPC_HAVE_VSOCK */
+#else   // GRPC_HAVE_VSOCK
 
 bool grpc_parse_vsock(const grpc_core::URI& /* uri */,
                       grpc_resolved_address* /* resolved_addr */) {
-  abort();
+  GPR_UNREACHABLE_CODE(return false);
 }
 
 namespace grpc_core {
 
 grpc_error_handle VSockaddrPopulate(
     absl::string_view /* path */, grpc_resolved_address* /* resolved_addr */) {
-  abort();
+  GPR_UNREACHABLE_CODE(return absl::InvalidArgumentError("vsock unsupported."));
 }
 
-#endif /* GRPC_HAVE_VSOCK */
+}  // namespace grpc_core
+#endif  // GRPC_HAVE_VSOCK
 
 bool grpc_parse_ipv4_hostport(absl::string_view hostport,
                               grpc_resolved_address* addr, bool log_errors) {

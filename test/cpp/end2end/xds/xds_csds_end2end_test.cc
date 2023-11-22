@@ -27,6 +27,7 @@
 #include <grpcpp/security/credentials.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
@@ -467,7 +468,9 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpRouteError) {
                   kDefaultRouteConfigurationName, kDefaultClusterName)),
               ClientResourceStatus::NACKED,
               EqUpdateFailureState(
-                  ::testing::HasSubstr("VirtualHost has no domains"), "2"))));
+                  ::testing::HasSubstr(
+                      "field:virtual_hosts[0].domains error:must be non-empty"),
+                  "2"))));
     } else {
       ok = ::testing::Value(
           csds_response.config(0).generic_xds_configs(),
@@ -478,7 +481,12 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpRouteError) {
                                           kDefaultClusterName))),
               ClientResourceStatus::NACKED,
               EqUpdateFailureState(
-                  ::testing::HasSubstr("VirtualHost has no domains"), "2"))));
+                  ::testing::HasSubstr(
+                      "field:api_listener.api_listener.value[envoy.extensions"
+                      ".filters.network.http_connection_manager.v3"
+                      ".HttpConnectionManager].route_config.virtual_hosts[0]"
+                      ".domains error:must be non-empty"),
+                  "2"))));
     }
     if (ok) return;  // TEST PASSED!
     gpr_sleep_until(
@@ -707,7 +715,9 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.client_channel_backup_poll_interval_ms = 1;
+  grpc_core::ConfigVars::SetOverrides(overrides);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   grpc_core::SetEnv("grpc_cfstream", "0");

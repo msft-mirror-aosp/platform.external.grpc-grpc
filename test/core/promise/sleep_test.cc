@@ -24,6 +24,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/notification.h"
@@ -87,7 +88,7 @@ TEST(Sleep, OverlyEagerEventEngine) {
   EXPECT_NE(wakeup, nullptr);
   EXPECT_FALSE(done);
   // Schedule the wakeup instantaneously - It won't have passed the scheduled
-  // time yet, but sleep should believe the event engine.
+  // time yet, but sleep should believe the EventEngine.
   wakeup->Run();
   EXPECT_TRUE(done);
 }

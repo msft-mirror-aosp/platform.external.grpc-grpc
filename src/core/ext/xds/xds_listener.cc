@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 
+#include <initializer_list>
 #include <set>
 #include <utility>
 
@@ -36,6 +37,7 @@
 #include "envoy/config/listener/v3/listener.upb.h"
 #include "envoy/config/listener/v3/listener.upbdefs.h"
 #include "envoy/config/listener/v3/listener_components.upb.h"
+#include "envoy/config/rbac/v3/rbac.upb.h"
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
@@ -43,8 +45,8 @@
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/text_encode.h"
-#include "upb/upb.h"
+#include "upb/base/string_view.h"
+#include "upb/text/encode.h"
 
 #include <grpc/support/log.h>
 
@@ -58,7 +60,6 @@
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
 
@@ -73,8 +74,8 @@ std::string XdsListenerResource::HttpConnectionManager::ToString() const {
       [](const std::string& rds_name) {
         return absl::StrCat("rds_name=", rds_name);
       },
-      [](const XdsRouteConfigResource& route_config) {
-        return absl::StrCat("route_config=", route_config.ToString());
+      [](const std::shared_ptr<const XdsRouteConfigResource>& route_config) {
+        return absl::StrCat("route_config=", route_config->ToString());
       }));
   contents.push_back(absl::StrCat("http_max_stream_duration=",
                                   http_max_stream_duration.ToString()));
@@ -395,15 +396,10 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
         const google_protobuf_Any* typed_config =
             envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
                 http_filter);
-        if (typed_config == nullptr) {
-          if (!is_optional) errors->AddError("field not present");
-          continue;
-        }
         auto extension = ExtractXdsExtension(context, typed_config, errors);
-        const XdsHttpFilterImpl* filter_impl = nullptr;
-        if (extension.has_value()) {
-          filter_impl = http_filter_registry.GetFilterForType(extension->type);
-        }
+        if (!extension.has_value()) continue;
+        const XdsHttpFilterImpl* filter_impl =
+            http_filter_registry.GetFilterForType(extension->type);
         if (filter_impl == nullptr) {
           if (!is_optional) errors->AddError("unsupported filter type");
           continue;
@@ -417,8 +413,8 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
           continue;
         }
         absl::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
-            filter_impl->GenerateFilterConfig(std::move(*extension),
-                                              context.arena, errors);
+            filter_impl->GenerateFilterConfig(context, std::move(*extension),
+                                              errors);
         if (filter_config.has_value()) {
           http_connection_manager.http_filters.emplace_back(
               XdsListenerResource::HttpConnectionManager::HttpFilter{
@@ -463,13 +459,9 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
     const envoy_config_route_v3_RouteConfiguration* route_config =
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
             http_connection_manager_proto);
-    auto rds_update = XdsRouteConfigResource::Parse(context, route_config);
-    if (!rds_update.ok()) {
-      ValidationErrors::ScopedField field(errors, ".route_config");
-      errors->AddError(rds_update.status().message());
-    } else {
-      http_connection_manager.route_config = std::move(*rds_update);
-    }
+    ValidationErrors::ScopedField field(errors, ".route_config");
+    http_connection_manager.route_config =
+        XdsRouteConfigResource::Parse(context, route_config, errors);
   } else {
     // Validate that RDS must be used to get the route_config dynamically.
     const envoy_extensions_filters_network_http_connection_manager_v3_Rds* rds =
@@ -498,24 +490,24 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
   return http_connection_manager;
 }
 
-absl::StatusOr<XdsListenerResource> LdsResourceParseClient(
+absl::StatusOr<std::shared_ptr<const XdsListenerResource>>
+LdsResourceParseClient(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_listener_v3_ApiListener* api_listener) {
-  XdsListenerResource lds_update;
+  auto lds_update = std::make_shared<XdsListenerResource>();
   ValidationErrors errors;
   ValidationErrors::ScopedField field(&errors, "api_listener.api_listener");
   auto* api_listener_field =
       envoy_config_listener_v3_ApiListener_api_listener(api_listener);
-  if (api_listener_field == nullptr) {
-    errors.AddError("field not present");
-  } else {
-    auto extension = ExtractXdsExtension(context, api_listener_field, &errors);
-    if (extension.has_value()) {
-      lds_update.listener = HttpConnectionManagerParse(
-          /*is_client=*/true, context, std::move(*extension), &errors);
-    }
+  auto extension = ExtractXdsExtension(context, api_listener_field, &errors);
+  if (extension.has_value()) {
+    lds_update->listener = HttpConnectionManagerParse(
+        /*is_client=*/true, context, std::move(*extension), &errors);
   }
-  if (!errors.ok()) return errors.status("errors validating ApiListener");
+  if (!errors.ok()) {
+    return errors.status(absl::StatusCode::kInvalidArgument,
+                         "errors validating ApiListener");
+  }
   return std::move(lds_update);
 }
 
@@ -628,8 +620,8 @@ absl::optional<XdsListenerResource::FilterChainMap::CidrRange> CidrRangeParse(
         google_protobuf_UInt32Value_value(prefix_len_proto),
         (reinterpret_cast<const grpc_sockaddr*>(cidr_range.address.addr))
                     ->sa_family == GRPC_AF_INET
-            ? uint32_t(32)
-            : uint32_t(128));
+            ? uint32_t{32}
+            : uint32_t{128});
   }
   // Normalize the network address by masking it with prefix_len
   grpc_sockaddr_mask_bits(&cidr_range.address, cidr_range.prefix_len);
@@ -1000,9 +992,9 @@ XdsListenerResource::FilterChainMap BuildFilterChainMap(
   return BuildFromInternalFilterChainMap(&internal_filter_chain_map);
 }
 
-absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
-    const XdsResourceType::DecodeContext& context,
-    const envoy_config_listener_v3_Listener* listener) {
+absl::StatusOr<std::shared_ptr<const XdsListenerResource>>
+LdsResourceParseServer(const XdsResourceType::DecodeContext& context,
+                       const envoy_config_listener_v3_Listener* listener) {
   ValidationErrors errors;
   XdsListenerResource::TcpListener tcp_listener;
   // address
@@ -1059,13 +1051,16 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
     }
   }
   // Return result.
-  if (!errors.ok()) return errors.status("errors validating server Listener");
-  XdsListenerResource lds_update;
-  lds_update.listener = std::move(tcp_listener);
+  if (!errors.ok()) {
+    return errors.status(absl::StatusCode::kInvalidArgument,
+                         "errors validating server Listener");
+  }
+  auto lds_update = std::make_shared<XdsListenerResource>();
+  lds_update->listener = std::move(tcp_listener);
   return lds_update;
 }
 
-absl::StatusOr<XdsListenerResource> LdsResourceParse(
+absl::StatusOr<std::shared_ptr<const XdsListenerResource>> LdsResourceParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_listener_v3_Listener* listener) {
   // Check whether it's a client or server listener.
@@ -1133,10 +1128,9 @@ XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_INFO, "[xds_client %p] parsed Listener %s: %s",
               context.client, result.name->c_str(),
-              listener->ToString().c_str());
+              (*listener)->ToString().c_str());
     }
-    result.resource =
-        std::make_unique<XdsListenerResource>(std::move(*listener));
+    result.resource = std::move(*listener);
   }
   return result;
 }

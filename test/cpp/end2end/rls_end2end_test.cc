@@ -43,6 +43,7 @@
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
@@ -100,7 +101,7 @@ class MyTestServiceImpl : public BackendService {
                     ::testing::Pair(kCallCredsMdKey, kCallCredsMdValue)));
     IncreaseRequestCount();
     auto client_metadata = context->client_metadata();
-    auto range = client_metadata.equal_range("X-Google-RLS-Data");
+    auto range = client_metadata.equal_range("x-google-rls-data");
     {
       grpc::internal::MutexLock lock(&mu_);
       for (auto it = range.first; it != range.second; ++it) {
@@ -134,7 +135,8 @@ class FakeResolverResponseGeneratorWrapper {
 
   void SetNextResolution(absl::string_view service_config_json) {
     grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetResponse(BuildFakeResults(service_config_json));
+    response_generator_->SetResponseSynchronously(
+        BuildFakeResults(service_config_json));
   }
 
   grpc_core::FakeResolverResponseGenerator* Get() const {
@@ -158,8 +160,9 @@ class FakeResolverResponseGeneratorWrapper {
 class RlsEnd2endTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
-    grpc_core::SetEnv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY", "true");
-    GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+    grpc_core::ConfigVars::Overrides overrides;
+    overrides.client_channel_backup_poll_interval_ms = 1;
+    grpc_core::ConfigVars::SetOverrides(overrides);
     grpc_core::CoreConfiguration::RegisterBuilder(
         grpc_core::RegisterFixedAddressLoadBalancingPolicy);
     grpc_init();
@@ -167,7 +170,6 @@ class RlsEnd2endTest : public ::testing::Test {
 
   static void TearDownTestSuite() {
     grpc_shutdown_blocking();
-    grpc_core::UnsetEnv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY");
     grpc_core::CoreConfiguration::Reset();
   }
 
@@ -201,8 +203,8 @@ class RlsEnd2endTest : public ::testing::Test {
                                                   nullptr));
     call_creds->Unref();
     channel_creds->Unref();
-    channel_ = grpc::CreateCustomChannel(
-        absl::StrCat("fake:///", kServerName).c_str(), std::move(creds), args);
+    channel_ = grpc::CreateCustomChannel(absl::StrCat("fake:///", kServerName),
+                                         std::move(creds), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -232,7 +234,7 @@ class RlsEnd2endTest : public ::testing::Test {
   }
 
   struct RpcOptions {
-    int timeout_ms = 1000;
+    int timeout_ms = 2000;
     bool wait_for_ready = false;
     std::vector<std::pair<std::string, std::string>> metadata;
 

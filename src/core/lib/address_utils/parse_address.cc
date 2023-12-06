@@ -22,6 +22,10 @@
 
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 
+#ifdef GRPC_HAVE_VSOCK
+#include <linux/vm_sockets.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

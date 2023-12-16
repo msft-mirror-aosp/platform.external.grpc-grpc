@@ -36,6 +36,10 @@
 #include <sys/un.h>
 #endif
 
+#ifdef GRPC_HAVE_VSOCK
+#include <linux/vm_sockets.h>
+#endif
+
 #include <errno.h>
 #include <inttypes.h>
 #include <stdlib.h>

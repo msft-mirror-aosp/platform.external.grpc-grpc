@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H
-#define GRPC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -30,14 +30,15 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "upb/arena.h"
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 
 #include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 
 namespace grpc_core {
 
@@ -53,7 +54,7 @@ class XdsHttpFilterImpl {
     }
     std::string ToString() const {
       return absl::StrCat("{config_proto_type_name=", config_proto_type_name,
-                          " config=", config.Dump(), "}");
+                          " config=", JsonDump(config), "}");
     }
   };
 
@@ -85,13 +86,13 @@ class XdsHttpFilterImpl {
   // Generates a Config from the xDS filter config proto.
   // Used for the top-level config in the HCM HTTP filter list.
   virtual absl::optional<FilterConfig> GenerateFilterConfig(
-      XdsExtension extension, upb_Arena* arena,
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const = 0;
 
   // Generates a Config from the xDS filter config proto.
   // Used for the typed_per_filter_config override in VirtualHost and Route.
   virtual absl::optional<FilterConfig> GenerateFilterConfigOverride(
-      XdsExtension extension, upb_Arena* arena,
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const = 0;
 
   // C-core channel filter implementation.
@@ -111,7 +112,8 @@ class XdsHttpFilterImpl {
   // there is no override in any of those locations.
   virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config,
-      const FilterConfig* filter_config_override) const = 0;
+      const FilterConfig* filter_config_override,
+      absl::string_view filter_name) const = 0;
 
   // Returns true if the filter is supported on clients; false otherwise
   virtual bool IsSupportedOnClients() const = 0;
@@ -129,15 +131,16 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
   absl::string_view OverrideConfigProtoName() const override;
   void PopulateSymtab(upb_DefPool* symtab) const override;
   absl::optional<FilterConfig> GenerateFilterConfig(
-      XdsExtension extension, upb_Arena* arena,
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const override;
   absl::optional<FilterConfig> GenerateFilterConfigOverride(
-      XdsExtension extension, upb_Arena* arena,
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const override;
   const grpc_channel_filter* channel_filter() const override { return nullptr; }
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& /*hcm_filter_config*/,
-      const FilterConfig* /*filter_config_override*/) const override {
+      const FilterConfig* /*filter_config_override*/,
+      absl::string_view /*filter_name*/) const override {
     // This will never be called, since channel_filter() returns null.
     return absl::UnimplementedError("router filter should never be called");
   }
@@ -178,4 +181,4 @@ class XdsHttpFilterRegistry {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H

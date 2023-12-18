@@ -28,6 +28,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -42,6 +43,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -74,6 +76,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -89,6 +92,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:channel_trace_proto_helper",
     ],
@@ -105,6 +109,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:channel_trace_proto_helper",
     ],
@@ -153,6 +158,22 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/promise:test_context",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "server_call_tracer_factory_test",
+    srcs = ["server_call_tracer_factory_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
 )

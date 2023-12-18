@@ -1,24 +1,25 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <algorithm>
 #include <memory>
 #include <string>
+#include <utility>
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
@@ -69,12 +70,19 @@ DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
         priority = grpc_core::HPackParser::Priority::Included;
       }
       int max_length = 1024;
+      int absolute_max_length = 1024;
+      if (absolute_max_length < max_length) {
+        std::swap(absolute_max_length, max_length);
+      }
       if (frame.max_metadata_length() != 0) {
         max_length = frame.max_metadata_length();
       }
+      if (frame.absolute_max_metadata_length() != 0) {
+        absolute_max_length = frame.absolute_max_metadata_length();
+      }
 
       parser->BeginFrame(
-          &b, max_length, boundary, priority,
+          &b, max_length, absolute_max_length, boundary, priority,
           grpc_core::HPackParser::LogInfo{
               1, grpc_core::HPackParser::LogInfo::kHeaders, false});
       int stop_buffering_ctr =

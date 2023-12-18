@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -27,8 +27,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/mpscq.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_combiner_trace(false, "combiner");
@@ -49,14 +50,14 @@ static void combiner_finally_exec(grpc_core::Combiner* lock,
                                   grpc_closure* closure,
                                   grpc_error_handle error);
 
-grpc_core::Combiner* grpc_combiner_create(
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-        event_engine) {
+static void offload(void* arg, grpc_error_handle error);
+
+grpc_core::Combiner* grpc_combiner_create(void) {
   grpc_core::Combiner* lock = new grpc_core::Combiner();
-  lock->event_engine = std::move(event_engine);
   gpr_ref_init(&lock->refs, 1);
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);
   grpc_closure_list_init(&lock->final_list);
+  GRPC_CLOSURE_INIT(&lock->offload, offload, lock, nullptr);
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p create", lock));
   return lock;
 }
@@ -163,15 +164,15 @@ static void move_next() {
   }
 }
 
+static void offload(void* arg, grpc_error_handle /*error*/) {
+  grpc_core::Combiner* lock = static_cast<grpc_core::Combiner*>(arg);
+  push_last_on_exec_ctx(lock);
+}
+
 static void queue_offload(grpc_core::Combiner* lock) {
   move_next();
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p queue_offload", lock));
-  lock->event_engine->Run([lock] {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-    grpc_core::ExecCtx exec_ctx(0);
-    push_last_on_exec_ctx(lock);
-    exec_ctx.Flush();
-  });
+  grpc_core::Executor::Run(&lock->offload, absl::OkStatus());
 }
 
 bool grpc_combiner_continue_exec_ctx() {
@@ -198,7 +199,9 @@ bool grpc_combiner_continue_exec_ctx() {
   // 2. the current execution context needs to finish as soon as possible
   // 3. the current thread is not a worker for any background poller
   // 4. the DEFAULT executor is threaded
-  if (contended && grpc_core::ExecCtx::Get()->IsReadyToFinish()) {
+  if (contended && grpc_core::ExecCtx::Get()->IsReadyToFinish() &&
+      !grpc_iomgr_platform_is_any_background_poller_thread() &&
+      grpc_core::Executor::IsThreadedDefault()) {
     // this execution context wants to move on: schedule remaining work to be
     // picked up on the executor
     queue_offload(lock);

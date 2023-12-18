@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(UPB_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR}/../third_party/upb)
+if(NOT DEFINED _gRPC_ROOT)
+    get_filename_component(_gRPC_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+endif()
+set(UPB_ROOT_DIR ${_gRPC_ROOT}/third_party/upb)
 
-set(_gRPC_UPB_INCLUDE_DIR "${UPB_ROOT_DIR}")
-set(_gRPC_UPB_GRPC_GENERATED_DIR "${CMAKE_CURRENT_LIST_DIR}/../src/core/ext/upb-generated" "${CMAKE_CURRENT_LIST_DIR}/../src/core/ext/upbdefs-generated")
+set(_gRPC_UPB_INCLUDE_DIR "${UPB_ROOT_DIR}" "${_gRPC_ROOT}/third_party/utf8_range")
+set(_gRPC_UPB_GRPC_GENERATED_DIR "${_gRPC_ROOT}/src/core/ext/upbdefs-gen" "${_gRPC_ROOT}/src/core/ext/upb-gen")
 set(_gRPC_UPB_LIBRARIES upb)

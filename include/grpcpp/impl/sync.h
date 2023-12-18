@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2019 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2019 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_IMPL_SYNC_H
 #define GRPCPP_IMPL_SYNC_H
@@ -31,7 +31,7 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
+#include <grpc/support/time.h>
 
 // The core library is not accessible in C++ codegen headers, and vice versa.
 // Thus, we need to have duplicate headers with similar functionality.
@@ -56,18 +56,14 @@ using CondVar = absl::CondVar;
 
 class ABSL_LOCKABLE Mutex {
  public:
-  Mutex() { g_core_codegen_interface->gpr_mu_init(&mu_); }
-  ~Mutex() { g_core_codegen_interface->gpr_mu_destroy(&mu_); }
+  Mutex() { gpr_mu_init(&mu_); }
+  ~Mutex() { gpr_mu_destroy(&mu_); }
 
   Mutex(const Mutex&) = delete;
   Mutex& operator=(const Mutex&) = delete;
 
-  void Lock() ABSL_EXCLUSIVE_LOCK_FUNCTION() {
-    g_core_codegen_interface->gpr_mu_lock(&mu_);
-  }
-  void Unlock() ABSL_UNLOCK_FUNCTION() {
-    g_core_codegen_interface->gpr_mu_unlock(&mu_);
-  }
+  void Lock() ABSL_EXCLUSIVE_LOCK_FUNCTION() { gpr_mu_lock(&mu_); }
+  void Unlock() ABSL_UNLOCK_FUNCTION() { gpr_mu_unlock(&mu_); }
 
  private:
   union {
@@ -121,19 +117,17 @@ class ABSL_SCOPED_LOCKABLE ReleasableMutexLock {
 
 class CondVar {
  public:
-  CondVar() { g_core_codegen_interface->gpr_cv_init(&cv_); }
-  ~CondVar() { g_core_codegen_interface->gpr_cv_destroy(&cv_); }
+  CondVar() { gpr_cv_init(&cv_); }
+  ~CondVar() { gpr_cv_destroy(&cv_); }
 
   CondVar(const CondVar&) = delete;
   CondVar& operator=(const CondVar&) = delete;
 
-  void Signal() { g_core_codegen_interface->gpr_cv_signal(&cv_); }
-  void SignalAll() { g_core_codegen_interface->gpr_cv_broadcast(&cv_); }
+  void Signal() { gpr_cv_signal(&cv_); }
+  void SignalAll() { gpr_cv_broadcast(&cv_); }
 
   void Wait(Mutex* mu) {
-    g_core_codegen_interface->gpr_cv_wait(
-        &cv_, &mu->mu_,
-        g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME));
+    gpr_cv_wait(&cv_, &mu->mu_, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
 
  private:

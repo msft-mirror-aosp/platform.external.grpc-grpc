@@ -29,11 +29,12 @@
 
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 TEST(TimerManagerTest, StressTest) {
   grpc_core::ExecCtx exec_ctx;
@@ -46,7 +47,7 @@ TEST(TimerManagerTest, StressTest) {
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_real_distribution<> dis_millis(100, 3000);
-  auto pool = std::make_shared<grpc_event_engine::experimental::ThreadPool>();
+  auto pool = MakeThreadPool(8);
   {
     TimerManager manager(pool);
     for (auto& timer : timers) {
@@ -82,7 +83,7 @@ TEST(TimerManagerTest, ShutDownBeforeAllCallbacksAreExecuted) {
   timers.resize(kTimerCount);
   std::atomic_int called{0};
   experimental::AnyInvocableClosure closure([&called] { ++called; });
-  auto pool = std::make_shared<grpc_event_engine::experimental::ThreadPool>();
+  auto pool = MakeThreadPool(8);
   {
     TimerManager manager(pool);
     for (auto& timer : timers) {
@@ -93,7 +94,7 @@ TEST(TimerManagerTest, ShutDownBeforeAllCallbacksAreExecuted) {
   pool->Quiesce();
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {

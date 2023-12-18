@@ -23,6 +23,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -34,8 +35,8 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
@@ -49,17 +50,15 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -68,6 +67,8 @@ namespace grpc_core {
 TraceFlag grpc_lb_priority_trace(false, "priority_lb");
 
 namespace {
+
+using ::grpc_event_engine::experimental::EventEngine;
 
 constexpr absl::string_view kPriority = "priority_experimental";
 
@@ -161,25 +162,23 @@ class PriorityLb : public LoadBalancingPolicy {
     bool FailoverTimerPending() const { return failover_timer_ != nullptr; }
 
    private:
-    class Helper : public ChannelControlHelper {
+    class Helper : public DelegatingChannelControlHelper {
      public:
       explicit Helper(RefCountedPtr<ChildPriority> priority)
           : priority_(std::move(priority)) {}
 
       ~Helper() override { priority_.reset(DEBUG_LOCATION, "Helper"); }
 
-      RefCountedPtr<SubchannelInterface> CreateSubchannel(
-          ServerAddress address, const ChannelArgs& args) override;
       void UpdateState(grpc_connectivity_state state,
                        const absl::Status& status,
                        RefCountedPtr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
-      absl::string_view GetAuthority() override;
-      grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
-      void AddTraceEvent(TraceSeverity severity,
-                         absl::string_view message) override;
 
      private:
+      ChannelControlHelper* parent_helper() const override {
+        return priority_->priority_policy_->channel_control_helper();
+      }
+
       RefCountedPtr<ChildPriority> priority_;
     };
 
@@ -190,13 +189,10 @@ class PriorityLb : public LoadBalancingPolicy {
       void Orphan() override;
 
      private:
-      static void OnTimer(void* arg, grpc_error_handle error);
-      void OnTimerLocked(grpc_error_handle);
+      void OnTimerLocked();
 
       RefCountedPtr<ChildPriority> child_priority_;
-      grpc_timer timer_;
-      grpc_closure on_timer_;
-      bool timer_pending_ = true;
+      absl::optional<EventEngine::TaskHandle> timer_handle_;
     };
 
     class FailoverTimer : public InternallyRefCounted<FailoverTimer> {
@@ -206,13 +202,10 @@ class PriorityLb : public LoadBalancingPolicy {
       void Orphan() override;
 
      private:
-      static void OnTimer(void* arg, grpc_error_handle error);
-      void OnTimerLocked(grpc_error_handle);
+      void OnTimerLocked();
 
       RefCountedPtr<ChildPriority> child_priority_;
-      grpc_timer timer_;
-      grpc_closure on_timer_;
-      bool timer_pending_ = true;
+      absl::optional<EventEngine::TaskHandle> timer_handle_;
     };
 
     // Methods for dealing with the child policy.
@@ -522,35 +515,38 @@ PriorityLb::ChildPriority::DeactivationTimer::DeactivationTimer(
             child_priority_->name_.c_str(), child_priority_.get(),
             kChildRetentionInterval.millis());
   }
-  GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
-  Ref(DEBUG_LOCATION, "Timer").release();
-  grpc_timer_init(&timer_, Timestamp::Now() + kChildRetentionInterval,
-                  &on_timer_);
+  timer_handle_ =
+      child_priority_->priority_policy_->channel_control_helper()
+          ->GetEventEngine()
+          ->RunAfter(kChildRetentionInterval, [self = Ref(DEBUG_LOCATION,
+                                                          "Timer")]() mutable {
+            ApplicationCallbackExecCtx callback_exec_ctx;
+            ExecCtx exec_ctx;
+            auto self_ptr = self.get();
+            self_ptr->child_priority_->priority_policy_->work_serializer()->Run(
+                [self = std::move(self)]() { self->OnTimerLocked(); },
+                DEBUG_LOCATION);
+          });
 }
 
 void PriorityLb::ChildPriority::DeactivationTimer::Orphan() {
-  if (timer_pending_) {
+  if (timer_handle_.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO, "[priority_lb %p] child %s (%p): reactivating",
               child_priority_->priority_policy_.get(),
               child_priority_->name_.c_str(), child_priority_.get());
     }
-    timer_pending_ = false;
-    grpc_timer_cancel(&timer_);
+    child_priority_->priority_policy_->channel_control_helper()
+        ->GetEventEngine()
+        ->Cancel(*timer_handle_);
+    timer_handle_.reset();
   }
   Unref();
 }
 
-void PriorityLb::ChildPriority::DeactivationTimer::OnTimer(
-    void* arg, grpc_error_handle error) {
-  auto* self = static_cast<DeactivationTimer*>(arg);
-  self->child_priority_->priority_policy_->work_serializer()->Run(
-      [self, error]() { self->OnTimerLocked(error); }, DEBUG_LOCATION);
-}
-
-void PriorityLb::ChildPriority::DeactivationTimer::OnTimerLocked(
-    grpc_error_handle error) {
-  if (error.ok() && timer_pending_) {
+void PriorityLb::ChildPriority::DeactivationTimer::OnTimerLocked() {
+  if (timer_handle_.has_value()) {
+    timer_handle_.reset();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,
               "[priority_lb %p] child %s (%p): deactivation timer fired, "
@@ -558,10 +554,8 @@ void PriorityLb::ChildPriority::DeactivationTimer::OnTimerLocked(
               child_priority_->priority_policy_.get(),
               child_priority_->name_.c_str(), child_priority_.get());
     }
-    timer_pending_ = false;
     child_priority_->priority_policy_->DeleteChild(child_priority_.get());
   }
-  Unref(DEBUG_LOCATION, "Timer");
 }
 
 //
@@ -580,39 +574,40 @@ PriorityLb::ChildPriority::FailoverTimer::FailoverTimer(
         child_priority_.get(),
         child_priority_->priority_policy_->child_failover_timeout_.millis());
   }
-  GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
-  Ref(DEBUG_LOCATION, "Timer").release();
-  grpc_timer_init(
-      &timer_,
-      Timestamp::Now() +
-          child_priority_->priority_policy_->child_failover_timeout_,
-      &on_timer_);
+  timer_handle_ =
+      child_priority_->priority_policy_->channel_control_helper()
+          ->GetEventEngine()
+          ->RunAfter(
+              child_priority_->priority_policy_->child_failover_timeout_,
+              [self = Ref(DEBUG_LOCATION, "Timer")]() mutable {
+                ApplicationCallbackExecCtx callback_exec_ctx;
+                ExecCtx exec_ctx;
+                auto self_ptr = self.get();
+                self_ptr->child_priority_->priority_policy_->work_serializer()
+                    ->Run([self = std::move(self)]() { self->OnTimerLocked(); },
+                          DEBUG_LOCATION);
+              });
 }
 
 void PriorityLb::ChildPriority::FailoverTimer::Orphan() {
-  if (timer_pending_) {
+  if (timer_handle_.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,
               "[priority_lb %p] child %s (%p): cancelling failover timer",
               child_priority_->priority_policy_.get(),
               child_priority_->name_.c_str(), child_priority_.get());
     }
-    timer_pending_ = false;
-    grpc_timer_cancel(&timer_);
+    child_priority_->priority_policy_->channel_control_helper()
+        ->GetEventEngine()
+        ->Cancel(*timer_handle_);
+    timer_handle_.reset();
   }
   Unref();
 }
 
-void PriorityLb::ChildPriority::FailoverTimer::OnTimer(
-    void* arg, grpc_error_handle error) {
-  auto* self = static_cast<FailoverTimer*>(arg);
-  self->child_priority_->priority_policy_->work_serializer()->Run(
-      [self, error]() { self->OnTimerLocked(error); }, DEBUG_LOCATION);
-}
-
-void PriorityLb::ChildPriority::FailoverTimer::OnTimerLocked(
-    grpc_error_handle error) {
-  if (error.ok() && timer_pending_) {
+void PriorityLb::ChildPriority::FailoverTimer::OnTimerLocked() {
+  if (timer_handle_.has_value()) {
+    timer_handle_.reset();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,
               "[priority_lb %p] child %s (%p): failover timer fired, "
@@ -620,13 +615,11 @@ void PriorityLb::ChildPriority::FailoverTimer::OnTimerLocked(
               child_priority_->priority_policy_.get(),
               child_priority_->name_.c_str(), child_priority_.get());
     }
-    timer_pending_ = false;
     child_priority_->OnConnectivityStateUpdateLocked(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
         absl::Status(absl::StatusCode::kUnavailable, "failover timer fired"),
         nullptr);
   }
-  Unref(DEBUG_LOCATION, "Timer");
 }
 
 //
@@ -798,14 +791,6 @@ void PriorityLb::ChildPriority::MaybeReactivateLocked() {
 // PriorityLb::ChildPriority::Helper
 //
 
-RefCountedPtr<SubchannelInterface>
-PriorityLb::ChildPriority::Helper::CreateSubchannel(ServerAddress address,
-                                                    const ChannelArgs& args) {
-  if (priority_->priority_policy_->shutting_down_) return nullptr;
-  return priority_->priority_policy_->channel_control_helper()
-      ->CreateSubchannel(std::move(address), args);
-}
-
 void PriorityLb::ChildPriority::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
@@ -820,23 +805,6 @@ void PriorityLb::ChildPriority::Helper::RequestReresolution() {
     return;
   }
   priority_->priority_policy_->channel_control_helper()->RequestReresolution();
-}
-
-absl::string_view PriorityLb::ChildPriority::Helper::GetAuthority() {
-  return priority_->priority_policy_->channel_control_helper()->GetAuthority();
-}
-
-grpc_event_engine::experimental::EventEngine*
-PriorityLb::ChildPriority::Helper::GetEventEngine() {
-  return priority_->priority_policy_->channel_control_helper()
-      ->GetEventEngine();
-}
-
-void PriorityLb::ChildPriority::Helper::AddTraceEvent(
-    TraceSeverity severity, absl::string_view message) {
-  if (priority_->priority_policy_->shutting_down_) return;
-  priority_->priority_policy_->channel_control_helper()->AddTraceEvent(severity,
-                                                                       message);
 }
 
 //
@@ -859,8 +827,8 @@ void PriorityLbConfig::PriorityLbChild::JsonPostLoad(const Json& json,
                                                      const JsonArgs&,
                                                      ValidationErrors* errors) {
   ValidationErrors::ScopedField field(errors, ".config");
-  auto it = json.object_value().find("config");
-  if (it == json.object_value().end()) {
+  auto it = json.object().find("config");
+  if (it == json.object().end()) {
     errors->AddError("field not present");
     return;
   }
@@ -909,15 +877,7 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
-      // priority was mentioned as a policy in the deprecated
-      // loadBalancingPolicy field or in the client API.
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:priority policy requires "
-          "configuration. Please use loadBalancingConfig field of service "
-          "config instead.");
-    }
-    return LoadRefCountedFromJson<PriorityLbConfig>(
+    return LoadFromJson<RefCountedPtr<PriorityLbConfig>>(
         json, JsonArgs(), "errors validating priority LB policy config");
   }
 };

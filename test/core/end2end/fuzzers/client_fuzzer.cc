@@ -1,32 +1,28 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
-#include <memory>
+#include <initializer_list>
 #include <string>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -37,7 +33,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -47,15 +44,12 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/event_string.h"
 #include "src/core/lib/transport/transport_fwd.h"
-#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
-#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "src/libfuzzer/libfuzzer_macro.h"
+#include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/util/mock_endpoint.h"
 
 bool squelch = true;
 bool leak_check = true;
-
-using ::grpc_event_engine::experimental::FuzzingEventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 static void discard_write(grpc_slice /*slice*/) {}
 
@@ -63,15 +57,10 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  if (squelch) gpr_set_log_function(dont_log);
-  grpc_event_engine::experimental::SetEventEngineFactory([]() {
-    return std::make_unique<FuzzingEventEngine>(
-        FuzzingEventEngine::Options(), fuzzing_event_engine::Actions{});
-  });
-  auto engine =
-      std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
-  FuzzingEventEngine::SetGlobalNowImplEngine(engine.get());
+DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
+  if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
+    gpr_set_log_function(dont_log);
+  }
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
@@ -109,8 +98,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_status_code status;
     grpc_slice details = grpc_empty_slice();
 
-    engine->Tick();
-
     grpc_op ops[6];
     memset(ops, 0, sizeof(ops));
     grpc_op* op = ops;
@@ -141,17 +128,20 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    grpc_call_error error =
-        grpc_call_start_batch(call, ops, (size_t)(op - ops), tag(1), nullptr);
+    grpc_call_error error = grpc_call_start_batch(
+        call, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
     int requested_calls = 1;
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    grpc_mock_endpoint_put_read(
-        mock_endpoint, grpc_slice_from_copied_buffer((const char*)data, size));
+    if (msg.network_input().has_single_read_bytes()) {
+      grpc_mock_endpoint_put_read(
+          mock_endpoint, grpc_slice_from_copied_buffer(
+                             msg.network_input().single_read_bytes().data(),
+                             msg.network_input().single_read_bytes().size()));
+    }
 
     grpc_event ev;
     while (true) {
-      engine->Tick();
       grpc_core::ExecCtx::Get()->Flush();
       ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                       nullptr);
@@ -167,8 +157,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     }
 
   done:
-    engine->FuzzingDone();
-    engine->Tick();
     if (requested_calls) {
       grpc_call_cancel(call, nullptr);
     }
@@ -176,11 +164,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                       nullptr);
       if (ev.type != GRPC_OP_COMPLETE) {
-        gpr_log(GPR_ERROR,
-                "[%d/%d requested calls] Unexpected event type (expected "
-                "COMPLETE): %s",
-                i, requested_calls, grpc_event_string(&ev).c_str());
-        abort();
+        grpc_core::Crash(absl::StrFormat(
+            "[%d/%d requested calls] Unexpected event type (expected "
+            "COMPLETE): %s",
+            i, requested_calls, grpc_event_string(&ev).c_str()));
       }
     }
     grpc_completion_queue_shutdown(cq);
@@ -188,9 +175,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                       nullptr);
       if (ev.type != GRPC_QUEUE_SHUTDOWN) {
-        gpr_log(GPR_ERROR, "Unexpected event type (expected SHUTDOWN): %s",
-                grpc_event_string(&ev).c_str());
-        abort();
+        grpc_core::Crash(
+            absl::StrFormat("Unexpected event type (expected SHUTDOWN): %s",
+                            grpc_event_string(&ev).c_str()));
       }
     }
     grpc_call_unref(call);
@@ -202,7 +189,5 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       grpc_byte_buffer_destroy(response_payload_recv);
     }
   }
-  grpc_shutdown_blocking();
-  FuzzingEventEngine::UnsetGlobalNowImplEngine(engine.get());
-  return 0;
+  grpc_shutdown();
 }

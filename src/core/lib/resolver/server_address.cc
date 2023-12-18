@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
@@ -55,14 +56,6 @@ ServerAddress::ServerAddress(
     const grpc_resolved_address& address, const ChannelArgs& args,
     std::map<const char*, std::unique_ptr<AttributeInterface>> attributes)
     : address_(address), args_(args), attributes_(std::move(attributes)) {}
-
-ServerAddress::ServerAddress(
-    const void* address, size_t address_len, const ChannelArgs& args,
-    std::map<const char*, std::unique_ptr<AttributeInterface>> attributes)
-    : args_(args), attributes_(std::move(attributes)) {
-  memcpy(address_.addr, address, address_len);
-  address_.len = static_cast<socklen_t>(address_len);
-}
 
 ServerAddress::ServerAddress(const ServerAddress& other)
     : address_(other.address_), args_(other.args_) {
@@ -168,6 +161,7 @@ std::string ServerAddress::ToString() const {
     for (const auto& p : attributes_) {
       attrs.emplace_back(absl::StrCat(p.first, "=", p.second->ToString()));
     }
+    std::sort(attrs.begin(), attrs.end());
     parts.emplace_back(
         absl::StrCat("attributes={", absl::StrJoin(attrs, ", "), "}"));
   }

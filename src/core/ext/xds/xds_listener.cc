@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 
+#include <initializer_list>
 #include <set>
 #include <utility>
 
@@ -36,6 +37,7 @@
 #include "envoy/config/listener/v3/listener.upb.h"
 #include "envoy/config/listener/v3/listener.upbdefs.h"
 #include "envoy/config/listener/v3/listener_components.upb.h"
+#include "envoy/config/rbac/v3/rbac.upb.h"
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
@@ -43,8 +45,8 @@
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/text_encode.h"
-#include "upb/upb.h"
+#include "upb/base/string_view.h"
+#include "upb/text/encode.h"
 
 #include <grpc/support/log.h>
 
@@ -58,7 +60,6 @@
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
 
@@ -412,8 +413,8 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
           continue;
         }
         absl::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
-            filter_impl->GenerateFilterConfig(std::move(*extension),
-                                              context.arena, errors);
+            filter_impl->GenerateFilterConfig(context, std::move(*extension),
+                                              errors);
         if (filter_config.has_value()) {
           http_connection_manager.http_filters.emplace_back(
               XdsListenerResource::HttpConnectionManager::HttpFilter{
@@ -502,7 +503,10 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseClient(
     lds_update.listener = HttpConnectionManagerParse(
         /*is_client=*/true, context, std::move(*extension), &errors);
   }
-  if (!errors.ok()) return errors.status("errors validating ApiListener");
+  if (!errors.ok()) {
+    return errors.status(absl::StatusCode::kInvalidArgument,
+                         "errors validating ApiListener");
+  }
   return std::move(lds_update);
 }
 
@@ -1046,7 +1050,10 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
     }
   }
   // Return result.
-  if (!errors.ok()) return errors.status("errors validating server Listener");
+  if (!errors.ok()) {
+    return errors.status(absl::StatusCode::kInvalidArgument,
+                         "errors validating server Listener");
+  }
   XdsListenerResource lds_update;
   lds_update.listener = std::move(tcp_listener);
   return lds_update;

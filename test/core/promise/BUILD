@@ -533,12 +533,41 @@ grpc_cc_test(
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:orphanable",
         "//src/core:default_event_engine",
         "//src/core:exec_ctx_wakeup_scheduler",
         "//src/core:notification",
         "//src/core:race",
         "//src/core:sleep",
         "//test/core/event_engine:mock_event_engine",
+    ],
+)
+
+grpc_cc_test(
+    name = "status_flag_test",
+    srcs = ["status_flag_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = ["//src/core:status_flag"],
+)
+
+grpc_cc_test(
+    name = "promise_mutex_test",
+    srcs = ["promise_mutex_test.cc"],
+    external_deps = [
+        "absl/status",
+        "gtest",
+    ],
+    deps = [
+        "test_wakeup_schedulers",
+        "//:promise",
+        "//src/core:activity",
+        "//src/core:join",
+        "//src/core:promise_mutex",
+        "//src/core:seq",
     ],
 )
 

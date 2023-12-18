@@ -102,6 +102,7 @@ void StartCall(TestCall* test_call) {
       test_call->call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_core::CqVerifier cqv(test_call->cq);
+  cqv.SetLogVerifications(false);
   cqv.Expect(tag, true);
   cqv.Verify();
 }
@@ -123,6 +124,7 @@ void SendMessage(grpc_call* call, grpc_completion_queue* cq) {
       call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_core::CqVerifier cqv(cq);
+  cqv.SetLogVerifications(false);
   cqv.Expect(tag, true);
   cqv.Verify();
   grpc_byte_buffer_destroy(request_payload);
@@ -143,6 +145,7 @@ void ReceiveMessage(grpc_call* call, grpc_completion_queue* cq) {
       call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_core::CqVerifier cqv(cq);
+  cqv.SetLogVerifications(false);
   cqv.Expect(tag, true);
   cqv.Verify();
   grpc_byte_buffer_destroy(request_payload);
@@ -355,9 +358,10 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
           grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
       {
         grpc_core::ExecCtx exec_ctx;
-        fake_resolver_response_generator->SetResponse(BuildResolverResponse(
-            {absl::StrCat("ipv4:", kSharedUnconnectableAddress),
-             absl::StrCat("ipv4:", test_server->address())}));
+        fake_resolver_response_generator->SetResponseSynchronously(
+            BuildResolverResponse(
+                {absl::StrCat("ipv4:", kSharedUnconnectableAddress),
+                 absl::StrCat("ipv4:", test_server->address())}));
       }
       args.push_back(grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
           fake_resolver_response_generator.get()));

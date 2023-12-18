@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/types/variant.h"
 
@@ -64,10 +65,22 @@ class CqVerifier {
   using ExpectedResult =
       absl::variant<bool, Maybe, AnyStatus, PerformAction, MaybePerformAction>;
 
+  // Captures information about one failure
   struct Failure {
     SourceLocation location;
     std::string message;
     std::vector<std::string> expected;
+    std::vector<std::string> message_details;
+  };
+
+  // Produces a string upon the successful (but unexpected) completion of an
+  // expectation.
+  class SuccessfulStateString {
+   public:
+    virtual std::string GetSuccessfulStateString() = 0;
+
+   protected:
+    ~SuccessfulStateString() = default;
   };
 
   static void FailUsingGprCrash(const Failure& failure);
@@ -98,6 +111,10 @@ class CqVerifier {
   void VerifyEmpty(Duration timeout = Duration::Seconds(1),
                    SourceLocation location = SourceLocation());
 
+  void ClearSuccessfulStateStrings(void* tag);
+  void AddSuccessfulStateString(void* tag,
+                                SuccessfulStateString* successful_state_string);
+
   // Match an expectation about a status.
   // location must be DEBUG_LOCATION.
   // result can be any of the types in ExpectedResult - a plain bool means
@@ -109,6 +126,13 @@ class CqVerifier {
   std::vector<std::string> ToStrings() const;
   std::string ToShortString() const;
   std::vector<std::string> ToShortStrings() const;
+
+  // Logging verifications helps debug CI problems a lot.
+  // Only disable if the logging prevents a stress test like scenario from
+  // passing.
+  void SetLogVerifications(bool log_verifications) {
+    log_verifications_ = log_verifications;
+  }
 
   static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -134,6 +158,9 @@ class CqVerifier {
   absl::AnyInvocable<void(
       grpc_event_engine::experimental::EventEngine::Duration) const>
       step_fn_;
+  absl::flat_hash_map<void*, std::vector<SuccessfulStateString*>>
+      successful_state_strings_;
+  bool log_verifications_ = true;
 };
 
 }  // namespace grpc_core

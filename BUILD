@@ -1613,7 +1613,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h",
     ],
     external_deps = [
-        "cares",
         "address_sorting",
     ],
     language = "c++",

@@ -659,7 +659,7 @@ android_add_library(TARGET address_sorting
                     URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
                     REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
                     NOTICE "REPO/NOTICE.txt"
-                    
+
                     SRC
                         ${_gRPC_ROOT}/third_party/address_sorting/address_sorting.c
                         ${_gRPC_ROOT}/third_party/address_sorting/address_sorting_posix.c
@@ -667,7 +667,7 @@ android_add_library(TARGET address_sorting
 )
 
 target_compile_features(address_sorting PRIVATE cxx_std_14)
-target_compile_features(address_sorting PRIVATE c_std_11)
+
 target_include_directories(address_sorting
   PUBLIC  ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_ROOT}
@@ -691,7 +691,7 @@ android_add_library(TARGET gpr
                     URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
                     REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
                     NOTICE "REPO/NOTICE.txt"
-                    
+
                     SRC
                         ${_gRPC_ROOT}/src/core/lib/config/config_vars.cc
                         ${_gRPC_ROOT}/src/core/lib/config/config_vars_non_generated.cc
@@ -742,7 +742,7 @@ android_add_library(TARGET gpr
 )
 
 target_compile_features(gpr PRIVATE cxx_std_14)
-target_compile_features(gpr PRIVATE c_std_11)
+
 target_include_directories(gpr
   PUBLIC  ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_ROOT}
@@ -781,7 +781,7 @@ android_add_library(TARGET grpc
                     URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
                     REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
                     NOTICE "REPO/NOTICE.txt"
-                    
+
                     SRC
                         ${_gRPC_ROOT}/src/core/ext/filters/backend_metrics/backend_metric_filter.cc
                         ${_gRPC_ROOT}/src/core/ext/filters/census/grpc_context.cc
@@ -1573,7 +1573,7 @@ android_add_library(TARGET grpc
 )
 
 target_compile_features(grpc PRIVATE cxx_std_14)
-target_compile_features(grpc PRIVATE c_std_11)
+
 target_include_directories(grpc
   PUBLIC  ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_ROOT}
@@ -1625,7 +1625,7 @@ android_add_library(TARGET grpc_test_util
                     URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
                     REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
                     NOTICE "REPO/NOTICE.txt"
-                    
+
                     SRC
                         ${_gRPC_ROOT}/test/core/event_engine/test_init.cc
                         ${_gRPC_ROOT}/test/core/util/build.cc
@@ -1640,7 +1640,7 @@ android_add_library(TARGET grpc_test_util
 )
 
 target_compile_features(grpc_test_util PRIVATE cxx_std_14)
-target_compile_features(grpc_test_util PRIVATE c_std_11)
+
 target_include_directories(grpc_test_util
   PUBLIC  ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_ROOT}
@@ -1671,7 +1671,7 @@ android_add_library(TARGET grpc_test_util_unsecure
                     URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
                     REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
                     NOTICE "REPO/NOTICE.txt"
-                    
+
                     SRC
                         ${_gRPC_ROOT}/test/core/event_engine/test_init.cc
                         ${_gRPC_ROOT}/test/core/util/build.cc
@@ -1685,7 +1685,7 @@ android_add_library(TARGET grpc_test_util_unsecure
 )
 
 target_compile_features(grpc_test_util_unsecure PRIVATE cxx_std_14)
-target_compile_features(grpc_test_util_unsecure PRIVATE c_std_11)
+
 target_include_directories(grpc_test_util_unsecure
   PUBLIC  ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_ROOT}
@@ -1716,7 +1716,7 @@ android_add_library(TARGET grpc_unsecure
                     URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
                     REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
                     NOTICE "REPO/NOTICE.txt"
-                    
+
                     SRC
                         ${_gRPC_ROOT}/src/core/ext/filters/backend_metrics/backend_metric_filter.cc
                         ${_gRPC_ROOT}/src/core/ext/filters/census/grpc_context.cc
@@ -2121,7 +2121,7 @@ android_add_library(TARGET grpc_unsecure
 )
 
 target_compile_features(grpc_unsecure PRIVATE cxx_std_14)
-target_compile_features(grpc_unsecure PRIVATE c_std_11)
+
 target_include_directories(grpc_unsecure
   PUBLIC  ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_ROOT}
@@ -2169,7 +2169,7 @@ android_add_library(TARGET upb
                     URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
                     REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
                     NOTICE "REPO/NOTICE.txt"
-                    
+
                     SRC
                         ${_gRPC_ROOT}/third_party/upb/upb/base/status.c
                         ${_gRPC_ROOT}/third_party/upb/upb/mem/alloc.c
@@ -2177,7 +2177,7 @@ android_add_library(TARGET upb
 )
 
 target_compile_features(upb PRIVATE cxx_std_14)
-target_compile_features(upb PRIVATE c_std_11)
+
 target_include_directories(upb
   PUBLIC  ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_ROOT}
@@ -2201,7 +2201,7 @@ android_add_library(TARGET upb_collections_lib
                     URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
                     REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
                     NOTICE "REPO/NOTICE.txt"
-                    
+
                     SRC
                         ${_gRPC_ROOT}/third_party/upb/upb/base/status.c
                         ${_gRPC_ROOT}/third_party/upb/upb/hash/common.c
@@ -2217,7 +2217,7 @@ android_add_library(TARGET upb_collections_lib
 )
 
 target_compile_features(upb_collections_lib PRIVATE cxx_std_14)
-target_compile_features(upb_collections_lib PRIVATE c_std_11)
+
 target_include_directories(upb_collections_lib
   PUBLIC  ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_ROOT}
@@ -2241,7 +2241,7 @@ android_add_library(TARGET upb_json_lib
                     URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
                     REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
                     NOTICE "REPO/NOTICE.txt"
-                    
+
                     SRC
                         ${_gRPC_ROOT}/src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
                         ${_gRPC_ROOT}/third_party/upb/upb/base/status.c
@@ -2292,7 +2292,7 @@ android_add_library(TARGET upb_json_lib
 )
 
 target_compile_features(upb_json_lib PRIVATE cxx_std_14)
-target_compile_features(upb_json_lib PRIVATE c_std_11)
+
 target_include_directories(upb_json_lib
   PUBLIC  ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_ROOT}
@@ -2317,7 +2317,7 @@ android_add_library(TARGET upb_textformat_lib
                     URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
                     REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
                     NOTICE "REPO/NOTICE.txt"
-                    
+
                     SRC
                         ${_gRPC_ROOT}/src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
                         ${_gRPC_ROOT}/third_party/upb/upb/base/status.c
@@ -2367,7 +2367,7 @@ android_add_library(TARGET upb_textformat_lib
 )
 
 target_compile_features(upb_textformat_lib PRIVATE cxx_std_14)
-target_compile_features(upb_textformat_lib PRIVATE c_std_11)
+
 target_include_directories(upb_textformat_lib
   PUBLIC  ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_ROOT}
@@ -2392,7 +2392,7 @@ android_add_library(TARGET utf8_range_lib
                     URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
                     REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
                     NOTICE "REPO/NOTICE.txt"
-                    
+
                     SRC
                         ${_gRPC_ROOT}/third_party/utf8_range/naive.c
                         ${_gRPC_ROOT}/third_party/utf8_range/range2-neon.c
@@ -2400,7 +2400,7 @@ android_add_library(TARGET utf8_range_lib
 )
 
 target_compile_features(utf8_range_lib PRIVATE cxx_std_14)
-target_compile_features(utf8_range_lib PRIVATE c_std_11)
+
 target_include_directories(utf8_range_lib
   PUBLIC  ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_ROOT}
@@ -2424,7 +2424,7 @@ android_add_library(TARGET grpc++
                     URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
                     REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
                     NOTICE "REPO/NOTICE.txt"
-                    
+
                     SRC
                         ${_gRPC_ROOT}/src/core/ext/transport/binder/client/binder_connector.cc
                         ${_gRPC_ROOT}/src/core/ext/transport/binder/client/channel_create.cc
@@ -2495,7 +2495,7 @@ android_add_library(TARGET grpc++
 )
 
 target_compile_features(grpc++ PRIVATE cxx_std_14)
-target_compile_features(grpc++ PRIVATE c_std_11)
+
 target_include_directories(grpc++
   PUBLIC  ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_ROOT}
@@ -2522,7 +2522,7 @@ android_add_library(TARGET grpc++_alts
                     URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
                     REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
                     NOTICE "REPO/NOTICE.txt"
-                    
+
                     SRC
                         ${_gRPC_ROOT}/src/cpp/common/alts_context.cc
                         ${_gRPC_ROOT}/src/cpp/common/alts_util.cc
@@ -2530,7 +2530,7 @@ android_add_library(TARGET grpc++_alts
 )
 
 target_compile_features(grpc++_alts PRIVATE cxx_std_14)
-target_compile_features(grpc++_alts PRIVATE c_std_11)
+
 target_include_directories(grpc++_alts
   PUBLIC  ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_ROOT}
@@ -2556,13 +2556,13 @@ android_add_library(TARGET grpc++_error_details
                     URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
                     REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
                     NOTICE "REPO/NOTICE.txt"
-                    
+
                     SRC
                         ${_gRPC_ROOT}/src/cpp/util/error_details.cc
 )
 
 target_compile_features(grpc++_error_details PRIVATE cxx_std_14)
-target_compile_features(grpc++_error_details PRIVATE c_std_11)
+
 target_include_directories(grpc++_error_details
   PUBLIC  ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_ROOT}
@@ -2589,7 +2589,7 @@ android_add_library(TARGET grpc++_reflection
                     URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
                     REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
                     NOTICE "REPO/NOTICE.txt"
-                    
+
                     SRC
                         ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1/reflection.pb.cc
                         ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1/reflection.grpc.pb.cc
@@ -2604,7 +2604,7 @@ android_add_library(TARGET grpc++_reflection
 )
 
 target_compile_features(grpc++_reflection PRIVATE cxx_std_14)
-target_compile_features(grpc++_reflection PRIVATE c_std_11)
+
 target_include_directories(grpc++_reflection
   PUBLIC  ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_ROOT}
@@ -2631,13 +2631,13 @@ android_add_library(TARGET grpc++_test_config
                     URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
                     REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
                     NOTICE "REPO/NOTICE.txt"
-                    
+
                     SRC
                         ${_gRPC_ROOT}/test/cpp/util/test_config_cc.cc
 )
 
 target_compile_features(grpc++_test_config PRIVATE cxx_std_14)
-target_compile_features(grpc++_test_config PRIVATE c_std_11)
+
 target_include_directories(grpc++_test_config
   PUBLIC  ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_ROOT}
@@ -2664,7 +2664,7 @@ android_add_library(TARGET grpc++_test_util
                     URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
                     REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
                     NOTICE "REPO/NOTICE.txt"
-                    
+
                     SRC
                         ${_gRPC_ROOT}/src/core/lib/gpr/subprocess_posix.cc
                         ${_gRPC_ROOT}/src/core/lib/gpr/subprocess_windows.cc
@@ -2690,7 +2690,7 @@ android_add_library(TARGET grpc++_test_util
 )
 
 target_compile_features(grpc++_test_util PRIVATE cxx_std_14)
-target_compile_features(grpc++_test_util PRIVATE c_std_11)
+
 target_include_directories(grpc++_test_util
   PUBLIC  ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_ROOT}
@@ -2717,7 +2717,7 @@ android_add_library(TARGET grpc++_unsecure
                     URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
                     REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
                     NOTICE "REPO/NOTICE.txt"
-                    
+
                     SRC
                         ${_gRPC_ROOT}/src/cpp/client/channel_cc.cc
                         ${_gRPC_ROOT}/src/cpp/client/client_callback.cc
@@ -2759,7 +2759,7 @@ android_add_library(TARGET grpc++_unsecure
 )
 
 target_compile_features(grpc++_unsecure PRIVATE cxx_std_14)
-target_compile_features(grpc++_unsecure PRIVATE c_std_11)
+
 target_include_directories(grpc++_unsecure
   PUBLIC  ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_ROOT}
@@ -2786,7 +2786,7 @@ android_add_library(TARGET grpc_authorization_provider
                     URL "https://android.googlesource.com/platform/external/grpc-grpc/+/refs/heads/emu-master-dev"
                     REPO "${ANDROID_QEMU2_TOP_DIR}/../grpc"
                     NOTICE "REPO/NOTICE.txt"
-                    
+
                     SRC
                         ${_gRPC_ROOT}/src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
                         ${_gRPC_ROOT}/src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
@@ -3073,7 +3073,7 @@ android_add_library(TARGET grpc_authorization_provider
 )
 
 target_compile_features(grpc_authorization_provider PRIVATE cxx_std_14)
-target_compile_features(grpc_authorization_provider PRIVATE c_std_11)
+
 target_include_directories(grpc_authorization_provider
   PUBLIC  ${_gRPC_ROOT}/include
   PRIVATE ${_gRPC_ROOT}

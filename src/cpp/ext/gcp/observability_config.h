@@ -14,8 +14,10 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_INTERNAL_CPP_EXT_GCP_OBSERVABILITY_GCP_OBSERVABILITY_CONFIG_H
-#define GRPC_INTERNAL_CPP_EXT_GCP_OBSERVABILITY_GCP_OBSERVABILITY_CONFIG_H
+#ifndef GRPC_SRC_CPP_EXT_GCP_OBSERVABILITY_CONFIG_H
+#define GRPC_SRC_CPP_EXT_GCP_OBSERVABILITY_CONFIG_H
+
+#include <grpc/support/port_platform.h>
 
 #include <stdint.h>
 
@@ -82,7 +84,8 @@ struct GcpObservabilityConfig {
   };
 
   struct CloudTrace {
-    float sampling_rate = 0;
+    CloudTrace() : sampling_rate(0) {}
+    float sampling_rate;
 
     static const grpc_core::JsonLoaderInterface* JsonLoader(
         const grpc_core::JsonArgs&) {
@@ -116,13 +119,13 @@ struct GcpObservabilityConfig {
   }
 
   // Tries to load the contents of GcpObservabilityConfig from the file located
-  // by the value of environment variable `GRPC_OBSERVABILITY_CONFIG_FILE`. If
-  // `GRPC_OBSERVABILITY_CONFIG_FILE` is unset, falls back to
-  // `GRPC_OBSERVABILITY_CONFIG`.
+  // by the value of environment variable `GRPC_GCP_OBSERVABILITY_CONFIG_FILE`.
+  // If `GRPC_GCP_OBSERVABILITY_CONFIG_FILE` is unset, falls back to
+  // `GRPC_GCP_OBSERVABILITY_CONFIG`.
   static absl::StatusOr<GcpObservabilityConfig> ReadFromEnv();
 };
 
 }  // namespace internal
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_EXT_GCP_OBSERVABILITY_GCP_OBSERVABILITY_CONFIG_H
+#endif  // GRPC_SRC_CPP_EXT_GCP_OBSERVABILITY_CONFIG_H

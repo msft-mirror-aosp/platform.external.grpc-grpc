@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -36,6 +36,7 @@
 
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -44,9 +45,10 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -202,8 +204,6 @@ void SecurityHandshaker::HandshakeFailedLocked(grpc_error_handle error) {
     // endpoint callback was invoked, we need to generate our own error.
     error = GRPC_ERROR_CREATE("Handshaker shutdown");
   }
-  gpr_log(GPR_DEBUG, "Security handshake failed: %s",
-          StatusToString(error).c_str());
   if (!is_shutdown_) {
     tsi_handshaker_shutdown(handshaker_);
     // TODO(ctiller): It is currently necessary to shutdown endpoints
@@ -360,6 +360,13 @@ grpc_error_handle SecurityHandshaker::CheckPeerLocked() {
   }
   connector_->check_peer(peer, args_->endpoint, args_->args, &auth_context_,
                          &on_peer_checked_);
+  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
+      auth_context_.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  if (!prop ||
+      !strcmp(tsi_security_level_to_string(TSI_SECURITY_NONE), prop->value)) {
+    global_stats().IncrementInsecureConnectionsCreated();
+  }
   return absl::OkStatus();
 }
 
@@ -369,6 +376,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
   grpc_error_handle error;
   // Handshaker was shutdown.
   if (is_shutdown_) {
+    tsi_handshaker_result_destroy(handshaker_result);
     return GRPC_ERROR_CREATE("Handshaker shutdown");
   }
   // Read more if we need to.

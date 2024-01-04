@@ -1,26 +1,24 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/http/client_authority_filter.h"
-
-#include <limits.h>
 
 #include <functional>
 #include <memory>
@@ -29,11 +27,11 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/channel_arg_names.h>
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -69,22 +67,22 @@ const grpc_channel_filter ClientAuthorityFilter::kFilter =
         "authority");
 
 namespace {
-bool add_client_authority_filter(ChannelStackBuilder* builder) {
-  if (builder->channel_args()
-          .GetBool(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER)
-          .value_or(false)) {
-    return true;
-  }
-  builder->PrependFilter(&ClientAuthorityFilter::kFilter);
-  return true;
+bool NeedsClientAuthorityFilter(const ChannelArgs& args) {
+  return !args.GetBool(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER)
+              .value_or(false);
 }
 }  // namespace
 
 void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder) {
-  builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
-                                         add_client_authority_filter);
-  builder->channel_init()->RegisterStage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
-                                         add_client_authority_filter);
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL, &ClientAuthorityFilter::kFilter)
+      .If(NeedsClientAuthorityFilter)
+      .Before({&ClientAuthFilter::kFilter});
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
+                       &ClientAuthorityFilter::kFilter)
+      .If(NeedsClientAuthorityFilter)
+      .Before({&ClientAuthFilter::kFilter});
 }
 
 }  // namespace grpc_core

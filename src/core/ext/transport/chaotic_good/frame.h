@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_H
-#define GRPC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_H
 
 #include <grpc/support/port_platform.h>
 
@@ -21,6 +21,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/types/variant.h"
 
@@ -39,8 +40,10 @@ class FrameInterface {
  public:
   virtual absl::Status Deserialize(HPackParser* parser,
                                    const FrameHeader& header,
+                                   absl::BitGenRef bitsrc,
                                    SliceBuffer& slice_buffer) = 0;
   virtual SliceBuffer Serialize(HPackCompressor* encoder) const = 0;
+  virtual std::string ToString() const = 0;
 
  protected:
   static bool EqVal(const Message& a, const Message& b) {
@@ -62,49 +65,58 @@ class FrameInterface {
 
 struct SettingsFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
+                           absl::BitGenRef bitsrc,
                            SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
+  std::string ToString() const override;
 
   bool operator==(const SettingsFrame&) const { return true; }
 };
 
 struct ClientFragmentFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
+                           absl::BitGenRef bitsrc,
                            SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
+  std::string ToString() const override;
 
   uint32_t stream_id;
   ClientMetadataHandle headers;
   MessageHandle message;
+  uint32_t message_padding;
   bool end_of_stream = false;
 
   bool operator==(const ClientFragmentFrame& other) const {
     return stream_id == other.stream_id && EqHdl(headers, other.headers) &&
-           EqHdl(message, other.message) &&
            end_of_stream == other.end_of_stream;
   }
 };
 
 struct ServerFragmentFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
+                           absl::BitGenRef bitsrc,
                            SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
+  std::string ToString() const override;
 
   uint32_t stream_id;
   ServerMetadataHandle headers;
   MessageHandle message;
+  uint32_t message_padding;
   ServerMetadataHandle trailers;
 
   bool operator==(const ServerFragmentFrame& other) const {
     return stream_id == other.stream_id && EqHdl(headers, other.headers) &&
-           EqHdl(message, other.message) && EqHdl(trailers, other.trailers);
+           EqHdl(trailers, other.trailers);
   }
 };
 
 struct CancelFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
+                           absl::BitGenRef bitsrc,
                            SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
+  std::string ToString() const override;
 
   uint32_t stream_id;
 
@@ -119,4 +131,4 @@ using ServerFrame = absl::variant<ServerFragmentFrame>;
 }  // namespace chaotic_good
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_H

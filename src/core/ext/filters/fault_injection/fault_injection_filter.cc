@@ -24,8 +24,10 @@
 #include <atomic>
 #include <functional>
 #include <string>
+#include <type_traits>
 #include <utility>
 
+#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"

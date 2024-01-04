@@ -25,16 +25,23 @@
 #include <algorithm>
 #include <atomic>
 #include <list>
+#include <memory>
 #include <new>
 #include <queue>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
+#include "absl/cleanup/cleanup.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -44,12 +51,24 @@
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/cancel_callback.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
@@ -176,6 +195,46 @@ class Server::RequestMatcherInterface {
   virtual void RequestCallWithPossiblePublish(size_t request_queue_index,
                                               RequestedCall* call) = 0;
 
+  class MatchResult {
+   public:
+    MatchResult(Server* server, size_t cq_idx, RequestedCall* requested_call)
+        : server_(server), cq_idx_(cq_idx), requested_call_(requested_call) {}
+    ~MatchResult() {
+      if (requested_call_ != nullptr) {
+        server_->FailCall(cq_idx_, requested_call_, absl::CancelledError());
+      }
+    }
+
+    MatchResult(const MatchResult&) = delete;
+    MatchResult& operator=(const MatchResult&) = delete;
+
+    MatchResult(MatchResult&& other) noexcept
+        : server_(other.server_),
+          cq_idx_(other.cq_idx_),
+          requested_call_(std::exchange(other.requested_call_, nullptr)) {}
+
+    RequestedCall* TakeCall() {
+      return std::exchange(requested_call_, nullptr);
+    }
+
+    grpc_completion_queue* cq() const { return server_->cqs_[cq_idx_]; }
+    size_t cq_idx() const { return cq_idx_; }
+
+   private:
+    Server* server_;
+    size_t cq_idx_;
+    RequestedCall* requested_call_;
+  };
+
+  // This function is invoked on an incoming promise based RPC.
+  // The RequestMatcher will try to match it against an application-requested
+  // RPC if possible or will place it in the pending queue otherwise. To enable
+  // some measure of fairness between server CQs, the match is done starting at
+  // the start_request_queue_index parameter in a cyclic order rather than
+  // always starting at 0.
+  virtual ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
+      size_t start_request_queue_index) = 0;
+
   // This function is invoked on an incoming RPC, represented by the calld
   // object. The RequestMatcher will try to match it against an
   // application-requested RPC if possible or will place it in the pending queue
@@ -194,22 +253,22 @@ class Server::RequestMatcherInterface {
 // application to explicitly request RPCs and then matching those to incoming
 // RPCs, along with a slow path by which incoming RPCs are put on a locked
 // pending list if they aren't able to be matched to an application request.
-class Server::RealRequestMatcher : public RequestMatcherInterface {
+class Server::RealRequestMatcherFilterStack : public RequestMatcherInterface {
  public:
-  explicit RealRequestMatcher(Server* server)
+  explicit RealRequestMatcherFilterStack(Server* server)
       : server_(server), requests_per_cq_(server->cqs_.size()) {}
 
-  ~RealRequestMatcher() override {
+  ~RealRequestMatcherFilterStack() override {
     for (LockedMultiProducerSingleConsumerQueue& queue : requests_per_cq_) {
       GPR_ASSERT(queue.Pop() == nullptr);
     }
+    GPR_ASSERT(pending_.empty());
   }
 
   void ZombifyPending() override {
     while (!pending_.empty()) {
-      CallData* calld = pending_.front();
-      calld->SetState(CallData::CallState::ZOMBIED);
-      calld->KillZombie();
+      pending_.front().calld->SetState(CallData::CallState::ZOMBIED);
+      pending_.front().calld->KillZombie();
       pending_.pop();
     }
   }
@@ -231,35 +290,39 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
   void RequestCallWithPossiblePublish(size_t request_queue_index,
                                       RequestedCall* call) override {
     if (requests_per_cq_[request_queue_index].Push(&call->mpscq_node)) {
-      /* this was the first queued request: we need to lock and start
-         matching calls */
-      struct PendingCall {
+      // this was the first queued request: we need to lock and start
+      // matching calls
+      struct NextPendingCall {
         RequestedCall* rc = nullptr;
-        CallData* calld;
+        CallData* pending;
       };
-      auto pop_next_pending = [this, request_queue_index] {
-        PendingCall pending_call;
+      while (true) {
+        NextPendingCall pending_call;
         {
           MutexLock lock(&server_->mu_call_);
+          while (!pending_.empty() &&
+                 pending_.front().Age() > server_->max_time_in_pending_queue_) {
+            pending_.front().calld->SetState(CallData::CallState::ZOMBIED);
+            pending_.front().calld->KillZombie();
+            pending_.pop();
+          }
           if (!pending_.empty()) {
             pending_call.rc = reinterpret_cast<RequestedCall*>(
                 requests_per_cq_[request_queue_index].Pop());
             if (pending_call.rc != nullptr) {
-              pending_call.calld = pending_.front();
+              pending_call.pending = pending_.front().calld;
               pending_.pop();
             }
           }
         }
-        return pending_call;
-      };
-      while (true) {
-        PendingCall next_pending = pop_next_pending();
-        if (next_pending.rc == nullptr) break;
-        if (!next_pending.calld->MaybeActivate()) {
+        if (pending_call.rc == nullptr) break;
+        if (!pending_call.pending->MaybeActivate()) {
           // Zombied Call
-          next_pending.calld->KillZombie();
+          pending_call.pending->KillZombie();
+          requests_per_cq_[request_queue_index].Push(
+              &pending_call.rc->mpscq_node);
         } else {
-          next_pending.calld->Publish(request_queue_index, next_pending.rc);
+          pending_call.pending->Publish(request_queue_index, pending_call.rc);
         }
       }
     }
@@ -297,7 +360,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       }
       if (rc == nullptr) {
         calld->SetState(CallData::CallState::PENDING);
-        pending_.push(calld);
+        pending_.push(PendingCall{calld});
         return;
       }
     }
@@ -305,11 +368,185 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
     calld->Publish(cq_idx, rc);
   }
 
-  Server* server() const override { return server_; }
+  ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(size_t) override {
+    Crash("not implemented for filter stack request matcher");
+  }
+
+  Server* server() const final { return server_; }
 
  private:
   Server* const server_;
-  std::queue<CallData*> pending_;
+  struct PendingCall {
+    CallData* calld;
+    Timestamp created = Timestamp::Now();
+    Duration Age() { return Timestamp::Now() - created; }
+  };
+  std::queue<PendingCall> pending_;
+  std::vector<LockedMultiProducerSingleConsumerQueue> requests_per_cq_;
+};
+
+class Server::RealRequestMatcherPromises : public RequestMatcherInterface {
+ public:
+  explicit RealRequestMatcherPromises(Server* server)
+      : server_(server), requests_per_cq_(server->cqs_.size()) {}
+
+  ~RealRequestMatcherPromises() override {
+    for (LockedMultiProducerSingleConsumerQueue& queue : requests_per_cq_) {
+      GPR_ASSERT(queue.Pop() == nullptr);
+    }
+  }
+
+  void ZombifyPending() override {
+    while (!pending_.empty()) {
+      pending_.front()->Finish(absl::InternalError("Server closed"));
+      pending_.pop();
+    }
+  }
+
+  void KillRequests(grpc_error_handle error) override {
+    for (size_t i = 0; i < requests_per_cq_.size(); i++) {
+      RequestedCall* rc;
+      while ((rc = reinterpret_cast<RequestedCall*>(
+                  requests_per_cq_[i].Pop())) != nullptr) {
+        server_->FailCall(i, rc, error);
+      }
+    }
+  }
+
+  size_t request_queue_count() const override {
+    return requests_per_cq_.size();
+  }
+
+  void RequestCallWithPossiblePublish(size_t request_queue_index,
+                                      RequestedCall* call) override {
+    if (requests_per_cq_[request_queue_index].Push(&call->mpscq_node)) {
+      // this was the first queued request: we need to lock and start
+      // matching calls
+      struct NextPendingCall {
+        RequestedCall* rc = nullptr;
+        PendingCall pending;
+      };
+      while (true) {
+        NextPendingCall pending_call;
+        {
+          MutexLock lock(&server_->mu_call_);
+          if (!pending_.empty()) {
+            pending_call.rc = reinterpret_cast<RequestedCall*>(
+                requests_per_cq_[request_queue_index].Pop());
+            if (pending_call.rc != nullptr) {
+              pending_call.pending = std::move(pending_.front());
+              pending_.pop();
+            }
+          }
+        }
+        if (pending_call.rc == nullptr) break;
+        if (!pending_call.pending->Finish(server(), request_queue_index,
+                                          pending_call.rc)) {
+          requests_per_cq_[request_queue_index].Push(
+              &pending_call.rc->mpscq_node);
+        }
+      }
+    }
+  }
+
+  void MatchOrQueue(size_t, CallData*) override {
+    Crash("not implemented for promises");
+  }
+
+  ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
+      size_t start_request_queue_index) override {
+    for (size_t i = 0; i < requests_per_cq_.size(); i++) {
+      size_t cq_idx = (start_request_queue_index + i) % requests_per_cq_.size();
+      RequestedCall* rc =
+          reinterpret_cast<RequestedCall*>(requests_per_cq_[cq_idx].TryPop());
+      if (rc != nullptr) {
+        return Immediate(MatchResult(server(), cq_idx, rc));
+      }
+    }
+    // No cq to take the request found; queue it on the slow list.
+    // We need to ensure that all the queues are empty.  We do this under
+    // the server mu_call_ lock to ensure that if something is added to
+    // an empty request queue, it will block until the call is actually
+    // added to the pending list.
+    RequestedCall* rc = nullptr;
+    size_t cq_idx = 0;
+    size_t loop_count;
+    {
+      std::vector<std::shared_ptr<ActivityWaiter>> removed_pending;
+      MutexLock lock(&server_->mu_call_);
+      while (!pending_.empty() &&
+             pending_.front()->Age() > server_->max_time_in_pending_queue_) {
+        removed_pending.push_back(std::move(pending_.front()));
+        pending_.pop();
+      }
+      for (loop_count = 0; loop_count < requests_per_cq_.size(); loop_count++) {
+        cq_idx =
+            (start_request_queue_index + loop_count) % requests_per_cq_.size();
+        rc = reinterpret_cast<RequestedCall*>(requests_per_cq_[cq_idx].Pop());
+        if (rc != nullptr) break;
+      }
+      if (rc == nullptr) {
+        if (server_->pending_backlog_protector_.Reject(pending_.size(),
+                                                       server_->bitgen_)) {
+          return Immediate(absl::ResourceExhaustedError(
+              "Too many pending requests for this server"));
+        }
+        auto w = std::make_shared<ActivityWaiter>(
+            Activity::current()->MakeOwningWaker());
+        pending_.push(w);
+        return OnCancel(
+            [w]() -> Poll<absl::StatusOr<MatchResult>> {
+              std::unique_ptr<absl::StatusOr<MatchResult>> r(
+                  w->result.exchange(nullptr, std::memory_order_acq_rel));
+              if (r == nullptr) return Pending{};
+              return std::move(*r);
+            },
+            [w]() { w->Expire(); });
+      }
+    }
+    return Immediate(MatchResult(server(), cq_idx, rc));
+  }
+
+  Server* server() const final { return server_; }
+
+ private:
+  Server* const server_;
+  struct ActivityWaiter {
+    using ResultType = absl::StatusOr<MatchResult>;
+    explicit ActivityWaiter(Waker waker) : waker(std::move(waker)) {}
+    ~ActivityWaiter() { delete result.load(std::memory_order_acquire); }
+    void Finish(absl::Status status) {
+      delete result.exchange(new ResultType(std::move(status)),
+                             std::memory_order_acq_rel);
+      waker.WakeupAsync();
+    }
+    // Returns true if requested_call consumed, false otherwise.
+    GRPC_MUST_USE_RESULT bool Finish(Server* server, size_t cq_idx,
+                                     RequestedCall* requested_call) {
+      ResultType* expected = nullptr;
+      ResultType* new_value =
+          new ResultType(MatchResult(server, cq_idx, requested_call));
+      if (!result.compare_exchange_strong(expected, new_value,
+                                          std::memory_order_acq_rel,
+                                          std::memory_order_acquire)) {
+        GPR_ASSERT(new_value->value().TakeCall() == requested_call);
+        delete new_value;
+        return false;
+      }
+      waker.WakeupAsync();
+      return true;
+    }
+    void Expire() {
+      delete result.exchange(new ResultType(absl::CancelledError()),
+                             std::memory_order_acq_rel);
+    }
+    Duration Age() { return Timestamp::Now() - created; }
+    Waker waker;
+    std::atomic<ResultType*> result{nullptr};
+    const Timestamp created = Timestamp::Now();
+  };
+  using PendingCall = std::shared_ptr<ActivityWaiter>;
+  std::queue<PendingCall> pending_;
   std::vector<LockedMultiProducerSingleConsumerQueue> requests_per_cq_;
 };
 
@@ -341,10 +578,10 @@ class Server::AllocatingRequestMatcherBase : public RequestMatcherInterface {
 
   void RequestCallWithPossiblePublish(size_t /*request_queue_index*/,
                                       RequestedCall* /*call*/) final {
-    GPR_ASSERT(false);
+    Crash("unreachable");
   }
 
-  Server* server() const override { return server_; }
+  Server* server() const final { return server_; }
 
   // Supply the completion queue related to this request matcher
   grpc_completion_queue* cq() const { return cq_; }
@@ -370,7 +607,10 @@ class Server::AllocatingRequestMatcherBatch
 
   void MatchOrQueue(size_t /*start_request_queue_index*/,
                     CallData* calld) override {
-    if (server()->ShutdownRefOnRequest()) {
+    const bool still_running = server()->ShutdownRefOnRequest();
+    auto cleanup_ref =
+        absl::MakeCleanup([this] { server()->ShutdownUnrefOnRequest(); });
+    if (still_running) {
       BatchCallAllocation call_info = allocator_();
       GPR_ASSERT(server()->ValidateServerRequest(
                      cq(), static_cast<void*>(call_info.tag), nullptr,
@@ -383,7 +623,18 @@ class Server::AllocatingRequestMatcherBatch
     } else {
       calld->FailCallCreation();
     }
-    server()->ShutdownUnrefOnRequest();
+  }
+
+  ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
+      size_t /*start_request_queue_index*/) override {
+    BatchCallAllocation call_info = allocator_();
+    GPR_ASSERT(server()->ValidateServerRequest(
+                   cq(), static_cast<void*>(call_info.tag), nullptr, nullptr) ==
+               GRPC_CALL_OK);
+    RequestedCall* rc = new RequestedCall(
+        static_cast<void*>(call_info.tag), call_info.cq, call_info.call,
+        call_info.initial_metadata, call_info.details);
+    return Immediate(MatchResult(server(), cq_idx(), rc));
   }
 
  private:
@@ -403,6 +654,8 @@ class Server::AllocatingRequestMatcherRegistered
 
   void MatchOrQueue(size_t /*start_request_queue_index*/,
                     CallData* calld) override {
+    auto cleanup_ref =
+        absl::MakeCleanup([this] { server()->ShutdownUnrefOnRequest(); });
     if (server()->ShutdownRefOnRequest()) {
       RegisteredCallAllocation call_info = allocator_();
       GPR_ASSERT(server()->ValidateServerRequest(
@@ -417,7 +670,18 @@ class Server::AllocatingRequestMatcherRegistered
     } else {
       calld->FailCallCreation();
     }
-    server()->ShutdownUnrefOnRequest();
+  }
+
+  ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
+      size_t /*start_request_queue_index*/) override {
+    RegisteredCallAllocation call_info = allocator_();
+    GPR_ASSERT(server()->ValidateServerRequest(
+                   cq(), call_info.tag, call_info.optional_payload,
+                   registered_method_) == GRPC_CALL_OK);
+    RequestedCall* rc = new RequestedCall(
+        call_info.tag, call_info.cq, call_info.call, call_info.initial_metadata,
+        registered_method_, call_info.deadline, call_info.optional_payload);
+    return Immediate(MatchResult(server(), cq_idx(), rc));
   }
 
  private:
@@ -492,7 +756,8 @@ class ChannelBroadcaster {
 
 const grpc_channel_filter Server::kServerTopFilter = {
     Server::CallData::StartTransportStreamOpBatch,
-    nullptr,
+    Server::ChannelData::MakeCallPromise,
+    /* init_call: */ nullptr,
     grpc_channel_next_op,
     sizeof(Server::CallData),
     Server::CallData::InitCallElement,
@@ -528,7 +793,9 @@ RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
 }  // namespace
 
 Server::Server(const ChannelArgs& args)
-    : channel_args_(args), channelz_node_(CreateChannelzNode(args)) {}
+    : channel_args_(args),
+      channelz_node_(CreateChannelzNode(args)),
+      server_call_tracer_factory_(ServerCallTracerFactory::Get(args)) {}
 
 Server::~Server() {
   // Remove the cq pollsets from the config_fetcher.
@@ -548,12 +815,22 @@ void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {
   channelz::ListenSocketNode* listen_socket_node =
       listener->channelz_listen_socket_node();
   if (listen_socket_node != nullptr && channelz_node_ != nullptr) {
-    channelz_node_->AddChildListenSocket(listen_socket_node->Ref());
+    channelz_node_->AddChildListenSocket(
+        listen_socket_node->RefAsSubclass<channelz::ListenSocketNode>());
   }
   listeners_.emplace_back(std::move(listener));
 }
 
 void Server::Start() {
+  auto make_real_request_matcher =
+      [this]() -> std::unique_ptr<RequestMatcherInterface> {
+    if (IsPromiseBasedServerCallEnabled()) {
+      return std::make_unique<RealRequestMatcherPromises>(this);
+    } else {
+      return std::make_unique<RealRequestMatcherFilterStack>(this);
+    }
+  };
+
   started_ = true;
   for (grpc_completion_queue* cq : cqs_) {
     if (grpc_cq_can_listen(cq)) {
@@ -561,11 +838,11 @@ void Server::Start() {
     }
   }
   if (unregistered_request_matcher_ == nullptr) {
-    unregistered_request_matcher_ = std::make_unique<RealRequestMatcher>(this);
+    unregistered_request_matcher_ = make_real_request_matcher();
   }
-  for (std::unique_ptr<RegisteredMethod>& rm : registered_methods_) {
-    if (rm->matcher == nullptr) {
-      rm->matcher = std::make_unique<RealRequestMatcher>(this);
+  for (auto& rm : registered_methods_) {
+    if (rm.second->matcher == nullptr) {
+      rm.second->matcher = make_real_request_matcher();
     }
   }
   {
@@ -591,7 +868,7 @@ void Server::Start() {
 }
 
 grpc_error_handle Server::SetupTransport(
-    grpc_transport* transport, grpc_pollset* accepting_pollset,
+    Transport* transport, grpc_pollset* accepting_pollset,
     const ChannelArgs& args,
     const RefCountedPtr<channelz::SocketNode>& socket_node) {
   // Create channel.
@@ -652,39 +929,34 @@ void Server::RegisterCompletionQueue(grpc_completion_queue* cq) {
   cqs_.push_back(cq);
 }
 
-namespace {
-
-bool streq(const std::string& a, const char* b) {
-  return (a.empty() && b == nullptr) ||
-         ((b != nullptr) && !strcmp(a.c_str(), b));
-}
-
-}  // namespace
-
 Server::RegisteredMethod* Server::RegisterMethod(
     const char* method, const char* host,
     grpc_server_register_method_payload_handling payload_handling,
     uint32_t flags) {
+  if (started_) {
+    Crash("Attempting to register method after server started");
+  }
+
   if (!method) {
     gpr_log(GPR_ERROR,
             "grpc_server_register_method method string cannot be NULL");
     return nullptr;
   }
-  for (std::unique_ptr<RegisteredMethod>& m : registered_methods_) {
-    if (streq(m->method, method) && streq(m->host, host)) {
-      gpr_log(GPR_ERROR, "duplicate registration for %s@%s", method,
-              host ? host : "*");
-      return nullptr;
-    }
+  auto key = std::make_pair(host ? host : "", method);
+  if (registered_methods_.find(key) != registered_methods_.end()) {
+    gpr_log(GPR_ERROR, "duplicate registration for %s@%s", method,
+            host ? host : "*");
+    return nullptr;
   }
   if (flags != 0) {
     gpr_log(GPR_ERROR, "grpc_server_register_method invalid flags 0x%08x",
             flags);
     return nullptr;
   }
-  registered_methods_.emplace_back(std::make_unique<RegisteredMethod>(
-      method, host, payload_handling, flags));
-  return registered_methods_.back().get();
+  auto it = registered_methods_.emplace(
+      key, std::make_unique<RegisteredMethod>(method, host, payload_handling,
+                                              flags));
+  return it.first->second.get();
 }
 
 void Server::DoneRequestEvent(void* req, grpc_cq_completion* /*c*/) {
@@ -735,9 +1007,9 @@ void Server::KillPendingWorkLocked(grpc_error_handle error) {
   if (started_) {
     unregistered_request_matcher_->KillRequests(error);
     unregistered_request_matcher_->ZombifyPending();
-    for (std::unique_ptr<RegisteredMethod>& rm : registered_methods_) {
-      rm->matcher->KillRequests(error);
-      rm->matcher->ZombifyPending();
+    for (auto& rm : registered_methods_) {
+      rm.second->matcher->KillRequests(error);
+      rm.second->matcher->ZombifyPending();
     }
   }
 }
@@ -781,7 +1053,6 @@ void DonePublishedShutdown(void* /*done_arg*/, grpc_cq_completion* storage) {
 //       connection is NOT closed until the server is done with all those calls.
 //    -- Once there are no more calls in progress, the channel is closed.
 void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
-  Notification* await_requests = nullptr;
   ChannelBroadcaster broadcaster;
   {
     // Wait for startup to be finished.  Locks mu_global.
@@ -807,12 +1078,7 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
       MutexLock lock(&mu_call_);
       KillPendingWorkLocked(GRPC_ERROR_CREATE("Server Shutdown"));
     }
-    await_requests = ShutdownUnrefOnShutdownCall();
-  }
-  // We expect no new requests but there can still be requests in-flight.
-  // Wait for them to complete before proceeding.
-  if (await_requests != nullptr) {
-    await_requests->WaitForNotification();
+    ShutdownUnrefOnShutdownCall();
   }
   StopListening();
   broadcaster.BroadcastShutdown(/*send_goaway=*/true, absl::OkStatus());
@@ -978,7 +1244,6 @@ class Server::ChannelData::ConnectivityWatcher
 //
 
 Server::ChannelData::~ChannelData() {
-  registered_methods_.reset();
   if (server_ != nullptr) {
     if (server_->channelz_node_ != nullptr && channelz_socket_uuid_ != 0) {
       server_->channelz_node_->RemoveChildSocket(channelz_socket_uuid_);
@@ -996,48 +1261,12 @@ Server::ChannelData::~ChannelData() {
 
 void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
                                         RefCountedPtr<Channel> channel,
-                                        size_t cq_idx,
-                                        grpc_transport* transport,
+                                        size_t cq_idx, Transport* transport,
                                         intptr_t channelz_socket_uuid) {
   server_ = std::move(server);
   channel_ = channel;
   cq_idx_ = cq_idx;
   channelz_socket_uuid_ = channelz_socket_uuid;
-  // Build a lookup table phrased in terms of mdstr's in this channels context
-  // to quickly find registered methods.
-  size_t num_registered_methods = server_->registered_methods_.size();
-  if (num_registered_methods > 0) {
-    uint32_t max_probes = 0;
-    size_t slots = 2 * num_registered_methods;
-    registered_methods_ =
-        std::make_unique<std::vector<ChannelRegisteredMethod>>(slots);
-    for (std::unique_ptr<RegisteredMethod>& rm : server_->registered_methods_) {
-      Slice host;
-      Slice method = Slice::FromExternalString(rm->method);
-      const bool has_host = !rm->host.empty();
-      if (has_host) {
-        host = Slice::FromExternalString(rm->host.c_str());
-      }
-      uint32_t hash = MixHash32(has_host ? host.Hash() : 0, method.Hash());
-      uint32_t probes = 0;
-      for (probes = 0; (*registered_methods_)[(hash + probes) % slots]
-                           .server_registered_method != nullptr;
-           probes++) {
-      }
-      if (probes > max_probes) max_probes = probes;
-      ChannelRegisteredMethod* crm =
-          &(*registered_methods_)[(hash + probes) % slots];
-      crm->server_registered_method = rm.get();
-      crm->flags = rm->flags;
-      crm->has_host = has_host;
-      if (has_host) {
-        crm->host = std::move(host);
-      }
-      crm->method = std::move(method);
-    }
-    GPR_ASSERT(slots <= UINT32_MAX);
-    registered_method_max_probes_ = max_probes;
-  }
   // Publish channel.
   {
     MutexLock lock(&server_->mu_global_);
@@ -1048,46 +1277,62 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
   op->set_accept_stream = true;
   op->set_accept_stream_fn = AcceptStream;
+  if (IsRegisteredMethodLookupInTransportEnabled()) {
+    op->set_registered_method_matcher_fn = [](void* arg,
+                                              ClientMetadata* metadata) {
+      static_cast<ChannelData*>(arg)->SetRegisteredMethodOnMetadata(*metadata);
+    };
+  }
+  // op->set_registered_method_matcher_fn = Registered
   op->set_accept_stream_user_data = this;
   op->start_connectivity_watch = MakeOrphanable<ConnectivityWatcher>(this);
   if (server_->ShutdownCalled()) {
     op->disconnect_with_error = GRPC_ERROR_CREATE("Server shutdown");
   }
-  grpc_transport_perform_op(transport, op);
+  transport->PerformOp(op);
 }
 
-Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
-    const grpc_slice& host, const grpc_slice& path) {
-  if (registered_methods_ == nullptr) return nullptr;
-  /* TODO(ctiller): unify these two searches */
-  /* check for an exact match with host */
-  uint32_t hash = MixHash32(grpc_slice_hash(host), grpc_slice_hash(path));
-  for (size_t i = 0; i <= registered_method_max_probes_; i++) {
-    ChannelRegisteredMethod* rm =
-        &(*registered_methods_)[(hash + i) % registered_methods_->size()];
-    if (rm->server_registered_method == nullptr) break;
-    if (!rm->has_host) continue;
-    if (rm->host != host) continue;
-    if (rm->method != path) continue;
-    return rm;
+Server::RegisteredMethod* Server::ChannelData::GetRegisteredMethod(
+    const absl::string_view& host, const absl::string_view& path) {
+  if (server_->registered_methods_.empty()) return nullptr;
+  // check for an exact match with host
+  auto it = server_->registered_methods_.find(std::make_pair(host, path));
+  if (it != server_->registered_methods_.end()) {
+    return it->second.get();
   }
-  /* check for a wildcard method definition (no host set) */
-  hash = MixHash32(0, grpc_slice_hash(path));
-  for (size_t i = 0; i <= registered_method_max_probes_; i++) {
-    ChannelRegisteredMethod* rm =
-        &(*registered_methods_)[(hash + i) % registered_methods_->size()];
-    if (rm->server_registered_method == nullptr) break;
-    if (rm->has_host) continue;
-    if (rm->method != path) continue;
-    return rm;
+  // check for wildcard method definition (no host set)
+  it = server_->registered_methods_.find(std::make_pair("", path));
+  if (it != server_->registered_methods_.end()) {
+    return it->second.get();
   }
   return nullptr;
 }
 
-void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
+void Server::ChannelData::SetRegisteredMethodOnMetadata(
+    ClientMetadata& metadata) {
+  auto* authority = metadata.get_pointer(HttpAuthorityMetadata());
+  if (authority == nullptr) {
+    authority = metadata.get_pointer(HostMetadata());
+    if (authority == nullptr) {
+      // Authority not being set is an RPC error.
+      return;
+    }
+  }
+  auto* path = metadata.get_pointer(HttpPathMetadata());
+  if (path == nullptr) {
+    // Path not being set would result in an RPC error.
+    return;
+  }
+  RegisteredMethod* method =
+      GetRegisteredMethod(authority->as_string_view(), path->as_string_view());
+  // insert in metadata
+  metadata.Set(GrpcRegisteredMethod(), method);
+}
+
+void Server::ChannelData::AcceptStream(void* arg, Transport* /*transport*/,
                                        const void* transport_server_data) {
   auto* chand = static_cast<Server::ChannelData*>(arg);
-  /* create a call */
+  // create a call
   grpc_call_create_args args;
   args.channel = chand->channel_;
   args.server = chand->server_.get();
@@ -1099,14 +1344,146 @@ void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
   args.send_deadline = Timestamp::InfFuture();
   grpc_call* call;
   grpc_error_handle error = grpc_call_create(&args, &call);
-  grpc_call_element* elem =
-      grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
-  auto* calld = static_cast<Server::CallData*>(elem->call_data);
-  if (!error.ok()) {
-    calld->FailCallCreation();
+  grpc_call_stack* call_stack = grpc_call_get_call_stack(call);
+  if (call_stack == nullptr) {  // Promise based calls do not have a call stack
+    GPR_ASSERT(error.ok());
+    GPR_ASSERT(IsPromiseBasedServerCallEnabled());
     return;
+  } else {
+    grpc_call_element* elem = grpc_call_stack_element(call_stack, 0);
+    auto* calld = static_cast<Server::CallData*>(elem->call_data);
+    if (!error.ok()) {
+      calld->FailCallCreation();
+      return;
+    }
+    calld->Start(elem);
   }
-  calld->Start(elem);
+}
+
+namespace {
+auto CancelledDueToServerShutdown() {
+  return [] {
+    return ServerMetadataFromStatus(absl::CancelledError("Server shutdown"));
+  };
+}
+}  // namespace
+
+ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
+    grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory) {
+  auto* chand = static_cast<Server::ChannelData*>(elem->channel_data);
+  auto* server = chand->server_.get();
+  absl::optional<Slice> path =
+      call_args.client_initial_metadata->Take(HttpPathMetadata());
+  if (server->ShutdownCalled()) return CancelledDueToServerShutdown();
+  auto cleanup_ref =
+      absl::MakeCleanup([server] { server->ShutdownUnrefOnRequest(); });
+  if (!server->ShutdownRefOnRequest()) return CancelledDueToServerShutdown();
+  if (!path.has_value()) {
+    return [] {
+      return ServerMetadataFromStatus(
+          absl::InternalError("Missing :path header"));
+    };
+  }
+  auto host_ptr =
+      call_args.client_initial_metadata->get_pointer(HttpAuthorityMetadata());
+  if (host_ptr == nullptr) {
+    return [] {
+      return ServerMetadataFromStatus(
+          absl::InternalError("Missing :authority header"));
+    };
+  }
+  Timestamp deadline = GetContext<CallContext>()->deadline();
+  // Find request matcher.
+  RequestMatcherInterface* matcher;
+  RegisteredMethod* rm = nullptr;
+  if (IsRegisteredMethodLookupInTransportEnabled()) {
+    rm = static_cast<RegisteredMethod*>(
+        call_args.client_initial_metadata->get(GrpcRegisteredMethod())
+            .value_or(nullptr));
+  } else {
+    rm = chand->GetRegisteredMethod(host_ptr->as_string_view(),
+                                    path->as_string_view());
+  }
+  ArenaPromise<absl::StatusOr<NextResult<MessageHandle>>>
+      maybe_read_first_message([] { return NextResult<MessageHandle>(); });
+  if (rm != nullptr) {
+    matcher = rm->matcher.get();
+    switch (rm->payload_handling) {
+      case GRPC_SRM_PAYLOAD_NONE:
+        break;
+      case GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER:
+        maybe_read_first_message =
+            Map(call_args.client_to_server_messages->Next(),
+                [](NextResult<MessageHandle> msg)
+                    -> absl::StatusOr<NextResult<MessageHandle>> {
+                  return std::move(msg);
+                });
+    }
+  } else {
+    matcher = server->unregistered_request_matcher_.get();
+  }
+  return TrySeq(
+      std::move(maybe_read_first_message),
+      [cleanup_ref = std::move(cleanup_ref), matcher,
+       chand](NextResult<MessageHandle> payload) mutable {
+        return Map(
+            [cleanup_ref = std::move(cleanup_ref),
+             mr = matcher->MatchRequest(chand->cq_idx())]() mutable {
+              return mr();
+            },
+            [payload = std::move(payload)](
+                absl::StatusOr<RequestMatcherInterface::MatchResult> mr) mutable
+            -> absl::StatusOr<std::pair<RequestMatcherInterface::MatchResult,
+                                        NextResult<MessageHandle>>> {
+              if (!mr.ok()) return mr.status();
+              return std::make_pair(std::move(*mr), std::move(payload));
+            });
+      },
+      [host_ptr, path = std::move(path), deadline,
+       call_args =
+           std::move(call_args)](std::pair<RequestMatcherInterface::MatchResult,
+                                           NextResult<MessageHandle>>
+                                     r) mutable {
+        auto& mr = r.first;
+        auto& payload = r.second;
+        auto* rc = mr.TakeCall();
+        auto* cq_for_new_request = mr.cq();
+        switch (rc->type) {
+          case RequestedCall::Type::BATCH_CALL:
+            GPR_ASSERT(!payload.has_value());
+            rc->data.batch.details->host = CSliceRef(host_ptr->c_slice());
+            rc->data.batch.details->method = CSliceRef(path->c_slice());
+            rc->data.batch.details->deadline =
+                deadline.as_timespec(GPR_CLOCK_MONOTONIC);
+            break;
+          case RequestedCall::Type::REGISTERED_CALL:
+            *rc->data.registered.deadline =
+                deadline.as_timespec(GPR_CLOCK_MONOTONIC);
+            if (rc->data.registered.optional_payload != nullptr) {
+              if (payload.has_value()) {
+                auto* sb = payload.value()->payload()->c_slice_buffer();
+                *rc->data.registered.optional_payload =
+                    grpc_raw_byte_buffer_create(sb->slices, sb->count);
+              } else {
+                *rc->data.registered.optional_payload = nullptr;
+              }
+            }
+            break;
+          default:
+            GPR_UNREACHABLE_CODE(abort());
+        }
+        return GetContext<CallContext>()
+            ->server_call_context()
+            ->MakeTopOfServerCallPromise(
+                std::move(call_args), rc->cq_bound_to_call,
+                rc->initial_metadata,
+                [rc, cq_for_new_request](grpc_call* call) {
+                  *rc->call = call;
+                  grpc_cq_end_op(cq_for_new_request, rc->tag, absl::OkStatus(),
+                                 Server::DoneRequestEvent, rc, &rc->completion,
+                                 true);
+                });
+      });
 }
 
 void Server::ChannelData::FinishDestroy(void* arg,
@@ -1272,6 +1649,7 @@ void Server::CallData::KillZombie() {
   ExecCtx::Run(DEBUG_LOCATION, &kill_zombie_closure_, absl::OkStatus());
 }
 
+// If this changes, change MakeCallPromise too.
 void Server::CallData::StartNewRpc(grpc_call_element* elem) {
   auto* chand = static_cast<ChannelData*>(elem->channel_data);
   if (server_->ShutdownCalled()) {
@@ -1284,11 +1662,18 @@ void Server::CallData::StartNewRpc(grpc_call_element* elem) {
   grpc_server_register_method_payload_handling payload_handling =
       GRPC_SRM_PAYLOAD_NONE;
   if (path_.has_value() && host_.has_value()) {
-    ChannelRegisteredMethod* rm =
-        chand->GetRegisteredMethod(host_->c_slice(), path_->c_slice());
+    RegisteredMethod* rm;
+    if (IsRegisteredMethodLookupInTransportEnabled()) {
+      rm = static_cast<RegisteredMethod*>(
+          recv_initial_metadata_->get(GrpcRegisteredMethod())
+              .value_or(nullptr));
+    } else {
+      rm = chand->GetRegisteredMethod(host_->as_string_view(),
+                                      path_->as_string_view());
+    }
     if (rm != nullptr) {
-      matcher_ = rm->server_registered_method->matcher.get();
-      payload_handling = rm->server_registered_method->payload_handling;
+      matcher_ = rm->matcher.get();
+      payload_handling = rm->payload_handling;
     }
   }
   // Start recv_message op if needed.
@@ -1357,10 +1742,9 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
     calld->deadline_ = *op_deadline;
   }
   if (calld->host_.has_value() && calld->path_.has_value()) {
-    /* do nothing */
+    // do nothing
   } else if (error.ok()) {
-    /* Pass the error reference to calld->recv_initial_metadata_error */
-    grpc_error_handle src_error = error;
+    // Pass the error reference to calld->recv_initial_metadata_error
     error = absl::UnknownError("Missing :authority or :path");
     calld->recv_initial_metadata_error_ = error;
   }
@@ -1444,8 +1828,8 @@ void grpc_server_register_completion_queue(grpc_server* server,
             "Completion queue of type %d is being registered as a "
             "server-completion-queue",
             static_cast<int>(cq_type));
-    /* Ideally we should log an error and abort but ruby-wrapped-language API
-       calls grpc_completion_queue_pluck() on server completion queues */
+    // Ideally we should log an error and abort but ruby-wrapped-language API
+    // calls grpc_completion_queue_pluck() on server completion queues
   }
   grpc_core::Server::FromC(server)->RegisterCompletionQueue(cq);
 }

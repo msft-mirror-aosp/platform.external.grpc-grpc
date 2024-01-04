@@ -14,6 +14,9 @@
 // limitations under the License.
 //
 
+#ifndef GRPC_TEST_CORE_UTIL_FAKE_UDP_AND_TCP_SERVER_H
+#define GRPC_TEST_CORE_UTIL_FAKE_UDP_AND_TCP_SERVER_H
+
 #include <grpc/support/port_platform.h>
 
 #include <functional>
@@ -93,6 +96,9 @@ class FakeUdpAndTcpServer {
   static ProcessReadResult CloseSocketUponCloseFromPeer(int bytes_received_size,
                                                         int read_error, int s);
 
+  static ProcessReadResult SendThreeAllZeroBytes(int bytes_received_size,
+                                                 int read_error, int s);
+
   void ReadFromUdpSocket();
 
   // Run a loop that periodically, every 10 ms:
@@ -129,3 +135,5 @@ class FakeUdpAndTcpServer {
 
 }  // namespace testing
 }  // namespace grpc_core
+
+#endif  // GRPC_TEST_CORE_UTIL_FAKE_UDP_AND_TCP_SERVER_H

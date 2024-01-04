@@ -25,7 +25,6 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/slice.h>
@@ -152,7 +151,6 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   // we don't want to pass args->endpoint directly.
   // Instead pass endpoint_ and swap this endpoint to
   // args endpoint on success.
-  // TODO(hork): use EventEngine::Connect if(IsEventEngineClientEnabled())
   grpc_tcp_client_connect(
       &connected_, &endpoint_to_destroy_, interested_parties_,
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(args->args),

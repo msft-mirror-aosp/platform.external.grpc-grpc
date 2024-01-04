@@ -1,30 +1,32 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/cpp/util/grpc_tool.h"
 
 #include <chrono>
 #include <sstream>
 
+#include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 
 #include "absl/flags/declare.h"
 #include "absl/flags/flag.h"
+#include "absl/strings/str_split.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -384,9 +386,11 @@ TEST_F(GrpcToolTest, ListCommand) {
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
-  EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(),
-                          "grpc.testing.EchoTestService\n"
-                          "grpc.reflection.v1alpha.ServerReflection\n"));
+  EXPECT_THAT(absl::StrSplit(output_stream.str(), "\n"),
+              ::testing::UnorderedElementsAre(
+                  "grpc.testing.EchoTestService",
+                  "grpc.reflection.v1alpha.ServerReflection",
+                  "grpc.reflection.v1.ServerReflection", ""));
 
   ShutdownServer();
 }
@@ -1395,9 +1399,11 @@ TEST_F(GrpcToolTest, ListCommandOverrideSslHostName) {
       0 == GrpcToolMainLib(
                ArraySize(argv), argv, TestCliCredentials(true),
                std::bind(PrintStream, &output_stream, std::placeholders::_1)));
-  EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(),
-                          "grpc.testing.EchoTestService\n"
-                          "grpc.reflection.v1alpha.ServerReflection\n"));
+  EXPECT_THAT(
+      absl::StrSplit(output_stream.str(), '\n'),
+      ::testing::UnorderedElementsAre(
+          "grpc.testing.EchoTestService", "grpc.reflection.v1.ServerReflection",
+          "grpc.reflection.v1alpha.ServerReflection", ""));
 
   absl::SetFlag(&FLAGS_channel_creds_type, "");
   absl::SetFlag(&FLAGS_ssl_target, "");
@@ -1420,9 +1426,11 @@ TEST_F(GrpcToolTest, ConfiguringDefaultServiceConfig) {
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
   absl::SetFlag(&FLAGS_default_service_config, "");
-  EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(),
-                          "grpc.testing.EchoTestService\n"
-                          "grpc.reflection.v1alpha.ServerReflection\n"));
+  EXPECT_THAT(
+      absl::StrSplit(output_stream.str().c_str(), '\n'),
+      ::testing::UnorderedElementsAre(
+          "grpc.testing.EchoTestService", "grpc.reflection.v1.ServerReflection",
+          "grpc.reflection.v1alpha.ServerReflection", ""));
   ShutdownServer();
 }
 

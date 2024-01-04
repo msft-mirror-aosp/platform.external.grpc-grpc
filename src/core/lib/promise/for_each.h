@@ -12,21 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_FOR_EACH_H
-#define GRPC_CORE_LIB_PROMISE_FOR_EACH_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_FOR_EACH_H
+#define GRPC_SRC_CORE_LIB_PROMISE_FOR_EACH_H
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
+#include <string>
 #include <utility>
 
 #include "absl/status/status.h"
-#include "absl/types/variant.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/construct_destruct.h"
+#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
+#include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/status_flag.h"
+#include "src/core/lib/promise/trace.h"
 
 namespace grpc_core {
 
@@ -41,6 +48,16 @@ struct Done;
 template <>
 struct Done<absl::Status> {
   static absl::Status Make() { return absl::OkStatus(); }
+};
+
+template <>
+struct Done<StatusFlag> {
+  static StatusFlag Make() { return StatusFlag(true); }
+};
+
+template <>
+struct Done<Success> {
+  static Success Make() { return Success{}; }
 };
 
 template <typename Reader, typename Action>
@@ -100,9 +117,21 @@ class ForEach {
     ReaderResult result;
   };
 
+  std::string DebugTag() {
+    return absl::StrCat(Activity::current()->DebugTag(), " FOR_EACH[0x",
+                        reinterpret_cast<uintptr_t>(this), "]: ");
+  }
+
   Poll<Result> PollReaderNext() {
+    if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "%s PollReaderNext", DebugTag().c_str());
+    }
     auto r = reader_next_();
-    if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
+    if (auto* p = r.value_if_ready()) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "%s PollReaderNext: got has_value=%s",
+                DebugTag().c_str(), p->has_value() ? "true" : "false");
+      }
       if (p->has_value()) {
         Destruct(&reader_next_);
         auto action = action_factory_.Make(std::move(**p));
@@ -117,9 +146,12 @@ class ForEach {
   }
 
   Poll<Result> PollAction() {
+    if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "%s PollAction", DebugTag().c_str());
+    }
     auto r = in_action_.promise();
-    if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
-      if (p->ok()) {
+    if (auto* p = r.value_if_ready()) {
+      if (IsStatusOk(*p)) {
         Destruct(&in_action_);
         Construct(&reader_next_, reader_.Next());
         reading_next_ = true;
@@ -151,4 +183,4 @@ for_each_detail::ForEach<Reader, Action> ForEach(Reader reader, Action action) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_FOR_EACH_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_FOR_EACH_H

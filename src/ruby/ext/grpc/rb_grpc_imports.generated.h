@@ -30,11 +30,11 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/log.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
+#include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
@@ -515,6 +515,18 @@ extern grpc_tls_certificate_provider_release_type grpc_tls_certificate_provider_
 typedef grpc_tls_credentials_options*(*grpc_tls_credentials_options_create_type)(void);
 extern grpc_tls_credentials_options_create_type grpc_tls_credentials_options_create_import;
 #define grpc_tls_credentials_options_create grpc_tls_credentials_options_create_import
+typedef void(*grpc_tls_credentials_options_set_min_tls_version_type)(grpc_tls_credentials_options* options, grpc_tls_version min_tls_version);
+extern grpc_tls_credentials_options_set_min_tls_version_type grpc_tls_credentials_options_set_min_tls_version_import;
+#define grpc_tls_credentials_options_set_min_tls_version grpc_tls_credentials_options_set_min_tls_version_import
+typedef void(*grpc_tls_credentials_options_set_max_tls_version_type)(grpc_tls_credentials_options* options, grpc_tls_version max_tls_version);
+extern grpc_tls_credentials_options_set_max_tls_version_type grpc_tls_credentials_options_set_max_tls_version_import;
+#define grpc_tls_credentials_options_set_max_tls_version grpc_tls_credentials_options_set_max_tls_version_import
+typedef grpc_tls_credentials_options*(*grpc_tls_credentials_options_copy_type)(grpc_tls_credentials_options* options);
+extern grpc_tls_credentials_options_copy_type grpc_tls_credentials_options_copy_import;
+#define grpc_tls_credentials_options_copy grpc_tls_credentials_options_copy_import
+typedef void(*grpc_tls_credentials_options_destroy_type)(grpc_tls_credentials_options* options);
+extern grpc_tls_credentials_options_destroy_type grpc_tls_credentials_options_destroy_import;
+#define grpc_tls_credentials_options_destroy grpc_tls_credentials_options_destroy_import
 typedef void(*grpc_tls_credentials_options_set_certificate_provider_type)(grpc_tls_credentials_options* options, grpc_tls_certificate_provider* provider);
 extern grpc_tls_credentials_options_set_certificate_provider_type grpc_tls_credentials_options_set_certificate_provider_import;
 #define grpc_tls_credentials_options_set_certificate_provider grpc_tls_credentials_options_set_certificate_provider_import
@@ -539,6 +551,9 @@ extern grpc_tls_credentials_options_set_crl_directory_type grpc_tls_credentials_
 typedef void(*grpc_tls_credentials_options_set_verify_server_cert_type)(grpc_tls_credentials_options* options, int verify_server_cert);
 extern grpc_tls_credentials_options_set_verify_server_cert_type grpc_tls_credentials_options_set_verify_server_cert_import;
 #define grpc_tls_credentials_options_set_verify_server_cert grpc_tls_credentials_options_set_verify_server_cert_import
+typedef void(*grpc_tls_credentials_options_set_send_client_ca_list_type)(grpc_tls_credentials_options* options, bool send_client_ca_list);
+extern grpc_tls_credentials_options_set_send_client_ca_list_type grpc_tls_credentials_options_set_send_client_ca_list_import;
+#define grpc_tls_credentials_options_set_send_client_ca_list grpc_tls_credentials_options_set_send_client_ca_list_import
 typedef void(*grpc_tls_credentials_options_set_check_call_host_type)(grpc_tls_credentials_options* options, int check_call_host);
 extern grpc_tls_credentials_options_set_check_call_host_type grpc_tls_credentials_options_set_check_call_host_import;
 #define grpc_tls_credentials_options_set_check_call_host grpc_tls_credentials_options_set_check_call_host_import
@@ -566,27 +581,6 @@ extern grpc_authorization_policy_provider_release_type grpc_authorization_policy
 typedef void(*grpc_tls_credentials_options_set_tls_session_key_log_file_path_type)(grpc_tls_credentials_options* options, const char* path);
 extern grpc_tls_credentials_options_set_tls_session_key_log_file_path_type grpc_tls_credentials_options_set_tls_session_key_log_file_path_import;
 #define grpc_tls_credentials_options_set_tls_session_key_log_file_path grpc_tls_credentials_options_set_tls_session_key_log_file_path_import
-typedef const char*(*gpr_log_severity_string_type)(gpr_log_severity severity);
-extern gpr_log_severity_string_type gpr_log_severity_string_import;
-#define gpr_log_severity_string gpr_log_severity_string_import
-typedef void(*gpr_log_type)(const char* file, int line, gpr_log_severity severity, const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
-extern gpr_log_type gpr_log_import;
-#define gpr_log gpr_log_import
-typedef int(*gpr_should_log_type)(gpr_log_severity severity);
-extern gpr_should_log_type gpr_should_log_import;
-#define gpr_should_log gpr_should_log_import
-typedef void(*gpr_log_message_type)(const char* file, int line, gpr_log_severity severity, const char* message);
-extern gpr_log_message_type gpr_log_message_import;
-#define gpr_log_message gpr_log_message_import
-typedef void(*gpr_set_log_verbosity_type)(gpr_log_severity min_severity_to_print);
-extern gpr_set_log_verbosity_type gpr_set_log_verbosity_import;
-#define gpr_set_log_verbosity gpr_set_log_verbosity_import
-typedef void(*gpr_log_verbosity_init_type)(void);
-extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
-#define gpr_log_verbosity_init gpr_log_verbosity_init_import
-typedef void(*gpr_set_log_function_type)(gpr_log_func func);
-extern gpr_set_log_function_type gpr_set_log_function_import;
-#define gpr_set_log_function gpr_set_log_function_import
 typedef grpc_slice(*grpc_slice_ref_type)(grpc_slice s);
 extern grpc_slice_ref_type grpc_slice_ref_import;
 #define grpc_slice_ref grpc_slice_ref_import
@@ -743,6 +737,30 @@ extern gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 typedef unsigned(*gpr_cpu_current_cpu_type)(void);
 extern gpr_cpu_current_cpu_type gpr_cpu_current_cpu_import;
 #define gpr_cpu_current_cpu gpr_cpu_current_cpu_import
+typedef const char*(*gpr_log_severity_string_type)(gpr_log_severity severity);
+extern gpr_log_severity_string_type gpr_log_severity_string_import;
+#define gpr_log_severity_string gpr_log_severity_string_import
+typedef void(*gpr_log_type)(const char* file, int line, gpr_log_severity severity, const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
+extern gpr_log_type gpr_log_import;
+#define gpr_log gpr_log_import
+typedef int(*gpr_should_log_type)(gpr_log_severity severity);
+extern gpr_should_log_type gpr_should_log_import;
+#define gpr_should_log gpr_should_log_import
+typedef void(*gpr_log_message_type)(const char* file, int line, gpr_log_severity severity, const char* message);
+extern gpr_log_message_type gpr_log_message_import;
+#define gpr_log_message gpr_log_message_import
+typedef void(*gpr_set_log_verbosity_type)(gpr_log_severity min_severity_to_print);
+extern gpr_set_log_verbosity_type gpr_set_log_verbosity_import;
+#define gpr_set_log_verbosity gpr_set_log_verbosity_import
+typedef void(*gpr_log_verbosity_init_type)(void);
+extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
+#define gpr_log_verbosity_init gpr_log_verbosity_init_import
+typedef void(*gpr_set_log_function_type)(gpr_log_func func);
+extern gpr_set_log_function_type gpr_set_log_function_import;
+#define gpr_set_log_function gpr_set_log_function_import
+typedef void(*gpr_assertion_failed_type)(const char* filename, int line, const char* message);
+extern gpr_assertion_failed_type gpr_assertion_failed_import;
+#define gpr_assertion_failed gpr_assertion_failed_import
 typedef char*(*gpr_format_message_type)(int messageid);
 extern gpr_format_message_type gpr_format_message_import;
 #define gpr_format_message gpr_format_message_import

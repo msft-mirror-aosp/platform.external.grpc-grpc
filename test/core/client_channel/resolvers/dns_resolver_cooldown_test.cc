@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <inttypes.h>
 
@@ -31,6 +31,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
@@ -41,6 +42,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/notification.h"
@@ -55,12 +57,14 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/resolver/resolver_registry.h"
-#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/util/test_config.h"
+
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 constexpr int kMinResolutionPeriodMs = 1000;
 
@@ -69,7 +73,7 @@ static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 static grpc_ares_request* (*g_default_dns_lookup_ares)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::EndpointAddressesList>* addresses,
     int query_timeout_ms);
 
 // Counter incremented by TestDNSResolver::LookupHostname indicating the
@@ -91,7 +95,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
   explicit TestDNSResolver(
       std::shared_ptr<grpc_core::DNSResolver> default_resolver)
       : default_resolver_(std::move(default_resolver)),
-        engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
+        engine_(GetDefaultEventEngine()) {}
   // Wrapper around default resolve_address in order to count the number of
   // times we incur in a system-level name resolution.
   TaskHandle LookupHostname(
@@ -174,7 +178,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
 static grpc_ares_request* test_dns_lookup_ares(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::EndpointAddressesList>* addresses,
     int query_timeout_ms) {
   // A records should suffice
   grpc_ares_request* result = g_default_dns_lookup_ares(
@@ -383,6 +387,7 @@ static void start_test_under_work_serializer(void* arg) {
       kMinResolutionPeriodMs);
   grpc_channel_args cooldown_args = {1, &cooldown_arg};
   args.args = grpc_core::ChannelArgs::FromC(&cooldown_args);
+  args.args = args.args.SetObject(GetDefaultEventEngine());
   res_cb_arg->resolver = factory->CreateResolver(std::move(args));
   ASSERT_NE(res_cb_arg->resolver, nullptr);
   // First resolution, would incur in system-level resolution.
@@ -405,9 +410,18 @@ static void test_cooldown() {
 }
 
 TEST(DnsResolverCooldownTest, MainTest) {
+  // TODO(yijiem): This test tests the cooldown behavior of the PollingResolver
+  // interface. To do that, it overrides the grpc_dns_lookup_hostname_ares
+  // function and overrides the iomgr's g_dns_resolver system. We would need to
+  // rewrite this test for EventEngine using a custom EE DNSResolver or adding
+  // to the resolver_fuzzer.
+  if (grpc_core::IsEventEngineDnsEnabled()) {
+    GTEST_SKIP() << "Not with event engine dns";
+  }
   grpc_init();
 
-  auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
+  auto work_serializer = std::make_shared<grpc_core::WorkSerializer>(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   g_work_serializer = &work_serializer;
 
   g_default_dns_lookup_ares = grpc_dns_lookup_hostname_ares;

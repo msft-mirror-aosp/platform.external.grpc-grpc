@@ -37,6 +37,7 @@
 #include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/ext/xds/xds_listener.h"
 #include "src/core/ext/xds/xds_route_config.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
@@ -58,9 +59,12 @@ class Fuzzer {
     }
     auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>();
     transport_factory->SetAutoCompleteMessagesFromClient(false);
+    transport_factory->SetAbortOnUndrainedMessages(false);
     transport_factory_ = transport_factory.get();
-    xds_client_ = MakeRefCounted<XdsClient>(std::move(*bootstrap),
-                                            std::move(transport_factory));
+    xds_client_ = MakeRefCounted<XdsClient>(
+        std::move(*bootstrap), std::move(transport_factory),
+        grpc_event_engine::experimental::GetDefaultEventEngine(), "foo agent",
+        "foo version");
   }
 
   void Act(const xds_client_fuzzer::Action& action) {
@@ -143,10 +147,11 @@ class Fuzzer {
         : resource_name_(std::move(resource_name)) {}
 
     void OnResourceChanged(
-        typename ResourceType::ResourceType resource) override {
+        std::shared_ptr<const typename ResourceType::ResourceType> resource)
+        override {
       gpr_log(GPR_INFO, "==> OnResourceChanged(%s %s): %s",
               std::string(ResourceType::Get()->type_url()).c_str(),
-              resource_name_.c_str(), resource.ToString().c_str());
+              resource_name_.c_str(), resource->ToString().c_str());
     }
 
     void OnError(absl::Status status) override {

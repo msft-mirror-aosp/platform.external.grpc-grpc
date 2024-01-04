@@ -49,6 +49,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = ["no_test_ios"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -68,6 +69,7 @@ grpc_cc_library(
         "//:grpc++_base",
         "//:grpc++_binder",
         "//:grpc_base",
+        "//src/core:channel_args",
     ],
 )
 
@@ -105,6 +107,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_test_ios"],
     deps = [
         "//:grpc++",
         "//:grpc++_binder",

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -26,7 +26,7 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
@@ -47,6 +47,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
 // Avoid some IWYU confusion:
@@ -76,7 +77,16 @@ ArenaPromise<ServerMetadataHandle> LameClientFilter::MakeCallPromise(
     CallArgs args, NextPromiseFactory) {
   // TODO(ctiller): remove if check once promise_based_filter is removed (Close
   // is still needed)
-  if (args.incoming_messages != nullptr) args.incoming_messages->Close();
+  if (args.server_to_client_messages != nullptr) {
+    args.server_to_client_messages->CloseWithError();
+  }
+  if (args.client_to_server_messages != nullptr) {
+    args.client_to_server_messages->CloseWithError();
+  }
+  if (args.server_initial_metadata != nullptr) {
+    args.server_initial_metadata->CloseWithError();
+  }
+  args.client_initial_metadata_outstanding.Complete(true);
   return Immediate(ServerMetadataFromStatus(error_));
 }
 

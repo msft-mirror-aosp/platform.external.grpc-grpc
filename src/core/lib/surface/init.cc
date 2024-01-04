@@ -1,43 +1,37 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/surface/init.h"
 
-#include <limits.h>
-
 #include "absl/base/thread_annotations.h"
 
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/fork.h"
@@ -70,48 +64,28 @@ static int g_initializations ABSL_GUARDED_BY(g_init_mu) = []() {
 static grpc_core::CondVar* g_shutting_down_cv;
 static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 
-static bool maybe_prepend_client_auth_filter(
-    grpc_core::ChannelStackBuilder* builder) {
-  if (builder->channel_args().Contains(GRPC_ARG_SECURITY_CONNECTOR)) {
-    builder->PrependFilter(&grpc_core::ClientAuthFilter::kFilter);
-  }
-  return true;
-}
-
-static bool maybe_prepend_server_auth_filter(
-    grpc_core::ChannelStackBuilder* builder) {
-  if (builder->channel_args().Contains(GRPC_SERVER_CREDENTIALS_ARG)) {
-    builder->PrependFilter(&grpc_server_auth_filter);
-  }
-  return true;
-}
-
-static bool maybe_prepend_grpc_server_authz_filter(
-    grpc_core::ChannelStackBuilder* builder) {
-  if (builder->channel_args().GetPointer<grpc_authorization_policy_provider>(
-          GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER) != nullptr) {
-    builder->PrependFilter(&grpc_core::GrpcServerAuthzFilter::kFilterVtable);
-  }
-  return true;
-}
-
 namespace grpc_core {
 void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
-  // Register the auth client with a priority < INT_MAX to allow the authority
-  // filter -on which the auth filter depends- to be higher on the channel
-  // stack.
-  builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL, INT_MAX - 1,
-                                         maybe_prepend_client_auth_filter);
-  builder->channel_init()->RegisterStage(GRPC_CLIENT_DIRECT_CHANNEL,
-                                         INT_MAX - 1,
-                                         maybe_prepend_client_auth_filter);
-  builder->channel_init()->RegisterStage(GRPC_SERVER_CHANNEL, INT_MAX - 1,
-                                         maybe_prepend_server_auth_filter);
-  // Register the GrpcServerAuthzFilter with a priority less than
-  // server_auth_filter to allow server_auth_filter on which the grpc filter
-  // depends on to be higher on the channel stack.
-  builder->channel_init()->RegisterStage(
-      GRPC_SERVER_CHANNEL, INT_MAX - 2, maybe_prepend_grpc_server_authz_filter);
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL, &ClientAuthFilter::kFilter)
+      .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL, &ClientAuthFilter::kFilter)
+      .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
+  if (IsV3ServerAuthFilterEnabled()) {
+    builder->channel_init()
+        ->RegisterFilter(GRPC_SERVER_CHANNEL, &ServerAuthFilter::kFilter)
+        .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
+  } else {
+    builder->channel_init()
+        ->RegisterFilter(GRPC_SERVER_CHANNEL, &LegacyServerAuthFilter::kFilter)
+        .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
+  }
+  builder->channel_init()
+      ->RegisterFilter(GRPC_SERVER_CHANNEL,
+                       &GrpcServerAuthzFilter::kFilterVtable)
+      .IfHasChannelArg(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER)
+      .After({&ServerAuthFilter::kFilter, &LegacyServerAuthFilter::kFilter});
 }
 }  // namespace grpc_core
 
@@ -127,7 +101,6 @@ static void do_basic_init(void) {
   gpr_time_init();
   grpc_core::PrintExperimentsList();
   grpc_core::Fork::GlobalInit();
-  grpc_event_engine::experimental::RegisterForkHandlers();
   grpc_fork_handlers_auto_register();
   grpc_tracer_init();
   grpc_client_channel_global_init_backup_polling();
@@ -182,7 +155,7 @@ void grpc_shutdown(void) {
     grpc_core::ApplicationCallbackExecCtx* acec =
         grpc_core::ApplicationCallbackExecCtx::Get();
     if (!grpc_iomgr_is_any_background_poller_thread() &&
-        !grpc_event_engine::posix_engine::TimerManager::
+        !grpc_event_engine::experimental::TimerManager::
             IsTimerManagerThread() &&
         (acec == nullptr ||
          (acec->Flags() & GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD) ==

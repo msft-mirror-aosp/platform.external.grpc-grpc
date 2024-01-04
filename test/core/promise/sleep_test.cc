@@ -14,7 +14,7 @@
 
 #include "src/core/lib/promise/sleep.h"
 
-#include <algorithm>
+#include <chrono>
 #include <cstddef>
 #include <memory>
 #include <utility>
@@ -24,9 +24,11 @@
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/notification.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/race.h"
@@ -87,7 +89,7 @@ TEST(Sleep, OverlyEagerEventEngine) {
   EXPECT_NE(wakeup, nullptr);
   EXPECT_FALSE(done);
   // Schedule the wakeup instantaneously - It won't have passed the scheduled
-  // time yet, but sleep should believe the event engine.
+  // time yet, but sleep should believe the EventEngine.
   wakeup->Run();
   EXPECT_TRUE(done);
 }

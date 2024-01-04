@@ -28,7 +28,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 
-#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
@@ -209,6 +208,28 @@ FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer(int bytes_received_size,
     return FakeUdpAndTcpServer::ProcessReadResult::kCloseSocket;
   }
   return FakeUdpAndTcpServer::ProcessReadResult::kContinueReading;
+}
+
+FakeUdpAndTcpServer::ProcessReadResult
+FakeUdpAndTcpServer::SendThreeAllZeroBytes(int bytes_received_size,
+                                           int read_error, int s) {
+  if (bytes_received_size < 0 && !ErrorIsRetryable(read_error)) {
+    gpr_log(GPR_ERROR, "Failed to receive from peer socket: %d. errno: %d", s,
+            read_error);
+    GPR_ASSERT(0);
+  }
+  if (bytes_received_size == 0) {
+    // The peer has shut down the connection.
+    gpr_log(GPR_DEBUG, "Fake TCP server received 0 bytes from peer socket: %d.",
+            s);
+    return FakeUdpAndTcpServer::ProcessReadResult::kCloseSocket;
+  }
+  char buf[3] = {0, 0, 0};
+  int bytes_sent = send(s, buf, sizeof(buf), 0);
+  gpr_log(GPR_DEBUG,
+          "Fake TCP server sent %d all-zero bytes on peer socket: %d.",
+          bytes_sent, s);
+  return FakeUdpAndTcpServer::ProcessReadResult::kCloseSocket;
 }
 
 FakeUdpAndTcpServer::FakeUdpAndTcpServerPeer::FakeUdpAndTcpServerPeer(int fd)

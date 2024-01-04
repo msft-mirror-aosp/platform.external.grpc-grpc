@@ -1,26 +1,25 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 
-#include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -29,7 +28,7 @@
 #include <string>
 #include <utility>
 
-#include "absl/meta/type_traits.h"
+#include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
@@ -40,7 +39,7 @@
 #include "opencensus/tags/tag_key.h"
 
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -51,7 +50,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -97,14 +95,15 @@ namespace {
 std::string GetCensusSafeClientIpString(
     const ClientMetadataHandle& initial_metadata) {
   // Find the client URI string.
-  auto client_uri_str = initial_metadata->get(PeerString());
-  if (!client_uri_str.has_value()) {
+  Slice* client_uri_slice = initial_metadata->get_pointer(PeerString());
+  if (client_uri_slice == nullptr) {
     gpr_log(GPR_ERROR,
             "Unable to extract client URI string (peer string) from gRPC "
             "metadata.");
     return "";
   }
-  absl::StatusOr<URI> client_uri = URI::Parse(*client_uri_str);
+  absl::StatusOr<URI> client_uri =
+      URI::Parse(client_uri_slice->as_string_view());
   if (!client_uri.ok()) {
     gpr_log(GPR_ERROR,
             "Unable to parse the client URI string (peer string) to a client "
@@ -256,10 +255,6 @@ ArenaPromise<ServerMetadataHandle> ServerLoadReportingFilter::MakeCallPromise(
 }
 
 namespace {
-bool MaybeAddServerLoadReportingFilter(const ChannelArgs& args) {
-  return args.GetBool(GRPC_ARG_ENABLE_LOAD_REPORTING).value_or(false);
-}
-
 const grpc_channel_filter kFilter =
     MakePromiseBasedFilter<ServerLoadReportingFilter, FilterEndpoint::kServer>(
         "server_load_reporting");
@@ -280,13 +275,9 @@ struct ServerLoadReportingFilterStaticRegistrar {
       grpc::load_reporter::MeasureEndBytesReceived();
       grpc::load_reporter::MeasureEndLatencyMs();
       grpc::load_reporter::MeasureOtherCallMetric();
-      builder->channel_init()->RegisterStage(
-          GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* cs_builder) {
-            if (MaybeAddServerLoadReportingFilter(cs_builder->channel_args())) {
-              cs_builder->PrependFilter(&kFilter);
-            }
-            return true;
-          });
+      builder->channel_init()
+          ->RegisterFilter(GRPC_SERVER_CHANNEL, &kFilter)
+          .IfChannelArg(GRPC_ARG_ENABLE_LOAD_REPORTING, false);
     });
   }
 } server_load_reporting_filter_static_registrar;

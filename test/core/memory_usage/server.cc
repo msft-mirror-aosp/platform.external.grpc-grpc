@@ -1,25 +1,30 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <signal.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
+
+#ifndef _WIN32
+// This is for _exit() below, which is temporary.
+#include <unistd.h>
+#endif
 
 #include <algorithm>
 #include <string>
@@ -28,29 +33,30 @@
 #include "absl/base/attributes.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "absl/strings/string_view.h"
+#include "absl/status/status.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-
-#include "test/core/memory_usage/memstats.h"
-#ifndef _WIN32
-/* This is for _exit() below, which is temporary. */
-#include <unistd.h>
-#endif
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/xds/xds_enabled_server.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/end2end/data/ssl_test_data.h"
+#include "test/core/memory_usage/memstats.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+ABSL_FLAG(std::string, bind, "", "Bind host:port");
+ABSL_FLAG(bool, secure, false, "Use security");
+ABSL_FLAG(bool, minstack, false, "Use minimal stack");
+ABSL_FLAG(bool, use_xds, false, "Use xDS");
 
 static grpc_completion_queue* cq;
 static grpc_server* server;
@@ -150,13 +156,17 @@ static void send_snapshot(void* tag, MemStats* snapshot) {
              grpc_call_start_batch((*(fling_call*)tag).call, snapshot_ops,
                                    (size_t)(op - snapshot_ops), tag, nullptr));
 }
-/* We have some sort of deadlock, so let's not exit gracefully for now.
-   When that is resolved, please remove the #include <unistd.h> above. */
+// We have some sort of deadlock, so let's not exit gracefully for now.
+// When that is resolved, please remove the #include <unistd.h> above.
 static void sigint_handler(int /*x*/) { _exit(0); }
 
-ABSL_FLAG(std::string, bind, "", "Bind host:port");
-ABSL_FLAG(bool, secure, false, "Use security");
-ABSL_FLAG(bool, minstack, false, "Use minimal stack");
+static void OnServingStatusUpdate(void* /*user_data*/, const char* uri,
+                                  grpc_serving_status_update update) {
+  absl::Status status(static_cast<absl::StatusCode>(update.code),
+                      update.error_message);
+  gpr_log(GPR_INFO, "xDS serving status notification: uri=\"%s\", status=%s",
+          uri, status.ToString().c_str());
+}
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
@@ -188,7 +198,26 @@ int main(int argc, char** argv) {
     args_vec.push_back(grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_MINIMAL_STACK), 1));
   }
+  // TODO(roth): The xDS code here duplicates the functionality in
+  // XdsServerBuilder, which is undesirable.  We should ideally convert
+  // this to use the C++ API instead of the C-core API, so that we can
+  // avoid this duplication.
+  if (absl::GetFlag(FLAGS_use_xds)) {
+    args_vec.push_back(grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_XDS_ENABLED_SERVER), 1));
+  }
+
   grpc_channel_args args = {args_vec.size(), args_vec.data()};
+  server = grpc_server_create(&args, nullptr);
+
+  if (absl::GetFlag(FLAGS_use_xds)) {
+    grpc_server_config_fetcher* config_fetcher =
+        grpc_server_config_fetcher_xds_create({OnServingStatusUpdate, nullptr},
+                                              &args);
+    if (config_fetcher != nullptr) {
+      grpc_server_set_config_fetcher(server, config_fetcher);
+    }
+  }
 
   MemStats before_server_create = MemStats::Snapshot();
   if (absl::GetFlag(FLAGS_secure)) {
@@ -196,11 +225,9 @@ int main(int argc, char** argv) {
                                                     test_server1_cert};
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
         nullptr, &pem_key_cert_pair, 1, 0, nullptr);
-    server = grpc_server_create(&args, nullptr);
     GPR_ASSERT(grpc_server_add_http2_port(server, addr.c_str(), ssl_creds));
     grpc_server_credentials_release(ssl_creds);
   } else {
-    server = grpc_server_create(&args, nullptr);
     GPR_ASSERT(grpc_server_add_http2_port(
         server, addr.c_str(), grpc_insecure_server_credentials_create()));
   }

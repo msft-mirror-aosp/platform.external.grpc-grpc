@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -35,17 +35,14 @@
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
-#include "src/core/tsi/alts/handshaker/alts_tsi_utils.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
 
-/* Main struct for ALTS TSI handshaker. */
+// Main struct for ALTS TSI handshaker.
 struct alts_tsi_handshaker {
   tsi_handshaker base;
   grpc_slice target_name;
@@ -71,7 +68,7 @@ struct alts_tsi_handshaker {
   size_t max_frame_size;
 };
 
-/* Main struct for ALTS TSI handshaker result. */
+// Main struct for ALTS TSI handshaker result.
 typedef struct alts_tsi_handshaker_result {
   tsi_handshaker_result base;
   char* peer_identity;
@@ -192,8 +189,10 @@ static tsi_result handshaker_result_create_zero_copy_grpc_protector(
           "protector equals %zu",
           *max_output_protected_frame_size);
   tsi_result ok = alts_zero_copy_grpc_protector_create(
-      reinterpret_cast<const uint8_t*>(result->key_data),
-      kAltsAes128GcmRekeyKeyLength, /*is_rekey=*/true, result->is_client,
+      grpc_core::GsecKeyFactory({reinterpret_cast<uint8_t*>(result->key_data),
+                                 kAltsAes128GcmRekeyKeyLength},
+                                /*is_rekey=*/true),
+      result->is_client,
       /*is_integrity_only=*/false, /*enable_extra_copy=*/false,
       max_output_protected_frame_size, protector);
   if (ok != TSI_OK) {
@@ -350,7 +349,7 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     gpr_log(GPR_ERROR, "Null peer identity in ALTS context.");
     return TSI_FAILED_PRECONDITION;
   }
-  if (grpc_gcp_Identity_has_attributes(identity)) {
+  if (grpc_gcp_Identity_attributes_size(identity) != 0) {
     size_t iter = kUpb_Map_Begin;
     grpc_gcp_Identity_AttributesEntry* peer_attributes_entry =
         grpc_gcp_Identity_attributes_nextmutable(peer_identity, &iter);
@@ -382,7 +381,7 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   return TSI_OK;
 }
 
-/* gRPC provided callback used when gRPC thread model is applied. */
+// gRPC provided callback used when gRPC thread model is applied.
 static void on_handshaker_service_resp_recv(void* arg,
                                             grpc_error_handle error) {
   alts_handshaker_client* client = static_cast<alts_handshaker_client*>(arg);
@@ -400,8 +399,8 @@ static void on_handshaker_service_resp_recv(void* arg,
   alts_handshaker_client_handle_response(client, success);
 }
 
-/* gRPC provided callback used when dedicatd CQ and thread are used.
- * It serves to safely bring the control back to application. */
+// gRPC provided callback used when dedicatd CQ and thread are used.
+// It serves to safely bring the control back to application.
 static void on_handshaker_service_resp_recv_dedicated(
     void* arg, grpc_error_handle /*error*/) {
   alts_shared_resource_dedicated* resource =
@@ -412,7 +411,7 @@ static void on_handshaker_service_resp_recv_dedicated(
       &resource->storage);
 }
 
-/* Returns TSI_OK if and only if no error is encountered. */
+// Returns TSI_OK if and only if no error is encountered.
 static tsi_result alts_tsi_handshaker_continue_handshaker_next(
     alts_tsi_handshaker* handshaker, const unsigned char* received_bytes,
     size_t received_bytes_size, tsi_handshaker_on_next_done_cb cb,
@@ -575,11 +574,11 @@ static tsi_result handshaker_next(
   return TSI_ASYNC;
 }
 
-/*
- * This API will be invoked by a non-gRPC application, and an ExecCtx needs
- * to be explicitly created in order to invoke ALTS handshaker client API's
- * that assumes the caller is inside gRPC core.
- */
+//
+// This API will be invoked by a non-gRPC application, and an ExecCtx needs
+// to be explicitly created in order to invoke ALTS handshaker client API's
+// that assumes the caller is inside gRPC core.
+//
 static tsi_result handshaker_next_dedicated(
     tsi_handshaker* self, const unsigned char* received_bytes,
     size_t received_bytes_size, const unsigned char** bytes_to_send,

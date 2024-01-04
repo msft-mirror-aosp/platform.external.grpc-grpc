@@ -28,6 +28,7 @@
 
 #include "absl/memory/memory.h"
 
+#include <grpc/grpc.h>
 #include <grpcpp/security/binder_security_policy.h>
 
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
@@ -371,7 +372,7 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
-  int r = RUN_ALL_TESTS();
+  auto results = RUN_ALL_TESTS();
   grpc_shutdown();
-  return r;
+  return results;
 }

@@ -18,10 +18,8 @@
 #include <utility>
 
 #include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 
-#include <grpc/support/log.h>  // IWYU pragma: keep
-
+#include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_WAKEUP_FD
@@ -36,7 +34,7 @@
 #include "src/core/lib/gprpp/strerror.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 #ifdef GRPC_POSIX_WAKEUP_FD
 
@@ -131,13 +129,13 @@ absl::StatusOr<std::unique_ptr<WakeupFd>> PipeWakeupFd::CreatePipeWakeupFd() {
 
 #else  //  GRPC_POSIX_WAKEUP_FD
 
-absl::Status PipeWakeupFd::Init() { GPR_ASSERT(false && "unimplemented"); }
+absl::Status PipeWakeupFd::Init() { grpc_core::Crash("unimplemented"); }
 
 absl::Status PipeWakeupFd::ConsumeWakeup() {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
-absl::Status PipeWakeupFd::Wakeup() { GPR_ASSERT(false && "unimplemented"); }
+absl::Status PipeWakeupFd::Wakeup() { grpc_core::Crash("unimplemented"); }
 
 bool PipeWakeupFd::IsSupported() { return false; }
 
@@ -147,5 +145,5 @@ absl::StatusOr<std::unique_ptr<WakeupFd>> PipeWakeupFd::CreatePipeWakeupFd() {
 
 #endif  //  GRPC_POSIX_WAKEUP_FD
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine

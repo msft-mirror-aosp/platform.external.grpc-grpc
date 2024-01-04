@@ -23,9 +23,8 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
-#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
-#include "absl/types/variant.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/support/log.h>
 
@@ -35,6 +34,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -45,8 +45,9 @@ const grpc_channel_filter* PromiseTracingFilterFor(
   struct DerivedFilter : public grpc_channel_filter {
     explicit DerivedFilter(const grpc_channel_filter* filter)
         : grpc_channel_filter{
-              /* start_transport_stream_op_batch: */ grpc_call_next_op,
-              /* make_call_promise: */
+              // start_transport_stream_op_batch:
+              grpc_call_next_op,
+              // make_call_promise:
               [](grpc_channel_element* elem, CallArgs call_args,
                  NextPromiseFactory next_promise_factory)
                   -> ArenaPromise<ServerMetadataHandle> {
@@ -54,47 +55,96 @@ const grpc_channel_filter* PromiseTracingFilterFor(
                     static_cast<const DerivedFilter*>(elem->filter)->filter;
                 gpr_log(
                     GPR_DEBUG,
-                    "%sCreateCallPromise[%s]: client_initial_metadata=%s",
+                    "%s[%s] CreateCallPromise: client_initial_metadata=%s",
                     Activity::current()->DebugTag().c_str(),
                     source_filter->name,
                     call_args.client_initial_metadata->DebugString().c_str());
                 return [source_filter, child = next_promise_factory(
                                            std::move(call_args))]() mutable {
-                  gpr_log(GPR_DEBUG, "%sPollCallPromise[%s]: begin",
+                  gpr_log(GPR_DEBUG, "%s[%s] PollCallPromise: begin",
                           Activity::current()->DebugTag().c_str(),
                           source_filter->name);
                   auto r = child();
-                  if (auto* p = absl::get_if<ServerMetadataHandle>(&r)) {
-                    gpr_log(GPR_DEBUG, "%sPollCallPromise[%s]: done: %s",
+                  if (auto* p = r.value_if_ready()) {
+                    gpr_log(GPR_DEBUG, "%s[%s] PollCallPromise: done: %s",
                             Activity::current()->DebugTag().c_str(),
                             source_filter->name, (*p)->DebugString().c_str());
                   } else {
-                    gpr_log(GPR_DEBUG, "%sPollCallPromise[%s]: <<pending>",
+                    gpr_log(GPR_DEBUG, "%s[%s] PollCallPromise: <<pending>>",
                             Activity::current()->DebugTag().c_str(),
                             source_filter->name);
                   }
                   return r;
                 };
               },
-              grpc_channel_next_op, /* sizeof_call_data: */ 0,
-              /* init_call_elem: */
+              /* init_call: */
+              [](grpc_channel_element* elem, CallSpineInterface* call) {
+                auto* source_filter =
+                    static_cast<const DerivedFilter*>(elem->filter)->filter;
+                call->client_initial_metadata().receiver.InterceptAndMap(
+                    [source_filter](ClientMetadataHandle md) {
+                      gpr_log(GPR_DEBUG, "%s[%s] OnClientInitialMetadata: %s",
+                              Activity::current()->DebugTag().c_str(),
+                              source_filter->name, md->DebugString().c_str());
+                      return md;
+                    });
+                call->client_to_server_messages().receiver.InterceptAndMap(
+                    [source_filter](MessageHandle msg) {
+                      gpr_log(GPR_DEBUG, "%s[%s] OnClientToServerMessage: %s",
+                              Activity::current()->DebugTag().c_str(),
+                              source_filter->name, msg->DebugString().c_str());
+                      return msg;
+                    });
+                call->server_initial_metadata().sender.InterceptAndMap(
+                    [source_filter](ServerMetadataHandle md) {
+                      gpr_log(GPR_DEBUG, "%s[%s] OnServerInitialMetadata: %s",
+                              Activity::current()->DebugTag().c_str(),
+                              source_filter->name, md->DebugString().c_str());
+                      return md;
+                    });
+                call->server_to_client_messages().sender.InterceptAndMap(
+                    [source_filter](MessageHandle msg) {
+                      gpr_log(GPR_DEBUG, "%s[%s] OnServerToClientMessage: %s",
+                              Activity::current()->DebugTag().c_str(),
+                              source_filter->name, msg->DebugString().c_str());
+                      return msg;
+                    });
+                call->server_trailing_metadata().sender.InterceptAndMap(
+                    [source_filter](ServerMetadataHandle md) {
+                      gpr_log(GPR_DEBUG, "%s[%s] OnServerTrailingMetadata: %s",
+                              Activity::current()->DebugTag().c_str(),
+                              source_filter->name, md->DebugString().c_str());
+                      return md;
+                    });
+              },
+              grpc_channel_next_op,
+              /* sizeof_call_data: */ 0,
+              // init_call_elem:
               [](grpc_call_element*, const grpc_call_element_args*) {
                 return absl::OkStatus();
               },
               grpc_call_stack_ignore_set_pollset_or_pollset_set,
-              /* destroy_call_elem: */
+              // destroy_call_elem:
               [](grpc_call_element*, const grpc_call_final_info*,
                  grpc_closure*) {},
-              /* sizeof_channel_data: */ 0, /* init_channel_elem: */
+              // sizeof_channel_data:
+              0,
+              // init_channel_elem:
               [](grpc_channel_element*, grpc_channel_element_args*) {
                 return absl::OkStatus();
               },
-              /* post_init_channel_elem: */
+              // post_init_channel_elem:
               [](grpc_channel_stack*, grpc_channel_element*) {},
-              /* destroy_channel_elem: */ [](grpc_channel_element*) {},
-              grpc_channel_next_get_info, filter->name},
-          filter(filter) {}
+              // destroy_channel_elem:
+              [](grpc_channel_element*) {}, grpc_channel_next_get_info,
+              // name:
+              nullptr},
+          filter(filter),
+          name_str(absl::StrCat(filter->name, ".trace")) {
+      this->name = name_str.c_str();
+    }
     const grpc_channel_filter* const filter;
+    const std::string name_str;
   };
   struct Globals {
     Mutex mu;

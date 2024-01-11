@@ -611,10 +611,10 @@ grpc_cc_library(
         "src/core/lib/gprpp/arena.h",
         "src/core/lib/gprpp/atomic.h",
         "src/core/lib/gprpp/fork.h",
+        "src/core/lib/gprpp/global_config.h",
         "src/core/lib/gprpp/global_config_custom.h",
         "src/core/lib/gprpp/global_config_env.h",
         "src/core/lib/gprpp/global_config_generic.h",
-        "src/core/lib/gprpp/global_config.h",
         "src/core/lib/gprpp/manual_constructor.h",
         "src/core/lib/gprpp/map.h",
         "src/core/lib/gprpp/memory.h",
@@ -1613,7 +1613,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h",
     ],
     external_deps = [
-        "cares",
         "address_sorting",
     ],
     language = "c++",
@@ -2381,16 +2380,16 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h",
         "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h",
     ],
-    language = "c++",
     external_deps = [
         "upb_lib",
     ],
+    language = "c++",
+    tags = ["no_windows"],
     deps = [
         ":envoy_core_upb",
         ":google_api_upb",
         ":proto_gen_validate_upb",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_library(
@@ -2419,13 +2418,13 @@ grpc_cc_library(
         "upb_lib",
     ],
     language = "c++",
+    tags = ["no_windows"],
     deps = [
         ":envoy_core_upb",
         ":envoy_type_upb",
         ":google_api_upb",
         ":proto_gen_validate_upb",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_library(

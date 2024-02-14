@@ -16,13 +16,60 @@
 
 """Dictionary of tags to experiments so we know when to test different experiments."""
 
+EXPERIMENT_ENABLES = {
+    "call_status_override_on_cancellation": "call_status_override_on_cancellation",
+    "canary_client_privacy": "canary_client_privacy",
+    "client_idleness": "client_idleness",
+    "client_privacy": "client_privacy",
+    "event_engine_client": "event_engine_client",
+    "event_engine_dns": "event_engine_dns",
+    "event_engine_listener": "event_engine_listener",
+    "free_large_allocator": "free_large_allocator",
+    "http2_stats_fix": "http2_stats_fix",
+    "keepalive_fix": "keepalive_fix",
+    "keepalive_server_fix": "keepalive_server_fix",
+    "monitoring_experiment": "monitoring_experiment",
+    "multiping": "multiping",
+    "peer_state_based_framing": "peer_state_based_framing",
+    "pending_queue_cap": "pending_queue_cap",
+    "pick_first_happy_eyeballs": "pick_first_happy_eyeballs",
+    "promise_based_client_call": "promise_based_client_call",
+    "promise_based_server_call": "promise_based_server_call",
+    "registered_method_lookup_in_transport": "registered_method_lookup_in_transport",
+    "promise_based_inproc_transport": "promise_based_client_call,promise_based_inproc_transport,promise_based_server_call,registered_method_lookup_in_transport",
+    "registered_methods_map": "registered_methods_map",
+    "rfc_max_concurrent_streams": "rfc_max_concurrent_streams",
+    "round_robin_delegate_to_pick_first": "round_robin_delegate_to_pick_first",
+    "rstpit": "rstpit",
+    "schedule_cancellation_over_write": "schedule_cancellation_over_write",
+    "server_privacy": "server_privacy",
+    "tcp_frame_size_tuning": "tcp_frame_size_tuning",
+    "tcp_rcv_lowat": "tcp_rcv_lowat",
+    "trace_record_callops": "trace_record_callops",
+    "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
+    "v3_backend_metric_filter": "v3_backend_metric_filter",
+    "v3_channel_idle_filters": "v3_channel_idle_filters",
+    "v3_compression_filter": "v3_compression_filter",
+    "v3_server_auth_filter": "v3_server_auth_filter",
+    "work_serializer_clears_time_cache": "work_serializer_clears_time_cache",
+    "work_serializer_dispatch": "work_serializer_dispatch",
+    "write_size_policy": "write_size_policy",
+    "write_size_cap": "write_size_cap,write_size_policy",
+    "wrr_delegate_to_pick_first": "wrr_delegate_to_pick_first",
+}
+
 EXPERIMENTS = {
     "windows": {
         "dbg": {
         },
         "off": {
+            "bad_client_test": [
+                "rfc_max_concurrent_streams",
+            ],
+            "compression_test": [
+                "v3_compression_filter",
+            ],
             "core_end2end_test": [
-                "event_engine_listener",
                 "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
@@ -35,13 +82,9 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
-            "event_engine_listener_test": [
-                "event_engine_listener",
-            ],
             "flow_control_test": [
                 "multiping",
                 "peer_state_based_framing",
-                "red_max_concurrent_streams",
                 "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -57,7 +100,6 @@ EXPERIMENTS = {
             ],
             "resource_quota_test": [
                 "free_large_allocator",
-                "memory_pressure_controller",
                 "unconstrained_max_quota_buffer_size",
             ],
             "xds_end2end_test": [
@@ -66,25 +108,23 @@ EXPERIMENTS = {
             ],
         },
         "on": {
-            "bad_client_test": [
-                "block_excessive_requests_before_settings_ack",
-                "tarpit",
-            ],
-            "cpp_end2end_test": [
-                "chttp2_offload_on_rst_stream",
+            "core_end2end_test": [
+                "event_engine_listener",
             ],
             "cpp_lb_end2end_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
+            "event_engine_listener_test": [
+                "event_engine_listener",
+            ],
             "flow_control_test": [
-                "chttp2_offload_on_rst_stream",
-                "lazier_stream_updates",
-                "overload_protection",
                 "write_size_cap",
                 "write_size_policy",
             ],
             "lb_unit_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -92,6 +132,7 @@ EXPERIMENTS = {
                 "registered_method_lookup_in_transport",
             ],
             "xds_end2end_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -101,8 +142,13 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "bad_client_test": [
+                "rfc_max_concurrent_streams",
+            ],
+            "compression_test": [
+                "v3_compression_filter",
+            ],
             "core_end2end_test": [
-                "event_engine_listener",
                 "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
@@ -115,13 +161,9 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
-            "event_engine_listener_test": [
-                "event_engine_listener",
-            ],
             "flow_control_test": [
                 "multiping",
                 "peer_state_based_framing",
-                "red_max_concurrent_streams",
                 "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -137,7 +179,6 @@ EXPERIMENTS = {
             ],
             "resource_quota_test": [
                 "free_large_allocator",
-                "memory_pressure_controller",
                 "unconstrained_max_quota_buffer_size",
             ],
             "xds_end2end_test": [
@@ -146,25 +187,17 @@ EXPERIMENTS = {
             ],
         },
         "on": {
-            "bad_client_test": [
-                "block_excessive_requests_before_settings_ack",
-                "tarpit",
-            ],
-            "cpp_end2end_test": [
-                "chttp2_offload_on_rst_stream",
-            ],
             "cpp_lb_end2end_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
-                "chttp2_offload_on_rst_stream",
-                "lazier_stream_updates",
-                "overload_protection",
                 "write_size_cap",
                 "write_size_policy",
             ],
             "lb_unit_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -172,6 +205,7 @@ EXPERIMENTS = {
                 "registered_method_lookup_in_transport",
             ],
             "xds_end2end_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -181,12 +215,17 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "bad_client_test": [
+                "rfc_max_concurrent_streams",
+            ],
             "cancel_ares_query_test": [
                 "event_engine_dns",
             ],
+            "compression_test": [
+                "v3_compression_filter",
+            ],
             "core_end2end_test": [
                 "event_engine_client",
-                "event_engine_listener",
                 "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
@@ -202,13 +241,9 @@ EXPERIMENTS = {
             "event_engine_client_test": [
                 "event_engine_client",
             ],
-            "event_engine_listener_test": [
-                "event_engine_listener",
-            ],
             "flow_control_test": [
                 "multiping",
                 "peer_state_based_framing",
-                "red_max_concurrent_streams",
                 "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -227,7 +262,6 @@ EXPERIMENTS = {
             ],
             "resource_quota_test": [
                 "free_large_allocator",
-                "memory_pressure_controller",
                 "unconstrained_max_quota_buffer_size",
             ],
             "xds_end2end_test": [
@@ -236,25 +270,23 @@ EXPERIMENTS = {
             ],
         },
         "on": {
-            "bad_client_test": [
-                "block_excessive_requests_before_settings_ack",
-                "tarpit",
-            ],
-            "cpp_end2end_test": [
-                "chttp2_offload_on_rst_stream",
+            "core_end2end_test": [
+                "event_engine_listener",
             ],
             "cpp_lb_end2end_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
+            "event_engine_listener_test": [
+                "event_engine_listener",
+            ],
             "flow_control_test": [
-                "chttp2_offload_on_rst_stream",
-                "lazier_stream_updates",
-                "overload_protection",
                 "write_size_cap",
                 "write_size_policy",
             ],
             "lb_unit_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -262,6 +294,7 @@ EXPERIMENTS = {
                 "registered_method_lookup_in_transport",
             ],
             "xds_end2end_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],

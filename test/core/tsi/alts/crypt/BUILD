@@ -1,5 +1,5 @@
 # Copyright 2018 gRPC authors.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -14,20 +14,23 @@
 #
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
-grpc_package(name = "test/core/tsi/alts/crypt", visibility = "public")
+grpc_package(
+    name = "test/core/tsi/alts/crypt",
+    visibility = "public",
+)
 
 grpc_cc_test(
     name = "alts_crypt_test",
     srcs = ["aes_gcm_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         ":alts_crypt_test_util",
-        "//:alts_frame_protector",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -40,4 +43,3 @@ grpc_cc_library(
         "//:grpc",
     ],
 )
-

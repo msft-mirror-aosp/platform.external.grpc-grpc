@@ -14,16 +14,14 @@
 """The Python implementation of the gRPC route guide server."""
 
 from concurrent import futures
-import time
+import logging
 import math
+import time
 
 import grpc
-
 import route_guide_pb2
 import route_guide_pb2_grpc
 import route_guide_resources
-
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
 def get_feature(feature_db, point):
@@ -47,9 +45,11 @@ def get_distance(start, end):
     delta_lon_rad = math.radians(lon_2 - lon_1)
 
     # Formula is based on http://mathforum.org/library/drmath/view/51879.html
-    a = (pow(math.sin(delta_lat_rad / 2), 2) +
-         (math.cos(lat_rad_1) * math.cos(lat_rad_2) * pow(
-             math.sin(delta_lon_rad / 2), 2)))
+    a = pow(math.sin(delta_lat_rad / 2), 2) + (
+        math.cos(lat_rad_1)
+        * math.cos(lat_rad_2)
+        * pow(math.sin(delta_lon_rad / 2), 2)
+    )
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     R = 6371000
     # metres
@@ -75,10 +75,12 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         top = max(request.lo.latitude, request.hi.latitude)
         bottom = min(request.lo.latitude, request.hi.latitude)
         for feature in self.db:
-            if (feature.location.longitude >= left and
-                    feature.location.longitude <= right and
-                    feature.location.latitude >= bottom and
-                    feature.location.latitude <= top):
+            if (
+                feature.location.longitude >= left
+                and feature.location.longitude <= right
+                and feature.location.latitude >= bottom
+                and feature.location.latitude <= top
+            ):
                 yield feature
 
     def RecordRoute(self, request_iterator, context):
@@ -101,7 +103,8 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
             point_count=point_count,
             feature_count=feature_count,
             distance=int(distance),
-            elapsed_time=int(elapsed_time))
+            elapsed_time=int(elapsed_time),
+        )
 
     def RouteChat(self, request_iterator, context):
         prev_notes = []
@@ -115,15 +118,13 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     route_guide_pb2_grpc.add_RouteGuideServicer_to_server(
-        RouteGuideServicer(), server)
-    server.add_insecure_port('[::]:50051')
+        RouteGuideServicer(), server
+    )
+    server.add_insecure_port("[::]:50051")
     server.start()
-    try:
-        while True:
-            time.sleep(_ONE_DAY_IN_SECONDS)
-    except KeyboardInterrupt:
-        server.stop(0)
+    server.wait_for_termination()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    logging.basicConfig()
     serve()

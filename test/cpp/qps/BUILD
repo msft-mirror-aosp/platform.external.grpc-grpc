@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package", "grpc_py_binary")
+load("//test/cpp/qps:qps_benchmark_script.bzl", "json_run_localhost_batch", "qps_json_driver_batch")
+load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_cc_binary", "grpc_package")
-load("//test/cpp/qps:qps_benchmark_script.bzl", "qps_json_driver_batch", "json_run_localhost_batch")
+licenses(["notice"])
 
 grpc_package(name = "test/cpp/qps")
 
@@ -31,10 +32,12 @@ grpc_cc_library(
     name = "qps_worker_impl",
     srcs = [
         "client_async.cc",
+        "client_callback.cc",
         "client_sync.cc",
         "qps_server_builder.cc",
         "qps_worker.cc",
         "server_async.cc",
+        "server_callback.cc",
         "server_sync.cc",
     ],
     hdrs = [
@@ -43,22 +46,17 @@ grpc_cc_library(
         "qps_worker.h",
         "server.h",
     ],
-    external_deps = [
-        "gflags",
-    ],
     deps = [
         ":histogram",
         ":interarrival",
         ":usage_timer",
         "//:grpc",
         "//:grpc++",
-        "//:grpc++_core_stats",
         "//src/proto/grpc/testing:benchmark_service_proto",
         "//src/proto/grpc/testing:control_proto",
         "//src/proto/grpc/testing:payloads_proto",
         "//src/proto/grpc/testing:worker_service_proto",
         "//test/core/end2end:ssl_test_data",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
@@ -84,7 +82,6 @@ grpc_cc_library(
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:report_qps_scenario_service_proto",
         "//src/proto/grpc/testing:worker_service_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -99,7 +96,7 @@ grpc_cc_library(
         "benchmark_config.h",
     ],
     external_deps = [
-        "gflags",
+        "absl/flags:flag",
     ],
     deps = [
         ":driver_impl",
@@ -115,14 +112,17 @@ grpc_cc_library(
         "histogram.h",
         "stats.h",
     ],
-    deps = ["//test/core/util:grpc_test_util"],
+    deps = [
+        "//src/proto/grpc/testing:stats_proto",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 grpc_cc_binary(
     name = "qps_json_driver",
     srcs = ["qps_json_driver.cc"],
     external_deps = [
-        "gflags",
+        "absl/flags:flag",
     ],
     deps = [
         ":benchmark_config",
@@ -158,9 +158,12 @@ json_run_localhost_batch()
 grpc_cc_test(
     name = "qps_interarrival_test",
     srcs = ["qps_interarrival_test.cc"],
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
         ":histogram",
         ":interarrival",
+        "//test/core/util:grpc_test_util_base",
         "//test/cpp/util:test_config",
     ],
 )
@@ -168,7 +171,8 @@ grpc_cc_test(
 grpc_cc_test(
     name = "qps_openloop_test",
     srcs = ["qps_openloop_test.cc"],
-    data = ["//third_party/toolchains:RBE_USE_MACHINE_TYPE_LARGE"],
+    exec_properties = LARGE_MACHINE,
+    tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
     deps = [
         ":benchmark_config",
         ":driver_impl",
@@ -200,11 +204,36 @@ grpc_cc_library(
 grpc_cc_binary(
     name = "qps_worker",
     srcs = ["worker.cc"],
+    external_deps = [
+        "absl/flags:flag",
+    ],
     deps = [
         ":qps_worker_impl",
         "//:grpc++",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_py_binary(
+    name = "scenario_runner",
+    testonly = True,
+    srcs = ["scenario_runner.py"],
+    data = ["scenario_runner_cc"],
+    python_version = "PY3",
+)
+
+grpc_cc_binary(
+    name = "scenario_runner_cc",
+    srcs = ["scenario_runner.cc"],
+    external_deps = [
+        "absl/flags:flag",
+    ],
+    deps = [
+        ":benchmark_config",
+        ":driver_impl",
+        "//:grpc++",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],

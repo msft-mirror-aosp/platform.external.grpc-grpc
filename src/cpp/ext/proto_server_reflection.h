@@ -1,29 +1,36 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_INTERNAL_CPP_EXT_PROTO_SERVER_REFLECTION_H
-#define GRPC_INTERNAL_CPP_EXT_PROTO_SERVER_REFLECTION_H
+#ifndef GRPC_SRC_CPP_EXT_PROTO_SERVER_REFLECTION_H
+#define GRPC_SRC_CPP_EXT_PROTO_SERVER_REFLECTION_H
 
+#include <string>
 #include <unordered_set>
 #include <vector>
 
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
+#include <grpcpp/support/config.h>
+#include <grpcpp/support/status.h>
+#include <grpcpp/support/sync_stream.h>
+
 #include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
+#include "src/proto/grpc/reflection/v1alpha/reflection.pb.h"
 
 namespace grpc {
 
@@ -33,7 +40,7 @@ class ProtoServerReflection final
   ProtoServerReflection();
 
   // Add the full names of registered services
-  void SetServiceList(const std::vector<grpc::string>* services);
+  void SetServiceList(const std::vector<std::string>* services);
 
   // implementation of ServerReflectionInfo(stream ServerReflectionRequest) rpc
   // in ServerReflection service
@@ -47,11 +54,11 @@ class ProtoServerReflection final
   Status ListService(ServerContext* context,
                      reflection::v1alpha::ListServiceResponse* response);
 
-  Status GetFileByName(ServerContext* context, const grpc::string& file_name,
+  Status GetFileByName(ServerContext* context, const std::string& file_name,
                        reflection::v1alpha::ServerReflectionResponse* response);
 
   Status GetFileContainingSymbol(
-      ServerContext* context, const grpc::string& symbol,
+      ServerContext* context, const std::string& symbol,
       reflection::v1alpha::ServerReflectionResponse* response);
 
   Status GetFileContainingExtension(
@@ -60,13 +67,13 @@ class ProtoServerReflection final
       reflection::v1alpha::ServerReflectionResponse* response);
 
   Status GetAllExtensionNumbers(
-      ServerContext* context, const grpc::string& type,
+      ServerContext* context, const std::string& type,
       reflection::v1alpha::ExtensionNumberResponse* response);
 
   void FillFileDescriptorResponse(
       const protobuf::FileDescriptor* file_desc,
       reflection::v1alpha::ServerReflectionResponse* response,
-      std::unordered_set<grpc::string>* seen_files);
+      std::unordered_set<std::string>* seen_files);
 
   void FillErrorResponse(const Status& status,
                          reflection::v1alpha::ErrorResponse* error_response);
@@ -77,4 +84,4 @@ class ProtoServerReflection final
 
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_EXT_PROTO_SERVER_REFLECTION_H
+#endif  // GRPC_SRC_CPP_EXT_PROTO_SERVER_REFLECTION_H

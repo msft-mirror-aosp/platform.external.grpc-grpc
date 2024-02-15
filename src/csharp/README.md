@@ -1,106 +1,25 @@
-[![Nuget](https://img.shields.io/nuget/v/Grpc.svg)](http://www.nuget.org/packages/Grpc/)
 gRPC C#
 =======
 
-A C# implementation of gRPC.
+This directory used to contain the original C# implementation of gRPC based on the native gRPC Core library
+(i.e. `Grpc.Core` nuget package). This implementation is currently in maintenance mode and its source code
+has been moved (see below for details). Also, we plan to deprecate the implementation in the future
+(see [blogpost](https://grpc.io/blog/grpc-csharp-future/)).
 
-SUPPORTED PLATFORMS
-------------------
+The source code that used to reside here has been moved as following:
 
-- [.NET Core](https://dotnet.github.io/) on Linux, Windows and Mac OS X 
-- .NET Framework 4.5+ (Windows)
-- Mono 4+ on Linux, Windows and Mac OS X
+- The `Grpc`, `Grpc.Core`, `Grpc.Core.Testing`, `Grpc.Core.NativeDebug` and `Grpc.Core.Xamarin` packages will continue to live in maintenance mode on the [v1.46.x](https://github.com/grpc/grpc/tree/v1.46.x) branch, where they will get the necessary critical/security patches as needed and will be released from there (as usual for gRPC patch releases). All future releases of these packages will have their major/minor version fixed at `2.46` and only their patch version will be incremented (`2.46.0`,`2.46.1`, ...)
 
-PREREQUISITES
---------------
+- The `Grpc.Core.Api`, `Grpc.Auth`, `Grpc.HealthCheck` and `Grpc.Reflection` packages will be moved to the [grpc-dotnet repository](https://github.com/grpc/grpc-dotnet) where their development will continue (note that all these packages are implementation-agnostic, and they are also used by grpc-dotnet, so it makes sense to move them there). Future releases of these packages (`v2.47.x`, `v2.48.x`, ...) will be released as part of the [grpc-dotnet release](https://github.com/grpc/grpc-dotnet/blob/master/doc/release_process.md).
 
-When using gRPC C# under .NET Core you only need to [install .NET Core](https://www.microsoft.com/net/core).
+- The package `Grpc.Tools` (which provides the protobuf/grpc codegen build integration) will for now stay on the master branch of grpc/grpc (i.e. in this directory). From there it will continue to be released along with other gRPC languages that live in the `grpc/grpc` repository. The eventual goal is to also move Grpc.Tools to elsewhere (probably the grpc-dotnet repository), but more work is needed there (e.g. we need to figure out some technical and test-infrastructure related issues first).
 
-In addition to that, you can also use gRPC C# with these runtimes / IDEs
-- Windows: .NET Framework 4.5+, Visual Studio 2013, 2015, 2017, Visual Studio Code
-- Linux: Mono 4+, Visual Studio Code, MonoDevelop 5.9+ 
-- Mac OS X: Mono 4+, Visual Studio Code, Xamarin Studio 5.9+
-
-HOW TO USE
---------------
-
-**Windows, Linux, Mac OS X**
-
-- Open Visual Studio / MonoDevelop / Xamarin Studio and start a new project/solution (alternatively, you can create a new project from command line with `dotnet` SDK)
-
-- Add the [Grpc](https://www.nuget.org/packages/Grpc/) NuGet package as a dependency (Project options -> Manage NuGet Packages). 
-
-- To be able to generate code from Protocol Buffer (`.proto`) file definitions, add the [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools/) NuGet package that contains Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin.
-
-**Xamarin.Android and Xamarin.iOS (Experimental only)**
-
-See [Experimentally supported platforms](experimental) for instructions.
-
-**Unity (Experimental only)**
-
-See [Experimentally supported platforms](experimental) for instructions.
-
-BUILD FROM SOURCE
------------------
-
-You only need to go through these steps if you are planning to develop gRPC C#.
-If you are a user of gRPC C#, go to Usage section above.
-
-**Prerequisites for contributors**
-
-- [dotnet SDK](https://www.microsoft.com/net/core)
-- [Mono 4+](https://www.mono-project.com/) (only needed for Linux and MacOS)
-- Prerequisites mentioned in [BUILDING.md](../../BUILDING.md#pre-requisites)
-  to be able to compile the native code.
-
-**Windows, Linux or Mac OS X**
-
-- The easiest way to build is using the `run_tests.py` script that will take care of building the `grpc_csharp_ext` native library.
-  
-  ```
-  # NOTE: make sure all necessary git submodules with dependencies 
-  # are available by running "git submodule update --init"
-  
-  # from the gRPC repository root
-  $ python tools/run_tests/run_tests.py -l csharp -c dbg --build_only
-  ```
-
-- Use Visual Studio 2017 (on Windows) to open the solution `Grpc.sln` or use Visual Studio Code with C# extension (on Linux and Mac). gRPC C# code has been migrated to
-  dotnet SDK `.csproj` projects that are much simpler to maintain, but are not yet supported by Xamarin Studio or Monodevelop (the NuGet packages still
-  support both `net45` and `netstandard` and can be used in all IDEs).
-
-RUNNING TESTS
--------------
-
-gRPC C# is using NUnit as the testing framework.
-
-Under Visual Studio, make sure NUnit test adapter is installed (under "Extensions and Updates").
-Then you should be able to run all the tests using Test Explorer.
-
-gRPC team uses a Python script to facilitate running tests for
-different languages.
-
-```
-# from the gRPC repository root
-$ python tools/run_tests/run_tests.py -l csharp -c dbg
-```
-
-DOCUMENTATION
--------------
-- [API Reference][]
-- [Helloworld Example][]
-- [RouteGuide Tutorial][]
-
-PERFORMANCE
------------
-
-For best gRPC C# performance, use [.NET Core](https://dotnet.github.io/) and the Server GC mode `"System.GC.Server": true` for your applications.
-
-THE NATIVE DEPENDENCY
+The original `src/csharp` tree
 ---------------
 
-Internally, gRPC C# uses a native library written in C (gRPC C core) and invokes its functionality via P/Invoke. The fact that a native library is used should be fully transparent to the users and just installing the `Grpc.Core` NuGet package is the only step needed to use gRPC C# on all supported platforms.
+It currently lives on the `v1.46.x` release branch here: https://github.com/grpc/grpc/tree/v1.46.x/src/csharp (and is in maintenance mode).
 
-[API Reference]: https://grpc.io/grpc/csharp/api/Grpc.Core.html
-[Helloworld Example]: ../../examples/csharp/helloworld
-[RouteGuide Tutorial]: https://grpc.io/docs/tutorials/basic/csharp.html 
+The original gRPC C# examples
+---------------
+
+The examples for the `Grpc.Code` implementation of gRPC for C# can be found here: https://github.com/grpc/grpc/tree/v1.46.x/examples/csharp

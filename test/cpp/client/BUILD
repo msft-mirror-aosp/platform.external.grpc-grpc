@@ -12,15 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+licenses(["notice"])
 
 grpc_package(name = "test/cpp/client")
 
 grpc_cc_test(
     name = "credentials_test",
     srcs = ["credentials_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
     external_deps = [
         "gtest",
     ],
@@ -28,25 +33,25 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:tls_test_utils",
     ],
 )
 
 grpc_cc_test(
-    name = "client_channel_stress_test",
-    srcs = ["client_channel_stress_test.cc"],
+    name = "destroy_grpclb_channel_with_active_connect_stress_test",
+    srcs = ["destroy_grpclb_channel_with_active_connect_stress_test.cc"],
+    external_deps = ["gtest"],
+    tags = [
+        "nomsan",  # 4/22/22 - seems to tickle the RBE compiler badly causing timeouts
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc_resolver_fake",
-        "//src/proto/grpc/lb/v1:load_balancer_proto",
-        "//src/proto/grpc/testing:echo_messages_proto",
-        "//src/proto/grpc/testing:echo_proto",
-        "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:gpr_test_util",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
-        "//test/cpp/end2end:test_service_impl",
         "//test/cpp/util:test_util",
     ],
 )

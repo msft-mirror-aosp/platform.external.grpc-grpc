@@ -1,27 +1,28 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_REGISTERED_OPENCENSUS_OBJECTS_H
-#define GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_REGISTERED_OPENCENSUS_OBJECTS_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_LOAD_REPORTING_REGISTERED_OPENCENSUS_OBJECTS_H
+#define GRPC_SRC_CORE_EXT_FILTERS_LOAD_REPORTING_REGISTERED_OPENCENSUS_OBJECTS_H
 
 #include <grpc/support/port_platform.h>
 
 #include "opencensus/stats/stats.h"
+#include "opencensus/tags/tag_key.h"
 
 #include "src/cpp/server/load_reporter/constants.h"
 
@@ -80,38 +81,37 @@ inline ::opencensus::stats::MeasureDouble MeasureOtherCallMetric() {
 
 // Tags.
 
-inline ::opencensus::stats::TagKey TagKeyToken() {
-  static const ::opencensus::stats::TagKey token =
-      opencensus::stats::TagKey::Register(kTagKeyToken);
+inline ::opencensus::tags::TagKey TagKeyToken() {
+  static const ::opencensus::tags::TagKey token =
+      opencensus::tags::TagKey::Register(kTagKeyToken);
   return token;
 }
 
-inline ::opencensus::stats::TagKey TagKeyHost() {
-  static const ::opencensus::stats::TagKey token =
-      opencensus::stats::TagKey::Register(kTagKeyHost);
+inline ::opencensus::tags::TagKey TagKeyHost() {
+  static const ::opencensus::tags::TagKey token =
+      opencensus::tags::TagKey::Register(kTagKeyHost);
   return token;
 }
 
-inline ::opencensus::stats::TagKey TagKeyUserId() {
-  static const ::opencensus::stats::TagKey token =
-      opencensus::stats::TagKey::Register(kTagKeyUserId);
+inline ::opencensus::tags::TagKey TagKeyUserId() {
+  static const ::opencensus::tags::TagKey token =
+      opencensus::tags::TagKey::Register(kTagKeyUserId);
   return token;
 }
 
-inline ::opencensus::stats::TagKey TagKeyStatus() {
-  static const ::opencensus::stats::TagKey token =
-      opencensus::stats::TagKey::Register(kTagKeyStatus);
+inline ::opencensus::tags::TagKey TagKeyStatus() {
+  static const ::opencensus::tags::TagKey token =
+      opencensus::tags::TagKey::Register(kTagKeyStatus);
   return token;
 }
 
-inline ::opencensus::stats::TagKey TagKeyMetricName() {
-  static const ::opencensus::stats::TagKey token =
-      opencensus::stats::TagKey::Register(kTagKeyMetricName);
+inline ::opencensus::tags::TagKey TagKeyMetricName() {
+  static const ::opencensus::tags::TagKey token =
+      opencensus::tags::TagKey::Register(kTagKeyMetricName);
   return token;
 }
 
 }  // namespace load_reporter
 }  // namespace grpc
 
-#endif /* GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_REGISTERED_OPENCENSUS_OBJECTS_H \
-        */
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_LOAD_REPORTING_REGISTERED_OPENCENSUS_OBJECTS_H

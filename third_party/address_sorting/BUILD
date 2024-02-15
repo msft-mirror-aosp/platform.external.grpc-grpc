@@ -38,7 +38,7 @@ package(
 
 load(":address_sorting.bzl", "address_sorting_cc_library")
 
-licenses(["notice"])  # BSD
+licenses(["notice"])
 
 exports_files(["LICENSE"])
 
@@ -50,8 +50,8 @@ address_sorting_cc_library(
         "address_sorting_windows.c",
     ],
     hdrs = [
-        "include/address_sorting/address_sorting.h",
         "address_sorting_internal.h",
+        "include/address_sorting/address_sorting.h",
     ],
     copts = ["-std=c99"],
     includes = [

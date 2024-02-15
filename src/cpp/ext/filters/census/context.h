@@ -1,69 +1,48 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CONTEXT_H
-#define GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CONTEXT_H
+#ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_CONTEXT_H
+#define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_CONTEXT_H
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/status.h>
-#include "absl/memory/memory.h"
+#include <stddef.h>
+#include <stdint.h>
+
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
-#include "opencensus/trace/trace_params.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/cpp/common/channel_filter.h"
-#include "src/cpp/ext/filters/census/rpc_encoding.h"
 
-// This is needed because grpc has hardcoded CensusContext with a
-// forward declaration of 'struct census_context;'
-struct census_context;
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpcpp/opencensus.h>
+
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/slice/slice.h"
 
 namespace grpc {
 
-// Thread compatible.
-class CensusContext {
- public:
-  CensusContext() : span_(::opencensus::trace::Span::BlankSpan()) {}
+using experimental::CensusContext;
 
-  explicit CensusContext(absl::string_view name)
-      : span_(::opencensus::trace::Span::StartSpan(name)) {}
-
-  CensusContext(absl::string_view name, const ::opencensus::trace::Span* parent)
-      : span_(::opencensus::trace::Span::StartSpan(name, parent)) {}
-
-  CensusContext(absl::string_view name,
-                const ::opencensus::trace::SpanContext& parent_ctxt)
-      : span_(::opencensus::trace::Span::StartSpanWithRemoteParent(
-            name, parent_ctxt)) {}
-
-  ::opencensus::trace::SpanContext Context() const { return span_.context(); }
-  ::opencensus::trace::Span Span() const { return span_; }
-  void EndSpan() { span_.End(); }
-
- private:
-  ::opencensus::trace::Span span_;
-};
-
-// Serializes the outgoing trace context. Field IDs are 1 byte followed by
-// field data. A 1 byte version ID is always encoded first.
+// Serializes the outgoing trace context. tracing_buf must be
+// opencensus::trace::propagation::kGrpcTraceBinHeaderLen bytes long.
 size_t TraceContextSerialize(const ::opencensus::trace::SpanContext& context,
                              char* tracing_buf, size_t tracing_buf_size);
 
@@ -83,9 +62,8 @@ size_t ServerStatsDeserialize(const char* buf, size_t buf_size,
 // Deserialize the incoming SpanContext and generate a new server context based
 // on that. This new span will never be a root span. This should only be called
 // with a blank CensusContext as it overwrites it.
-void GenerateServerContext(absl::string_view tracing, absl::string_view stats,
-                           absl::string_view primary_role,
-                           absl::string_view method, CensusContext* context);
+void GenerateServerContext(absl::string_view tracing, absl::string_view method,
+                           CensusContext* context);
 
 // Creates a new client context that is by default a new root context.
 // If the current context is the default context then the newly created
@@ -110,17 +88,14 @@ uint64_t GetOutgoingDataSize(const grpc_call_final_info* final_info);
 // Returns a string representation of the StatusCode enum.
 absl::string_view StatusCodeToString(grpc_status_code code);
 
-inline absl::string_view GetMethod(const grpc_slice* path) {
-  if (GRPC_SLICE_IS_EMPTY(*path)) {
+inline absl::string_view GetMethod(const grpc_core::Slice& path) {
+  if (path.empty()) {
     return "";
   }
   // Check for leading '/' and trim it if present.
-  return absl::StripPrefix(absl::string_view(reinterpret_cast<const char*>(
-                                                 GRPC_SLICE_START_PTR(*path)),
-                                             GRPC_SLICE_LENGTH(*path)),
-                           "/");
+  return absl::StripPrefix(path.as_string_view(), "/");
 }
 
 }  // namespace grpc
 
-#endif /* GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CONTEXT_H */
+#endif  // GRPC_SRC_CPP_EXT_FILTERS_CENSUS_CONTEXT_H

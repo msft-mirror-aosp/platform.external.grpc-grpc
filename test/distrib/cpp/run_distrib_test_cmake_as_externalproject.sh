@@ -17,25 +17,23 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
-echo "deb http://ftp.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
-apt-get update
-apt-get install -t jessie-backports -y libssl-dev
+# Install openssl (to use instead of boringssl)
+apt-get update && apt-get install -y libssl-dev
 
 # To increase the confidence that gRPC installation works without depending on
 # too many submodules unnecessarily, just wipe out contents of most submodules
 # before starting the test.
-rm -r third_party/abseil-cpp/* || true
 rm -r third_party/benchmark/* || true
 rm -r third_party/bloaty/* || true
-rm -r third_party/boringssl/* || true
 rm -r third_party/boringssl-with-bazel/* || true
-rm -r third_party/gflags/* || true
 rm -r third_party/googletest/* || true
+
+# Use externally provided env to determine build parallelism, otherwise use default.
+GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS=${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS:-4}
 
 # Build helloworld example using cmake superbuild
 cd examples/cpp/helloworld/cmake_externalproject
 mkdir -p cmake/build
 cd cmake/build
 cmake ../..
-make
-
+make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}"

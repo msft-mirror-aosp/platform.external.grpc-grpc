@@ -1,38 +1,46 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_REPORTER_H
 #define GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_REPORTER_H
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <atomic>
 #include <chrono>
+#include <cstdint>
 #include <deque>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
-#include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/config.h>
-
-#include "src/cpp/server/load_reporter/load_data_store.h"
-#include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
+#include <google/protobuf/repeated_ptr_field.h>
 
 #include "opencensus/stats/stats.h"
+#include "opencensus/tags/tag_key.h"
+
+#include "src/core/lib/gprpp/sync.h"
+#include "src/cpp/server/load_reporter/load_data_store.h"
+#include "src/proto/grpc/lb/v1/load_reporter.pb.h"
 
 namespace grpc {
 namespace load_reporter {
@@ -42,10 +50,10 @@ class CensusViewProvider {
  public:
   // Maps from the view name to the view data.
   using ViewDataMap =
-      std::unordered_map<grpc::string, ::opencensus::stats::ViewData>;
+      std::unordered_map<std::string, ::opencensus::stats::ViewData>;
   // Maps from the view name to the view descriptor.
   using ViewDescriptorMap =
-      std::unordered_map<grpc::string, ::opencensus::stats::ViewDescriptor>;
+      std::unordered_map<std::string, ::opencensus::stats::ViewDescriptor>;
 
   CensusViewProvider();
   virtual ~CensusViewProvider() = default;
@@ -61,10 +69,10 @@ class CensusViewProvider {
   // recorded at the same time.
   static double GetRelatedViewDataRowDouble(
       const ViewDataMap& view_data_map, const char* view_name,
-      size_t view_name_len, const std::vector<grpc::string>& tag_values);
+      size_t view_name_len, const std::vector<std::string>& tag_values);
   static uint64_t GetRelatedViewDataRowInt(
       const ViewDataMap& view_data_map, const char* view_name,
-      size_t view_name_len, const std::vector<grpc::string>& tag_values);
+      size_t view_name_len, const std::vector<std::string>& tag_values);
 
  protected:
   const ViewDescriptorMap& view_descriptor_map() const {
@@ -74,11 +82,11 @@ class CensusViewProvider {
  private:
   ViewDescriptorMap view_descriptor_map_;
   // Tag keys.
-  ::opencensus::stats::TagKey tag_key_token_;
-  ::opencensus::stats::TagKey tag_key_host_;
-  ::opencensus::stats::TagKey tag_key_user_id_;
-  ::opencensus::stats::TagKey tag_key_status_;
-  ::opencensus::stats::TagKey tag_key_metric_name_;
+  ::opencensus::tags::TagKey tag_key_token_;
+  ::opencensus::tags::TagKey tag_key_host_;
+  ::opencensus::tags::TagKey tag_key_user_id_;
+  ::opencensus::tags::TagKey tag_key_status_;
+  ::opencensus::tags::TagKey tag_key_metric_name_;
 };
 
 // The default implementation fetches the real stats from Census.
@@ -89,7 +97,7 @@ class CensusViewProviderDefaultImpl : public CensusViewProvider {
   ViewDataMap FetchViewData() override;
 
  private:
-  std::unordered_map<grpc::string, ::opencensus::stats::View> view_map_;
+  std::unordered_map<std::string, ::opencensus::stats::View> view_map_;
 };
 
 // The interface to get the CPU stats. Abstracted for mocking.
@@ -138,28 +146,28 @@ class LoadReporter {
   // all the stats data accumulated between the last report (i.e., the last
   // consumption) and the last fetch from Census (i.e., the last production).
   // Thread-safe.
-  ::google::protobuf::RepeatedPtrField<::grpc::lb::v1::Load> GenerateLoads(
-      const grpc::string& hostname, const grpc::string& lb_id);
+  ::google::protobuf::RepeatedPtrField<grpc::lb::v1::Load> GenerateLoads(
+      const std::string& hostname, const std::string& lb_id);
 
   // The feedback is calculated from the stats data recorded in the sliding
   // window. Outdated records are discarded.
   // Thread-safe.
-  ::grpc::lb::v1::LoadBalancingFeedback GenerateLoadBalancingFeedback();
+  grpc::lb::v1::LoadBalancingFeedback GenerateLoadBalancingFeedback();
 
   // Wrapper around LoadDataStore::ReportStreamCreated.
   // Thread-safe.
-  void ReportStreamCreated(const grpc::string& hostname,
-                           const grpc::string& lb_id,
-                           const grpc::string& load_key);
+  void ReportStreamCreated(const std::string& hostname,
+                           const std::string& lb_id,
+                           const std::string& load_key);
 
   // Wrapper around LoadDataStore::ReportStreamClosed.
   // Thread-safe.
-  void ReportStreamClosed(const grpc::string& hostname,
-                          const grpc::string& lb_id);
+  void ReportStreamClosed(const std::string& hostname,
+                          const std::string& lb_id);
 
   // Generates a unique LB ID of length kLbIdLength. Returns an empty string
   // upon failure. Thread-safe.
-  grpc::string GenerateLbId();
+  std::string GenerateLbId();
 
   // Accessors only for testing.
   CensusViewProvider* census_view_provider() {
@@ -207,16 +215,16 @@ class LoadReporter {
 
   // Extracts an OrphanedLoadIdentifier from the per-balancer store and attaches
   // it to the load.
-  void AttachOrphanLoadId(::grpc::lb::v1::Load* load,
+  void AttachOrphanLoadId(grpc::lb::v1::Load* load,
                           const PerBalancerStore& per_balancer_store);
 
   std::atomic<int64_t> next_lb_id_{0};
   const std::chrono::seconds feedback_sample_window_seconds_;
-  std::mutex feedback_mu_;
+  grpc_core::Mutex feedback_mu_;
   std::deque<LoadBalancingFeedbackRecord> feedback_records_;
   // TODO(juanlishen): Lock in finer grain. Locking the whole store may be
   // too expensive.
-  std::mutex store_mu_;
+  grpc_core::Mutex store_mu_;
   LoadDataStore load_data_store_;
   std::unique_ptr<CensusViewProvider> census_view_provider_;
   std::unique_ptr<CpuStatsProvider> cpu_stats_provider_;

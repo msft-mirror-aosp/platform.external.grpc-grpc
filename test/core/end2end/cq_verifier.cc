@@ -1,77 +1,63 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/core/end2end/cq_verifier.h"
 
 #include <inttypes.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
+#include <algorithm>
+#include <initializer_list>
+#include <limits>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
+
 #include <grpc/byte_buffer.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/support/alloc.h>
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-#include "src/core/lib/gpr/string.h"
+
+#include "src/core/lib/compression/message_compress.h"
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/surface/event_string.h"
+#include "test/core/util/test_config.h"
 
-#define ROOT_EXPECTATION 1000
-
-/* a set of metadata we expect to find on an event */
+// a set of metadata we expect to find on an event
 typedef struct metadata {
   size_t count;
   size_t cap;
   char** keys;
   char** values;
 } metadata;
-
-/* details what we expect to find on a single event - and forms a linked
-   list to detail other expectations */
-typedef struct expectation {
-  struct expectation* next;
-  const char* file;
-  int line;
-  grpc_completion_type type;
-  void* tag;
-  int success;
-} expectation;
-
-/* the verifier itself */
-struct cq_verifier {
-  /* bound completion queue */
-  grpc_completion_queue* cq;
-  /* start of expectation list */
-  expectation* first_expectation;
-};
-
-cq_verifier* cq_verifier_create(grpc_completion_queue* cq) {
-  cq_verifier* v = static_cast<cq_verifier*>(gpr_malloc(sizeof(cq_verifier)));
-  v->cq = cq;
-  v->first_expectation = nullptr;
-  return v;
-}
-
-void cq_verifier_destroy(cq_verifier* v) {
-  cq_verify(v);
-  gpr_free(v);
-}
 
 static int has_metadata(const grpc_metadata* md, size_t count, const char* key,
                         const char* value) {
@@ -139,184 +125,325 @@ int raw_byte_buffer_eq_slice(grpc_byte_buffer* rbb, grpc_slice b) {
   ok = GRPC_SLICE_LENGTH(a) == GRPC_SLICE_LENGTH(b) &&
        0 == memcmp(GRPC_SLICE_START_PTR(a), GRPC_SLICE_START_PTR(b),
                    GRPC_SLICE_LENGTH(a));
+  if (!ok) {
+    gpr_log(GPR_ERROR,
+            "SLICE MISMATCH: left_length=%" PRIuPTR " right_length=%" PRIuPTR,
+            GRPC_SLICE_LENGTH(a), GRPC_SLICE_LENGTH(b));
+    std::string out;
+    const char* a_str = reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(a));
+    const char* b_str = reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(b));
+    for (size_t i = 0; i < std::max(GRPC_SLICE_LENGTH(a), GRPC_SLICE_LENGTH(b));
+         i++) {
+      if (i >= GRPC_SLICE_LENGTH(a)) {
+        absl::StrAppend(&out, "\u001b[36m",  // cyan
+                        absl::CEscape(absl::string_view(&b_str[i], 1)),
+                        "\u001b[0m");
+      } else if (i >= GRPC_SLICE_LENGTH(b)) {
+        absl::StrAppend(&out, "\u001b[35m",  // magenta
+                        absl::CEscape(absl::string_view(&a_str[i], 1)),
+                        "\u001b[0m");
+      } else if (a_str[i] == b_str[i]) {
+        absl::StrAppend(&out, absl::CEscape(absl::string_view(&a_str[i], 1)));
+      } else {
+        absl::StrAppend(&out, "\u001b[31m",  // red
+                        absl::CEscape(absl::string_view(&a_str[i], 1)),
+                        "\u001b[33m",  // yellow
+                        absl::CEscape(absl::string_view(&b_str[i], 1)),
+                        "\u001b[0m");
+      }
+      gpr_log(GPR_ERROR, "%s", out.c_str());
+    }
+  }
   grpc_slice_unref(a);
   grpc_slice_unref(b);
   return ok;
 }
 
 int byte_buffer_eq_slice(grpc_byte_buffer* bb, grpc_slice b) {
-  grpc_byte_buffer_reader reader;
-  grpc_byte_buffer* rbb;
-  int res;
-
-  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb) &&
-             "Couldn't init byte buffer reader");
-  rbb = grpc_raw_byte_buffer_from_reader(&reader);
-  res = raw_byte_buffer_eq_slice(rbb, b);
-  grpc_byte_buffer_reader_destroy(&reader);
-  grpc_byte_buffer_destroy(rbb);
-
-  return res;
+  if (bb == nullptr) return 0;
+  if (bb->data.raw.compression > GRPC_COMPRESS_NONE) {
+    grpc_slice_buffer decompressed_buffer;
+    grpc_slice_buffer_init(&decompressed_buffer);
+    GPR_ASSERT(grpc_msg_decompress(bb->data.raw.compression,
+                                   &bb->data.raw.slice_buffer,
+                                   &decompressed_buffer));
+    grpc_byte_buffer* rbb = grpc_raw_byte_buffer_create(
+        decompressed_buffer.slices, decompressed_buffer.count);
+    int ret_val = raw_byte_buffer_eq_slice(rbb, b);
+    grpc_byte_buffer_destroy(rbb);
+    grpc_slice_buffer_destroy(&decompressed_buffer);
+    return ret_val;
+  }
+  return raw_byte_buffer_eq_slice(bb, b);
 }
 
 int byte_buffer_eq_string(grpc_byte_buffer* bb, const char* str) {
-  grpc_byte_buffer_reader reader;
-  grpc_byte_buffer* rbb;
-  int res;
-
-  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb) &&
-             "Couldn't init byte buffer reader");
-  rbb = grpc_raw_byte_buffer_from_reader(&reader);
-  res = raw_byte_buffer_eq_slice(rbb, grpc_slice_from_copied_string(str));
-  grpc_byte_buffer_reader_destroy(&reader);
-  grpc_byte_buffer_destroy(rbb);
-
-  return res;
+  return byte_buffer_eq_slice(bb, grpc_slice_from_copied_string(str));
 }
 
-static bool is_probably_integer(void* p) { return ((uintptr_t)p) < 1000000; }
+namespace {
+bool IsProbablyInteger(void* p) {
+  return reinterpret_cast<uintptr_t>(p) < 1000000 ||
+         (reinterpret_cast<uintptr_t>(p) >
+          std::numeric_limits<uintptr_t>::max() - 10);
+}
 
-static void expectation_to_strvec(gpr_strvec* buf, expectation* e) {
-  char* tmp;
-
-  if (is_probably_integer(e->tag)) {
-    gpr_asprintf(&tmp, "tag(%" PRIdPTR ") ", (intptr_t)e->tag);
+std::string TagStr(void* tag) {
+  if (IsProbablyInteger(tag)) {
+    return absl::StrFormat("tag(%" PRIdPTR ")",
+                           reinterpret_cast<intptr_t>(tag));
   } else {
-    gpr_asprintf(&tmp, "%p ", e->tag);
-  }
-  gpr_strvec_add(buf, tmp);
-
-  switch (e->type) {
-    case GRPC_OP_COMPLETE:
-      gpr_asprintf(&tmp, "GRPC_OP_COMPLETE success=%d %s:%d", e->success,
-                   e->file, e->line);
-      gpr_strvec_add(buf, tmp);
-      break;
-    case GRPC_QUEUE_TIMEOUT:
-    case GRPC_QUEUE_SHUTDOWN:
-      gpr_log(GPR_ERROR, "not implemented");
-      abort();
-      break;
+    return absl::StrFormat("%p", tag);
   }
 }
+}  // namespace
 
-static void expectations_to_strvec(gpr_strvec* buf, cq_verifier* v) {
-  expectation* e;
+namespace grpc_core {
 
-  for (e = v->first_expectation; e != nullptr; e = e->next) {
-    expectation_to_strvec(buf, e);
-    gpr_strvec_add(buf, gpr_strdup("\n"));
+CqVerifier::CqVerifier(
+    grpc_completion_queue* cq, absl::AnyInvocable<void(Failure) const> fail,
+    absl::AnyInvocable<
+        void(grpc_event_engine::experimental::EventEngine::Duration) const>
+        step_fn)
+    : cq_(cq), fail_(std::move(fail)), step_fn_(std::move(step_fn)) {}
+
+CqVerifier::~CqVerifier() { Verify(); }
+
+std::string CqVerifier::Expectation::ToString() const {
+  return absl::StrCat(
+      location.file(), ":", location.line(), ": ", TagStr(tag), " ",
+      Match(
+          result,
+          [](bool success) {
+            return absl::StrCat("success=", success ? "true" : "false");
+          },
+          [](Maybe) { return std::string("maybe"); },
+          [](AnyStatus) { return std::string("any success value"); },
+          [](const PerformAction&) {
+            return std::string("perform some action");
+          },
+          [](const MaybePerformAction&) {
+            return std::string("maybe perform action");
+          }));
+}
+
+std::string CqVerifier::Expectation::ToShortString() const {
+  return absl::StrCat(
+      TagStr(tag),
+      Match(
+          result,
+          [](bool success) -> std::string {
+            if (!success) return "-❌";
+            return "-✅";
+          },
+          [](Maybe) { return std::string("-❓"); },
+          [](AnyStatus) { return std::string("-🤷"); },
+          [](const PerformAction&) { return std::string("-🎬"); },
+          [](const MaybePerformAction&) { return std::string("-🎬❓"); }));
+}
+
+std::vector<std::string> CqVerifier::ToStrings() const {
+  std::vector<std::string> expectations;
+  expectations.reserve(expectations_.size());
+  for (const auto& e : expectations_) {
+    expectations.push_back(e.ToString());
   }
+  return expectations;
 }
 
-static void fail_no_event_received(cq_verifier* v) {
-  gpr_strvec buf;
-  char* msg;
-  gpr_strvec_init(&buf);
-  gpr_strvec_add(&buf, gpr_strdup("no event received, but expected:\n"));
-  expectations_to_strvec(&buf, v);
-  msg = gpr_strvec_flatten(&buf, nullptr);
-  gpr_log(GPR_ERROR, "%s", msg);
-  gpr_strvec_destroy(&buf);
-  gpr_free(msg);
-  abort();
+std::string CqVerifier::ToString() const {
+  return absl::StrJoin(ToStrings(), "\n");
 }
 
-static void verify_matches(expectation* e, grpc_event* ev) {
-  GPR_ASSERT(e->type == ev->type);
-  switch (e->type) {
-    case GRPC_OP_COMPLETE:
-      if (e->success != ev->success) {
-        gpr_strvec expected;
-        gpr_strvec_init(&expected);
-        expectation_to_strvec(&expected, e);
-        char* s = gpr_strvec_flatten(&expected, nullptr);
-        gpr_strvec_destroy(&expected);
-        gpr_log(GPR_ERROR, "actual success does not match expected: %s", s);
-        gpr_free(s);
-        abort();
+std::vector<std::string> CqVerifier::ToShortStrings() const {
+  std::vector<std::string> expectations;
+  expectations.reserve(expectations_.size());
+  for (const auto& e : expectations_) {
+    expectations.push_back(e.ToShortString());
+  }
+  return expectations;
+}
+
+std::string CqVerifier::ToShortString() const {
+  return absl::StrJoin(ToShortStrings(), " ");
+}
+
+void CqVerifier::FailNoEventReceived(const SourceLocation& location) const {
+  fail_(Failure{location, "No event received", ToStrings(), {}});
+}
+
+void CqVerifier::FailUnexpectedEvent(grpc_event* ev,
+                                     const SourceLocation& location) const {
+  std::vector<std::string> message_details;
+  if (ev->type == GRPC_OP_COMPLETE && ev->success) {
+    auto successful_state_strings = successful_state_strings_.find(ev->tag);
+    if (successful_state_strings != successful_state_strings_.end()) {
+      for (SuccessfulStateString* sss : successful_state_strings->second) {
+        message_details.push_back(sss->GetSuccessfulStateString());
       }
-      break;
-    case GRPC_QUEUE_SHUTDOWN:
-      gpr_log(GPR_ERROR, "premature queue shutdown");
-      abort();
-      break;
-    case GRPC_QUEUE_TIMEOUT:
-      gpr_log(GPR_ERROR, "not implemented");
-      abort();
-      break;
+    }
   }
+  fail_(Failure{location,
+                absl::StrCat("Unexpected event: ", grpc_event_string(ev)),
+                ToStrings(), std::move(message_details)});
 }
 
-void cq_verify(cq_verifier* v) {
-  const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
-  while (v->first_expectation != nullptr) {
-    grpc_event ev = grpc_completion_queue_next(v->cq, deadline, nullptr);
-    if (ev.type == GRPC_QUEUE_TIMEOUT) {
-      fail_no_event_received(v);
-      break;
+namespace {
+std::string CrashMessage(const CqVerifier::Failure& failure) {
+  std::string message = failure.message;
+  if (!failure.message_details.empty()) {
+    absl::StrAppend(&message, "\nwith:");
+    for (const auto& detail : failure.message_details) {
+      absl::StrAppend(&message, "\n  ", detail);
     }
-    expectation* e;
-    expectation* prev = nullptr;
-    for (e = v->first_expectation; e != nullptr; e = e->next) {
-      if (e->tag == ev.tag) {
-        verify_matches(e, &ev);
-        if (e == v->first_expectation) v->first_expectation = e->next;
-        if (prev != nullptr) prev->next = e->next;
-        gpr_free(e);
-        break;
+  }
+  absl::StrAppend(&message, "\nchecked @ ", failure.location.file(), ":",
+                  failure.location.line());
+  if (!failure.expected.empty()) {
+    absl::StrAppend(&message, "\nexpected:\n");
+    for (const auto& line : failure.expected) {
+      absl::StrAppend(&message, "  ", line, "\n");
+    }
+  } else {
+    absl::StrAppend(&message, "\nexpected nothing");
+  }
+  return message;
+}
+}  // namespace
+
+void CqVerifier::FailUsingGprCrashWithStdio(const Failure& failure) {
+  CrashWithStdio(CrashMessage(failure));
+}
+
+void CqVerifier::FailUsingGprCrash(const Failure& failure) {
+  Crash(CrashMessage(failure));
+}
+
+void CqVerifier::FailUsingGtestFail(const Failure& failure) {
+  std::string message = absl::StrCat("  ", failure.message);
+  if (!failure.expected.empty()) {
+    absl::StrAppend(&message, "\n  expected:\n");
+    for (const auto& line : failure.expected) {
+      absl::StrAppend(&message, "    ", line, "\n");
+    }
+  } else {
+    absl::StrAppend(&message, "\n  expected nothing");
+  }
+  ADD_FAILURE_AT(failure.location.file(), failure.location.line()) << message;
+}
+
+namespace {
+bool IsMaybe(const CqVerifier::ExpectedResult& r) {
+  return Match(
+      r, [](bool) { return false; }, [](CqVerifier::Maybe) { return true; },
+      [](CqVerifier::AnyStatus) { return false; },
+      [](const CqVerifier::PerformAction&) { return false; },
+      [](const CqVerifier::MaybePerformAction&) { return true; });
+}
+}  // namespace
+
+grpc_event CqVerifier::Step(gpr_timespec deadline) {
+  if (step_fn_ != nullptr) {
+    while (true) {
+      grpc_event r = grpc_completion_queue_next(
+          cq_, gpr_inf_past(deadline.clock_type), nullptr);
+      if (r.type != GRPC_QUEUE_TIMEOUT) return r;
+      auto now = gpr_now(deadline.clock_type);
+      if (gpr_time_cmp(deadline, now) < 0) break;
+      step_fn_(Timestamp::FromTimespecRoundDown(deadline) - Timestamp::Now());
+    }
+    return grpc_event{GRPC_QUEUE_TIMEOUT, 0, nullptr};
+  }
+  return grpc_completion_queue_next(cq_, deadline, nullptr);
+}
+
+void CqVerifier::Verify(Duration timeout, SourceLocation location) {
+  if (expectations_.empty()) return;
+  if (log_verifications_) {
+    gpr_log(GPR_ERROR, "Verify %s for %s", ToShortString().c_str(),
+            timeout.ToString().c_str());
+  }
+  const gpr_timespec deadline =
+      grpc_timeout_milliseconds_to_deadline(timeout.millis());
+  while (!expectations_.empty()) {
+    grpc_event ev = Step(deadline);
+    if (ev.type == GRPC_QUEUE_TIMEOUT) break;
+    if (ev.type != GRPC_OP_COMPLETE) {
+      FailUnexpectedEvent(&ev, location);
+    }
+    bool found = false;
+    for (auto it = expectations_.begin(); it != expectations_.end(); ++it) {
+      if (it->tag != ev.tag) continue;
+      auto expectation = std::move(*it);
+      expectations_.erase(it);
+      const bool expected = Match(
+          expectation.result,
+          [ev](bool success) { return ev.success == success; },
+          [ev](Maybe m) {
+            if (m.seen != nullptr) *m.seen = true;
+            return ev.success != 0;
+          },
+          [ev](AnyStatus a) {
+            if (a.result != nullptr) *a.result = ev.success;
+            return true;
+          },
+          [ev](const PerformAction& action) {
+            action.action(ev.success);
+            return true;
+          },
+          [ev](const MaybePerformAction& action) {
+            action.action(ev.success);
+            return true;
+          });
+      if (!expected) {
+        FailUnexpectedEvent(&ev, location);
       }
-      prev = e;
+      found = true;
+      break;
     }
-    if (e == nullptr) {
-      char* s = grpc_event_string(&ev);
-      gpr_log(GPR_ERROR, "cq returned unexpected event: %s", s);
-      gpr_free(s);
-      gpr_strvec expectations;
-      gpr_strvec_init(&expectations);
-      expectations_to_strvec(&expectations, v);
-      s = gpr_strvec_flatten(&expectations, nullptr);
-      gpr_strvec_destroy(&expectations);
-      gpr_log(GPR_ERROR, "expected tags:\n%s", s);
-      gpr_free(s);
-      abort();
-    }
+    if (!found) FailUnexpectedEvent(&ev, location);
+    if (AllMaybes()) break;
   }
+  expectations_.erase(
+      std::remove_if(expectations_.begin(), expectations_.end(),
+                     [](const Expectation& e) { return IsMaybe(e.result); }),
+      expectations_.end());
+  if (!expectations_.empty()) FailNoEventReceived(location);
 }
 
-void cq_verify_empty_timeout(cq_verifier* v, int timeout_sec) {
-  gpr_timespec deadline =
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                   gpr_time_from_seconds(timeout_sec, GPR_TIMESPAN));
-  grpc_event ev;
+bool CqVerifier::AllMaybes() const {
+  for (const auto& e : expectations_) {
+    if (!IsMaybe(e.result)) return false;
+  }
+  return true;
+}
 
-  GPR_ASSERT(v->first_expectation == nullptr &&
-             "expectation queue must be empty");
-
-  ev = grpc_completion_queue_next(v->cq, deadline, nullptr);
+void CqVerifier::VerifyEmpty(Duration timeout, SourceLocation location) {
+  if (log_verifications_) {
+    gpr_log(GPR_ERROR, "Verify empty completion queue for %s",
+            timeout.ToString().c_str());
+  }
+  const gpr_timespec deadline =
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), timeout.as_timespec());
+  GPR_ASSERT(expectations_.empty());
+  grpc_event ev = Step(deadline);
   if (ev.type != GRPC_QUEUE_TIMEOUT) {
-    char* s = grpc_event_string(&ev);
-    gpr_log(GPR_ERROR, "unexpected event (expected nothing): %s", s);
-    gpr_free(s);
-    abort();
+    FailUnexpectedEvent(&ev, location);
   }
 }
 
-void cq_verify_empty(cq_verifier* v) { cq_verify_empty_timeout(v, 1); }
-
-static void add(cq_verifier* v, const char* file, int line,
-                grpc_completion_type type, void* tag, bool success) {
-  expectation* e = static_cast<expectation*>(gpr_malloc(sizeof(expectation)));
-  e->type = type;
-  e->file = file;
-  e->line = line;
-  e->tag = tag;
-  e->success = success;
-  e->next = v->first_expectation;
-  v->first_expectation = e;
+void CqVerifier::Expect(void* tag, ExpectedResult result,
+                        SourceLocation location) {
+  expectations_.push_back(Expectation{location, tag, std::move(result)});
 }
 
-void cq_expect_completion(cq_verifier* v, const char* file, int line, void* tag,
-                          bool success) {
-  add(v, file, line, GRPC_OP_COMPLETE, tag, success);
+void CqVerifier::AddSuccessfulStateString(
+    void* tag, SuccessfulStateString* successful_state_string) {
+  successful_state_strings_[tag].push_back(successful_state_string);
 }
+
+void CqVerifier::ClearSuccessfulStateStrings(void* tag) {
+  successful_state_strings_.erase(tag);
+}
+
+}  // namespace grpc_core

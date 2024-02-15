@@ -1,29 +1,30 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/* Benchmark gRPC end2end in various configurations */
+// Benchmark gRPC end2end in various configurations
 
-#ifndef TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PING_PONG_H
-#define TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PING_PONG_H
+#ifndef GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PING_PONG_H
+#define GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PING_PONG_H
+
+#include <sstream>
 
 #include <benchmark/benchmark.h>
-#include <sstream>
-#include "src/core/lib/profiling/timers.h"
+
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
@@ -31,9 +32,9 @@
 namespace grpc {
 namespace testing {
 
-/*******************************************************************************
- * BENCHMARKING KERNELS
- */
+//******************************************************************************
+// BENCHMARKING KERNELS
+//
 
 static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 
@@ -65,7 +66,7 @@ static void BM_StreamingPingPong(benchmark::State& state) {
     std::unique_ptr<EchoTestService::Stub> stub(
         EchoTestService::NewStub(fixture->channel()));
 
-    while (state.KeepRunning()) {
+    for (auto _ : state) {
       ServerContext svr_ctx;
       ServerContextMutator svr_ctx_mut(&svr_ctx);
       ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
@@ -83,7 +84,7 @@ static void BM_StreamingPingPong(benchmark::State& state) {
       while (need_tags) {
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));
         GPR_ASSERT(ok);
-        int i = static_cast<int>((intptr_t)t);
+        int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
         GPR_ASSERT(need_tags & (1 << i));
         need_tags &= ~(1 << i);
       }
@@ -99,7 +100,7 @@ static void BM_StreamingPingPong(benchmark::State& state) {
         while (need_tags) {
           GPR_ASSERT(fixture->cq()->Next(&t, &ok));
           GPR_ASSERT(ok);
-          int i = static_cast<int>((intptr_t)t);
+          int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
 
           // If server recv is complete, start the server send operation
           if (i == 1) {
@@ -122,7 +123,7 @@ static void BM_StreamingPingPong(benchmark::State& state) {
       need_tags = (1 << 0) | (1 << 1) | (1 << 2);
       while (need_tags) {
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-        int i = static_cast<int>((intptr_t)t);
+        int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
         GPR_ASSERT(need_tags & (1 << i));
         need_tags &= ~(1 << i);
       }
@@ -131,7 +132,6 @@ static void BM_StreamingPingPong(benchmark::State& state) {
     }
   }
 
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(msg_size * state.iterations() * max_ping_pongs * 2);
 }
@@ -175,13 +175,12 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
       GPR_ASSERT(ok);
-      int i = static_cast<int>((intptr_t)t);
+      int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
 
-    while (state.KeepRunning()) {
-      GPR_TIMER_SCOPE("BenchmarkCycle", 0);
+    for (auto _ : state) {
       request_rw->Write(send_request, tag(0));   // Start client send
       response_rw.Read(&recv_request, tag(1));   // Start server recv
       request_rw->Read(&recv_response, tag(2));  // Start client recv
@@ -190,7 +189,7 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
       while (need_tags) {
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));
         GPR_ASSERT(ok);
-        int i = static_cast<int>((intptr_t)t);
+        int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
 
         // If server recv is complete, start the server send operation
         if (i == 1) {
@@ -210,7 +209,7 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
     need_tags = (1 << 0) | (1 << 1) | (1 << 2);
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-      int i = static_cast<int>((intptr_t)t);
+      int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
@@ -218,7 +217,6 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
     GPR_ASSERT(recv_status.ok());
   }
 
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(msg_size * state.iterations() * 2);
 }
@@ -262,7 +260,7 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
     std::unique_ptr<EchoTestService::Stub> stub(
         EchoTestService::NewStub(fixture->channel()));
 
-    while (state.KeepRunning()) {
+    for (auto _ : state) {
       ServerContext svr_ctx;
       ServerContextMutator svr_ctx_mut(&svr_ctx);
       ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
@@ -297,10 +295,10 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
           // established). It is necessary when client init metadata is
           // coalesced
           GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-          while (static_cast<int>((intptr_t)t) != 0) {
+          while (static_cast<int>(reinterpret_cast<intptr_t>(t)) != 0) {
             // In some cases tag:2 comes before tag:0 (write tag comes out
             // first), this while loop is to make sure get tag:0.
-            int i = static_cast<int>((intptr_t)t);
+            int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
             GPR_ASSERT(await_tags & (1 << i));
             await_tags &= ~(1 << i);
             GPR_ASSERT(fixture->cq()->Next(&t, &ok));
@@ -317,7 +315,7 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
         while (await_tags != 0) {
           GPR_ASSERT(fixture->cq()->Next(&t, &ok));
           GPR_ASSERT(ok);
-          int i = static_cast<int>((intptr_t)t);
+          int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
 
           // If server recv is complete, start the server send operation
           if (i == 3) {
@@ -367,8 +365,8 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
         // wait for server call data structure(call_hook, etc.) to be
         // initialized, since initial metadata is corked.
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-        while (static_cast<int>((intptr_t)t) != 0) {
-          int i = static_cast<int>((intptr_t)t);
+        while (static_cast<int>(reinterpret_cast<intptr_t>(t)) != 0) {
+          int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
           GPR_ASSERT(expect_tags & (1 << i));
           expect_tags &= ~(1 << i);
           GPR_ASSERT(fixture->cq()->Next(&t, &ok));
@@ -385,7 +383,7 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
 
       while (expect_tags) {
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-        int i = static_cast<int>((intptr_t)t);
+        int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
         GPR_ASSERT(expect_tags & (1 << i));
         expect_tags &= ~(1 << i);
       }
@@ -394,11 +392,10 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
     }
   }
 
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(msg_size * state.iterations() * max_ping_pongs * 2);
 }
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PING_PONG_H
+#endif  // GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PING_PONG_H

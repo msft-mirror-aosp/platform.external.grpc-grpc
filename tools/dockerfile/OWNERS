@@ -7,5 +7,4 @@ set noparent
 # for kokoro to be able to access the pre-built images.
 
 @jtattermusch
-@mehrdada
-@nicolasnoble
+@apolcyn

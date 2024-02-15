@@ -17,6 +17,10 @@ syntax = "proto3";
 
 package grpc.testing;
 
+option cc_enable_arenas = true;
+
+import "src/proto/grpc/testing/xds/v3/orca_load_report.proto";
+
 // Message to be echoed back serialized in trailer.
 message DebugInfo {
   repeated string stack_entries = 1;
@@ -45,8 +49,12 @@ message RequestParams {
   bool server_die = 12; // Server should not see a request with this set.
   string binary_error_details = 13;
   ErrorStatus expected_error = 14;
-  int32 server_sleep_us = 15; // Amount to sleep when invoking server
+  int32 server_sleep_us = 15; // sleep when invoking server for deadline tests
   int32 backend_channel_idx = 16; // which backend to send request to
+  bool echo_metadata_initially = 17;
+  bool server_notify_client_when_started = 18;
+  xds.data.orca.v3.OrcaLoadReport backend_metrics = 19;
+  bool echo_host_from_authority_header = 20;
 }
 
 message EchoRequest {

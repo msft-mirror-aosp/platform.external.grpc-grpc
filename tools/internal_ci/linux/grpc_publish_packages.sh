@@ -19,7 +19,7 @@ shopt -s nullglob
 
 cd "$(dirname "$0")/../../.."
 
-GRPC_VERSION=$(grep -e "^ *version: " build.yaml | head -n 1 | sed 's/.*: //')
+GRPC_VERSION=$(grep -e "^ *version: " build_handwritten.yaml | head -n 1 | sed 's/.*: //')
 
 INPUT_ARTIFACTS=$KOKORO_GFILE_DIR/github/grpc/artifacts
 INDEX_FILENAME=index.xml
@@ -49,7 +49,7 @@ for zip_dir in protoc_windows_{x86,x64}
 do
   zip -jr "$PROTOC_PLUGINS_ZIPPED_PACKAGES/grpc-$zip_dir-$GRPC_VERSION.zip" "$INPUT_ARTIFACTS/$zip_dir/"*
 done
-for tar_dir in protoc_{linux,macos}_{x86,x64}
+for tar_dir in protoc_linux_{x86,x64} protoc_macos_x64
 do
   chmod +x "$INPUT_ARTIFACTS/$tar_dir"/*
   tar -cvzf "$PROTOC_PLUGINS_ZIPPED_PACKAGES/grpc-$tar_dir-$GRPC_VERSION.tar.gz" -C "$INPUT_ARTIFACTS/$tar_dir" .
@@ -57,12 +57,14 @@ done
 
 PROTOC_PACKAGES=(
   "$PROTOC_PLUGINS_ZIPPED_PACKAGES"/grpc-protoc_windows_{x86,x64}-"$GRPC_VERSION.zip"
-  "$PROTOC_PLUGINS_ZIPPED_PACKAGES"/grpc-protoc_{linux,macos}_{x86,x64}-"$GRPC_VERSION.tar.gz"
+  "$PROTOC_PLUGINS_ZIPPED_PACKAGES"/grpc-protoc_linux_{x86,x64}-"$GRPC_VERSION.tar.gz"
+  "$PROTOC_PLUGINS_ZIPPED_PACKAGES"/grpc-protoc_macos_x64-"$GRPC_VERSION.tar.gz"
 )
 
 # C#
 UNZIPPED_CSHARP_PACKAGES=$(mktemp -d)
-unzip "$INPUT_ARTIFACTS/csharp_nugets_windows_dotnetcli.zip" -d "$UNZIPPED_CSHARP_PACKAGES"
+# the "_multiplatform" suffix is to fix https://github.com/grpc/grpc/issues/32179
+unzip "$INPUT_ARTIFACTS/csharp_nugets_windows_dotnetcli_multiplatform.zip" -d "$UNZIPPED_CSHARP_PACKAGES"
 CSHARP_PACKAGES=(
   "$UNZIPPED_CSHARP_PACKAGES"/*
   "$INPUT_ARTIFACTS"/grpc_unity_package.[0-9]*.zip
@@ -223,7 +225,7 @@ EOF
 
 # Upload the current build artifacts
 gsutil -m cp -r "$LOCAL_STAGING_TEMPDIR/${BUILD_RELPATH%%/*}" "$GCS_ARCHIVE_ROOT"
-# Upload directory indicies for subdirectories
+# Upload directory indices for subdirectories
 (
   cd "$LOCAL_BUILD_ROOT"
   find * -type d | while read -r directory
@@ -233,3 +235,16 @@ gsutil -m cp -r "$LOCAL_STAGING_TEMPDIR/${BUILD_RELPATH%%/*}" "$GCS_ARCHIVE_ROOT
 )
 # Upload the new /index.xml
 gsutil -h "Content-Type:application/xml" cp "$NEW_INDEX" "$GCS_INDEX"
+
+# Upload C# nugets to the dev nuget feed
+pushd "$UNZIPPED_CSHARP_PACKAGES"
+docker pull mcr.microsoft.com/dotnet/core/sdk:2.1
+for nugetfile in *.nupkg
+do
+  echo "Going to push $nugetfile"
+  # use nuget from a docker container to push the nupkg
+  set +x  # IMPORTANT: avoid revealing the nuget api key by the command echo
+  docker run -v "$(pwd):/nugets:ro" --rm=true mcr.microsoft.com/dotnet/core/sdk:2.1 bash -c "dotnet nuget push /nugets/$nugetfile -k $(cat ${KOKORO_GFILE_DIR}/artifactory_grpc_nuget_dev_api_key) --source https://grpc.jfrog.io/grpc/api/nuget/v3/grpc-nuget-dev"
+  set -ex
+done
+popd

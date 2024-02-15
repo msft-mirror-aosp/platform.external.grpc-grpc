@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 package(
     features = [
@@ -26,14 +26,28 @@ package(
 grpc_cc_test(
     name = "backoff_test",
     srcs = ["backoff_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:backoff",
+        "//:exec_ctx",
+        "//:grpc",
+        "//src/core:time",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "random_early_detection_test",
+    srcs = ["random_early_detection_test.cc"],
     external_deps = [
+        "absl/random",
         "gtest",
     ],
     language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_util",
-    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = ["//src/core:random_early_detection"],
 )

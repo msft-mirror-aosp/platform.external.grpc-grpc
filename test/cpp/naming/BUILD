@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_py_binary")
+load(":generate_resolver_component_tests.bzl", "generate_resolver_component_tests")
+
 package(
     default_visibility = ["//visibility:public"],
     features = [
@@ -20,35 +23,40 @@ package(
     ],
 )
 
-licenses(["notice"])  # Apache v2
-
-load("//bazel:grpc_build_system.bzl", "grpc_py_binary", "grpc_cc_test")
-
-load(":generate_resolver_component_tests.bzl", "generate_resolver_component_tests")
+licenses(["notice"])
 
 # Meant to be invoked only through the top-level shell script driver.
 grpc_py_binary(
     name = "resolver_component_tests_runner",
+    testonly = True,
     srcs = [
         "resolver_component_tests_runner.py",
     ],
-    testonly = True,
 )
 
 grpc_cc_test(
     name = "cancel_ares_query_test",
     srcs = ["cancel_ares_query_test.cc"],
-    external_deps = ["gmock"],
+    external_deps = ["gtest"],
+    tags = ["cancel_ares_query_test"],
     deps = [
-        "//test/cpp/util:test_util",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:gpr_test_util",
-        "//:grpc++",
-        "//:grpc",
         "//:gpr",
-        "//test/cpp/util:test_config",
+        "//:grpc",
+        "//:grpc++",
+        "//src/core:ares_resolver",
+        "//src/core:channel_args",
         "//test/core/end2end:cq_verifier",
+        "//test/core/util:fake_udp_and_tcp_server",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:socket_use_after_close_detector",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
     ],
+)
+
+filegroup(
+    name = "resolver_test_record_groups",
+    srcs = ["resolver_test_record_groups.yaml"],
 )
 
 generate_resolver_component_tests()

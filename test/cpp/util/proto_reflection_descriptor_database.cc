@@ -1,26 +1,28 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
 
 #include <vector>
 
 #include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/crash.h"
 
 using grpc::reflection::v1alpha::ErrorResponse;
 using grpc::reflection::v1alpha::ListServiceResponse;
@@ -35,7 +37,7 @@ ProtoReflectionDescriptorDatabase::ProtoReflectionDescriptorDatabase(
     : stub_(std::move(stub)) {}
 
 ProtoReflectionDescriptorDatabase::ProtoReflectionDescriptorDatabase(
-    const std::shared_ptr<grpc::Channel>& channel)
+    const std::shared_ptr<grpc::ChannelInterface>& channel)
     : stub_(ServerReflection::NewStub(channel)) {}
 
 ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {
@@ -44,14 +46,17 @@ ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {
     Status status = stream_->Finish();
     if (!status.ok()) {
       if (status.error_code() == StatusCode::UNIMPLEMENTED) {
-        gpr_log(GPR_INFO,
+        fprintf(stderr,
                 "Reflection request not implemented; "
-                "is the ServerReflection service enabled?");
+                "is the ServerReflection service enabled?\n");
+      } else {
+        fprintf(stderr,
+                "ServerReflectionInfo rpc failed. Error code: %d, message: %s, "
+                "debug info: %s\n",
+                static_cast<int>(status.error_code()),
+                status.error_message().c_str(),
+                ctx_.debug_error_string().c_str());
       }
-      gpr_log(GPR_INFO,
-              "ServerReflectionInfo rpc failed. Error code: %d, details: %s",
-              static_cast<int>(status.error_code()),
-              status.error_message().c_str());
     }
   }
 }
@@ -254,7 +259,7 @@ bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
 }
 
 bool ProtoReflectionDescriptorDatabase::GetServices(
-    std::vector<grpc::string>* output) {
+    std::vector<std::string>* output) {
   ServerReflectionRequest request;
   request.set_list_services("");
   ServerReflectionResponse response;
@@ -287,9 +292,9 @@ bool ProtoReflectionDescriptorDatabase::GetServices(
   return false;
 }
 
-const protobuf::FileDescriptorProto
+protobuf::FileDescriptorProto
 ProtoReflectionDescriptorDatabase::ParseFileDescriptorProtoResponse(
-    const grpc::string& byte_fd_proto) {
+    const std::string& byte_fd_proto) {
   protobuf::FileDescriptorProto file_desc_proto;
   file_desc_proto.ParseFromString(byte_fd_proto);
   return file_desc_proto;
@@ -307,7 +312,7 @@ void ProtoReflectionDescriptorDatabase::AddFileFromResponse(
   }
 }
 
-const std::shared_ptr<ProtoReflectionDescriptorDatabase::ClientStream>
+std::shared_ptr<ProtoReflectionDescriptorDatabase::ClientStream>
 ProtoReflectionDescriptorDatabase::GetStream() {
   if (!stream_) {
     stream_ = stub_->ServerReflectionInfo(&ctx_);

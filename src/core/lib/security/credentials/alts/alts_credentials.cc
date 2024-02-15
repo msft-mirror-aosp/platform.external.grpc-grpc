@@ -1,72 +1,92 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 
-#include <cstring>
+#include <utility>
+
+#include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
-#include "src/core/lib/security/security_connector/alts_security_connector.h"
+#include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
+#include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 
-#define GRPC_CREDENTIALS_TYPE_ALTS "Alts"
-#define GRPC_ALTS_HANDSHAKER_SERVICE_URL "metadata.google.internal:8080"
+#define GRPC_ALTS_HANDSHAKER_SERVICE_URL "metadata.google.internal.:8080"
 
-static void alts_credentials_destruct(grpc_channel_credentials* creds) {
-  grpc_alts_credentials* alts_creds =
-      reinterpret_cast<grpc_alts_credentials*>(creds);
-  grpc_alts_credentials_options_destroy(alts_creds->options);
-  gpr_free(alts_creds->handshaker_service_url);
+grpc_alts_credentials::grpc_alts_credentials(
+    const grpc_alts_credentials_options* options,
+    const char* handshaker_service_url)
+    : options_(grpc_alts_credentials_options_copy(options)),
+      handshaker_service_url_(handshaker_service_url == nullptr
+                                  ? gpr_strdup(GRPC_ALTS_HANDSHAKER_SERVICE_URL)
+                                  : gpr_strdup(handshaker_service_url)) {
+  grpc_alts_set_rpc_protocol_versions(&options_->rpc_versions);
 }
 
-static void alts_server_credentials_destruct(grpc_server_credentials* creds) {
-  grpc_alts_server_credentials* alts_creds =
-      reinterpret_cast<grpc_alts_server_credentials*>(creds);
-  grpc_alts_credentials_options_destroy(alts_creds->options);
-  gpr_free(alts_creds->handshaker_service_url);
+grpc_alts_credentials::~grpc_alts_credentials() {
+  grpc_alts_credentials_options_destroy(options_);
+  gpr_free(handshaker_service_url_);
 }
 
-static grpc_security_status alts_create_security_connector(
-    grpc_channel_credentials* creds,
-    grpc_call_credentials* request_metadata_creds, const char* target_name,
-    const grpc_channel_args* args, grpc_channel_security_connector** sc,
-    grpc_channel_args** new_args) {
+grpc_core::RefCountedPtr<grpc_channel_security_connector>
+grpc_alts_credentials::create_security_connector(
+    grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+    const char* target_name, grpc_core::ChannelArgs* /*args*/) {
   return grpc_alts_channel_security_connector_create(
-      creds, request_metadata_creds, target_name, sc);
+      this->Ref(), std::move(call_creds), target_name);
 }
 
-static grpc_security_status alts_server_create_security_connector(
-    grpc_server_credentials* creds, grpc_server_security_connector** sc) {
-  return grpc_alts_server_security_connector_create(creds, sc);
+grpc_core::UniqueTypeName grpc_alts_credentials::type() const {
+  static grpc_core::UniqueTypeName::Factory kFactory("Alts");
+  return kFactory.Create();
 }
 
-static const grpc_channel_credentials_vtable alts_credentials_vtable = {
-    alts_credentials_destruct, alts_create_security_connector,
-    /*duplicate_without_call_credentials=*/nullptr};
+grpc_alts_server_credentials::grpc_alts_server_credentials(
+    const grpc_alts_credentials_options* options,
+    const char* handshaker_service_url)
+    : options_(grpc_alts_credentials_options_copy(options)),
+      handshaker_service_url_(handshaker_service_url == nullptr
+                                  ? gpr_strdup(GRPC_ALTS_HANDSHAKER_SERVICE_URL)
+                                  : gpr_strdup(handshaker_service_url)) {
+  grpc_alts_set_rpc_protocol_versions(&options_->rpc_versions);
+}
 
-static const grpc_server_credentials_vtable alts_server_credentials_vtable = {
-    alts_server_credentials_destruct, alts_server_create_security_connector};
+grpc_core::RefCountedPtr<grpc_server_security_connector>
+grpc_alts_server_credentials::create_security_connector(
+    const grpc_core::ChannelArgs& /* args */) {
+  return grpc_alts_server_security_connector_create(this->Ref());
+}
+
+grpc_alts_server_credentials::~grpc_alts_server_credentials() {
+  grpc_alts_credentials_options_destroy(options_);
+  gpr_free(handshaker_service_url_);
+}
+
+grpc_core::UniqueTypeName grpc_alts_server_credentials::type() const {
+  static grpc_core::UniqueTypeName::Factory kFactory("Alts");
+  return kFactory.Create();
+}
 
 grpc_channel_credentials* grpc_alts_credentials_create_customized(
     const grpc_alts_credentials_options* options,
@@ -74,17 +94,7 @@ grpc_channel_credentials* grpc_alts_credentials_create_customized(
   if (!enable_untrusted_alts && !grpc_alts_is_running_on_gcp()) {
     return nullptr;
   }
-  auto creds = static_cast<grpc_alts_credentials*>(
-      gpr_zalloc(sizeof(grpc_alts_credentials)));
-  creds->options = grpc_alts_credentials_options_copy(options);
-  creds->handshaker_service_url =
-      handshaker_service_url == nullptr
-          ? gpr_strdup(GRPC_ALTS_HANDSHAKER_SERVICE_URL)
-          : gpr_strdup(handshaker_service_url);
-  creds->base.type = GRPC_CREDENTIALS_TYPE_ALTS;
-  creds->base.vtable = &alts_credentials_vtable;
-  gpr_ref_init(&creds->base.refcount, 1);
-  return &creds->base;
+  return new grpc_alts_credentials(options, handshaker_service_url);
 }
 
 grpc_server_credentials* grpc_alts_server_credentials_create_customized(
@@ -93,17 +103,7 @@ grpc_server_credentials* grpc_alts_server_credentials_create_customized(
   if (!enable_untrusted_alts && !grpc_alts_is_running_on_gcp()) {
     return nullptr;
   }
-  auto creds = static_cast<grpc_alts_server_credentials*>(
-      gpr_zalloc(sizeof(grpc_alts_server_credentials)));
-  creds->options = grpc_alts_credentials_options_copy(options);
-  creds->handshaker_service_url =
-      handshaker_service_url == nullptr
-          ? gpr_strdup(GRPC_ALTS_HANDSHAKER_SERVICE_URL)
-          : gpr_strdup(handshaker_service_url);
-  creds->base.type = GRPC_CREDENTIALS_TYPE_ALTS;
-  creds->base.vtable = &alts_server_credentials_vtable;
-  gpr_ref_init(&creds->base.refcount, 1);
-  return &creds->base;
+  return new grpc_alts_server_credentials(options, handshaker_service_url);
 }
 
 grpc_channel_credentials* grpc_alts_credentials_create(

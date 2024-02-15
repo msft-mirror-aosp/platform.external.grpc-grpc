@@ -1,26 +1,25 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/gprpp/orphanable.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
-#include "src/core/lib/gprpp/memory.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -31,7 +30,7 @@ class Foo : public Orphanable {
  public:
   Foo() : Foo(0) {}
   explicit Foo(int value) : value_(value) {}
-  void Orphan() override { Delete(this); }
+  void Orphan() override { delete this; }
   int value() const { return value_; }
 
  private:
@@ -39,12 +38,12 @@ class Foo : public Orphanable {
 };
 
 TEST(Orphanable, Basic) {
-  Foo* foo = New<Foo>();
+  Foo* foo = new Foo();
   foo->Orphan();
 }
 
 TEST(OrphanablePtr, Basic) {
-  OrphanablePtr<Foo> foo(New<Foo>());
+  OrphanablePtr<Foo> foo(new Foo());
   EXPECT_EQ(0, foo->value());
 }
 
@@ -79,15 +78,10 @@ TEST(OrphanablePtr, InternallyRefCounted) {
   bar->FinishWork();
 }
 
-// Note: We use DebugOnlyTraceFlag instead of TraceFlag to ensure that
-// things build properly in both debug and non-debug cases.
-DebugOnlyTraceFlag baz_tracer(true, "baz");
-
-class Baz : public InternallyRefCountedWithTracing<Baz> {
+class Baz : public InternallyRefCounted<Baz> {
  public:
   Baz() : Baz(0) {}
-  explicit Baz(int value)
-      : InternallyRefCountedWithTracing<Baz>(&baz_tracer), value_(value) {}
+  explicit Baz(int value) : InternallyRefCounted<Baz>("Baz"), value_(value) {}
   void Orphan() override { Unref(); }
   int value() const { return value_; }
 
@@ -114,7 +108,7 @@ TEST(OrphanablePtr, InternallyRefCountedWithTracing) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

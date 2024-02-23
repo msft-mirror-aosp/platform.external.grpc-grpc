@@ -29,13 +29,12 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
@@ -54,6 +53,7 @@
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
@@ -173,7 +173,9 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
               too_soon.next_allowed_ping_interval.ToString().c_str(),
               too_soon.wait.ToString().c_str());
         }
-        if (!t->delayed_ping_timer_handle.has_value()) {
+        if (t->delayed_ping_timer_handle ==
+            grpc_event_engine::experimental::EventEngine::TaskHandle::
+                kInvalid) {
           t->delayed_ping_timer_handle = t->event_engine->RunAfter(
               too_soon.wait, [t = t->Ref()]() mutable {
                 grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
@@ -216,15 +218,12 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
         ":peer_initwin=%d:t_win=%" PRId64 ":s_win=%d:s_delta=%" PRId64 "]",
         std::string(t->peer_string.as_string_view()).c_str(), t, s->id, staller,
         s->flow_controlled_buffer.length, s->flow_controlled_bytes_flowed,
-        t->settings[GRPC_ACKED_SETTINGS]
-                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
+        t->settings.acked().initial_window_size(),
         t->flow_control.remote_window(),
         static_cast<uint32_t>(std::max(
-            int64_t{0},
-            s->flow_control.remote_window_delta() +
-                static_cast<int64_t>(
-                    t->settings[GRPC_PEER_SETTINGS]
-                               [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]))),
+            int64_t{0}, s->flow_control.remote_window_delta() +
+                            static_cast<int64_t>(
+                                t->settings.peer().initial_window_size()))),
         s->flow_control.remote_window_delta());
   }
 }
@@ -264,23 +263,13 @@ class WriteContext {
   }
 
   void FlushSettings() {
-    const bool dirty =
-        t_->dirtied_local_settings ||
-        t_->settings[GRPC_SENT_SETTINGS]
-                    [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS] !=
-            t_->max_concurrent_streams_policy.AdvertiseValue();
-    if (dirty && !t_->sent_local_settings) {
-      t_->settings[GRPC_LOCAL_SETTINGS]
-                  [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS] =
-          t_->max_concurrent_streams_policy.AdvertiseValue();
-      grpc_slice_buffer_add(
-          t_->outbuf.c_slice_buffer(),
-          grpc_chttp2_settings_create(t_->settings[GRPC_SENT_SETTINGS],
-                                      t_->settings[GRPC_LOCAL_SETTINGS],
-                                      t_->force_send_settings,
-                                      GRPC_CHTTP2_NUM_SETTINGS));
-      if (grpc_core::IsSettingsTimeoutEnabled() &&
-          t_->keepalive_timeout != grpc_core::Duration::Infinity()) {
+    t_->settings.mutable_local().SetMaxConcurrentStreams(
+        t_->max_concurrent_streams_policy.AdvertiseValue());
+    auto update = t_->settings.MaybeSendUpdate();
+    if (update.has_value()) {
+      grpc_core::Http2Frame frame(std::move(*update));
+      Serialize(absl::Span<grpc_core::Http2Frame>(&frame, 1), t_->outbuf);
+      if (t_->keepalive_timeout != grpc_core::Duration::Infinity()) {
         GPR_ASSERT(
             t_->settings_ack_watchdog ==
             grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid);
@@ -293,9 +282,6 @@ class WriteContext {
               grpc_chttp2_settings_timeout(std::move(t));
             });
       }
-      t_->force_send_settings = false;
-      t_->dirtied_local_settings = false;
-      t_->sent_local_settings = true;
       t_->flow_control.FlushedSettings();
       t_->max_concurrent_streams_policy.FlushedSettings();
       grpc_core::global_stats().IncrementHttp2SettingsWrites();
@@ -322,6 +308,10 @@ class WriteContext {
   }
 
   void FlushPingAcks() {
+    if (t_->ping_ack_count == 0) return;
+    // Limit the size of writes if we include ping acks - to avoid the ack being
+    // delayed by crypto operations.
+    target_write_size_ = 0;
     for (size_t i = 0; i < t_->ping_ack_count; i++) {
       grpc_slice_buffer_add(t_->outbuf.c_slice_buffer(),
                             grpc_chttp2_ping_create(true, t_->ping_acks[i]));
@@ -331,8 +321,7 @@ class WriteContext {
 
   void EnactHpackSettings() {
     t_->hpack_compressor.SetMaxTableSize(
-        t_->settings[GRPC_PEER_SETTINGS]
-                    [GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE]);
+        t_->settings.peer().header_table_size());
   }
 
   void UpdateStreamsNoLongerStalled() {
@@ -348,7 +337,7 @@ class WriteContext {
   }
 
   grpc_chttp2_stream* NextStream() {
-    if (t_->outbuf.c_slice_buffer()->length > target_write_size()) {
+    if (t_->outbuf.c_slice_buffer()->length > target_write_size_) {
       result_.partial = true;
       return nullptr;
     }
@@ -405,17 +394,14 @@ class DataSendContext {
     return static_cast<uint32_t>(std::max(
         int64_t{0},
         s_->flow_control.remote_window_delta() +
-            static_cast<int64_t>(
-                t_->settings[GRPC_PEER_SETTINGS]
-                            [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE])));
+            static_cast<int64_t>(t_->settings.peer().initial_window_size())));
   }
 
   uint32_t max_outgoing() const {
     return grpc_core::Clamp<uint32_t>(
         std::min<int64_t>(
-            {t_->settings[GRPC_PEER_SETTINGS]
-                         [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-             stream_remote_window(), t_->flow_control.remote_window(),
+            {t_->settings.peer().max_frame_size(), stream_remote_window(),
+             t_->flow_control.remote_window(),
              grpc_core::IsWriteSizeCapEnabled()
                  ? static_cast<int64_t>(write_context_->target_write_size())
                  : std::numeric_limits<uint32_t>::max()}),
@@ -489,14 +475,10 @@ class StreamWriteContext {
           grpc_core::HPackCompressor::EncodeHeaderOptions{
               s_->id,  // stream_id
               false,   // is_eof
-              t_->settings
-                      [GRPC_PEER_SETTINGS]
-                      [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] !=
-                  0,  // use_true_binary_metadata
-              t_->settings
-                  [GRPC_PEER_SETTINGS]
-                  [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],  // max_frame_size
-              &s_->stats.outgoing                         // stats
+              t_->settings.peer()
+                  .allow_true_binary_metadata(),     // use_true_binary_metadata
+              t_->settings.peer().max_frame_size(),  // max_frame_size
+              &s_->stats.outgoing                    // stats
           },
           *s_->send_initial_metadata, t_->outbuf.c_slice_buffer());
       grpc_chttp2_reset_ping_clock(t_);
@@ -509,6 +491,12 @@ class StreamWriteContext {
     grpc_chttp2_complete_closure_step(
         t_, s_, &s_->send_initial_metadata_finished, absl::OkStatus(),
         "send_initial_metadata_finished");
+    if (s_->call_tracer) {
+      s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
+          grpc_core::HttpAnnotation::Type::kHeadWritten,
+          gpr_now(GPR_CLOCK_REALTIME), s_->t->flow_control.stats(),
+          s_->flow_control.stats()));
+    }
   }
 
   void FlushWindowUpdates() {
@@ -585,14 +573,8 @@ class StreamWriteContext {
       }
       t_->hpack_compressor.EncodeHeaders(
           grpc_core::HPackCompressor::EncodeHeaderOptions{
-              s_->id, true,
-              t_->settings
-                      [GRPC_PEER_SETTINGS]
-                      [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] !=
-                  0,
-              t_->settings[GRPC_PEER_SETTINGS]
-                          [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-              &s_->stats.outgoing},
+              s_->id, true, t_->settings.peer().allow_true_binary_metadata(),
+              t_->settings.peer().max_frame_size(), &s_->stats.outgoing},
           *s_->send_trailing_metadata, t_->outbuf.c_slice_buffer());
     }
     write_context_->IncTrailingMetadataWrites();
@@ -636,6 +618,11 @@ class StreamWriteContext {
     }
     grpc_chttp2_mark_stream_closed(t_, s_, !t_->is_client, true,
                                    absl::OkStatus());
+    if (s_->call_tracer) {
+      s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
+          grpc_core::HttpAnnotation::Type::kEnd, gpr_now(GPR_CLOCK_REALTIME),
+          s_->t->flow_control.stats(), s_->flow_control.stats()));
+    }
   }
 
   WriteContext* const write_context_;
@@ -682,7 +669,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             grpc_core::GrpcHttp2GetWriteTimestampsCallback() != nullptr) {
           t->cl->emplace_back(copy_context_fn(s->context),
                               outbuf_relative_start_pos, num_stream_bytes,
-                              s->byte_counter);
+                              s->byte_counter, s->tcp_tracer);
         }
       }
       outbuf_relative_start_pos += num_stream_bytes;
@@ -718,9 +705,7 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
       t->keepalive_timeout != grpc_core::Duration::Infinity()) {
     // Set ping timeout after finishing write so we don't measure our own send
     // time.
-    const auto timeout = grpc_core::IsSeparatePingFromKeepaliveEnabled()
-                             ? t->ping_timeout
-                             : t->keepalive_timeout;
+    const auto timeout = t->ping_timeout;
     auto id = t->ping_callbacks.OnPingTimeout(
         timeout, t->event_engine.get(), [t = t->Ref()] {
           grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
@@ -734,8 +719,7 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
               id.value());
     }
 
-    if (grpc_core::IsSeparatePingFromKeepaliveEnabled() &&
-        t->keepalive_incoming_data_wanted &&
+    if (t->keepalive_incoming_data_wanted &&
         t->keepalive_timeout < t->ping_timeout &&
         t->keepalive_ping_timeout_handle !=
             grpc_event_engine::experimental::EventEngine::TaskHandle::

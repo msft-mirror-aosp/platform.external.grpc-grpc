@@ -40,6 +40,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/compression/compression_internal.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/chunked_vector.h"
 #include "src/core/lib/gprpp/if_list.h"
 #include "src/core/lib/gprpp/packed_table.h"
@@ -409,7 +410,8 @@ struct GrpcLbClientStatsMetadata {
   static const char* DisplayMemento(MementoType) {
     return "<internal-lb-stats>";
   }
-  static MementoType ParseMemento(Slice, bool, MetadataParseErrorFn) {
+  static MementoType ParseMemento(Slice, bool, MetadataParseErrorFn error) {
+    error("not a valid value for grpclb_client_stats", Slice());
     return nullptr;
   }
 };
@@ -647,7 +649,10 @@ class ParseHelper {
       absl::string_view key) {
     return ParsedMetadata<Container>(
         typename ParsedMetadata<Container>::FromSlicePair{},
-        Slice::FromCopiedString(key), std::move(value_), transport_size_);
+        Slice::FromCopiedString(key),
+        will_keep_past_request_lifetime_ ? value_.TakeUniquelyOwned()
+                                         : std::move(value_),
+        transport_size_);
   }
 
  private:

@@ -152,6 +152,7 @@ class PythonArtifact:
             environ["PIP"] = "/opt/python/{}/bin/pip3".format(self.py_version)
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
             environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
+            environ["LDFLAGS"] = "-s"
             return create_docker_jobspec(
                 self.name,
                 "tools/dockerfile/grpc_artifact_python_linux_{}".format(
@@ -223,7 +224,7 @@ class PythonArtifact:
                     "32" if self.arch == "x86" else "64",
                 ],
                 environ=environ,
-                timeout_seconds=45 * 60,
+                timeout_seconds=60 * 60 * 2,
                 use_workspace=True,
             )
         else:

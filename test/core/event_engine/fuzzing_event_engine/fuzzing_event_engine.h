@@ -22,7 +22,6 @@
 #include <map>
 #include <memory>
 #include <queue>
-#include <ratio>
 #include <set>
 #include <utility>
 #include <vector>
@@ -49,7 +48,9 @@ namespace experimental {
 
 // EventEngine implementation to be used by fuzzers.
 // It's only allowed to have one FuzzingEventEngine instantiated at a time.
-class FuzzingEventEngine : public EventEngine {
+class FuzzingEventEngine
+    : public EventEngine,
+      public std::enable_shared_from_this<FuzzingEventEngine> {
  public:
   struct Options {
     Duration max_delay_run_after = std::chrono::seconds(30);
@@ -107,6 +108,9 @@ class FuzzingEventEngine : public EventEngine {
       ABSL_LOCKS_EXCLUDED(mu_) override;
   bool Cancel(TaskHandle handle) ABSL_LOCKS_EXCLUDED(mu_) override;
 
+  TaskHandle RunAfterExactly(Duration when, absl::AnyInvocable<void()> closure)
+      ABSL_LOCKS_EXCLUDED(mu_);
+
   Time Now() ABSL_LOCKS_EXCLUDED(mu_);
 
   // Clear any global hooks installed by this event engine. Call prior to
@@ -118,6 +122,7 @@ class FuzzingEventEngine : public EventEngine {
   enum class RunType {
     kWrite,
     kRunAfter,
+    kExact,
   };
 
   // One pending task to be run.

@@ -361,14 +361,14 @@ class CppDistribTest(object):
                 "tools/dockerfile/distribtest/cpp_%s_%s"
                 % (self.docker_suffix, self.arch),
                 "test/distrib/cpp/run_distrib_test_%s.sh" % self.testcase,
-                timeout_seconds=45 * 60,
+                timeout_seconds=60 * 60,
             )
         elif self.platform == "windows":
             return create_jobspec(
                 self.name,
                 ["test\\distrib\\cpp\\run_distrib_test_%s.bat" % self.testcase],
                 environ={},
-                timeout_seconds=45 * 60,
+                timeout_seconds=60 * 60,
                 use_workspace=True,
             )
         else:
@@ -429,7 +429,7 @@ def targets():
         CSharpDistribTest(
             "linux", "x64", "debian10", use_dotnet_cli=True, presubmit=True
         ),
-        CSharpDistribTest("linux", "x64", "ubuntu1604", use_dotnet_cli=True),
+        CSharpDistribTest("linux", "x64", "ubuntu2204", use_dotnet_cli=True),
         CSharpDistribTest(
             "linux", "x64", "alpine", use_dotnet_cli=True, presubmit=True
         ),
@@ -448,7 +448,7 @@ def targets():
         PythonDistribTest("linux", "x64", "fedora36"),
         PythonDistribTest("linux", "x64", "arch"),
         PythonDistribTest("linux", "x64", "alpine"),
-        PythonDistribTest("linux", "x64", "ubuntu2004"),
+        PythonDistribTest("linux", "x64", "ubuntu2204"),
         PythonDistribTest(
             "linux", "aarch64", "python38_buster", presubmit=True
         ),
@@ -463,7 +463,7 @@ def targets():
         ),
         PythonDistribTest("linux", "x64", "fedora36", source=True),
         PythonDistribTest("linux", "x64", "arch", source=True),
-        PythonDistribTest("linux", "x64", "ubuntu2004", source=True),
+        PythonDistribTest("linux", "x64", "ubuntu2204", source=True),
         # Ruby
         RubyDistribTest(
             "linux",
@@ -477,8 +477,8 @@ def targets():
             "linux", "x64", "debian10", ruby_version="ruby_3_0", presubmit=True
         ),
         RubyDistribTest("linux", "x64", "centos7"),
-        RubyDistribTest("linux", "x64", "ubuntu1604"),
-        RubyDistribTest("linux", "x64", "ubuntu1804", presubmit=True),
+        RubyDistribTest("linux", "x64", "ubuntu2004"),
+        RubyDistribTest("linux", "x64", "ubuntu2204", presubmit=True),
         # PHP7
         PHP7DistribTest("linux", "x64", "debian10", presubmit=True),
         PHP7DistribTest("macos", "x64", presubmit=True),

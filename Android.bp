@@ -54,6 +54,7 @@ GRPC_COMMON_SRCS = [
     "src/core/ext/filters/census/grpc_context.cc",
     "src/core/ext/filters/channel_idle/channel_idle_filter.cc",
     "src/core/ext/filters/channel_idle/idle_filter_state.cc",
+    "src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc",
     "src/core/ext/filters/client_channel/backend_metric.cc",
     "src/core/ext/filters/client_channel/backup_poller.cc",
     "src/core/ext/filters/client_channel/channel_connectivity.cc",
@@ -114,6 +115,7 @@ GRPC_COMMON_SRCS = [
     "src/core/ext/filters/http/client/http_client_filter.cc",
     "src/core/ext/filters/http/http_filters_plugin.cc",
     "src/core/ext/filters/http/message_compress/compression_filter.cc",
+    "src/core/ext/filters/http/message_compress/legacy_compression_filter.cc",
     "src/core/ext/filters/http/server/http_server_filter.cc",
     "src/core/ext/filters/message_size/message_size_filter.cc",
     "src/core/ext/transport/chttp2/client/chttp2_connector.cc",
@@ -123,6 +125,7 @@ GRPC_COMMON_SRCS = [
     "src/core/ext/transport/chttp2/transport/chttp2_transport.cc",
     "src/core/ext/transport/chttp2/transport/decode_huff.cc",
     "src/core/ext/transport/chttp2/transport/flow_control.cc",
+    "src/core/ext/transport/chttp2/transport/frame.cc",
     "src/core/ext/transport/chttp2/transport/frame_data.cc",
     "src/core/ext/transport/chttp2/transport/frame_goaway.cc",
     "src/core/ext/transport/chttp2/transport/frame_ping.cc",
@@ -148,6 +151,7 @@ GRPC_COMMON_SRCS = [
     "src/core/ext/transport/chttp2/transport/writing.cc",
     "src/core/ext/transport/inproc/inproc_plugin.cc",
     "src/core/ext/transport/inproc/inproc_transport.cc",
+    "src/core/ext/transport/inproc/legacy_inproc_transport.cc",
     "src/core/lib/address_utils/parse_address.cc",
     "src/core/lib/address_utils/sockaddr_utils.cc",
     "src/core/lib/backoff/backoff.cc",
@@ -158,6 +162,7 @@ GRPC_COMMON_SRCS = [
     "src/core/lib/channel/channel_stack_builder.cc",
     "src/core/lib/channel/channel_stack_builder_impl.cc",
     "src/core/lib/channel/channel_stack.cc",
+    "src/core/lib/channel/channel_stack_trace.cc",
     "src/core/lib/channel/channel_trace.cc",
     "src/core/lib/channel/channelz.cc",
     "src/core/lib/channel/channelz_registry.cc",
@@ -183,12 +188,12 @@ GRPC_COMMON_SRCS = [
     "src/core/lib/event_engine/default_event_engine_factory.cc",
     "src/core/lib/event_engine/event_engine.cc",
     "src/core/lib/event_engine/forkable.cc",
-    "src/core/lib/event_engine/memory_allocator.cc",
     "src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc",
     "src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc",
     "src/core/lib/event_engine/posix_engine/ev_poll_posix.cc",
     "src/core/lib/event_engine/posix_engine/internal_errqueue.cc",
     "src/core/lib/event_engine/posix_engine/lockfree_event.cc",
+    "src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc",
     "src/core/lib/event_engine/posix_engine/posix_endpoint.cc",
     "src/core/lib/event_engine/posix_engine/posix_engine.cc",
     "src/core/lib/event_engine/posix_engine/posix_engine_listener.cc",
@@ -214,7 +219,9 @@ GRPC_COMMON_SRCS = [
     "src/core/lib/event_engine/time_util.cc",
     "src/core/lib/event_engine/trace.cc",
     "src/core/lib/event_engine/utils.cc",
+    "src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc",
     "src/core/lib/event_engine/windows/iocp.cc",
+    "src/core/lib/event_engine/windows/native_windows_dns_resolver.cc",
     "src/core/lib/event_engine/windows/windows_endpoint.cc",
     "src/core/lib/event_engine/windows/windows_engine.cc",
     "src/core/lib/event_engine/windows/windows_listener.cc",
@@ -362,9 +369,9 @@ GRPC_COMMON_SRCS = [
     "src/core/lib/promise/party.cc",
     "src/core/lib/promise/sleep.cc",
     "src/core/lib/promise/trace.cc",
+    "src/core/lib/resolver/endpoint_addresses.cc",
     "src/core/lib/resolver/resolver.cc",
     "src/core/lib/resolver/resolver_registry.cc",
-    "src/core/lib/resolver/server_address.cc",
     "src/core/lib/resource_quota/api.cc",
     "src/core/lib/resource_quota/arena.cc",
     "src/core/lib/resource_quota/memory_quota.cc",
@@ -397,6 +404,7 @@ GRPC_COMMON_SRCS = [
     "src/core/lib/security/security_connector/load_system_roots_supported.cc",
     "src/core/lib/security/security_connector/security_connector.cc",
     "src/core/lib/security/transport/client_auth_filter.cc",
+    "src/core/lib/security/transport/legacy_server_auth_filter.cc",
     "src/core/lib/security/transport/secure_endpoint.cc",
     "src/core/lib/security/transport/security_handshaker.cc",
     "src/core/lib/security/transport/server_auth_filter.cc",
@@ -434,6 +442,7 @@ GRPC_COMMON_SRCS = [
     "src/core/lib/surface/version.cc",
     "src/core/lib/transport/batch_builder.cc",
     "src/core/lib/transport/bdp_estimator.cc",
+    "src/core/lib/transport/call_final_info.cc",
     "src/core/lib/transport/connectivity_state.cc",
     "src/core/lib/transport/error_utils.cc",
     "src/core/lib/transport/handshaker.cc",
@@ -441,7 +450,6 @@ GRPC_COMMON_SRCS = [
     "src/core/lib/transport/http_connect_handshaker.cc",
     "src/core/lib/transport/metadata_batch.cc",
     "src/core/lib/transport/parsed_metadata.cc",
-    "src/core/lib/transport/pid_controller.cc",
     "src/core/lib/transport/status_conversion.cc",
     "src/core/lib/transport/tcp_connect_handshaker.cc",
     "src/core/lib/transport/timeout_encoding.cc",
@@ -465,7 +473,6 @@ GRPC_COMMON_SRCS = [
     "src/cpp/client/insecure_credentials.cc",
     "src/cpp/common/alarm.cc",
     "src/cpp/common/channel_arguments.cc",
-    "src/cpp/common/channel_filter.cc",
     "src/cpp/common/completion_queue_cc.cc",
     "src/cpp/common/resource_quota_cc.cc",
     "src/cpp/common/rpc_method.cc",
@@ -498,11 +505,12 @@ GRPC_SECURE_SRCS = [
     "src/core/ext/filters/client_channel/lb_policy/xds/cds.cc",
     "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc",
     "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc",
-    "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc",
     "src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc",
     "src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc",
     "src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc",
+    "src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.cc",
     "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
+    "src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.cc",
     "src/core/ext/filters/rbac/rbac_filter.cc",
     "src/core/ext/filters/rbac/rbac_service_config_parser.cc",
     "src/core/ext/filters/server_config_selector/server_config_selector_filter.cc",
@@ -553,6 +561,8 @@ GRPC_SECURE_SRCS = [
     "src/core/ext/xds/xds_routing.cc",
     "src/core/ext/xds/xds_server_config_fetcher.cc",
     "src/core/ext/xds/xds_transport_grpc.cc",
+    "src/core/lib/gprpp/posix/directory_reader.cc",
+    "src/core/lib/gprpp/windows/directory_reader.cc",
     "src/core/lib/http/httpcli_security_connector.cc",
     "src/core/lib/json/json_util.cc",
     "src/core/lib/matchers/matchers.cc",
@@ -582,6 +592,7 @@ GRPC_SECURE_SRCS = [
     "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc",
     "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc",
     "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc",
+    "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc",
     "src/core/lib/security/credentials/tls/tls_credentials.cc",
     "src/core/lib/security/credentials/xds/xds_credentials.cc",
     "src/core/lib/security/security_connector/alts/alts_security_connector.cc",
@@ -624,6 +635,7 @@ GRPC_SECURE_SRCS = [
     "src/cpp/common/tls_certificate_verifier.cc",
     "src/cpp/common/tls_credentials_options.cc",
     "src/cpp/server/secure_server_credentials.cc",
+    "src/cpp/server/xds_server_builder.cc",
     "src/cpp/server/xds_server_credentials.cc",
 ]
 
@@ -680,7 +692,7 @@ cc_defaults {
     target: {
         vendor: {
             // Needs to be updated when a new version is imported.
-            suffix: "-1.59.2",
+            suffix: "-1.61.1",
         },
     },
 }
@@ -739,11 +751,14 @@ genrule {
     ],
     cmd: "$(location aprotoc) -Iexternal/grpc-grpc --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-cpp-plugin) $(in) --grpc_out=$(genDir) --cpp_out=$(genDir)",
     srcs: [
+        "src/proto/grpc/reflection/v1/reflection.proto",
         "src/proto/grpc/reflection/v1alpha/reflection.proto",
     ],
     out: [
+        "src/proto/grpc/reflection/v1/reflection.pb.h",
+        "src/proto/grpc/reflection/v1/reflection.grpc.pb.h",
         "src/proto/grpc/reflection/v1alpha/reflection.pb.h",
-        "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
+        "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h",
     ],
 }
 
@@ -755,11 +770,14 @@ genrule {
     ],
     cmd: "$(location aprotoc) -Iexternal/grpc-grpc --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-cpp-plugin) $(in) --grpc_out=$(genDir) --cpp_out=$(genDir)",
     srcs: [
+        "src/proto/grpc/reflection/v1/reflection.proto",
         "src/proto/grpc/reflection/v1alpha/reflection.proto",
     ],
     out: [
+        "src/proto/grpc/reflection/v1/reflection.pb.cc",
+        "src/proto/grpc/reflection/v1/reflection.grpc.pb.cc",
         "src/proto/grpc/reflection/v1alpha/reflection.pb.cc",
-        "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc"
+        "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc",
     ],
 }
 
@@ -798,7 +816,7 @@ cc_library_host_static {
         "test/cpp/util/test_config_cc.cc",
     ],
     local_include_dirs: [
-        "include"
+        "include",
     ],
     static_libs: [
         "libabsl",
@@ -903,12 +921,12 @@ cc_library_static {
     name: "libgrpc_upb_protos",
     defaults: ["grpc_defaults"],
     srcs: [
-        "src/core/ext/upb-generated/**/*.c",
-        "src/core/ext/upbdefs-generated/**/*.c",
+        "src/core/ext/upb-gen/**/*.c",
+        "src/core/ext/upbdefs-gen/**/*.c",
     ],
     export_include_dirs: [
-        "src/core/ext/upb-generated",
-        "src/core/ext/upbdefs-generated",
+        "src/core/ext/upb-gen",
+        "src/core/ext/upbdefs-gen",
     ],
     header_libs: [
         "libgrpc_third_party_upb_headers",

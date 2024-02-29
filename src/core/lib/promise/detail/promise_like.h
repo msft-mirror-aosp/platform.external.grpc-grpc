@@ -63,8 +63,22 @@ auto WrapInPoll(T&& x) -> decltype(PollWrapper<T>::Wrap(std::forward<T>(x))) {
   return PollWrapper<T>::Wrap(std::forward<T>(x));
 }
 
+template <typename F, typename SfinaeVoid = void>
+class PromiseLike;
+
+template <>
+class PromiseLike<void>;
+
+// Android local modification: Android builds grpc with C++20, which removes
+// std::result_of. Use std::invoke_result_t instead.
 template <typename F>
-class PromiseLike {
+class PromiseLike<F, absl::enable_if_t<!std::is_void<
+#if __cplusplus >= 201703L
+                         std::invoke_result_t<F>
+#else
+                         typename std::result_of<F()>::type
+#endif
+                         >::value>> {
  private:
   GPR_NO_UNIQUE_ADDRESS F f_;
 

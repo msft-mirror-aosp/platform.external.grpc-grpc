@@ -651,6 +651,7 @@ cc_defaults {
     name: "grpc_deps_defaults",
     host_supported: true,
     vendor_available: true,
+    product_available: true,
     apex_available: [
         "//apex_available:platform",
     ],

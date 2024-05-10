@@ -12,65 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_package(name = "test/core/json")
 
-licenses(["notice"])  # Apache v2
-
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
+licenses(["notice"])
 
 grpc_fuzzer(
     name = "json_fuzzer",
     srcs = ["fuzzer.cc"],
-    language = "C++",
     corpus = "corpus",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_binary(
-    name = "json_rewrite",
-    testonly = 1,
-    srcs = ["json_rewrite.cc"],
     language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "json_rewrite_test",
-    srcs = ["json_rewrite_test.cc"],
-    language = "C++",
-    data = [
-        "rewrite_test_input.json",
-        "rewrite_test_output_condensed.json",
-        "rewrite_test_output_indented.json",
-        ":json_stream_error_test",
-    ],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "json_stream_error_test",
-    srcs = ["json_stream_error_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -78,11 +35,29 @@ grpc_cc_test(
 grpc_cc_test(
     name = "json_test",
     srcs = ["json_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "json_object_loader_test",
+    srcs = ["json_object_loader_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//src/core:json_object_loader",
         "//test/core/util:grpc_test_util",
     ],
 )

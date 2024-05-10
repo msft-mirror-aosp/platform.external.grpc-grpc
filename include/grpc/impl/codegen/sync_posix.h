@@ -19,16 +19,11 @@
 #ifndef GRPC_IMPL_CODEGEN_SYNC_POSIX_H
 #define GRPC_IMPL_CODEGEN_SYNC_POSIX_H
 
-#include <grpc/impl/codegen/port_platform.h>
+// IWYU pragma: private, include <grpc/support/sync.h>
 
-#include <grpc/impl/codegen/sync_generic.h>
+#include <grpc/support/port_platform.h>
 
-#include <pthread.h>
-
-typedef pthread_mutex_t gpr_mu;
-typedef pthread_cond_t gpr_cv;
-typedef pthread_once_t gpr_once;
-
-#define GPR_ONCE_INIT PTHREAD_ONCE_INIT
+/// TODO(chengyuc): Remove this file after solving compatibility.
+#include <grpc/support/sync_posix.h>
 
 #endif /* GRPC_IMPL_CODEGEN_SYNC_POSIX_H */

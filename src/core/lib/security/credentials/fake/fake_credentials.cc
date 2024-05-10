@@ -1,136 +1,105 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 
-#include <string.h>
+#include <stdlib.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include <memory>
+#include <utility>
+
+#include "absl/strings/string_view.h"
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/security/security_connector/fake/fake_security_connector.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
-/* -- Fake transport security credentials. -- */
+// -- Fake transport security credentials. --
 
-static grpc_security_status fake_transport_security_create_security_connector(
-    grpc_channel_credentials* c, grpc_call_credentials* call_creds,
-    const char* target, const grpc_channel_args* args,
-    grpc_channel_security_connector** sc, grpc_channel_args** new_args) {
-  *sc =
-      grpc_fake_channel_security_connector_create(c, call_creds, target, args);
-  return GRPC_SECURITY_OK;
+grpc_core::RefCountedPtr<grpc_channel_security_connector>
+grpc_fake_channel_credentials::create_security_connector(
+    grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+    const char* target, grpc_core::ChannelArgs* args) {
+  return grpc_fake_channel_security_connector_create(
+      this->Ref(), std::move(call_creds), target, *args);
 }
 
-static grpc_security_status
-fake_transport_security_server_create_security_connector(
-    grpc_server_credentials* c, grpc_server_security_connector** sc) {
-  *sc = grpc_fake_server_security_connector_create(c);
-  return GRPC_SECURITY_OK;
+grpc_core::UniqueTypeName grpc_fake_channel_credentials::Type() {
+  static grpc_core::UniqueTypeName::Factory kFactory("Fake");
+  return kFactory.Create();
 }
 
-static grpc_channel_credentials_vtable
-    fake_transport_security_credentials_vtable = {
-        nullptr, fake_transport_security_create_security_connector, nullptr};
-
-static grpc_server_credentials_vtable
-    fake_transport_security_server_credentials_vtable = {
-        nullptr, fake_transport_security_server_create_security_connector};
-
-grpc_channel_credentials* grpc_fake_transport_security_credentials_create(
-    void) {
-  grpc_channel_credentials* c = static_cast<grpc_channel_credentials*>(
-      gpr_zalloc(sizeof(grpc_channel_credentials)));
-  c->type = GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY;
-  c->vtable = &fake_transport_security_credentials_vtable;
-  gpr_ref_init(&c->refcount, 1);
-  return c;
+int grpc_fake_channel_credentials::cmp_impl(
+    const grpc_channel_credentials* other) const {
+  // TODO(yashykt): Check if we can do something better here
+  return grpc_core::QsortCompare(
+      static_cast<const grpc_channel_credentials*>(this), other);
 }
 
-grpc_server_credentials* grpc_fake_transport_security_server_credentials_create(
-    void) {
-  grpc_server_credentials* c = static_cast<grpc_server_credentials*>(
-      gpr_malloc(sizeof(grpc_server_credentials)));
-  memset(c, 0, sizeof(grpc_server_credentials));
-  c->type = GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY;
-  gpr_ref_init(&c->refcount, 1);
-  c->vtable = &fake_transport_security_server_credentials_vtable;
-  return c;
+grpc_core::RefCountedPtr<grpc_server_security_connector>
+grpc_fake_server_credentials::create_security_connector(
+    const grpc_core::ChannelArgs& /*args*/) {
+  return grpc_fake_server_security_connector_create(this->Ref());
+}
+
+grpc_core::UniqueTypeName grpc_fake_server_credentials::Type() {
+  static grpc_core::UniqueTypeName::Factory kFactory("Fake");
+  return kFactory.Create();
+}
+
+grpc_channel_credentials* grpc_fake_transport_security_credentials_create() {
+  return new grpc_fake_channel_credentials();
+}
+
+grpc_server_credentials*
+grpc_fake_transport_security_server_credentials_create() {
+  return new grpc_fake_server_credentials();
 }
 
 grpc_arg grpc_fake_transport_expected_targets_arg(char* expected_targets) {
   return grpc_channel_arg_string_create(
-      (char*)GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, expected_targets);
+      const_cast<char*>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
+      expected_targets);
 }
 
-const char* grpc_fake_transport_get_expected_targets(
-    const grpc_channel_args* args) {
-  const grpc_arg* expected_target_arg =
-      grpc_channel_args_find(args, GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
-  return grpc_channel_arg_get_string(expected_target_arg);
+// -- Metadata-only test credentials. --
+
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
+grpc_md_only_test_credentials::GetRequestMetadata(
+    grpc_core::ClientMetadataHandle initial_metadata,
+    const grpc_call_credentials::GetRequestMetadataArgs*) {
+  initial_metadata->Append(
+      key_.as_string_view(), value_.Ref(),
+      [](absl::string_view, const grpc_core::Slice&) { abort(); });
+  return grpc_core::Immediate(std::move(initial_metadata));
 }
 
-/* -- Metadata-only test credentials. -- */
-
-static void md_only_test_destruct(grpc_call_credentials* creds) {
-  grpc_md_only_test_credentials* c =
-      reinterpret_cast<grpc_md_only_test_credentials*>(creds);
-  GRPC_MDELEM_UNREF(c->md);
+grpc_core::UniqueTypeName grpc_md_only_test_credentials::Type() {
+  static grpc_core::UniqueTypeName::Factory kFactory("MdOnlyTest");
+  return kFactory.Create();
 }
-
-static bool md_only_test_get_request_metadata(
-    grpc_call_credentials* creds, grpc_polling_entity* pollent,
-    grpc_auth_metadata_context context, grpc_credentials_mdelem_array* md_array,
-    grpc_closure* on_request_metadata, grpc_error** error) {
-  grpc_md_only_test_credentials* c =
-      reinterpret_cast<grpc_md_only_test_credentials*>(creds);
-  grpc_credentials_mdelem_array_add(md_array, c->md);
-  if (c->is_async) {
-    GRPC_CLOSURE_SCHED(on_request_metadata, GRPC_ERROR_NONE);
-    return false;
-  }
-  return true;
-}
-
-static void md_only_test_cancel_get_request_metadata(
-    grpc_call_credentials* c, grpc_credentials_mdelem_array* md_array,
-    grpc_error* error) {
-  GRPC_ERROR_UNREF(error);
-}
-
-static grpc_call_credentials_vtable md_only_test_vtable = {
-    md_only_test_destruct, md_only_test_get_request_metadata,
-    md_only_test_cancel_get_request_metadata};
 
 grpc_call_credentials* grpc_md_only_test_credentials_create(
-    const char* md_key, const char* md_value, bool is_async) {
-  grpc_md_only_test_credentials* c =
-      static_cast<grpc_md_only_test_credentials*>(
-          gpr_zalloc(sizeof(grpc_md_only_test_credentials)));
-  c->base.type = GRPC_CALL_CREDENTIALS_TYPE_OAUTH2;
-  c->base.vtable = &md_only_test_vtable;
-  gpr_ref_init(&c->base.refcount, 1);
-  c->md = grpc_mdelem_from_slices(grpc_slice_from_copied_string(md_key),
-                                  grpc_slice_from_copied_string(md_value));
-  c->is_async = is_async;
-  return &c->base;
+    const char* md_key, const char* md_value) {
+  return new grpc_md_only_test_credentials(md_key, md_value);
 }

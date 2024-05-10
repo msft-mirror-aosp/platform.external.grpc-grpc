@@ -1,20 +1,22 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+
+#include <gtest/gtest.h>
 
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>
@@ -24,10 +26,11 @@
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
-#include <gtest/gtest.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -35,11 +38,10 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
-#include "test/core/util/passthru_endpoint.h"
-#include "test/core/util/port.h"
-
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/passthru_endpoint.h"
+#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc {
@@ -52,26 +54,10 @@ static void ApplyCommonServerBuilderConfig(ServerBuilder* b) {
   b->SetMaxSendMessageSize(INT_MAX);
 }
 
-static void ApplyCommonChannelArguments(ChannelArguments* c) {
-  c->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX);
-  c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
+static void ApplyCommonChannelArguments(grpc_core::ChannelArgs* c) {
+  *c = c->Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX)
+           .Set(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
 }
-
-static class InitializeStuff {
- public:
-  InitializeStuff() {
-    init_lib_.init();
-    rq_ = grpc_resource_quota_create("bm");
-  }
-
-  ~InitializeStuff() { init_lib_.shutdown(); }
-
-  grpc_resource_quota* rq() { return rq_; }
-
- private:
-  internal::GrpcLibrary init_lib_;
-  grpc_resource_quota* rq_;
-} initialize_stuff;
 
 class EndpointPairFixture {
  public:
@@ -84,41 +70,46 @@ class EndpointPairFixture {
 
     grpc_core::ExecCtx exec_ctx;
 
-    /* add server endpoint to server_ */
+    // add server endpoint to server_
     {
-      const grpc_channel_args* server_args =
-          grpc_server_get_channel_args(server_->c_server());
-      grpc_transport* transport = grpc_create_chttp2_transport(
-          server_args, endpoints.server, false /* is_client */);
-
-      grpc_pollset** pollsets;
-      size_t num_pollsets = 0;
-      grpc_server_get_pollsets(server_->c_server(), &pollsets, &num_pollsets);
-
-      for (size_t i = 0; i < num_pollsets; i++) {
-        grpc_endpoint_add_to_pollset(endpoints.server, pollsets[i]);
+      grpc_core::Server* core_server =
+          grpc_core::Server::FromC(server_->c_server());
+      grpc_core::Transport* transport = grpc_create_chttp2_transport(
+          core_server->channel_args(), endpoints.server, false /* is_client */);
+      for (grpc_pollset* pollset : core_server->pollsets()) {
+        grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
 
-      grpc_server_setup_transport(server_->c_server(), transport, nullptr,
-                                  server_args);
-      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+      GPR_ASSERT(GRPC_LOG_IF_ERROR(
+          "SetupTransport",
+          core_server->SetupTransport(transport, nullptr,
+                                      core_server->channel_args(), nullptr)));
+      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     }
 
-    /* create channel */
+    // create channel
     {
-      ChannelArguments args;
-      args.SetString(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
+      grpc_core::ChannelArgs args =
+          grpc_core::CoreConfiguration::Get()
+              .channel_args_preconditioning()
+              .PreconditionChannelArgs(nullptr)
+              .Set(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
       ApplyCommonChannelArguments(&args);
 
-      grpc_channel_args c_args = args.c_channel_args();
-      grpc_transport* transport =
-          grpc_create_chttp2_transport(&c_args, endpoints.client, true);
+      grpc_core::Transport* transport =
+          grpc_create_chttp2_transport(args, endpoints.client, true);
       GPR_ASSERT(transport);
-      grpc_channel* channel = grpc_channel_create(
-          "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
-      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+      grpc_channel* channel =
+          grpc_core::Channel::Create("target", args, GRPC_CLIENT_DIRECT_CHANNEL,
+                                     transport)
+              ->release()
+              ->c_ptr();
+      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
-      channel_ = CreateChannelInternal("", channel);
+      channel_ = grpc::CreateChannelInternal(
+          "", channel,
+          std::vector<std::unique_ptr<
+              experimental::ClientInterceptorFactoryInterface>>());
     }
   }
 
@@ -145,21 +136,20 @@ class InProcessCHTTP2 : public EndpointPairFixture {
   InProcessCHTTP2(Service* service, grpc_passthru_endpoint_stats* stats)
       : EndpointPairFixture(service, MakeEndpoints(stats)), stats_(stats) {}
 
-  virtual ~InProcessCHTTP2() {
+  ~InProcessCHTTP2() override {
     if (stats_ != nullptr) {
       grpc_passthru_endpoint_stats_destroy(stats_);
     }
   }
 
-  int writes_performed() const { return stats_->num_writes; }
+  int writes_performed() const { return gpr_atm_acq_load(&stats_->num_writes); }
 
  private:
   grpc_passthru_endpoint_stats* stats_;
 
   static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
     grpc_endpoint_pair p;
-    grpc_passthru_endpoint_create(&p.client, &p.server, initialize_stuff.rq(),
-                                  stats);
+    grpc_passthru_endpoint_create(&p.client, &p.server, stats);
     return p;
   }
 };
@@ -252,7 +242,10 @@ TEST(WritesPerRpcTest, UnaryPingPong) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc::testing::TestEnvironment env(&argc, argv);
+  grpc_init();
+  int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return ret;
 }

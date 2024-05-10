@@ -16,12 +16,13 @@
  *
  */
 
+#include "src/compiler/ruby_generator.h"
+
 #include <cctype>
 #include <map>
 #include <vector>
 
 #include "src/compiler/config.h"
-#include "src/compiler/ruby_generator.h"
 #include "src/compiler/ruby_generator_helpers-inl.h"
 #include "src/compiler/ruby_generator_map-inl.h"
 #include "src/compiler/ruby_generator_string-inl.h"
@@ -38,19 +39,16 @@ namespace grpc_ruby_generator {
 namespace {
 
 // Prints out the method using the ruby gRPC DSL.
-void PrintMethod(const MethodDescriptor* method, const grpc::string& package,
-                 Printer* out) {
-  grpc::string input_type =
-      RubyTypeOf(method->input_type()->full_name(), package);
+void PrintMethod(const MethodDescriptor* method, Printer* out) {
+  std::string input_type = RubyTypeOf(method->input_type());
   if (method->client_streaming()) {
     input_type = "stream(" + input_type + ")";
   }
-  grpc::string output_type =
-      RubyTypeOf(method->output_type()->full_name(), package);
+  std::string output_type = RubyTypeOf(method->output_type());
   if (method->server_streaming()) {
     output_type = "stream(" + output_type + ")";
   }
-  std::map<grpc::string, grpc::string> method_vars = ListToDict({
+  std::map<std::string, std::string> method_vars = ListToDict({
       "mth.name",
       method->name(),
       "input.type",
@@ -64,14 +62,13 @@ void PrintMethod(const MethodDescriptor* method, const grpc::string& package,
 }
 
 // Prints out the service using the ruby gRPC DSL.
-void PrintService(const ServiceDescriptor* service, const grpc::string& package,
-                  Printer* out) {
+void PrintService(const ServiceDescriptor* service, Printer* out) {
   if (service->method_count() == 0) {
     return;
   }
 
   // Begin the service module
-  std::map<grpc::string, grpc::string> module_vars = ListToDict({
+  std::map<std::string, std::string> module_vars = ListToDict({
       "module.name",
       Modularize(service->name()),
   });
@@ -84,16 +81,16 @@ void PrintService(const ServiceDescriptor* service, const grpc::string& package,
   // Write the indented class body.
   out->Indent();
   out->Print("\n");
-  out->Print("include GRPC::GenericService\n");
+  out->Print("include ::GRPC::GenericService\n");
   out->Print("\n");
   out->Print("self.marshal_class_method = :encode\n");
   out->Print("self.unmarshal_class_method = :decode\n");
-  std::map<grpc::string, grpc::string> pkg_vars =
+  std::map<std::string, std::string> pkg_vars =
       ListToDict({"service_full_name", service->full_name()});
   out->Print(pkg_vars, "self.service_name = '$service_full_name$'\n");
   out->Print("\n");
   for (int i = 0; i < service->method_count(); ++i) {
-    PrintMethod(service->method(i), package, out);
+    PrintMethod(service->method(i), out);
   }
   out->Outdent();
 
@@ -113,28 +110,34 @@ void PrintService(const ServiceDescriptor* service, const grpc::string& package,
 // ruby generator
 // to ensure compatibility (with the exception of int and string type changes).
 // See
-// https://github.com/google/protobuf/blob/master/src/google/protobuf/compiler/ruby/ruby_generator.cc#L250
+// https://github.com/protocolbuffers/protobuf/blob/63895855d7b1298bee97591cbafced49f23902da/src/google/protobuf/compiler/ruby/ruby_generator.cc#L312
 // TODO: keep up to date with protoc code generation, though this behavior isn't
 // expected to change
+
+// Locale-agnostic utility functions.
 bool IsLower(char ch) { return ch >= 'a' && ch <= 'z'; }
 
-char ToUpper(char ch) { return IsLower(ch) ? (ch - 'a' + 'A') : ch; }
+bool IsUpper(char ch) { return ch >= 'A' && ch <= 'Z'; }
+
+bool IsAlpha(char ch) { return IsLower(ch) || IsUpper(ch); }
+
+char UpperChar(char ch) { return IsLower(ch) ? (ch - 'a' + 'A') : ch; }
 
 // Package names in protobuf are snake_case by convention, but Ruby module
 // names must be PascalCased.
 //
 //   foo_bar_baz -> FooBarBaz
-grpc::string PackageToModule(const grpc::string& name) {
+std::string PackageToModule(const std::string& name) {
   bool next_upper = true;
-  grpc::string result;
+  std::string result;
   result.reserve(name.size());
 
-  for (grpc::string::size_type i = 0; i < name.size(); i++) {
+  for (std::string::size_type i = 0; i < name.size(); i++) {
     if (name[i] == '_') {
       next_upper = true;
     } else {
       if (next_upper) {
-        result.push_back(ToUpper(name[i]));
+        result.push_back(UpperChar(name[i]));
       } else {
         result.push_back(name[i]);
       }
@@ -144,10 +147,33 @@ grpc::string PackageToModule(const grpc::string& name) {
 
   return result;
 }
+
+// Class and enum names in protobuf should be PascalCased by convention, but
+// since there is nothing enforcing this we need to ensure that they are valid
+// Ruby constants.  That mainly means making sure that the first character is
+// an upper-case letter.
+std::string RubifyConstant(const std::string& name) {
+  std::string ret = name;
+  if (!ret.empty()) {
+    if (IsLower(ret[0])) {
+      // If it starts with a lowercase letter, capitalize it.
+      ret[0] = UpperChar(ret[0]);
+    } else if (!IsAlpha(ret[0])) {
+      // Otherwise (e.g. if it begins with an underscore), we need to come up
+      // with some prefix that starts with a capital letter. We could be smarter
+      // here, e.g. try to strip leading underscores, but this may cause other
+      // problems if the user really intended the name. So let's just prepend a
+      // well-known suffix.
+      ret = "PB_" + ret;
+    }
+  }
+
+  return ret;
+}
 // end copying of protoc generator for ruby code
 
-grpc::string GetServices(const FileDescriptor* file) {
-  grpc::string output;
+std::string GetServices(const FileDescriptor* file) {
+  std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
 
@@ -160,16 +186,10 @@ grpc::string GetServices(const FileDescriptor* file) {
       return output;
     }
 
-    std::string package_name;
-
-    if (file->options().has_ruby_package()) {
-      package_name = file->options().ruby_package();
-    } else {
-      package_name = file->package();
-    }
+    std::string package_name = RubyPackage(file);
 
     // Write out a file header.
-    std::map<grpc::string, grpc::string> header_comment_vars = ListToDict({
+    std::map<std::string, std::string> header_comment_vars = ListToDict({
         "file.name",
         file->name(),
         "file.package",
@@ -179,7 +199,7 @@ grpc::string GetServices(const FileDescriptor* file) {
     out.Print(header_comment_vars,
               "# Source: $file.name$ for package '$file.package$'\n");
 
-    grpc::string leading_comments = GetRubyComments(file, true);
+    std::string leading_comments = GetRubyComments(file, true);
     if (!leading_comments.empty()) {
       out.Print("# Original file comments:\n");
       out.PrintRaw(leading_comments.c_str());
@@ -190,7 +210,7 @@ grpc::string GetServices(const FileDescriptor* file) {
     // Write out require statemment to import the separately generated file
     // that defines the messages used by the service. This is generated by the
     // main ruby plugin.
-    std::map<grpc::string, grpc::string> dep_vars = ListToDict({
+    std::map<std::string, std::string> dep_vars = ListToDict({
         "dep.name",
         MessagesRequireName(file),
     });
@@ -198,9 +218,9 @@ grpc::string GetServices(const FileDescriptor* file) {
 
     // Write out services within the modules
     out.Print("\n");
-    std::vector<grpc::string> modules = Split(package_name, '.');
+    std::vector<std::string> modules = Split(package_name, '.');
     for (size_t i = 0; i < modules.size(); ++i) {
-      std::map<grpc::string, grpc::string> module_vars = ListToDict({
+      std::map<std::string, std::string> module_vars = ListToDict({
           "module.name",
           PackageToModule(modules[i]),
       });
@@ -209,7 +229,7 @@ grpc::string GetServices(const FileDescriptor* file) {
     }
     for (int i = 0; i < file->service_count(); ++i) {
       auto service = file->service(i);
-      PrintService(service, file->package(), &out);
+      PrintService(service, &out);
     }
     for (size_t i = 0; i < modules.size(); ++i) {
       out.Outdent();

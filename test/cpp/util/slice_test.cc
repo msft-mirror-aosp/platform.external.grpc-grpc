@@ -1,31 +1,31 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#include <grpc++/support/slice.h>
-#include <grpcpp/impl/grpc_library.h>
-
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
 #include <gtest/gtest.h>
 
-namespace grpc {
+#include <grpc++/support/slice.h>
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpcpp/impl/grpc_library.h>
 
-static internal::GrpcLibraryInitializer g_gli_initializer;
+#include "test/core/util/test_config.h"
+
+namespace grpc {
 
 namespace {
 
@@ -33,13 +33,17 @@ const char* kContent = "hello xxxxxxxxxxxxxxxxxxxx world";
 
 class SliceTest : public ::testing::Test {
  protected:
-  void CheckSliceSize(const Slice& s, const grpc::string& content) {
+  static void SetUpTestSuite() { grpc_init(); }
+
+  static void TearDownTestSuite() { grpc_shutdown(); }
+
+  void CheckSliceSize(const Slice& s, const std::string& content) {
     EXPECT_EQ(content.size(), s.size());
   }
-  void CheckSlice(const Slice& s, const grpc::string& content) {
+  void CheckSlice(const Slice& s, const std::string& content) {
     EXPECT_EQ(content.size(), s.size());
     EXPECT_EQ(content,
-              grpc::string(reinterpret_cast<const char*>(s.begin()), s.size()));
+              std::string(reinterpret_cast<const char*>(s.begin()), s.size()));
   }
 };
 
@@ -76,7 +80,7 @@ TEST_F(SliceTest, SliceNew) {
 }
 
 TEST_F(SliceTest, SliceNewDoNothing) {
-  Slice spp(const_cast<char*>(kContent), strlen(kContent), [](void* p) {});
+  Slice spp(const_cast<char*>(kContent), strlen(kContent), [](void* /*p*/) {});
   CheckSlice(spp, kContent);
 }
 
@@ -88,19 +92,20 @@ TEST_F(SliceTest, SliceNewWithUserData) {
   auto* t = new stest;
   t->x = new char[strlen(kContent) + 1];
   strcpy(t->x, kContent);
-  Slice spp(t->x, strlen(t->x),
-            [](void* p) {
-              auto* t = static_cast<stest*>(p);
-              delete[] t->x;
-              delete t;
-            },
-            t);
+  Slice spp(
+      t->x, strlen(t->x),
+      [](void* p) {
+        auto* t = static_cast<stest*>(p);
+        delete[] t->x;
+        delete t;
+      },
+      t);
   CheckSlice(spp, kContent);
 }
 
 TEST_F(SliceTest, SliceNewLen) {
   Slice spp(const_cast<char*>(kContent), strlen(kContent),
-            [](void* p, size_t l) { EXPECT_EQ(l, strlen(kContent)); });
+            [](void* /*p*/, size_t l) { EXPECT_EQ(l, strlen(kContent)); });
   CheckSlice(spp, kContent);
 }
 
@@ -117,6 +122,12 @@ TEST_F(SliceTest, Add) {
   CheckSlice(spp, kContent);
 }
 
+TEST_F(SliceTest, Sub) {
+  Slice spp("0123456789");
+  Slice sub = spp.sub(1, 9);
+  CheckSlice(sub, "12345678");
+}
+
 TEST_F(SliceTest, Cslice) {
   grpc_slice s = grpc_slice_from_copied_string(kContent);
   Slice spp(s, Slice::STEAL_REF);
@@ -131,9 +142,8 @@ TEST_F(SliceTest, Cslice) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_init();
   int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
   return ret;
 }

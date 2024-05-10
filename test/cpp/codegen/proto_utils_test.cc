@@ -1,27 +1,29 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#include <grpc/impl/codegen/byte_buffer.h>
-#include <grpc/slice.h>
-#include <grpcpp/impl/codegen/grpc_library.h>
-#include <grpcpp/impl/codegen/proto_utils.h>
-#include <grpcpp/impl/grpc_library.h>
 #include <gtest/gtest.h>
+
+#include <grpc/byte_buffer.h>
+#include <grpc/slice.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/impl/proto_utils.h>
+
+#include "test/core/util/test_config.h"
 
 namespace grpc {
 
@@ -49,7 +51,16 @@ class GrpcByteBufferPeer {
   ByteBuffer* bb_;
 };
 
-class ProtoUtilsTest : public ::testing::Test {};
+class ProtoUtilsTest : public ::testing::Test {
+ protected:
+  static void SetUpTestSuite() {
+    // Ensure the ProtoBufferWriter internals are initialized.
+    grpc::internal::GrpcLibrary lib;
+    grpc_init();
+  }
+
+  static void TearDownTestSuite() { grpc_shutdown(); }
+};
 
 // Regression test for a memory corruption bug where a series of
 // ProtoBufferWriter Next()/Backup() invocations could result in a dangling
@@ -136,36 +147,45 @@ void BufferWriterTest(int block_size, int total_size, int backup_size) {
   grpc_byte_buffer_reader_destroy(&reader);
 }
 
-TEST(WriterTest, TinyBlockTinyBackup) {
+class WriterTest : public ::testing::Test {
+ protected:
+  static void SetUpTestSuite() {
+    grpc::internal::GrpcLibrary lib;
+    // Ensure the ProtoBufferWriter internals are initialized.
+    grpc_init();
+  }
+
+  static void TearDownTestSuite() { grpc_shutdown(); }
+};
+
+TEST_F(WriterTest, TinyBlockTinyBackup) {
   for (int i = 2; i < static_cast<int> GRPC_SLICE_INLINED_SIZE; i++) {
     BufferWriterTest(i, 256, 1);
   }
 }
 
-TEST(WriterTest, SmallBlockTinyBackup) { BufferWriterTest(64, 256, 1); }
+TEST_F(WriterTest, SmallBlockTinyBackup) { BufferWriterTest(64, 256, 1); }
 
-TEST(WriterTest, SmallBlockNoBackup) { BufferWriterTest(64, 256, 0); }
+TEST_F(WriterTest, SmallBlockNoBackup) { BufferWriterTest(64, 256, 0); }
 
-TEST(WriterTest, SmallBlockFullBackup) { BufferWriterTest(64, 256, 64); }
+TEST_F(WriterTest, SmallBlockFullBackup) { BufferWriterTest(64, 256, 64); }
 
-TEST(WriterTest, LargeBlockTinyBackup) { BufferWriterTest(4096, 8192, 1); }
+TEST_F(WriterTest, LargeBlockTinyBackup) { BufferWriterTest(4096, 8192, 1); }
 
-TEST(WriterTest, LargeBlockNoBackup) { BufferWriterTest(4096, 8192, 0); }
+TEST_F(WriterTest, LargeBlockNoBackup) { BufferWriterTest(4096, 8192, 0); }
 
-TEST(WriterTest, LargeBlockFullBackup) { BufferWriterTest(4096, 8192, 4096); }
+TEST_F(WriterTest, LargeBlockFullBackup) { BufferWriterTest(4096, 8192, 4096); }
 
-TEST(WriterTest, LargeBlockLargeBackup) { BufferWriterTest(4096, 8192, 4095); }
+TEST_F(WriterTest, LargeBlockLargeBackup) {
+  BufferWriterTest(4096, 8192, 4095);
+}
 
 }  // namespace
 }  // namespace internal
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  // Ensure the ProtoBufferWriter internals are initialized.
-  grpc::internal::GrpcLibraryInitializer init;
-  init.summon();
-  grpc::GrpcLibraryCodegen lib;
-
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

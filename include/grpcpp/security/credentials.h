@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_SECURITY_CREDENTIALS_H
 #define GRPCPP_SECURITY_CREDENTIALS_H
@@ -24,19 +24,41 @@
 #include <vector>
 
 #include <grpc/grpc_security_constants.h>
-#include <grpcpp/impl/codegen/grpc_library.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/auth_context.h>
+#include <grpcpp/security/tls_credentials_options.h>
+#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 
 struct grpc_call;
 
 namespace grpc {
-class ChannelArguments;
-class Channel;
-class SecureChannelCredentials;
 class CallCredentials;
 class SecureCallCredentials;
+class SecureChannelCredentials;
+class ChannelCredentials;
+
+std::shared_ptr<Channel> CreateCustomChannel(
+    const grpc::string& target,
+    const std::shared_ptr<grpc::ChannelCredentials>& creds,
+    const grpc::ChannelArguments& args);
+
+namespace experimental {
+std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
+    const grpc::string& target,
+    const std::shared_ptr<grpc::ChannelCredentials>& creds,
+    const grpc::ChannelArguments& args,
+    std::vector<
+        std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
+        interceptor_creators);
+}  // namespace experimental
+
+/// Builds XDS Credentials.
+std::shared_ptr<ChannelCredentials> XdsCredentials(
+    const std::shared_ptr<ChannelCredentials>& fallback_creds);
 
 /// A channel credentials object encapsulates all the state needed by a client
 /// to authenticate with a server for a given channel.
@@ -44,39 +66,67 @@ class SecureCallCredentials;
 /// for all the calls on that channel.
 ///
 /// \see https://grpc.io/docs/guides/auth.html
-class ChannelCredentials : private GrpcLibraryCodegen {
+class ChannelCredentials : private grpc::internal::GrpcLibrary {
  public:
-  ChannelCredentials();
-  ~ChannelCredentials();
-
  protected:
   friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
       const std::shared_ptr<ChannelCredentials>& channel_creds,
       const std::shared_ptr<CallCredentials>& call_creds);
 
+  // TODO(yashykt): We need this friend declaration mainly for access to
+  // AsSecureCredentials(). Once we are able to remove insecure builds from gRPC
+  // (and also internal dependencies on the indirect method of creating a
+  // channel through credentials), we would be able to remove this.
+  friend std::shared_ptr<ChannelCredentials> grpc::XdsCredentials(
+      const std::shared_ptr<ChannelCredentials>& fallback_creds);
+
   virtual SecureChannelCredentials* AsSecureCredentials() = 0;
 
  private:
-  friend std::shared_ptr<Channel> CreateCustomChannel(
+  friend std::shared_ptr<grpc::Channel> CreateCustomChannel(
       const grpc::string& target,
-      const std::shared_ptr<ChannelCredentials>& creds,
-      const ChannelArguments& args);
+      const std::shared_ptr<grpc::ChannelCredentials>& creds,
+      const grpc::ChannelArguments& args);
 
-  virtual std::shared_ptr<Channel> CreateChannel(
+  friend std::shared_ptr<grpc::Channel>
+  grpc::experimental::CreateCustomChannelWithInterceptors(
+      const grpc::string& target,
+      const std::shared_ptr<grpc::ChannelCredentials>& creds,
+      const grpc::ChannelArguments& args,
+      std::vector<std::unique_ptr<
+          grpc::experimental::ClientInterceptorFactoryInterface>>
+          interceptor_creators);
+
+  virtual std::shared_ptr<Channel> CreateChannelImpl(
       const grpc::string& target, const ChannelArguments& args) = 0;
+
+  // This function should have been a pure virtual function, but it is
+  // implemented as a virtual function so that it does not break API.
+  virtual std::shared_ptr<Channel> CreateChannelWithInterceptors(
+      const grpc::string& /*target*/, const ChannelArguments& /*args*/,
+      std::vector<std::unique_ptr<
+          grpc::experimental::ClientInterceptorFactoryInterface>>
+      /*interceptor_creators*/) {
+    return nullptr;
+  }
+
+  // TODO(yashkt): This is a hack that is needed since InsecureCredentials can
+  // not use grpc_channel_credentials internally and should be removed after
+  // insecure builds are removed from gRPC.
+  virtual bool IsInsecure() const { return false; }
 };
 
 /// A call credentials object encapsulates the state needed by a client to
 /// authenticate with a server for a given call on a channel.
 ///
 /// \see https://grpc.io/docs/guides/auth.html
-class CallCredentials : private GrpcLibraryCodegen {
+class CallCredentials : private grpc::internal::GrpcLibrary {
  public:
-  CallCredentials();
-  ~CallCredentials();
-
   /// Apply this instance's credentials to \a call.
   virtual bool ApplyToCall(grpc_call* call) = 0;
+  virtual grpc::string DebugString() {
+    return "CallCredentials did not provide a debug string";
+  }
 
  protected:
   friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
@@ -134,7 +184,6 @@ std::shared_ptr<ChannelCredentials> SslCredentials(
 /// services.
 std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials();
 
-/// Constant for maximum auth token lifetime.
 constexpr long kMaxAuthTokenLifetimeSecs = 3600;
 
 /// Builds Service Account JWT Access credentials.
@@ -192,9 +241,6 @@ std::shared_ptr<CallCredentials> CompositeCallCredentials(
 /// Credentials for an unencrypted, unauthenticated channel
 std::shared_ptr<ChannelCredentials> InsecureChannelCredentials();
 
-/// Credentials for a channel using Cronet.
-std::shared_ptr<ChannelCredentials> CronetChannelCredentials(void* engine);
-
 /// User defined metadata credentials.
 class MetadataCredentialsPlugin {
  public:
@@ -212,16 +258,58 @@ class MetadataCredentialsPlugin {
   /// service_url + "/" + method_name.
   /// The channel_auth_context contains (among other things), the identity of
   /// the server.
-  virtual Status GetMetadata(
+  virtual grpc::Status GetMetadata(
       grpc::string_ref service_url, grpc::string_ref method_name,
-      const AuthContext& channel_auth_context,
+      const grpc::AuthContext& channel_auth_context,
       std::multimap<grpc::string, grpc::string>* metadata) = 0;
+
+  virtual grpc::string DebugString() {
+    return "MetadataCredentialsPlugin did not provide a debug string";
+  }
 };
 
 std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
     std::unique_ptr<MetadataCredentialsPlugin> plugin);
 
+/// Builds External Account credentials.
+/// json_string is the JSON string containing the credentials options.
+/// scopes contains the scopes to be binded with the credentials.
+std::shared_ptr<CallCredentials> ExternalAccountCredentials(
+    const grpc::string& json_string, const std::vector<grpc::string>& scopes);
+
 namespace experimental {
+
+/// Options for creating STS Oauth Token Exchange credentials following the IETF
+/// draft https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16.
+/// Optional fields may be set to empty string. It is the responsibility of the
+/// caller to ensure that the subject and actor tokens are refreshed on disk at
+/// the specified paths.
+struct StsCredentialsOptions {
+  grpc::string token_exchange_service_uri;  // Required.
+  grpc::string resource;                    // Optional.
+  grpc::string audience;                    // Optional.
+  grpc::string scope;                       // Optional.
+  grpc::string requested_token_type;        // Optional.
+  grpc::string subject_token_path;          // Required.
+  grpc::string subject_token_type;          // Required.
+  grpc::string actor_token_path;            // Optional.
+  grpc::string actor_token_type;            // Optional.
+};
+
+grpc::Status StsCredentialsOptionsFromJson(const std::string& json_string,
+                                           StsCredentialsOptions* options);
+
+/// Creates STS credentials options from the $STS_CREDENTIALS environment
+/// variable. This environment variable points to the path of a JSON file
+/// comforming to the schema described above.
+grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options);
+
+std::shared_ptr<CallCredentials> StsCredentials(
+    const StsCredentialsOptions& options);
+
+std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
+    std::unique_ptr<MetadataCredentialsPlugin> plugin,
+    grpc_security_level min_security_level);
 
 /// Options used to build AltsCredentials.
 struct AltsCredentialsOptions {
@@ -238,6 +326,10 @@ std::shared_ptr<ChannelCredentials> AltsCredentials(
 /// Builds Local Credentials.
 std::shared_ptr<ChannelCredentials> LocalCredentials(
     grpc_local_connect_type type);
+
+/// Builds TLS Credentials given TLS options.
+std::shared_ptr<ChannelCredentials> TlsCredentials(
+    const TlsChannelCredentialsOptions& options);
 
 }  // namespace experimental
 }  // namespace grpc

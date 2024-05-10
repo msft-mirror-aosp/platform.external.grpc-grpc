@@ -1,32 +1,34 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef TEST_QPS_SERVER_H
-#define TEST_QPS_SERVER_H
+#ifndef GRPC_TEST_CPP_QPS_SERVER_H
+#define GRPC_TEST_CPP_QPS_SERVER_H
+
+#include <vector>
 
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
+#include <grpcpp/channel.h>
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server_builder.h>
-#include <vector>
 
-#include "src/cpp/util/core_stats.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/control.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -63,9 +65,6 @@ class Server {
       timer_result = timer_->Mark();
     }
 
-    grpc_stats_data core_stats;
-    grpc_stats_collect(&core_stats);
-
     ServerStats stats;
     stats.set_time_elapsed(timer_result.wall);
     stats.set_time_system(timer_result.system);
@@ -73,7 +72,6 @@ class Server {
     stats.set_total_cpu_time(timer_result.total_cpu_time);
     stats.set_idle_cpu_time(timer_result.idle_cpu_time);
     stats.set_cq_poll_count(poll_count);
-    CoreStatsToProto(core_stats, stats.mutable_core_stats());
     return stats;
   }
 
@@ -96,7 +94,7 @@ class Server {
   static std::shared_ptr<ServerCredentials> CreateServerCredentials(
       const ServerConfig& config) {
     if (config.has_security_params()) {
-      grpc::string type;
+      std::string type;
       if (config.security_params().cred_type().empty()) {
         type = kTlsCredentialsType;
       } else {
@@ -152,8 +150,9 @@ class Server {
 std::unique_ptr<Server> CreateSynchronousServer(const ServerConfig& config);
 std::unique_ptr<Server> CreateAsyncServer(const ServerConfig& config);
 std::unique_ptr<Server> CreateAsyncGenericServer(const ServerConfig& config);
+std::unique_ptr<Server> CreateCallbackServer(const ServerConfig& config);
 
 }  // namespace testing
 }  // namespace grpc
 
-#endif
+#endif  // GRPC_TEST_CPP_QPS_SERVER_H

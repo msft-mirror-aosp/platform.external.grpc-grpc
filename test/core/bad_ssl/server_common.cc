@@ -1,36 +1,39 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
-#include <grpc/support/log.h>
-#include <signal.h>
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/core/bad_ssl/server_common.h"
+
+#include <signal.h>
+
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
 #include "test/core/util/cmdline.h"
 #include "test/core/util/test_config.h"
 
-/* Common server implementation details for all servers in servers/.
- * There's nothing *wrong* with these servers per-se, but they are
- * configured to cause some failure case in the SSL connection path.
- */
+// Common server implementation details for all servers in servers/.
+// There's nothing *wrong* with these servers per-se, but they are
+// configured to cause some failure case in the SSL connection path.
+//
 
 static int got_sigint = 0;
 
-static void sigint_handler(int x) { got_sigint = 1; }
+static void sigint_handler(int /*x*/) { got_sigint = 1; }
 
 const char* bad_ssl_addr(int argc, char** argv) {
   gpr_cmdline* cl;
@@ -62,7 +65,8 @@ void bad_ssl_run(grpc_server* server) {
   grpc_server_start(server);
 
   error = grpc_server_request_call(server, &s, &call_details,
-                                   &request_metadata_recv, cq, cq, (void*)1);
+                                   &request_metadata_recv, cq, cq,
+                                   reinterpret_cast<void*>(1));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   signal(SIGINT, sigint_handler);

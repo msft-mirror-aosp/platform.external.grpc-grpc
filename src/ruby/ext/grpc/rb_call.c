@@ -19,17 +19,17 @@
 #include <ruby/ruby.h>
 
 #include "rb_call.h"
+
+#include "rb_byte_buffer.h"
+#include "rb_call_credentials.h"
+#include "rb_completion_queue.h"
+#include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-
-#include "rb_byte_buffer.h"
-#include "rb_call_credentials.h"
-#include "rb_completion_queue.h"
-#include "rb_grpc.h"
 
 /* grpc_rb_cCall is the Call class whose instances proxy grpc_call. */
 static VALUE grpc_rb_cCall;
@@ -48,7 +48,7 @@ static VALUE grpc_rb_sBatchResult;
 
 /* grpc_rb_cMdAry is the MetadataArray class whose instances proxy
  * grpc_metadata_array. */
-static VALUE grpc_rb_cMdAry;
+VALUE grpc_rb_cMdAry;
 
 /* id_credentials is the name of the hidden ivar that preserves the value
  * of the credentials added to the call */
@@ -103,7 +103,7 @@ static void grpc_rb_call_destroy(void* p) {
   xfree(p);
 }
 
-static const rb_data_type_t grpc_rb_md_ary_data_type = {
+const rb_data_type_t grpc_rb_md_ary_data_type = {
     "grpc_metadata_array",
     {GRPC_RB_GC_NOT_MARKED,
      GRPC_RB_GC_DONT_FREE,
@@ -170,7 +170,7 @@ static VALUE grpc_rb_call_cancel(VALUE self) {
 /* TODO: expose this as part of the surface API if needed.
  * This is meant for internal usage by the "write thread" of grpc-ruby
  * client-side bidi calls. It provides a way for the background write-thread
- * to propogate failures to the main read-thread and give the user an error
+ * to propagate failures to the main read-thread and give the user an error
  * message. */
 static VALUE grpc_rb_call_cancel_with_status(VALUE self, VALUE status_code,
                                              VALUE details) {
@@ -489,6 +489,7 @@ static int grpc_rb_md_ary_capacity_hash_cb(VALUE key, VALUE val,
 
 /* grpc_rb_md_ary_convert converts a ruby metadata hash into
    a grpc_metadata_array.
+   Note that this function may throw exceptions.
 */
 void grpc_rb_md_ary_convert(VALUE md_ary_hash, grpc_metadata_array* md_ary) {
   VALUE md_ary_obj = Qnil;
@@ -620,6 +621,7 @@ typedef struct run_batch_stack {
   int recv_cancelled;
   grpc_status_code recv_status;
   grpc_slice recv_status_details;
+  const char* recv_status_debug_error_string;
   unsigned write_flag;
   grpc_slice send_status_details;
 } run_batch_stack;
@@ -729,6 +731,8 @@ static void grpc_run_batch_stack_fill_ops(run_batch_stack* st, VALUE ops_hash) {
             &st->recv_status;
         st->ops[st->op_num].data.recv_status_on_client.status_details =
             &st->recv_status_details;
+        st->ops[st->op_num].data.recv_status_on_client.error_string =
+            &st->recv_status_debug_error_string;
         break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
         st->ops[st->op_num].data.recv_close_on_server.cancelled =
@@ -780,7 +784,12 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack* st) {
                 (GRPC_SLICE_START_PTR(st->recv_status_details) == NULL
                      ? Qnil
                      : grpc_rb_slice_to_ruby_string(st->recv_status_details)),
-                grpc_rb_md_ary_to_h(&st->recv_trailing_metadata), NULL));
+                grpc_rb_md_ary_to_h(&st->recv_trailing_metadata),
+                st->recv_status_debug_error_string == NULL
+                    ? Qnil
+                    : rb_str_new_cstr(st->recv_status_debug_error_string),
+                NULL));
+        gpr_free((void*)st->recv_status_debug_error_string);
         break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
         rb_struct_aset(result, sym_send_close, Qtrue);
@@ -790,6 +799,56 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack* st) {
     }
   }
   return result;
+}
+
+struct call_run_batch_args {
+  grpc_rb_call* call;
+  unsigned write_flag;
+  VALUE ops_hash;
+  run_batch_stack* st;
+};
+
+static VALUE grpc_rb_call_run_batch_try(VALUE value_args) {
+  grpc_rb_fork_unsafe_begin();
+  struct call_run_batch_args* args = (struct call_run_batch_args*)value_args;
+  void* tag = (void*)&args->st;
+
+  grpc_event ev;
+  grpc_call_error err;
+
+  args->st = gpr_malloc(sizeof(run_batch_stack));
+  grpc_run_batch_stack_init(args->st, args->write_flag);
+  grpc_run_batch_stack_fill_ops(args->st, args->ops_hash);
+
+  /* call grpc_call_start_batch, then wait for it to complete using
+   * pluck_event */
+  err = grpc_call_start_batch(args->call->wrapped, args->st->ops,
+                              args->st->op_num, tag, NULL);
+  if (err != GRPC_CALL_OK) {
+    rb_raise(grpc_rb_eCallError,
+             "grpc_call_start_batch failed with %s (code=%d)",
+             grpc_call_error_detail_of(err), err);
+  }
+  ev = rb_completion_queue_pluck(args->call->queue, tag,
+                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  if (!ev.success) {
+    rb_raise(grpc_rb_eCallError, "call#run_batch failed somehow");
+  }
+  /* Build and return the BatchResult struct result,
+     if there is an error, it's reflected in the status */
+  return grpc_run_batch_stack_build_result(args->st);
+}
+
+static VALUE grpc_rb_call_run_batch_ensure(VALUE value_args) {
+  grpc_rb_fork_unsafe_end();
+  struct call_run_batch_args* args = (struct call_run_batch_args*)value_args;
+
+  if (args->st) {
+    grpc_run_batch_stack_cleanup(args->st);
+    gpr_free(args->st);
+  }
+
+  return Qnil;
 }
 
 /* call-seq:
@@ -810,56 +869,29 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack* st) {
    Only one operation of each type can be active at once in any given
    batch */
 static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
-  run_batch_stack* st = NULL;
-  grpc_rb_call* call = NULL;
-  grpc_event ev;
-  grpc_call_error err;
-  VALUE result = Qnil;
-  VALUE rb_write_flag = rb_ivar_get(self, id_write_flag);
-  unsigned write_flag = 0;
-  void* tag = (void*)&st;
-
   grpc_ruby_fork_guard();
   if (RTYPEDDATA_DATA(self) == NULL) {
     rb_raise(grpc_rb_eCallError, "Cannot run batch on closed call");
-    return Qnil;
   }
+
+  grpc_rb_call* call = NULL;
   TypedData_Get_Struct(self, grpc_rb_call, &grpc_call_data_type, call);
 
   /* Validate the ops args, adding them to a ruby array */
   if (TYPE(ops_hash) != T_HASH) {
     rb_raise(rb_eTypeError, "call#run_batch: ops hash should be a hash");
-    return Qnil;
   }
-  if (rb_write_flag != Qnil) {
-    write_flag = NUM2UINT(rb_write_flag);
-  }
-  st = gpr_malloc(sizeof(run_batch_stack));
-  grpc_run_batch_stack_init(st, write_flag);
-  grpc_run_batch_stack_fill_ops(st, ops_hash);
 
-  /* call grpc_call_start_batch, then wait for it to complete using
-   * pluck_event */
-  err = grpc_call_start_batch(call->wrapped, st->ops, st->op_num, tag, NULL);
-  if (err != GRPC_CALL_OK) {
-    grpc_run_batch_stack_cleanup(st);
-    gpr_free(st);
-    rb_raise(grpc_rb_eCallError,
-             "grpc_call_start_batch failed with %s (code=%d)",
-             grpc_call_error_detail_of(err), err);
-    return Qnil;
-  }
-  ev = rb_completion_queue_pluck(call->queue, tag,
-                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-  if (!ev.success) {
-    rb_raise(grpc_rb_eCallError, "call#run_batch failed somehow");
-  }
-  /* Build and return the BatchResult struct result,
-     if there is an error, it's reflected in the status */
-  result = grpc_run_batch_stack_build_result(st);
-  grpc_run_batch_stack_cleanup(st);
-  gpr_free(st);
-  return result;
+  VALUE rb_write_flag = rb_ivar_get(self, id_write_flag);
+
+  struct call_run_batch_args args = {
+      .call = call,
+      .write_flag = rb_write_flag == Qnil ? 0 : NUM2UINT(rb_write_flag),
+      .ops_hash = ops_hash,
+      .st = NULL};
+
+  return rb_ensure(grpc_rb_call_run_batch_try, (VALUE)&args,
+                   grpc_rb_call_run_batch_ensure, (VALUE)&args);
 }
 
 static void Init_grpc_write_flags() {
@@ -964,6 +996,7 @@ void Init_grpc_call() {
   grpc_rb_cCall = rb_define_class_under(grpc_rb_mGrpcCore, "Call", rb_cObject);
   grpc_rb_cMdAry =
       rb_define_class_under(grpc_rb_mGrpcCore, "MetadataArray", rb_cObject);
+  rb_undef_alloc_func(grpc_rb_cMdAry);
 
   /* Prevent allocation or inialization of the Call class */
   rb_define_alloc_func(grpc_rb_cCall, grpc_rb_cannot_alloc);

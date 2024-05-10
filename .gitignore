@@ -1,24 +1,30 @@
 # C/C++ build outputs
 .build/
+build/
 bins
 gens
 libs
 objs
 
 # Python items
-cython_debug/
-python_build/
-yapf_virtual_environment/
-python_pylint_venv/
 .coverage*
 .eggs
-htmlcov/
-dist/
+.pytype
 *.egg
-py27_gevent/
-py27_native/
-py3[0-9]_gevent/
-py3[0-9]_native/
+*.egg-info
+a.out
+cython_debug/
+dist/
+htmlcov/
+py3*/
+pyb/
+python_pylint_venv/
+src/python/grpcio_*/=*
+src/python/grpcio_*/build/
+src/python/grpcio_*/LICENSE
+src/python/grpcio_status/grpc_status/google/rpc/status.proto
+black_virtual_environment/
+isort_virtual_environment/
 
 # Node installation output
 node_modules
@@ -49,6 +55,7 @@ coverage
 
 # vim temp files
 .*.swp
+.*.swo
 
 # Makefile's cache
 cache.mk
@@ -59,6 +66,7 @@ Gemfile.lock
 # Temporary test reports
 report.xml
 */sponge_log.xml
+*/success_log_to_rename.xml
 latency_trace.txt
 latency_trace.*.txt
 
@@ -91,9 +99,13 @@ DerivedData
 *.xcuserstate
 *.DS_Store
 
+# Swift Package Manager files
+Package.resolved
+
 # Objective-C generated files
 *.pbobjc.*
 *.pbrpc.*
+src/objective-c/**/Build
 
 # Cocoapods artifacts
 Pods/
@@ -109,12 +121,15 @@ Podfile.lock
 # IDE specific folder for JetBrains IDEs
 .idea/
 
-# Blaze files
-bazel-bin
-bazel-genfiles
-bazel-grpc
-bazel-out
-bazel-testlogs
+# Bazel files
+bazel-*
+bazel_format_virtual_environment/
+tools/bazel-*
+
+# Bazel wrapper
+bazel_wrapper
+bazel_wrapper.bat
+bazel_wrapper.bazelrc
 
 # Debug output
 gdb.txt
@@ -131,6 +146,41 @@ perf.data.old
 bm_diff_new/
 bm_diff_old/
 bm_*.json
+bloat_diff_new/
+bloat_diff_old/
+bloaty-build/
 
 # cmake build files
-/cmake/build
+**/cmake/build/
+
+# Visual Studio Code artifacts
+.cache/*
+.vscode/*
+.history/
+
+# Clion artifacts
+cmake-build-debug/
+
+# Benchmark outputs
+BenchmarkDotNet.Artifacts/
+
+# pyenv config
+.python-version
+
+# clang JSON compilation database file
+compile_commands.json
+
+# IWYU byproducts
+compile_commands_for_iwyu.json
+iwyu.out
+iwyu_files.txt
+iwyu_files0.txt
+iwyu/
+iwyu_build/
+
+# fuzzer logs
+fuzz-*.log
+
+# bazel module files (MODULE.bazel will need to be removed here)
+MODULE.bazel
+MODULE.bazel.lock

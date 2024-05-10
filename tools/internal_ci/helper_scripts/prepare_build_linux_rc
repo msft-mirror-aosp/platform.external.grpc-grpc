@@ -18,14 +18,34 @@
 # Need to increase open files limit for c tests
 ulimit -n 32768
 
-# Move docker's storage location to scratch disk so we don't run out of space.
-echo 'DOCKER_OPTS="${DOCKER_OPTS} --graph=/tmpfs/docker"' | sudo tee --append /etc/default/docker
-# Use container registry mirror for pulling docker images (should make downloads faster)
-# See https://cloud.google.com/container-registry/docs/using-dockerhub-mirroring
-echo 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=https://mirror.gcr.io"' | sudo tee --append /etc/default/docker
-sudo service docker restart
+# 1. Move docker's storage location to scratch disk so we don't run out of space.
+# 2. Use container registry mirror for pulling docker images (should make downloads faster)
+#    See https://cloud.google.com/container-registry/docs/using-dockerhub-mirroring
+GRPC_DOCKER_OPTS="--data-root=/tmpfs/docker --registry-mirror=https://mirror.gcr.io"
 
-# Download Docker images from DockerHub
-export DOCKERHUB_ORGANIZATION=grpctesting
+# Update global docker configuration to have GRPC_DOCKER_OPTS
+P1NAME=$(ps -p 1 -o comm=)
+if [[ $P1NAME == *"systemd"* ]];  then
+  # https://stackoverflow.com/questions/27763340
+  sudo sed -i -E "s|ExecStart=(.*)//|EnvironmentFile=/etc/default/docker\nExecStart=\nExecStart=\1// \$DOCKER_OPTS|" /lib/systemd/system/docker.service
+  sudo systemctl daemon-reload
+  echo "DOCKER_OPTS=\"${GRPC_DOCKER_OPTS}\"" | sudo tee --append /etc/default/docker
+  sudo systemctl restart docker.service
+else
+  echo "DOCKER_OPTS=\"\${DOCKER_OPTS} ${GRPC_DOCKER_OPTS}\"" | sudo tee --append /etc/default/docker
+  sudo service docker restart
+fi
 
 git submodule update --init
+
+python3 -m pip install six
+
+# Allows the test driver to spin up a GDB subprocess and have it attach to
+# another subprocess of the test driver.
+sudo bash -c 'echo "0" > /proc/sys/kernel/yama/ptrace_scope'
+
+# check whether /tmpfs is mounted correctly
+(mount | grep -q 'on /tmpfs ') || (mount; echo 'BAD KOKORO WORKER WARNING: it seems that /tmpfs volume with scratch disk is not mounted in the kokoro worker. This can result in unexpected "out of disk space" errors.')
+
+# Uncomment the following line to debug "out of disk space" errors by print available disk space every 30seconds in the background
+# bash -c "while true; do echo 'periodic background disk usage check:'; df -h / /tmpfs; sleep 30; done;" &

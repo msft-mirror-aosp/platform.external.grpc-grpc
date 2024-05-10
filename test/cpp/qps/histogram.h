@@ -1,23 +1,23 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef TEST_QPS_HISTOGRAM_H
-#define TEST_QPS_HISTOGRAM_H
+#ifndef GRPC_TEST_CPP_QPS_HISTOGRAM_H
+#define GRPC_TEST_CPP_QPS_HISTOGRAM_H
 
 #include "src/proto/grpc/testing/stats.pb.h"
 #include "test/core/util/histogram.h"
@@ -27,7 +27,7 @@ namespace testing {
 
 class Histogram {
  public:
-  // TODO: look into making histogram params not hardcoded for C++
+  // TODO(unknown): look into making histogram params not hardcoded for C++
   Histogram()
       : impl_(grpc_histogram_create(default_resolution(),
                                     default_max_possible())) {}
@@ -39,7 +39,9 @@ class Histogram {
     impl_ = grpc_histogram_create(default_resolution(), default_max_possible());
   }
 
-  Histogram(Histogram&& other) : impl_(other.impl_) { other.impl_ = nullptr; }
+  Histogram(Histogram&& other) noexcept : impl_(other.impl_) {
+    other.impl_ = nullptr;
+  }
 
   void Merge(const Histogram& h) { grpc_histogram_merge(impl_, h.impl_); }
   void Add(double value) { grpc_histogram_add(impl_, value); }
@@ -78,4 +80,4 @@ class Histogram {
 }  // namespace testing
 }  // namespace grpc
 
-#endif /* TEST_QPS_HISTOGRAM_H */
+#endif  // GRPC_TEST_CPP_QPS_HISTOGRAM_H

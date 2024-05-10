@@ -1,41 +1,41 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+#include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
 
 #include <memory>
 #include <sstream>
 #include <string>
 
-#include <gflags/gflags.h>
+#include "absl/strings/str_format.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/async_stream.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/support/async_stream.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/tsi/alts/fake_handshaker/handshaker.grpc.pb.h"
 #include "test/core/tsi/alts/fake_handshaker/handshaker.pb.h"
 #include "test/core/tsi/alts/fake_handshaker/transport_security_common.pb.h"
-#include "test/cpp/util/test_config.h"
-
-DEFINE_int32(handshaker_port, 55056,
-             "TCP port on which the fake handshaker server listens to.");
 
 // Fake handshake messages.
 constexpr char kClientInitFrame[] = "ClientInit";
@@ -58,8 +58,11 @@ namespace gcp {
 // It is thread-safe.
 class FakeHandshakerService : public HandshakerService::Service {
  public:
+  explicit FakeHandshakerService(const std::string& peer_identity)
+      : peer_identity_(peer_identity) {}
+
   Status DoHandshake(
-      ServerContext* server_context,
+      ServerContext* /*server_context*/,
       ServerReaderWriter<HandshakerResp, HandshakerReq>* stream) override {
     Status status;
     HandshakerContext context;
@@ -231,38 +234,26 @@ class FakeHandshakerService : public HandshakerService::Service {
     HandshakerResult result;
     result.set_application_protocol("grpc");
     result.set_record_protocol("ALTSRP_GCM_AES128_REKEY");
-    result.mutable_peer_identity()->set_service_account("peer_identity");
+    result.mutable_peer_identity()->set_service_account(peer_identity_);
     result.mutable_local_identity()->set_service_account("local_identity");
     string key(1024, '\0');
     result.set_key_data(key);
+    result.set_max_frame_size(16384);
     result.mutable_peer_rpc_versions()->mutable_max_rpc_version()->set_major(2);
     result.mutable_peer_rpc_versions()->mutable_max_rpc_version()->set_minor(1);
     result.mutable_peer_rpc_versions()->mutable_min_rpc_version()->set_major(2);
     result.mutable_peer_rpc_versions()->mutable_min_rpc_version()->set_minor(1);
     return result;
   }
+
+  const std::string peer_identity_;
 };
+
+std::unique_ptr<grpc::Service> CreateFakeHandshakerService(
+    const std::string& peer_identity) {
+  return std::unique_ptr<grpc::Service>{
+      new grpc::gcp::FakeHandshakerService(peer_identity)};
+}
 
 }  // namespace gcp
 }  // namespace grpc
-
-void RunServer() {
-  GPR_ASSERT(FLAGS_handshaker_port != 0);
-  std::ostringstream server_address;
-  server_address << "[::1]:" << FLAGS_handshaker_port;
-  grpc::gcp::FakeHandshakerService service;
-  grpc::ServerBuilder builder;
-  builder.AddListeningPort(server_address.str(),
-                           grpc::InsecureServerCredentials());
-  builder.RegisterService(&service);
-  std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
-  gpr_log(GPR_INFO, "Fake handshaker server listening on %s",
-          server_address.str().c_str());
-  server->Wait();
-}
-
-int main(int argc, char** argv) {
-  grpc::testing::InitTest(&argc, &argv, true);
-  RunServer();
-  return 0;
-}

@@ -13,56 +13,67 @@
 # limitations under the License.
 """The Python implementation of the GRPC interoperability test server."""
 
-import argparse
 from concurrent import futures
 import logging
-import time
 
+from absl import app
+from absl.flags import argparse_flags
 import grpc
-from src.proto.grpc.testing import test_pb2_grpc
 
-from tests.interop import methods
+from src.proto.grpc.testing import test_pb2_grpc
 from tests.interop import resources
+from tests.interop import service
 from tests.unit import test_common
 
 logging.basicConfig()
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 _LOGGER = logging.getLogger(__name__)
 
 
-def serve():
-    parser = argparse.ArgumentParser()
+def parse_interop_server_arguments(argv):
+    parser = argparse_flags.ArgumentParser()
     parser.add_argument(
-        '--port', type=int, required=True, help='the port on which to serve')
+        "--port", type=int, required=True, help="the port on which to serve"
+    )
     parser.add_argument(
-        '--use_tls',
+        "--use_tls",
         default=False,
         type=resources.parse_bool,
-        help='require a secure connection')
-    args = parser.parse_args()
+        help="require a secure connection",
+    )
+    parser.add_argument(
+        "--use_alts",
+        default=False,
+        type=resources.parse_bool,
+        help="require an ALTS connection",
+    )
+    return parser.parse_args(argv[1:])
 
-    server = test_common.test_server()
-    test_pb2_grpc.add_TestServiceServicer_to_server(methods.TestService(),
-                                                    server)
-    if args.use_tls:
+
+def get_server_credentials(use_tls):
+    if use_tls:
         private_key = resources.private_key()
         certificate_chain = resources.certificate_chain()
-        credentials = grpc.ssl_server_credentials(((private_key,
-                                                    certificate_chain),))
-        server.add_secure_port('[::]:{}'.format(args.port), credentials)
+        return grpc.ssl_server_credentials(((private_key, certificate_chain),))
     else:
-        server.add_insecure_port('[::]:{}'.format(args.port))
+        return grpc.alts_server_credentials()
+
+
+def serve(args):
+    server = test_common.test_server()
+    test_pb2_grpc.add_TestServiceServicer_to_server(
+        service.TestService(), server
+    )
+    if args.use_tls or args.use_alts:
+        credentials = get_server_credentials(args.use_tls)
+        server.add_secure_port("[::]:{}".format(args.port), credentials)
+    else:
+        server.add_insecure_port("[::]:{}".format(args.port))
 
     server.start()
-    _LOGGER.info('Server serving.')
-    try:
-        while True:
-            time.sleep(_ONE_DAY_IN_SECONDS)
-    except BaseException as e:
-        _LOGGER.info('Caught exception "%s"; stopping server...', e)
-        server.stop(None)
-        _LOGGER.info('Server stopped; exiting.')
+    _LOGGER.info("Server serving.")
+    server.wait_for_termination()
+    _LOGGER.info("Server stopped; exiting.")
 
 
-if __name__ == '__main__':
-    serve()
+if __name__ == "__main__":
+    app.run(serve, flags_parser=parse_interop_server_arguments)

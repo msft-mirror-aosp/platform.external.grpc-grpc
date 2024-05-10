@@ -104,7 +104,7 @@ end
 
 SynchronizedCancellationStub = SynchronizedCancellationService.rpc_stub_class
 
-# a test service that hangs onto call objects
+# a test service that holds onto call objects
 # and uses them after the server-side call has been
 # finished
 class CheckCallAfterFinishedService
@@ -340,6 +340,28 @@ describe GRPC::RpcServer do
         end
         @srv.stop
         t.join
+      end
+
+      it 'should return UNIMPLEMENTED on unimplemented ' \
+         'methods for client_streamer', server: true do
+        @srv.handle(EchoService)
+        t = Thread.new { @srv.run }
+        @srv.wait_till_running
+        blk = proc do
+          stub = EchoStub.new(@host, :this_channel_is_insecure, **client_opts)
+          requests = [EchoMsg.new, EchoMsg.new]
+          stub.a_client_streaming_rpc_unimplemented(requests)
+        end
+
+        begin
+          expect(&blk).to raise_error do |error|
+            expect(error).to be_a(GRPC::BadStatus)
+            expect(error.code).to eq(GRPC::Core::StatusCodes::UNIMPLEMENTED)
+          end
+        ensure
+          @srv.stop # should be call not to crash
+          t.join
+        end
       end
 
       it 'should handle multiple sequential requests', server: true do
@@ -646,9 +668,9 @@ describe GRPC::RpcServer do
       def check_multi_req_view_of_finished_call(call)
         common_check_of_finished_server_call(call)
 
-        expect do
-          call.each_remote_read.each { |r| p r }
-        end.to raise_error(GRPC::Core::CallError)
+        l = []
+        call.each_remote_read.each { |r| l << r }
+        expect(l.size).to eq(0)
       end
 
       def common_check_of_finished_server_call(call)

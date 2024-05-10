@@ -1,29 +1,30 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/* Benchmark gRPC end2end in various configurations */
+// Benchmark gRPC end2end in various configurations
 
-#ifndef TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PUMP_H
-#define TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PUMP_H
+#ifndef GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PUMP_H
+#define GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PUMP_H
+
+#include <sstream>
 
 #include <benchmark/benchmark.h>
-#include <sstream>
-#include "src/core/lib/profiling/timers.h"
+
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
@@ -31,9 +32,9 @@
 namespace grpc {
 namespace testing {
 
-/*******************************************************************************
- * BENCHMARKING KERNELS
- */
+//******************************************************************************
+// BENCHMARKING KERNELS
+//
 
 static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 
@@ -62,13 +63,12 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
       GPR_ASSERT(ok);
-      int i = static_cast<int>((intptr_t)t);
+      int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
     response_rw.Read(&recv_request, tag(0));
-    while (state.KeepRunning()) {
-      GPR_TIMER_SCOPE("BenchmarkCycle", 0);
+    for (auto _ : state) {
       request_rw->Write(send_request, tag(1));
       while (true) {
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));
@@ -77,7 +77,7 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
         } else if (t == tag(1)) {
           break;
         } else {
-          GPR_ASSERT(false);
+          grpc_core::Crash("unreachable");
         }
       }
     }
@@ -85,7 +85,7 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
     need_tags = (1 << 0) | (1 << 1);
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-      int i = static_cast<int>((intptr_t)t);
+      int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
@@ -95,13 +95,12 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
     need_tags = (1 << 0) | (1 << 1);
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-      int i = static_cast<int>((intptr_t)t);
+      int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
     GPR_ASSERT(final_status.ok());
   }
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(state.range(0) * state.iterations());
 }
@@ -131,13 +130,12 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
       GPR_ASSERT(ok);
-      int i = static_cast<int>((intptr_t)t);
+      int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
     request_rw->Read(&recv_response, tag(0));
-    while (state.KeepRunning()) {
-      GPR_TIMER_SCOPE("BenchmarkCycle", 0);
+    for (auto _ : state) {
       response_rw.Write(send_response, tag(1));
       while (true) {
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));
@@ -146,7 +144,7 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
         } else if (t == tag(1)) {
           break;
         } else {
-          GPR_ASSERT(false);
+          grpc_core::Crash("unreachable");
         }
       }
     }
@@ -154,16 +152,15 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
     need_tags = (1 << 0) | (1 << 1);
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-      int i = static_cast<int>((intptr_t)t);
+      int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
   }
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(state.range(0) * state.iterations());
 }
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
+#endif  // GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PUMP_H

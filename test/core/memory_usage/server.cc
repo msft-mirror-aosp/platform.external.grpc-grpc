@@ -1,44 +1,62 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <signal.h>
-#include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 #include <time.h>
+
 #ifndef _WIN32
-/* This is for _exit() below, which is temporary. */
+// This is for _exit() below, which is temporary.
 #include <unistd.h>
 #endif
 
+#include <algorithm>
+#include <string>
+#include <vector>
+
+#include "absl/base/attributes.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/status/status.h"
+
+#include <grpc/byte_buffer.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/ext/xds/xds_enabled_server.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "test/core/end2end/data/ssl_test_data.h"
-#include "test/core/util/cmdline.h"
-#include "test/core/util/memory_counters.h"
+#include "test/core/memory_usage/memstats.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+ABSL_FLAG(std::string, bind, "", "Bind host:port");
+ABSL_FLAG(bool, secure, false, "Use security");
+ABSL_FLAG(bool, minstack, false, "Use minimal stack");
+ABSL_FLAG(bool, use_xds, false, "Use xDS");
 
 static grpc_completion_queue* cq;
 static grpc_server* server;
@@ -47,10 +65,9 @@ static grpc_op snapshot_ops[5];
 static grpc_op status_op;
 static int got_sigint = 0;
 static grpc_byte_buffer* payload_buffer = nullptr;
-static grpc_byte_buffer* terminal_buffer = nullptr;
 static int was_cancelled = 2;
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 typedef enum {
   FLING_SERVER_NEW_REQUEST = 1,
@@ -69,8 +86,8 @@ typedef struct {
   grpc_metadata_array initial_metadata_send;
 } fling_call;
 
-// hold up to 10000 calls and 6 snaphost calls
-static fling_call calls[100006];
+// hold up to 100000 calls and 6 snaphost calls
+static fling_call calls[1000006];
 
 static void request_call_unary(int call_idx) {
   if (call_idx == static_cast<int>(sizeof(calls) / sizeof(fling_call))) {
@@ -106,7 +123,7 @@ static void send_status(void* tag) {
                                                    nullptr));
 }
 
-static void send_snapshot(void* tag, struct grpc_memory_counters* snapshot) {
+static void send_snapshot(void* tag, MemStats* snapshot) {
   grpc_op* op;
 
   grpc_slice snapshot_slice =
@@ -118,9 +135,6 @@ static void send_snapshot(void* tag, struct grpc_memory_counters* snapshot) {
   op = snapshot_ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &terminal_buffer;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   if (payload_buffer == nullptr) {
@@ -142,68 +156,86 @@ static void send_snapshot(void* tag, struct grpc_memory_counters* snapshot) {
              grpc_call_start_batch((*(fling_call*)tag).call, snapshot_ops,
                                    (size_t)(op - snapshot_ops), tag, nullptr));
 }
-/* We have some sort of deadlock, so let's not exit gracefully for now.
-   When that is resolved, please remove the #include <unistd.h> above. */
-static void sigint_handler(int x) { _exit(0); }
+// We have some sort of deadlock, so let's not exit gracefully for now.
+// When that is resolved, please remove the #include <unistd.h> above.
+static void sigint_handler(int /*x*/) { _exit(0); }
+
+static void OnServingStatusUpdate(void* /*user_data*/, const char* uri,
+                                  grpc_serving_status_update update) {
+  absl::Status status(static_cast<absl::StatusCode>(update.code),
+                      update.error_message);
+  gpr_log(GPR_INFO, "xDS serving status notification: uri=\"%s\", status=%s",
+          uri, status.ToString().c_str());
+}
 
 int main(int argc, char** argv) {
-  grpc_memory_counters_init();
+  absl::ParseCommandLine(argc, argv);
+
   grpc_event ev;
-  char* addr_buf = nullptr;
-  gpr_cmdline* cl;
   grpc_completion_queue* shutdown_cq;
   int shutdown_started = 0;
   int shutdown_finished = 0;
-
-  int secure = 0;
-  const char* addr = nullptr;
 
   char* fake_argv[1];
 
   GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];
-  grpc_test_init(1, fake_argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
 
   grpc_init();
   srand(static_cast<unsigned>(clock()));
 
-  cl = gpr_cmdline_create("fling server");
-  gpr_cmdline_add_string(cl, "bind", "Bind host:port", &addr);
-  gpr_cmdline_add_flag(cl, "secure", "Run with security?", &secure);
-  gpr_cmdline_parse(cl, argc, argv);
-  gpr_cmdline_destroy(cl);
-
-  if (addr == nullptr) {
-    gpr_join_host_port(&addr_buf, "::", grpc_pick_unused_port_or_die());
-    addr = addr_buf;
+  std::string addr = absl::GetFlag(FLAGS_bind);
+  if (addr.empty()) {
+    addr = grpc_core::JoinHostPort("::", grpc_pick_unused_port_or_die());
   }
-  gpr_log(GPR_INFO, "creating server on: %s", addr);
+  gpr_log(GPR_INFO, "creating server on: %s", addr.c_str());
 
   cq = grpc_completion_queue_create_for_next(nullptr);
 
-  struct grpc_memory_counters before_server_create =
-      grpc_memory_counters_snapshot();
-  if (secure) {
+  std::vector<grpc_arg> args_vec;
+  if (absl::GetFlag(FLAGS_minstack)) {
+    args_vec.push_back(grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_MINIMAL_STACK), 1));
+  }
+  // TODO(roth): The xDS code here duplicates the functionality in
+  // XdsServerBuilder, which is undesirable.  We should ideally convert
+  // this to use the C++ API instead of the C-core API, so that we can
+  // avoid this duplication.
+  if (absl::GetFlag(FLAGS_use_xds)) {
+    args_vec.push_back(grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_XDS_ENABLED_SERVER), 1));
+  }
+
+  grpc_channel_args args = {args_vec.size(), args_vec.data()};
+  server = grpc_server_create(&args, nullptr);
+
+  if (absl::GetFlag(FLAGS_use_xds)) {
+    grpc_server_config_fetcher* config_fetcher =
+        grpc_server_config_fetcher_xds_create({OnServingStatusUpdate, nullptr},
+                                              &args);
+    if (config_fetcher != nullptr) {
+      grpc_server_set_config_fetcher(server, config_fetcher);
+    }
+  }
+
+  MemStats before_server_create = MemStats::Snapshot();
+  if (absl::GetFlag(FLAGS_secure)) {
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                     test_server1_cert};
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
         nullptr, &pem_key_cert_pair, 1, 0, nullptr);
-    server = grpc_server_create(nullptr, nullptr);
-    GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
+    GPR_ASSERT(grpc_server_add_http2_port(server, addr.c_str(), ssl_creds));
     grpc_server_credentials_release(ssl_creds);
   } else {
-    server = grpc_server_create(nullptr, nullptr);
-    GPR_ASSERT(grpc_server_add_insecure_http2_port(server, addr));
+    GPR_ASSERT(grpc_server_add_http2_port(
+        server, addr.c_str(), grpc_insecure_server_credentials_create()));
   }
 
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_start(server);
 
-  struct grpc_memory_counters after_server_create =
-      grpc_memory_counters_snapshot();
-
-  gpr_free(addr_buf);
-  addr = addr_buf = nullptr;
+  MemStats after_server_create = MemStats::Snapshot();
 
   // initialize call instances
   for (int i = 0; i < static_cast<int>(sizeof(calls) / sizeof(fling_call));
@@ -213,7 +245,7 @@ int main(int argc, char** argv) {
   }
 
   int next_call_idx = 0;
-  struct grpc_memory_counters current_snapshot;
+  MemStats current_snapshot;
 
   request_call_unary(next_call_idx);
 
@@ -261,12 +293,12 @@ int main(int argc, char** argv) {
             } else if (0 == grpc_slice_str_cmp(s->call_details.method,
                                                "Reflector/SimpleSnapshot")) {
               s->state = FLING_SERVER_SEND_STATUS_SNAPSHOT;
-              current_snapshot = grpc_memory_counters_snapshot();
+              current_snapshot = MemStats::Snapshot();
               send_snapshot(s, &current_snapshot);
             } else if (0 == grpc_slice_str_cmp(s->call_details.method,
                                                "Reflector/DestroyCalls")) {
               s->state = FLING_SERVER_BATCH_SEND_STATUS_FLING_CALL;
-              current_snapshot = grpc_memory_counters_snapshot();
+              current_snapshot = MemStats::Snapshot();
               send_snapshot(s, &current_snapshot);
             } else {
               gpr_log(GPR_ERROR, "Wrong call method");
@@ -292,17 +324,15 @@ int main(int argc, char** argv) {
                 send_status(&calls[k]);
               }
             }
+            ABSL_FALLTHROUGH_INTENDED;
           // no break here since we want to continue to case
           // FLING_SERVER_SEND_STATUS_SNAPSHOT to destroy the snapshot call
-          /* fallthrough */
           case FLING_SERVER_SEND_STATUS_SNAPSHOT:
             grpc_byte_buffer_destroy(payload_buffer);
-            grpc_byte_buffer_destroy(terminal_buffer);
             grpc_call_unref(s->call);
             grpc_call_details_destroy(&s->call_details);
             grpc_metadata_array_destroy(&s->initial_metadata_send);
             grpc_metadata_array_destroy(&s->request_metadata_recv);
-            terminal_buffer = nullptr;
             payload_buffer = nullptr;
             break;
         }
@@ -318,7 +348,6 @@ int main(int argc, char** argv) {
 
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
-  grpc_shutdown();
-  grpc_memory_counters_destroy();
+  grpc_shutdown_blocking();
   return 0;
 }

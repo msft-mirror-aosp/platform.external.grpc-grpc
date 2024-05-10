@@ -16,39 +16,29 @@
  *
  */
 
-#include <grpcpp/grpcpp.h>
 #include <jni.h>
-#include <src/core/lib/gpr/env.h>
+
+#include "absl/strings/str_format.h"
+
+#include <grpcpp/grpcpp.h>
 
 #include "test/cpp/interop/interop_client.h"
-
-extern "C" JNIEXPORT void JNICALL
-Java_io_grpc_interop_cpp_InteropActivity_configureSslRoots(JNIEnv* env,
-                                                           jobject obj_this,
-                                                           jstring path_raw) {
-  const char* path = env->GetStringUTFChars(path_raw, (jboolean*)0);
-
-  gpr_setenv("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", path);
-}
 
 std::shared_ptr<grpc::testing::InteropClient> GetClient(const char* host,
                                                         int port,
                                                         bool use_tls) {
-  const int host_port_buf_size = 1024;
-  char host_port[host_port_buf_size];
-  snprintf(host_port, host_port_buf_size, "%s:%d", host, port);
-
   std::shared_ptr<grpc::ChannelCredentials> credentials;
   if (use_tls) {
     credentials = grpc::SslCredentials(grpc::SslCredentialsOptions());
   } else {
     credentials = grpc::InsecureChannelCredentials();
   }
-
-  grpc::testing::ChannelCreationFunc channel_creation_func = 
-      std::bind(grpc::CreateChannel, host_port, credentials);
-  return std::shared_ptr<grpc::testing::InteropClient>(
-      new grpc::testing::InteropClient(channel_creation_func, true, false));
+  std::string host_port = absl::StrFormat("%s:%d", host, port);
+  return std::make_shared<grpc::testing::InteropClient>(
+      [host_port, credentials](grpc::ChannelArguments args) {
+        return grpc::CreateCustomChannel(host_port, credentials, args);
+      },
+      true, false);
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
@@ -60,7 +50,9 @@ Java_io_grpc_interop_cpp_InteropActivity_doEmpty(JNIEnv* env, jobject obj_this,
   int port = static_cast<int>(port_raw);
   bool use_tls = static_cast<bool>(use_tls_raw);
 
-  return GetClient(host, port, use_tls)->DoEmpty();
+  jboolean result = GetClient(host, port, use_tls)->DoEmpty();
+  env->ReleaseStringUTFChars(host_raw, host);
+  return result;
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
@@ -73,7 +65,9 @@ Java_io_grpc_interop_cpp_InteropActivity_doLargeUnary(JNIEnv* env,
   int port = static_cast<int>(port_raw);
   bool use_tls = static_cast<bool>(use_tls_raw);
 
-  return GetClient(host, port, use_tls)->DoLargeUnary();
+  jboolean result = GetClient(host, port, use_tls)->DoLargeUnary();
+  env->ReleaseStringUTFChars(host_raw, host);
+  return result;
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
@@ -86,7 +80,9 @@ Java_io_grpc_interop_cpp_InteropActivity_doEmptyStream(JNIEnv* env,
   int port = static_cast<int>(port_raw);
   bool use_tls = static_cast<bool>(use_tls_raw);
 
-  return GetClient(host, port, use_tls)->DoEmptyStream();
+  jboolean result = GetClient(host, port, use_tls)->DoEmptyStream();
+  env->ReleaseStringUTFChars(host_raw, host);
+  return result;
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
@@ -97,7 +93,9 @@ Java_io_grpc_interop_cpp_InteropActivity_doRequestStreaming(
   int port = static_cast<int>(port_raw);
   bool use_tls = static_cast<bool>(use_tls_raw);
 
-  return GetClient(host, port, use_tls)->DoRequestStreaming();
+  jboolean result = GetClient(host, port, use_tls)->DoRequestStreaming();
+  env->ReleaseStringUTFChars(host_raw, host);
+  return result;
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
@@ -108,7 +106,9 @@ Java_io_grpc_interop_cpp_InteropActivity_doResponseStreaming(
   int port = static_cast<int>(port_raw);
   bool use_tls = static_cast<bool>(use_tls_raw);
 
-  return GetClient(host, port, use_tls)->DoResponseStreaming();
+  jboolean result = GetClient(host, port, use_tls)->DoResponseStreaming();
+  env->ReleaseStringUTFChars(host_raw, host);
+  return result;
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
@@ -121,5 +121,7 @@ Java_io_grpc_interop_cpp_InteropActivity_doPingPong(JNIEnv* env,
   int port = static_cast<int>(port_raw);
   bool use_tls = static_cast<bool>(use_tls_raw);
 
-  return GetClient(host, port, use_tls)->DoPingPong();
+  jboolean result = GetClient(host, port, use_tls)->DoPingPong();
+  env->ReleaseStringUTFChars(host_raw, host);
+  return result;
 }

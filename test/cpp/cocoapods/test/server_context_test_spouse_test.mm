@@ -31,8 +31,6 @@
 
 #include <grpcpp/impl/grpc_library.h>
 
-static grpc::internal::GrpcLibraryInitializer g_initializer;
-
 const char key1[] = "metadata-key1";
 const char key2[] = "metadata-key2";
 const char val1[] = "metadata-val1";
@@ -55,7 +53,7 @@ bool ClientMetadataContains(const grpc::ServerContext& context, const grpc::stri
 
 @implementation ServerContextTestSpouseTest
 
-TEST(ServerContextTestSpouseTest, ClientMetadata) {
+TEST(ServerContextTestSpouseTest, ClientMetadataHandle) {
   grpc::ServerContext context;
   grpc::testing::ServerContextTestSpouse spouse(&context);
 
@@ -70,28 +68,28 @@ TEST(ServerContextTestSpouseTest, ClientMetadata) {
 TEST(ServerContextTestSpouseTest, InitialMetadata) {
   grpc::ServerContext context;
   grpc::testing::ServerContextTestSpouse spouse(&context);
-  std::multimap<grpc::string, grpc::string> metadata;
+  std::multimap<std::string, std::string> metadata;
 
   context.AddInitialMetadata(key1, val1);
-  metadata.insert(std::pair<grpc::string, grpc::string>(key1, val1));
+  metadata.insert(std::pair<std::string, std::string>(key1, val1));
   ASSERT_EQ(metadata, spouse.GetInitialMetadata());
 
   context.AddInitialMetadata(key2, val2);
-  metadata.insert(std::pair<grpc::string, grpc::string>(key2, val2));
+  metadata.insert(std::pair<std::string, std::string>(key2, val2));
   ASSERT_EQ(metadata, spouse.GetInitialMetadata());
 }
 
-TEST(ServerContextTestSpouseTest, TrailingMetadata) {
+TEST(ServerContextTestSpouseTest, ServerMetadataHandle) {
   grpc::ServerContext context;
   grpc::testing::ServerContextTestSpouse spouse(&context);
-  std::multimap<grpc::string, grpc::string> metadata;
+  std::multimap<std::string, std::string> metadata;
 
   context.AddTrailingMetadata(key1, val1);
-  metadata.insert(std::pair<grpc::string, grpc::string>(key1, val1));
+  metadata.insert(std::pair<std::string, std::string>(key1, val1));
   ASSERT_EQ(metadata, spouse.GetTrailingMetadata());
 
   context.AddTrailingMetadata(key2, val2);
-  metadata.insert(std::pair<grpc::string, grpc::string>(key2, val2));
+  metadata.insert(std::pair<std::string, std::string>(key2, val2));
   ASSERT_EQ(metadata, spouse.GetTrailingMetadata());
 }
 

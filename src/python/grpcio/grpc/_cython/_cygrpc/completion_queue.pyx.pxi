@@ -12,44 +12,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cimport cpython
 
-import threading
-import time
+g_interrupt_check_period_ms = 200
 
-cdef int _INTERRUPT_CHECK_PERIOD_MS = 200
-
-
-cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline):
+cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) except *:
+  global g_interrupt_check_period_ms
   cdef gpr_timespec c_increment
   cdef gpr_timespec c_timeout
   cdef gpr_timespec c_deadline
-  c_increment = gpr_time_from_millis(_INTERRUPT_CHECK_PERIOD_MS, GPR_TIMESPAN)
+  c_increment = gpr_time_from_millis(g_interrupt_check_period_ms, GPR_TIMESPAN)
   if deadline is None:
     c_deadline = gpr_inf_future(GPR_CLOCK_REALTIME)
   else:
     c_deadline = _timespec_from_time(deadline)
 
-  with nogil:
-    while True:
+  while True:
+    with nogil:
       c_timeout = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), c_increment)
       if gpr_time_cmp(c_timeout, c_deadline) > 0:
         c_timeout = c_deadline
+
       c_event = grpc_completion_queue_next(c_completion_queue, c_timeout, NULL)
+
       if (c_event.type != GRPC_QUEUE_TIMEOUT or
           gpr_time_cmp(c_timeout, c_deadline) == 0):
         break
 
-      # Handle any signals
-      with gil:
-        cpython.PyErr_CheckSignals()
+    # Handle any signals
+    cpython.PyErr_CheckSignals()
   return c_event
-
 
 cdef _interpret_event(grpc_event c_event):
   cdef _Tag tag
   if c_event.type == GRPC_QUEUE_TIMEOUT:
-    # NOTE(nathaniel): For now we coopt ConnectivityEvent here.
+    # TODO(ericgribkoff) Do not coopt ConnectivityEvent here.
     return None, ConnectivityEvent(GRPC_QUEUE_TIMEOUT, False, None)
   elif c_event.type == GRPC_QUEUE_SHUTDOWN:
     # NOTE(nathaniel): For now we coopt ConnectivityEvent here.
@@ -61,11 +57,25 @@ cdef _interpret_event(grpc_event c_event):
     cpython.Py_DECREF(tag)
     return tag, tag.event(c_event)
 
-
-cdef _latent_event(grpc_completion_queue *c_completion_queue, object deadline):
-  cdef grpc_event c_event = _next(c_completion_queue, deadline)
+cdef _internal_latent_event(_LatentEventArg latent_event_arg):
+  cdef grpc_event c_event = _next(latent_event_arg.c_completion_queue, latent_event_arg.deadline)
   return _interpret_event(c_event)
 
+cdef _latent_event(grpc_completion_queue *c_completion_queue, object deadline):
+    global g_gevent_activated
+
+    latent_event_arg = _LatentEventArg()
+    latent_event_arg.c_completion_queue = c_completion_queue
+    latent_event_arg.deadline = deadline
+
+    if g_gevent_activated:
+      # For gevent, completion_queue_next is run in a native thread pool.
+      global g_gevent_threadpool
+
+      result = g_gevent_threadpool.apply(_internal_latent_event, (latent_event_arg,))
+      return result
+    else:
+      return _internal_latent_event(latent_event_arg)
 
 cdef class CompletionQueue:
 
@@ -76,6 +86,7 @@ cdef class CompletionQueue:
       c_attrs.version = 1
       c_attrs.cq_completion_type = GRPC_CQ_NEXT
       c_attrs.cq_polling_type = GRPC_CQ_NON_LISTENING
+      c_attrs.cq_shutdown_cb = NULL
       self.c_completion_queue = grpc_completion_queue_create(
           grpc_completion_queue_factory_lookup(&c_attrs), &c_attrs, NULL);
     else:
@@ -89,10 +100,17 @@ cdef class CompletionQueue:
       self.is_shutdown = True
     return event
 
+  def _internal_poll(self, deadline):
+    return self._interpret_event(_next(self.c_completion_queue, deadline))
+
   # We name this 'poll' to avoid problems with CPython's expectations for
   # 'special' methods (like next and __next__).
   def poll(self, deadline=None):
-    return self._interpret_event(_next(self.c_completion_queue, deadline))
+    global g_gevent_activated
+    if g_gevent_activated:
+      return g_gevent_threadpool.apply(CompletionQueue._internal_poll, (self, deadline))
+    else:
+      return self._internal_poll(deadline)
 
   def shutdown(self):
     with nogil:

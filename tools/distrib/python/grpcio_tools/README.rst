@@ -3,14 +3,17 @@ gRPC Python Tools
 
 Package for gRPC Python tools.
 
+Supported Python Versions
+-------------------------
+Python >= 3.6
+
 Installation
 ------------
 
-The gRPC Python tools package is available for Linux, Mac OS X, and Windows
-running Python 2.7.
+The gRPC Python tools package is available for Linux, Mac OS X, and Windows.
 
-From PyPI
-~~~~~~~~~
+Installing From PyPI
+~~~~~~~~~~~~~~~~~~~~
 
 If you are installing locally...
 
@@ -42,8 +45,8 @@ You might also need to install Cython to handle installation via the source
 distribution if gRPC Python's system coverage with wheels does not happen to
 include your system.
 
-From Source
-~~~~~~~~~~~
+Installing From Source
+~~~~~~~~~~~~~~~~~~~~~~
 
 Building from source requires that you have the Python headers (usually a
 package named :code:`python-dev`) and Cython installed. It further requires a
@@ -53,7 +56,7 @@ GCC-like stuff, but you may end up having a bad time.
 ::
 
   $ export REPO_ROOT=grpc  # REPO_ROOT can be any directory of your choice
-  $ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc $REPO_ROOT
+  $ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc $REPO_ROOT
   $ cd $REPO_ROOT
   $ git submodule update --init
 
@@ -136,9 +139,9 @@ Given protobuf include directories :code:`$INCLUDE`, an output directory
 
 ::
 
-  $ python -m grpc.tools.protoc -I$INCLUDE --python_out=$OUTPUT --grpc_python_out=$OUTPUT $PROTO_FILES
+  $ python -m grpc_tools.protoc -I$INCLUDE --python_out=$OUTPUT --grpc_python_out=$OUTPUT $PROTO_FILES
 
-To use as a build step in distutils-based projects, you may use the provided
+To use as a build step in setuptools-based projects, you may use the provided
 command class in your :code:`setup.py`:
 
 ::
@@ -146,7 +149,7 @@ command class in your :code:`setup.py`:
   setuptools.setup(
     # ...
     cmdclass={
-      'build_proto_modules': grpc.tools.command.BuildPackageProtos,
+      'build_proto_modules': grpc_tools.command.BuildPackageProtos,
     }
     # ...
   )
@@ -157,7 +160,7 @@ Invocation of the command will walk the project tree and transpile every
 Note that this particular approach requires :code:`grpcio-tools` to be
 installed on the machine before the setup script is invoked (i.e. no
 combination of :code:`setup_requires` or :code:`install_requires` will provide
-access to :code:`grpc.tools.command.BuildPackageProtos` if it isn't already
+access to :code:`grpc_tools.command.BuildPackageProtos` if it isn't already
 installed). One way to work around this can be found in our
 :code:`grpcio-health-checking`
 `package <https://pypi.python.org/pypi/grpcio-health-checking>`_:
@@ -168,11 +171,10 @@ installed). One way to work around this can be found in our
     """Command to generate project *_pb2.py modules from proto files."""
     # ...
     def run(self):
-      from grpc.tools import command
+      from grpc_tools import command
       command.build_package_protos(self.distribution.package_dir[''])
 
 Now including :code:`grpcio-tools` in :code:`setup_requires` will provide the
 command on-setup as desired.
 
-For more information on command classes, consult :code:`distutils` and
-:code:`setuptools` documentation.
+For more information on command classes, consult :code:`setuptools` documentation.

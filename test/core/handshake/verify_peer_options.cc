@@ -1,40 +1,45 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_TCP
 
 #include <arpa/inet.h>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <string>
+
+#include <openssl/err.h>
+#include <openssl/ssl.h>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
@@ -69,11 +74,9 @@ static void server_thread(void* arg) {
       ca_cert, &pem_key_cert_pair, 1, 0, nullptr);
 
   // Start server listening on local port.
-  char* addr;
-  gpr_asprintf(&addr, "127.0.0.1:%d", port);
+  std::string addr = absl::StrCat("127.0.0.1:", port);
   grpc_server* server = grpc_server_create(nullptr, nullptr);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
-  free(addr);
+  GPR_ASSERT(grpc_server_add_http2_port(server, addr.c_str(), ssl_creds));
 
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
@@ -118,13 +121,12 @@ static bool verify_peer_options_test(verify_peer_options* verify_options) {
   int port = grpc_pick_unused_port_or_die();
   gpr_event_init(&client_handshake_complete);
 
-  // Launch the gRPC server thread.
-  bool ok;
-  grpc_core::Thread thd("grpc_client_ssl_test", server_thread, &port, &ok);
-  GPR_ASSERT(ok);
-  thd.Start();
-
   // Load key pair and establish client SSL credentials.
+  // NOTE: we intentionally load the credential files before starting
+  // the server thread because grpc_load_file can experience trouble
+  // when two threads attempt to load the same file concurrently
+  // and server thread also reads the same files as soon as it starts.
+  // See https://github.com/grpc/grpc/issues/23503 for details.
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
   grpc_slice ca_slice, cert_slice, key_slice;
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
@@ -142,10 +144,15 @@ static bool verify_peer_options_test(verify_peer_options* verify_options) {
   grpc_channel_credentials* ssl_creds = grpc_ssl_credentials_create(
       ca_cert, &pem_key_cert_pair, verify_options, nullptr);
 
+  // Launch the gRPC server thread.
+  bool ok;
+  grpc_core::Thread thd("grpc_client_ssl_test", server_thread, &port, &ok);
+  GPR_ASSERT(ok);
+  thd.Start();
+
   // Establish a channel pointing at the TLS server. Since the gRPC runtime is
   // lazy, this won't necessarily establish a connection yet.
-  char* target;
-  gpr_asprintf(&target, "127.0.0.1:%d", port);
+  std::string target = absl::StrCat("127.0.0.1:", port);
   grpc_arg ssl_name_override = {
       GRPC_ARG_STRING,
       const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
@@ -154,9 +161,8 @@ static bool verify_peer_options_test(verify_peer_options* verify_options) {
   grpc_args.num_args = 1;
   grpc_args.args = &ssl_name_override;
   grpc_channel* channel =
-      grpc_secure_channel_create(ssl_creds, target, &grpc_args, nullptr);
+      grpc_channel_create(target.c_str(), ssl_creds, &grpc_args);
   GPR_ASSERT(channel);
-  gpr_free(target);
 
   // Initially the channel will be idle, the
   // grpc_channel_check_connectivity_state triggers an attempt to connect.
@@ -229,6 +235,9 @@ static int verify_callback(const char* target_host, const char* target_pem,
 static void verify_destruct(void* userdata) { destruct_userdata = userdata; }
 
 int main(int argc, char* argv[]) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  grpc_init();
+
   int userdata = 42;
   verify_peer_options verify_options;
 
@@ -265,11 +274,12 @@ int main(int argc, char* argv[]) {
 
   grpc_slice_unref(cert_slice);
 
+  grpc_shutdown();
   return 0;
 }
 
-#else /* GRPC_POSIX_SOCKET */
+#else  // GRPC_POSIX_SOCKET_TCP
 
 int main(int argc, char** argv) { return 1; }
 
-#endif /* GRPC_POSIX_SOCKET */
+#endif  // GRPC_POSIX_SOCKET_TCP

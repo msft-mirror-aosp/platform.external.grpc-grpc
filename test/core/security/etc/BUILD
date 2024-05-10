@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 exports_files([
-        "bundle.pem",
-        "test_roots/cert1.pem",
-        "test_roots/cert2.pem",
-        "test_roots/cert3.pem",
+    "bundle.pem",
+    "test_roots/cert1.pem",
+    "test_roots/cert2.pem",
+    "test_roots/cert3.pem",
 ])

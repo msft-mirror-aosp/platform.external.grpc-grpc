@@ -14,10 +14,14 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  FROM debian:jessie
+  FROM silkeh/clang:16-bullseye
   
-  <%include file="../clang5.include"/>
-  <%include file="../python_deps.include"/>
+  # Install prerequisites for the clang-tidy script
+  RUN apt-get update && apt-get install -y python3 jq git && apt-get clean
+
+  # otherwise clang-tidy will report missing <gtest/gtest.h> header
+  RUN apt-get update && apt-get install -y libgtest-dev && apt-get clean
+
   ADD clang_tidy_all_the_things.sh /
   
   # When running locally, we'll be impersonating the current user, so we need

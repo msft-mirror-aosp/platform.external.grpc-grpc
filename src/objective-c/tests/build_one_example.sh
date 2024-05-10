@@ -16,7 +16,7 @@
 # Don't run this script standalone. Instead, run from the repository root:
 # ./tools/run_tests/run_tests.py -l objc
 
-set -ev
+set -ex
 
 # Params:
 # EXAMPLE_PATH - directory of the example
@@ -25,20 +25,36 @@ set -ev
 # CocoaPods requires the terminal to be using UTF-8 encoding.
 export LANG=en_US.UTF-8
 
-cd `dirname $0`/../../..
+TEST_PATH=$(cd "$(dirname $0)" > /dev/null ; pwd)
+
+cd $(dirname $0)/../../..
 
 cd $EXAMPLE_PATH
 
 # clean the directory
 rm -rf Pods
-rm -rf $SCHEME.xcworkspace
+rm -rf *.xcworkspace
 rm -f Podfile.lock
 
-pod install
+time pod install
 
-set -o pipefail
-XCODEBUILD_FILTER='(^CompileC |^Ld |^.*clang |^ *cd |^ *export |^Libtool |^.*libtool |^CpHeader |^ *builtin-copy )'
-xcodebuild \
+set -o pipefail  # preserve xcodebuild exit code when piping output
+
+XCODEBUILD_FILTER_OUTPUT_SCRIPT="${TEST_PATH}/xcodebuild_filter_output.sh"
+
+if [ "$SCHEME" == "tvOS-sample" ]; then
+  time xcodebuild \
+    build \
+    -workspace *.xcworkspace \
+    -scheme $SCHEME \
+    -destination generic/platform=tvOS \
+    -derivedDataPath Build/Build \
+    CODE_SIGN_IDENTITY="" \
+    CODE_SIGNING_REQUIRED=NO \
+    CODE_SIGNING_ALLOWED=NO \
+    | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
+else
+  time xcodebuild \
     build \
     -workspace *.xcworkspace \
     -scheme $SCHEME \
@@ -46,5 +62,6 @@ xcodebuild \
     -derivedDataPath Build/Build \
     CODE_SIGN_IDENTITY="" \
     CODE_SIGNING_REQUIRED=NO \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v "^$" -
+    CODE_SIGNING_ALLOWED=NO \
+    | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
+fi

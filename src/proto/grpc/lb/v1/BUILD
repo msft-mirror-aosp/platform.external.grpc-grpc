@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
-
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+
+licenses(["notice"])
 
 grpc_package(
     name = "lb",
@@ -27,6 +28,15 @@ grpc_proto_library(
         "load_balancer.proto",
     ],
     well_known_protos = True,
+)
+
+proto_library(
+    name = "load_balancer_proto_descriptor",
+    srcs = ["load_balancer.proto"],
+    deps = [
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
 )
 
 grpc_proto_library(

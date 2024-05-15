@@ -26,7 +26,7 @@
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 #include "upb/message/map.h"
-#include "xds/data/orca/v3/orca_load_report.upb.h"
+// #include "xds/data/orca/v3/orca_load_report.upb.h" // No load reporting due to dependencies
 
 namespace grpc_core {
 

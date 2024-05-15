@@ -69,7 +69,7 @@
 #include "src/core/load_balancing/endpoint_list.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
-#include "src/core/load_balancing/oob_backend_metric.h"
+// #include "src/core/load_balancing/oob_backend_metric.h" // No load balancing metrics due to dependencies
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
 #include "src/core/load_balancing/weighted_target/weighted_target.h"
@@ -232,20 +232,20 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
       RefCountedPtr<EndpointWeight> weight() const { return weight_; }
 
      private:
-      class OobWatcher final : public OobBackendMetricWatcher {
-       public:
-        OobWatcher(RefCountedPtr<EndpointWeight> weight,
-                   float error_utilization_penalty)
-            : weight_(std::move(weight)),
-              error_utilization_penalty_(error_utilization_penalty) {}
+      // class OobWatcher final : public OobBackendMetricWatcher {
+      //  public:
+      //   OobWatcher(RefCountedPtr<EndpointWeight> weight,
+      //              float error_utilization_penalty)
+      //       : weight_(std::move(weight)),
+      //         error_utilization_penalty_(error_utilization_penalty) {}
 
-        void OnBackendMetricReport(
-            const BackendMetricData& backend_metric_data) override;
+      //   void OnBackendMetricReport(
+      //       const BackendMetricData& backend_metric_data) override;
 
-       private:
-        RefCountedPtr<EndpointWeight> weight_;
-        const float error_utilization_penalty_;
-      };
+      //  private:
+      //   RefCountedPtr<EndpointWeight> weight_;
+      //   const float error_utilization_penalty_;
+      // };
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
           const grpc_resolved_address& address,
@@ -816,15 +816,15 @@ WeightedRoundRobin::GetOrCreateWeight(
 // WeightedRoundRobin::WrrEndpointList::WrrEndpoint::OobWatcher
 //
 
-void WeightedRoundRobin::WrrEndpointList::WrrEndpoint::OobWatcher::
-    OnBackendMetricReport(const BackendMetricData& backend_metric_data) {
-  double utilization = backend_metric_data.application_utilization;
-  if (utilization <= 0) {
-    utilization = backend_metric_data.cpu_utilization;
-  }
-  weight_->MaybeUpdateWeight(backend_metric_data.qps, backend_metric_data.eps,
-                             utilization, error_utilization_penalty_);
-}
+// void WeightedRoundRobin::WrrEndpointList::WrrEndpoint::OobWatcher::
+//     OnBackendMetricReport(const BackendMetricData& backend_metric_data) {
+//   double utilization = backend_metric_data.application_utilization;
+//   if (utilization <= 0) {
+//     utilization = backend_metric_data.cpu_utilization;
+//   }
+//   weight_->MaybeUpdateWeight(backend_metric_data.qps, backend_metric_data.eps,
+//                              utilization, error_utilization_penalty_);
+// }
 
 //
 // WeightedRoundRobin::WrrEndpointList::WrrEndpoint
@@ -839,10 +839,12 @@ WeightedRoundRobin::WrrEndpointList::WrrEndpoint::CreateSubchannel(
       address, per_address_args, args);
   // Start OOB watch if configured.
   if (wrr->config_->enable_oob_load_report()) {
-    subchannel->AddDataWatcher(MakeOobBackendMetricWatcher(
-        wrr->config_->oob_reporting_period(),
-        std::make_unique<OobWatcher>(
-            weight_, wrr->config_->error_utilization_penalty())));
+    printf("This is not supported for android emulator\n");
+    exit(1);
+    // subchannel->AddDataWatcher(MakeOobBackendMetricWatcher(
+    //     wrr->config_->oob_reporting_period(),
+    //     std::make_unique<OobWatcher>(
+    //         weight_, wrr->config_->error_utilization_penalty())));
   }
   return subchannel;
 }

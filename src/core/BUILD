@@ -5823,7 +5823,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_client_channel",
         "//:grpc_trace",
-        "//:oob_backend_metric",
+        # "//:oob_backend_metric",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:stats",

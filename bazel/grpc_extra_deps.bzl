@@ -16,13 +16,13 @@
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
 load("@build_bazel_apple_support//lib:repositories.bzl", "apple_support_dependencies")
 load("@build_bazel_rules_apple//apple:repositories.bzl", "apple_rules_dependencies")
-load("@com_envoyproxy_protoc_gen_validate//:dependencies.bzl", "go_third_party")
-load("@com_google_googleapis//:repository_rules.bzl", "switched_rules_by_language")
-load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
-load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
-load("@google_cloud_cpp//bazel:google_cloud_cpp_deps.bzl", "google_cloud_cpp_deps")
-load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
-load("@rules_python//python:repositories.bzl", "py_repositories")
+# load("@com_envoyproxy_protoc_gen_validate//:dependencies.bzl", "go_third_party")
+# load("@com_google_googleapis//:repository_rules.bzl", "switched_rules_by_language")
+# load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+# load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
+# load("@google_cloud_cpp//bazel:google_cloud_cpp_deps.bzl", "google_cloud_cpp_deps")
+# load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
+# load("@rules_python//python:repositories.bzl", "py_repositories")
 
 def grpc_extra_deps(ignore_version_differences = False):
     """Loads the extra dependencies.
@@ -47,30 +47,30 @@ def grpc_extra_deps(ignore_version_differences = False):
       ignore_version_differences: Plumbed directly to the invocation of
         apple_rules_dependencies.
     """
-    protobuf_deps()
+    # protobuf_deps()
 
-    api_dependencies()
+    # api_dependencies()
 
-    go_rules_dependencies()
-    go_register_toolchains(version = "1.18")
+    # go_rules_dependencies()
+    # go_register_toolchains(version = "1.18")
     gazelle_dependencies()
 
     # Pull-in the go 3rd party dependencies for protoc_gen_validate, which is
     # needed for building C++ xDS protos
-    go_third_party()
+    # go_third_party()
 
     apple_rules_dependencies(ignore_version_differences = ignore_version_differences)
 
     apple_support_dependencies()
 
     # Initialize Google APIs with only C++ and Python targets
-    switched_rules_by_language(
-        name = "com_google_googleapis_imports",
-        cc = True,
-        grpc = True,
-        python = True,
-    )
+    # switched_rules_by_language(
+    #     name = "com_google_googleapis_imports",
+    #     cc = True,
+    #     grpc = True,
+    #     python = True,
+    # )
 
-    google_cloud_cpp_deps()
+    # google_cloud_cpp_deps()
 
-    py_repositories()
+    # py_repositories()

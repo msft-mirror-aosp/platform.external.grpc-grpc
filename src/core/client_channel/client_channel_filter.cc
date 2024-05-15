@@ -97,7 +97,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/load_balancing/backend_metric_parser.h"
+// #include "src/core/load_balancing/backend_metric_parser.h" // No metric support for emu-dev due to dependencies
 #include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/subchannel_interface.h"
@@ -2729,30 +2729,30 @@ class ClientChannelFilter::LoadBalancedCall::BackendMetricAccessor final
         recv_trailing_metadata_ != nullptr) {
       if (const auto* md = recv_trailing_metadata_->get_pointer(
               EndpointLoadMetricsBinMetadata())) {
-        BackendMetricAllocator allocator(lb_call_->arena());
-        lb_call_->backend_metric_data_ =
-            ParseBackendMetricData(md->as_string_view(), &allocator);
+        // BackendMetricAllocator allocator(lb_call_->arena());
+        // lb_call_->backend_metric_data_ =
+        //     ParseBackendMetricData(md->as_string_view(), &allocator);
       }
     }
     return lb_call_->backend_metric_data_;
   }
 
  private:
-  class BackendMetricAllocator final : public BackendMetricAllocatorInterface {
-   public:
-    explicit BackendMetricAllocator(Arena* arena) : arena_(arena) {}
+  // class BackendMetricAllocator final : public BackendMetricAllocatorInterface {
+  //  public:
+  //   explicit BackendMetricAllocator(Arena* arena) : arena_(arena) {}
 
-    BackendMetricData* AllocateBackendMetricData() override {
-      return arena_->New<BackendMetricData>();
-    }
+  //   BackendMetricData* AllocateBackendMetricData() override {
+  //     return arena_->New<BackendMetricData>();
+  //   }
 
-    char* AllocateString(size_t size) override {
-      return static_cast<char*>(arena_->Alloc(size));
-    }
+  //   char* AllocateString(size_t size) override {
+  //     return static_cast<char*>(arena_->Alloc(size));
+  //   }
 
-   private:
-    Arena* arena_;
-  };
+  //  private:
+  //   Arena* arena_;
+  // };
 
   LoadBalancedCall* lb_call_;
   grpc_metadata_batch* recv_trailing_metadata_;

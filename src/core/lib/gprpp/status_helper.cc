@@ -32,7 +32,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/time/clock.h"
 #include "google/protobuf/any.upb.h"
-#include "google/rpc/status.upb.h"
+// #include "google/rpc/status.upb.h" // No "google rpc" status support for emu-dev due to dependencies
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 
@@ -146,20 +146,20 @@ uint32_t DecodeUInt32FromBytes(const char* buf) {
 
 std::vector<absl::Status> ParseChildren(absl::Cord children) {
   std::vector<absl::Status> result;
-  upb::Arena arena;
-  // Cord is flattened to iterate the buffer easily at the cost of memory copy.
-  // TODO(veblush): Optimize this once CordReader is introduced.
-  absl::string_view buf = children.Flatten();
-  size_t cur = 0;
-  while (buf.size() - cur >= sizeof(uint32_t)) {
-    size_t msg_size = DecodeUInt32FromBytes(buf.data() + cur);
-    cur += sizeof(uint32_t);
-    GPR_ASSERT(buf.size() - cur >= msg_size);
-    google_rpc_Status* msg =
-        google_rpc_Status_parse(buf.data() + cur, msg_size, arena.ptr());
-    cur += msg_size;
-    result.push_back(internal::StatusFromProto(msg));
-  }
+  // upb::Arena arena;
+  // // Cord is flattened to iterate the buffer easily at the cost of memory copy.
+  // // TODO(veblush): Optimize this once CordReader is introduced.
+  // absl::string_view buf = children.Flatten();
+  // size_t cur = 0;
+  // while (buf.size() - cur >= sizeof(uint32_t)) {
+  //   size_t msg_size = DecodeUInt32FromBytes(buf.data() + cur);
+  //   cur += sizeof(uint32_t);
+  //   GPR_ASSERT(buf.size() - cur >= msg_size);
+  //   google_rpc_Status* msg =
+  //       google_rpc_Status_parse(buf.data() + cur, msg_size, arena.ptr());
+  //   cur += msg_size;
+  //   result.push_back(internal::StatusFromProto(msg));
+  // }
   return result;
 }
 
@@ -256,20 +256,20 @@ absl::optional<absl::Time> StatusGetTime(const absl::Status& status,
 void StatusAddChild(absl::Status* status, absl::Status child) {
   upb::Arena arena;
   // Serialize msg to buf
-  google_rpc_Status* msg = internal::StatusToProto(child, arena.ptr());
-  size_t buf_len = 0;
-  char* buf = google_rpc_Status_serialize(msg, arena.ptr(), &buf_len);
-  // Append (msg-length and msg) to children payload
-  absl::optional<absl::Cord> old_children =
-      status->GetPayload(kChildrenPropertyUrl);
+  // google_rpc_Status* msg = internal::StatusToProto(child, arena.ptr());
+  // size_t buf_len = 0;
+  // char* buf = google_rpc_Status_serialize(msg, arena.ptr(), &buf_len);
+  // // Append (msg-length and msg) to children payload
+  // absl::optional<absl::Cord> old_children =
+  //     status->GetPayload(kChildrenPropertyUrl);
   absl::Cord children;
-  if (old_children.has_value()) {
-    children = *old_children;
-  }
-  char head_buf[sizeof(uint32_t)];
-  EncodeUInt32ToBytes(buf_len, head_buf);
-  children.Append(absl::string_view(head_buf, sizeof(uint32_t)));
-  children.Append(absl::string_view(buf, buf_len));
+  // if (old_children.has_value()) {
+  //   children = *old_children;
+  // }
+  // char head_buf[sizeof(uint32_t)];
+  // EncodeUInt32ToBytes(buf_len, head_buf);
+  // children.Append(absl::string_view(head_buf, sizeof(uint32_t)));
+  // children.Append(absl::string_view(buf, buf_len));
   status->SetPayload(kChildrenPropertyUrl, std::move(children));
 }
 
@@ -350,6 +350,7 @@ std::string StatusToString(const absl::Status& status) {
 
 namespace internal {
 
+/*
 google_rpc_Status* StatusToProto(const absl::Status& status, upb_Arena* arena) {
   google_rpc_Status* msg = google_rpc_Status_new(arena);
   google_rpc_Status_set_code(msg, static_cast<int32_t>(status.code()));
@@ -407,16 +408,18 @@ absl::Status StatusFromProto(google_rpc_Status* msg) {
       absl::string_view(reinterpret_cast<const char*>(message_slice.data()),
                         message_slice.size()));
   size_t detail_len;
-  const google_protobuf_Any* const* details =
-      google_rpc_Status_details(msg, &detail_len);
-  for (size_t i = 0; i < detail_len; i++) {
-    upb_StringView type_url = google_protobuf_Any_type_url(details[i]);
-    upb_StringView value = google_protobuf_Any_value(details[i]);
-    status.SetPayload(absl::string_view(type_url.data, type_url.size),
-                      absl::Cord(absl::string_view(value.data, value.size)));
-  }
+  // emu-dev does not support google status..
+  // const google_protobuf_Any* const* details =
+  //     google_rpc_Status_details(msg, &detail_len);
+  // for (size_t i = 0; i < detail_len; i++) {
+  //   upb_StringView type_url = google_protobuf_Any_type_url(details[i]);
+  //   upb_StringView value = google_protobuf_Any_value(details[i]);
+  //   status.SetPayload(absl::string_view(type_url.data, type_url.size),
+  //                     absl::Cord(absl::string_view(value.data, value.size)));
+  // }
   return status;
 }
+*/
 
 uintptr_t StatusAllocHeapPtr(absl::Status s) {
   if (s.ok()) return 0;

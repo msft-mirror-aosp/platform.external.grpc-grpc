@@ -56,7 +56,7 @@ extern void RegisterExtraFilters(CoreConfiguration::Builder* builder);
 extern void RegisterResourceQuota(CoreConfiguration::Builder* builder);
 extern void FaultInjectionFilterRegister(CoreConfiguration::Builder* builder);
 extern void RegisterDnsResolver(CoreConfiguration::Builder* builder);
-extern void RegisterBackendMetricFilter(CoreConfiguration::Builder* builder);
+// extern void RegisterBackendMetricFilter(CoreConfiguration::Builder* builder);
 extern void RegisterSockaddrResolver(CoreConfiguration::Builder* builder);
 extern void RegisterFakeResolver(CoreConfiguration::Builder* builder);
 extern void RegisterPriorityLbPolicy(CoreConfiguration::Builder* builder);
@@ -129,7 +129,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
 #endif  // !GRPC_NO_RLS
   // Run last so it gets a consistent location.
   // TODO(ctiller): Is this actually necessary?
-  RegisterBackendMetricFilter(builder);
+  //  RegisterBackendMetricFilter(builder); // DISABLED, Not available in emu-dev
   RegisterSecurityFilters(builder);
   RegisterExtraFilters(builder);
   RegisterBuiltins(builder);

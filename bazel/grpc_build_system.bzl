@@ -50,10 +50,7 @@ def if_mac(a):
 
 def if_android(a):
     return select({
-        "@//tools/base/bazel:android_cpu_x86": a,
-        "@//tools/base/bazel:android_cpu_x86_64": a,
-        "@//tools/base/bazel:android_cpu_arm": a,
-        "@//tools/base/bazel:android_cpu_arm_64": a,
+        "@platforms//os:android": a,
         "//conditions:default": [],
     })
 

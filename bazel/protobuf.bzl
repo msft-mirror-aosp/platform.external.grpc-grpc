@@ -58,7 +58,7 @@ def get_proto_root(workspace_root):
     Returns:
       The directory relative to which generated include paths should be.
     """
-    if workspace_root:
+    if workspace_root and not workspace_root.startswith("../"):
         return "/{}".format(workspace_root)
     else:
         return ""
@@ -113,7 +113,10 @@ def get_include_directory(source_file):
     if not source_file.is_source and directory.startswith(source_file.root.path):
         prefix_len = len(source_file.root.path) + 1
 
-    if directory.startswith("external", prefix_len):
+    # This path is hit when proto targets are built as @grpc//:xxx
+    # instead of //:xxx. This happens in embedded builds.
+    # For that we have 2 cases.. experimental_sibling_repository_layout (..) or not
+    if directory.startswith("external", prefix_len) or directory.startswith("..", prefix_len):
         external_separator = directory.find("/", prefix_len)
         repository_separator = directory.find("/", external_separator + 1)
         return directory[:repository_separator]

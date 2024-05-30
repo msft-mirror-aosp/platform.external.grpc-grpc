@@ -30,21 +30,19 @@ POLLERS = ["epollex", "epoll1", "poll"]
 
 def if_not_windows(a):
     return select({
-        "//:windows": [],
-        "//:windows_msvc": [],
+        "@platforms//os:windows": [],
         "//conditions:default": a,
     })
 
 def if_windows(a):
     return select({
-        "//:windows": a,
-        "//:windows_msvc": a,
+        "@platforms//os:windows": a,
         "//conditions:default": [],
     })
 
 def if_mac(a):
     return select({
-        "//:mac_x86_64": a,
+        "@platforms//os:macos": a,
         "//conditions:default": [],
     })
 

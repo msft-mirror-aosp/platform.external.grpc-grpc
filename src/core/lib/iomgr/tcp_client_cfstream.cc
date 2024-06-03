@@ -86,7 +86,7 @@ static void OnAlarm(void* arg, grpc_error* error) {
   }
   gpr_mu_lock(&connect->mu);
   grpc_closure* closure = connect->closure;
-  connect->closure = nil;
+  connect->closure = nullptr;
   const bool done = (--connect->refs == 0);
   gpr_mu_unlock(&connect->mu);
   // Only schedule a callback once, by either OnAlarm or OnOpen. The
@@ -108,7 +108,7 @@ static void OnOpen(void* arg, grpc_error* error) {
   gpr_mu_lock(&connect->mu);
   grpc_timer_cancel(&connect->alarm);
   grpc_closure* closure = connect->closure;
-  connect->closure = nil;
+  connect->closure = nullptr;
 
   bool done = (--connect->refs == 0);
   grpc_endpoint** endpoint = connect->endpoint;

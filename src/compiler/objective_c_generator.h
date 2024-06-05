@@ -23,25 +23,36 @@
 
 namespace grpc_objective_c_generator {
 
-using ::grpc::protobuf::FileDescriptor;
+struct Parameters {
+  // Do not generate V1 interface and implementation
+  bool no_v1_compatibility;
+};
+
 using ::grpc::protobuf::FileDescriptor;
 using ::grpc::protobuf::ServiceDescriptor;
-using ::grpc::string;
 
 // Returns forward declaration of classes in the generated header file.
-string GetAllMessageClasses(const FileDescriptor* file);
+std::string GetAllMessageClasses(const FileDescriptor* file);
+
+// Returns the content to be included defining the @protocol segment at the
+// insertion point of the generated implementation file. This interface is
+// legacy and for backwards compatibility.
+std::string GetProtocol(const ServiceDescriptor* service,
+                        const Parameters& generator_params);
 
 // Returns the content to be included defining the @protocol segment at the
 // insertion point of the generated implementation file.
-string GetProtocol(const ServiceDescriptor* service);
+std::string GetV2Protocol(const ServiceDescriptor* service);
 
 // Returns the content to be included defining the @interface segment at the
 // insertion point of the generated implementation file.
-string GetInterface(const ServiceDescriptor* service);
+std::string GetInterface(const ServiceDescriptor* service,
+                         const Parameters& generator_params);
 
 // Returns the content to be included in the "global_scope" insertion point of
 // the generated implementation file.
-string GetSource(const ServiceDescriptor* service);
+std::string GetSource(const ServiceDescriptor* service,
+                      const Parameters& generator_params);
 
 }  // namespace grpc_objective_c_generator
 

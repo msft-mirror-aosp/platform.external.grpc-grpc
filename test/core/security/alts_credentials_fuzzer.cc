@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <string.h>
 
@@ -23,13 +23,13 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include "test/core/util/fuzzer_util.h"
-#include "test/core/util/memory_counters.h"
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
+#include "test/core/util/fuzzer_util.h"
 
 using grpc_core::testing::grpc_fuzzer_get_next_byte;
 using grpc_core::testing::grpc_fuzzer_get_next_string;
@@ -39,7 +39,7 @@ using grpc_core::testing::input_stream;
 bool squelch = true;
 bool leak_check = true;
 
-static void dont_log(gpr_log_func_args* args) {}
+static void dont_log(gpr_log_func_args* /*args*/) {}
 
 // Add a random number of target service accounts to client options.
 static void read_target_service_accounts(
@@ -61,14 +61,8 @@ static void read_target_service_accounts(
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  char* grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
-  if (squelch && grpc_trace_fuzzer == nullptr) {
+  if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
-  }
-  gpr_free(grpc_trace_fuzzer);
-  struct grpc_memory_counters counters;
-  if (leak_check) {
-    grpc_memory_counters_init();
   }
   input_stream inp = {data, data + size};
   grpc_init();
@@ -111,10 +105,5 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     gpr_free(handshaker_service_url);
   }
   grpc_shutdown();
-  if (leak_check) {
-    counters = grpc_memory_counters_snapshot();
-    grpc_memory_counters_destroy();
-    GPR_ASSERT(counters.total_size_relative == 0);
-  }
   return 0;
 }

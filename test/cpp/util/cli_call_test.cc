@@ -1,22 +1,24 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/cpp/util/cli_call.h"
+
+#include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
@@ -25,20 +27,16 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/string_ref_helper.h"
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-
 namespace grpc {
 namespace testing {
 
-class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
+class TestServiceImpl : public grpc::testing::EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
@@ -74,8 +72,8 @@ class CliCallTest : public ::testing::Test {
   void TearDown() override { server_->Shutdown(); }
 
   void ResetStub() {
-    channel_ =
-        CreateChannel(server_address_.str(), InsecureChannelCredentials());
+    channel_ = grpc::CreateChannel(server_address_.str(),
+                                   InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -100,17 +98,17 @@ TEST_F(CliCallTest, SimpleRpc) {
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
 
-  const grpc::string kMethod("/grpc.testing.EchoTestService/Echo");
-  grpc::string request_bin, response_bin, expected_response_bin;
+  const std::string kMethod("/grpc.testing.EchoTestService/Echo");
+  std::string request_bin, response_bin, expected_response_bin;
   EXPECT_TRUE(request.SerializeToString(&request_bin));
   EXPECT_TRUE(response.SerializeToString(&expected_response_bin));
-  std::multimap<grpc::string, grpc::string> client_metadata;
+  std::multimap<std::string, std::string> client_metadata;
   std::multimap<grpc::string_ref, grpc::string_ref> server_initial_metadata,
       server_trailing_metadata;
-  client_metadata.insert(std::pair<grpc::string, grpc::string>("key1", "val1"));
-  Status s2 = CliCall::Call(channel_, kMethod, request_bin, &response_bin,
-                            client_metadata, &server_initial_metadata,
-                            &server_trailing_metadata);
+  client_metadata.insert(std::pair<std::string, std::string>("key1", "val1"));
+  CliCall call(channel_, kMethod, client_metadata);
+  Status s2 = call.Call(request_bin, &response_bin, &server_initial_metadata,
+                        &server_trailing_metadata);
   EXPECT_TRUE(s2.ok());
 
   EXPECT_EQ(expected_response_bin, response_bin);
@@ -122,7 +120,7 @@ TEST_F(CliCallTest, SimpleRpc) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

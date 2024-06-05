@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 set -e
 
 export TEST=true
@@ -24,20 +23,23 @@ cd "$(dirname "$0")/../../.."
 submodules=$(mktemp /tmp/submXXXXXX)
 want_submodules=$(mktemp /tmp/submXXXXXX)
 
-git submodule | awk '{ print $1 }' | sort > "$submodules"
-cat << EOF | awk '{ print $1 }' | sort > "$want_submodules"
- cc4bed2d74f7c8717e31f9579214ab52a9c9c610 third_party/abseil-cpp (cc4bed2)
- 5b7683f49e1e9223cf9927b24f6fd3d6bd82e3f8 third_party/benchmark (v1.2.0)
- 73594cde8c9a52a102c4341c244c833aa61b9c06 third_party/bloaty (remotes/origin/wide-14-g73594cd)
- b29b21a81b32ec273f118f589f46d56ad3332420 third_party/boringssl (remotes/origin/chromium-stable)
- 8149b351bf797bd80e063787886b7618f508e451 third_party/boringssl-with-bazel (version_for_cocoapods_10.0-434-g8149b351)
- 3be1924221e1326df520f8498d704a5c4c8d0cce third_party/cares/cares (cares-1_13_0)
- 30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e third_party/gflags (v2.2.0-5-g30dbc81)
- ec44c6c1675c25b9827aacd08c02433cccde7780 third_party/googletest (release-1.8.0)
- 6599cac0965be8e5a835ab7a5684bbef033d5ad0 third_party/libcxx (heads/release_60)
- 9245d481eb3e890f708ff2d7dadf2a10c04748ba third_party/libcxxabi (heads/release_60)
- 48cb18e5c419ddd23d9badcfe4e9df7bde1979b2 third_party/protobuf (v3.6.0.1-37-g48cb18e5)
- cacf7f1d4e3d44d871b605da3b647f07d718623f third_party/zlib (v1.2.11)
+git submodule | sed 's/+//g' | awk '{ print $2 " " $1 }' | sort >"$submodules"
+cat <<EOF | sort >"$want_submodules"
+third_party/abseil-cpp 29bf8085f3bf17b84d30e34b3d7ff8248fda404e
+third_party/benchmark 344117638c8ff7e239044fd0fa7085839fc03021
+third_party/bloaty 60209eb1ccc34d5deefb002d1b7f37545204f7f2
+third_party/boringssl-with-bazel 2ff4b968a7e0cfee66d9f151cb95635b43dc1d5b
+third_party/cares/cares 6360e96b5cf8e5980c887ce58ef727e53d77243a
+third_party/envoy-api 9d6ffa70677c4dbf23f6ed569676206c4e2edff4
+third_party/googleapis 2f9af297c84c55c8b871ba4495e01ade42476c92
+third_party/googletest 2dd1c131950043a8ad5ab0d2dda0e0970596586a
+third_party/opencensus-proto 4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89
+third_party/opentelemetry 60fa8754d890b5c55949a8c68dcfd7ab5c2395df
+third_party/protobuf 7f94235e552599141950d7a4a3eaf93bc87d1b22
+third_party/protoc-gen-validate fab737efbb4b4d03e7c771393708f75594b121e4
+third_party/re2 0c5616df9c0aaa44c9440d87422012423d91c7d1
+third_party/xds e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7
+third_party/zlib 09155eaa2f9270dc4ed1fa13e2b4b2613e6e4851
 EOF
 
 diff -u "$submodules" "$want_submodules"

@@ -43,6 +43,16 @@ describe GRPC::ActiveCall do
     @server = new_core_server_for_testing(nil)
     server_port = @server.add_http2_port(host, :this_port_is_insecure)
     @server.start
+    @received_rpcs_queue = Queue.new
+    @server_thread = Thread.new do
+      begin
+        received_rpc = @server.request_call
+      rescue GRPC::Core::CallError, StandardError => e
+        # enqueue the exception in this case as a way to indicate the error
+        received_rpc = e
+      end
+      @received_rpcs_queue.push(received_rpc)
+    end
     @ch = GRPC::Core::Channel.new("0.0.0.0:#{server_port}", nil,
                                   :this_channel_is_insecure)
   end
@@ -50,14 +60,24 @@ describe GRPC::ActiveCall do
   after(:each) do
     @server.shutdown_and_notify(deadline)
     @server.close
+    @server_thread.join
   end
 
   describe 'restricted view methods' do
     before(:each) do
-      call = make_test_call
-      ActiveCall.client_invoke(call)
-      @client_call = ActiveCall.new(call, @pass_through,
+      @call = make_test_call
+      ActiveCall.client_invoke(@call)
+      @client_call = ActiveCall.new(@call, @pass_through,
                                     @pass_through, deadline)
+    end
+
+    after(:each) do
+      # terminate the RPC that was started in before(:each)
+      recvd_rpc = @received_rpcs_queue.pop
+      recvd_call = recvd_rpc.call
+      recvd_call.run_batch(CallOps::SEND_INITIAL_METADATA => nil)
+      @call.run_batch(CallOps::RECV_INITIAL_METADATA => nil)
+      send_and_receive_close_and_status(@call, recvd_call)
     end
 
     describe '#multi_req_view' do
@@ -105,7 +125,7 @@ describe GRPC::ActiveCall do
       client_call.remote_send(msg)
 
       # check that server rpc new was received
-      recvd_rpc = @server.request_call
+      recvd_rpc = @received_rpcs_queue.pop
       expect(recvd_rpc).to_not eq nil
       recvd_call = recvd_rpc.call
 
@@ -130,7 +150,7 @@ describe GRPC::ActiveCall do
       client_call.remote_send(msg)
 
       # confirm that the message was marshalled
-      recvd_rpc =  @server.request_call
+      recvd_rpc =  @received_rpcs_queue.pop
       recvd_call = recvd_rpc.call
       server_ops = {
         CallOps::SEND_INITIAL_METADATA => nil
@@ -160,7 +180,7 @@ describe GRPC::ActiveCall do
         call.run_batch(CallOps::SEND_CLOSE_FROM_CLIENT => nil) if f == 1
 
         # confirm that the message was marshalled
-        recvd_rpc =  @server.request_call
+        recvd_rpc =  @received_rpcs_queue.pop
         recvd_call = recvd_rpc.call
         server_ops = {
           CallOps::SEND_INITIAL_METADATA => nil
@@ -187,11 +207,11 @@ describe GRPC::ActiveCall do
         deadline,
         started: false)
 
-      metadata = { key: 'dummy_val', other: 'other_val' }
+      metadata = { key: 'phony_val', other: 'other_val' }
       expect(@client_call.metadata_sent).to eq(false)
       @client_call.merge_metadata_to_send(metadata)
 
-      message = 'dummy message'
+      message = 'phony message'
 
       expect(call).to(
         receive(:run_batch)
@@ -321,7 +341,7 @@ describe GRPC::ActiveCall do
       call = make_test_call
       metadata = { k1: 'v1', k2: 'v2' }
       ActiveCall.client_invoke(call, metadata)
-      recvd_rpc =  @server.request_call
+      recvd_rpc =  @received_rpcs_queue.pop
       recvd_call = recvd_rpc.call
       expect(recvd_call).to_not be_nil
       expect(recvd_rpc.metadata).to_not be_nil
@@ -339,7 +359,7 @@ describe GRPC::ActiveCall do
       call = make_test_call
       ActiveCall.client_invoke(call)
 
-      recvd_rpc = @server.request_call
+      recvd_rpc = @received_rpcs_queue.pop
       server_call = ActiveCall.new(
         recvd_rpc.call,
         @pass_through,
@@ -405,7 +425,7 @@ describe GRPC::ActiveCall do
       client_call = make_test_call
       ActiveCall.client_invoke(client_call)
 
-      recvd_rpc = @server.request_call
+      recvd_rpc = @received_rpcs_queue.pop
       recvd_call = recvd_rpc.call
 
       server_call = ActiveCall.new(
@@ -575,7 +595,7 @@ describe GRPC::ActiveCall do
       @client_call = make_test_call
       @client_call.run_batch(CallOps::SEND_INITIAL_METADATA => {})
 
-      recvd_rpc = @server.request_call
+      recvd_rpc = @received_rpcs_queue.pop
       recvd_call = recvd_rpc.call
       @server_call = ActiveCall.new(
         recvd_call,
@@ -654,7 +674,7 @@ describe GRPC::ActiveCall do
   end
 
   def expect_server_to_be_invoked(**kw)
-    recvd_rpc =  @server.request_call
+    recvd_rpc =  @received_rpcs_queue.pop
     expect(recvd_rpc).to_not eq nil
     recvd_call = recvd_rpc.call
     recvd_call.run_batch(CallOps::SEND_INITIAL_METADATA => kw)

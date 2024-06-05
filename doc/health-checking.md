@@ -37,19 +37,21 @@ message HealthCheckResponse {
     UNKNOWN = 0;
     SERVING = 1;
     NOT_SERVING = 2;
+    SERVICE_UNKNOWN = 3;  // Used only by the Watch method.
   }
   ServingStatus status = 1;
 }
 
 service Health {
   rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+
+  rpc Watch(HealthCheckRequest) returns (stream HealthCheckResponse);
 }
 ```
 
 A client can query the server’s health status by calling the `Check` method, and
 a deadline should be set on the rpc. The client can optionally set the service
-name it wants to query for health status. The suggested format of service name
-is `package_names.ServiceName`, such as `grpc.health.v1.Health`.
+name it wants to query for health status.
 
 The server should register all the services manually and set
 the individual status, including an empty service name and its status. For each
@@ -68,3 +70,8 @@ matching semantics that both the client and server agree upon.
 A client can declare the server as unhealthy if the rpc is not finished after
 some amount of time. The client should be able to handle the case where server
 does not have the Health service.
+
+A client can call the `Watch` method to perform a streaming health-check.
+The server will immediately send back a message indicating the current
+serving status.  It will then subsequently send a new message whenever
+the service's serving status changes.

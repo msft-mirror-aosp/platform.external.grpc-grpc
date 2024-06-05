@@ -1,24 +1,35 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/cpp/server/load_reporter/load_reporter_async_service_impl.h"
+
+#include <inttypes.h>
+
+#include <google/protobuf/repeated_ptr_field.h>
+
+#include <grpc/support/time.h>
+#include <grpcpp/support/status.h>
+
+#include "src/cpp/server/load_reporter/constants.h"
+
+// IWYU pragma: no_include "google/protobuf/duration.pb.h"
 
 namespace grpc {
 namespace load_reporter {
@@ -32,27 +43,28 @@ void LoadReporterAsyncServiceImpl::CallableTag::Run(bool ok) {
 LoadReporterAsyncServiceImpl::LoadReporterAsyncServiceImpl(
     std::unique_ptr<ServerCompletionQueue> cq)
     : cq_(std::move(cq)) {
-  thread_ = std::unique_ptr<::grpc_core::Thread>(
-      new ::grpc_core::Thread("server_load_reporting", Work, this));
+  thread_ =
+      std::make_unique<grpc_core::Thread>("server_load_reporting", Work, this);
   std::unique_ptr<CpuStatsProvider> cpu_stats_provider = nullptr;
 #if defined(GPR_LINUX) || defined(GPR_WINDOWS) || defined(GPR_APPLE)
-  cpu_stats_provider.reset(new CpuStatsProviderDefaultImpl());
+  cpu_stats_provider = std::make_unique<CpuStatsProviderDefaultImpl>();
 #endif
-  load_reporter_ = std::unique_ptr<LoadReporter>(new LoadReporter(
+  load_reporter_ = std::make_unique<LoadReporter>(
       kFeedbackSampleWindowSeconds,
       std::unique_ptr<CensusViewProvider>(new CensusViewProviderDefaultImpl()),
-      std::move(cpu_stats_provider)));
+      std::move(cpu_stats_provider));
 }
 
 LoadReporterAsyncServiceImpl::~LoadReporterAsyncServiceImpl() {
   // We will reach here after the server starts shutting down.
   shutdown_ = true;
   {
-    std::unique_lock<std::mutex> lock(cq_shutdown_mu_);
+    grpc_core::MutexLock lock(&cq_shutdown_mu_);
     cq_->Shutdown();
   }
-  if (next_fetch_and_sample_alarm_ != nullptr)
+  if (next_fetch_and_sample_alarm_ != nullptr) {
     next_fetch_and_sample_alarm_->Cancel();
+  }
   thread_->Join();
 }
 
@@ -62,11 +74,11 @@ void LoadReporterAsyncServiceImpl::ScheduleNextFetchAndSample() {
                    gpr_time_from_millis(kFetchAndSampleIntervalSeconds * 1000,
                                         GPR_TIMESPAN));
   {
-    std::unique_lock<std::mutex> lock(cq_shutdown_mu_);
+    grpc_core::MutexLock lock(&cq_shutdown_mu_);
     if (shutdown_) return;
     // TODO(juanlishen): Improve the Alarm implementation to reuse a single
     // instance for multiple events.
-    next_fetch_and_sample_alarm_.reset(new Alarm);
+    next_fetch_and_sample_alarm_ = std::make_unique<Alarm>();
     next_fetch_and_sample_alarm_->Set(cq_.get(), next_fetch_and_sample_time,
                                       this);
   }
@@ -85,7 +97,7 @@ void LoadReporterAsyncServiceImpl::FetchAndSample(bool ok) {
 
 void LoadReporterAsyncServiceImpl::Work(void* arg) {
   LoadReporterAsyncServiceImpl* service =
-      reinterpret_cast<LoadReporterAsyncServiceImpl*>(arg);
+      static_cast<LoadReporterAsyncServiceImpl*>(arg);
   service->FetchAndSample(true /* ok */);
   // TODO(juanlishen): This is a workaround to wait for the cq to be ready. Need
   // to figure out why cq is not ready after service starts.
@@ -119,7 +131,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::CreateAndStart(
       std::make_shared<ReportLoadHandler>(cq, service, load_reporter);
   ReportLoadHandler* p = handler.get();
   {
-    std::unique_lock<std::mutex> lock(service->cq_shutdown_mu_);
+    grpc_core::MutexLock lock(&service->cq_shutdown_mu_);
     if (service->shutdown_) return;
     p->on_done_notified_ =
         CallableTag(std::bind(&ReportLoadHandler::OnDoneNotified, p,
@@ -164,9 +176,9 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
   // instance will deallocate itself when it's done.
   CreateAndStart(cq_, service_, load_reporter_);
   {
-    std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
+    grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
-      lock.release()->unlock();
+      lock.Release();
       Shutdown(std::move(self), "OnRequestDelivered");
       return;
     }
@@ -211,20 +223,20 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
                                           load_key_);
       const auto& load_report_interval = initial_request.load_report_interval();
       load_report_interval_ms_ =
-          static_cast<uint64_t>(load_report_interval.seconds() * 1000 +
-                                load_report_interval.nanos() / 1000);
-      gpr_log(
-          GPR_INFO,
-          "[LRS %p] Initial request received. Start load reporting (load "
-          "balanced host: %s, interval: %lu ms, lb_id_: %s, handler: %p)...",
-          service_, load_balanced_hostname_.c_str(), load_report_interval_ms_,
-          lb_id_.c_str(), this);
+          static_cast<unsigned long>(load_report_interval.seconds() * 1000 +
+                                     load_report_interval.nanos() / 1000);
+      gpr_log(GPR_INFO,
+              "[LRS %p] Initial request received. Start load reporting (load "
+              "balanced host: %s, interval: %" PRIu64
+              " ms, lb_id_: %s, handler: %p)...",
+              service_, load_balanced_hostname_.c_str(),
+              load_report_interval_ms_, lb_id_.c_str(), this);
       SendReport(self, true /* ok */);
       // Expect this read to fail.
       {
-        std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
+        grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
         if (service_->shutdown_) {
-          lock.release()->unlock();
+          lock.Release();
           Shutdown(std::move(self), "OnReadDone");
           return;
         }
@@ -254,9 +266,9 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
       gpr_now(GPR_CLOCK_MONOTONIC),
       gpr_time_from_millis(load_report_interval_ms_, GPR_TIMESPAN));
   {
-    std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
+    grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
-      lock.release()->unlock();
+      lock.Release();
       Shutdown(std::move(self), "ScheduleNextReport");
       return;
     }
@@ -266,7 +278,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
                     std::move(self));
     // TODO(juanlishen): Improve the Alarm implementation to reuse a single
     // instance for multiple events.
-    next_report_alarm_.reset(new Alarm);
+    next_report_alarm_ = std::make_unique<Alarm>();
     next_report_alarm_->Set(cq_, next_report_time, &next_outbound_);
   }
   gpr_log(GPR_DEBUG,
@@ -280,7 +292,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(
     Shutdown(std::move(self), "SendReport");
     return;
   }
-  ::grpc::lb::v1::LoadReportResponse response;
+  grpc::lb::v1::LoadReportResponse response;
   auto loads = load_reporter_->GenerateLoads(load_balanced_hostname_, lb_id_);
   response.mutable_load()->Swap(&loads);
   auto feedback = load_reporter_->GenerateLoadBalancingFeedback();
@@ -289,14 +301,14 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(
     auto initial_response = response.mutable_initial_response();
     initial_response->set_load_balancer_id(lb_id_);
     initial_response->set_implementation_id(
-        ::grpc::lb::v1::InitialLoadReportResponse::CPP);
+        grpc::lb::v1::InitialLoadReportResponse::CPP);
     initial_response->set_server_version(kVersion);
     call_status_ = INITIAL_RESPONSE_SENT;
   }
   {
-    std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
+    grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
-      lock.release()->unlock();
+      lock.Release();
       Shutdown(std::move(self), "SendReport");
       return;
     }
@@ -342,7 +354,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::Shutdown(
   // OnRequestDelivered() may be called after OnDoneNotified(), so we need to
   // try to Finish() every time we are in Shutdown().
   if (call_status_ >= DELIVERED && call_status_ < FINISH_CALLED) {
-    std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
+    grpc_core::MutexLock lock(&service_->cq_shutdown_mu_);
     if (!service_->shutdown_) {
       on_finish_done_ =
           CallableTag(std::bind(&ReportLoadHandler::OnFinishDone, this,
@@ -358,7 +370,8 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::Shutdown(
 }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnFinishDone(
-    std::shared_ptr<ReportLoadHandler> self, bool ok) {
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    std::shared_ptr<ReportLoadHandler> /*self*/, bool ok) {
   if (ok) {
     gpr_log(GPR_INFO,
             "[LRS %p] Load reporting finished (lb_id_: %s, handler: %p).",

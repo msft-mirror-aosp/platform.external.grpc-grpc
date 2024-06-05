@@ -16,8 +16,11 @@
 
 #endregion
 
-﻿using System;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Grpc.Core;
+using GrpcCsharpDistribtest.Helloworld;
 
 namespace TestGrpcPackage
 {
@@ -25,11 +28,36 @@ namespace TestGrpcPackage
     {
         public static void Main(string[] args)
         {
-            // This code doesn't do much but makes sure the native extension is loaded
-            // which is what we are testing here.
-            Channel c = new Channel("127.0.0.1:1000", ChannelCredentials.Insecure);
-            c.ShutdownAsync().Wait();
-            Console.WriteLine("Success!");
+            CheckGreeterProtobufCodegenWorks();
+            CheckGreeterGrpcProtobufPluginCodegenWorks();
+            CheckDuplicateProtoFilesAreOk();
+        }
+
+        private static object CheckGreeterProtobufCodegenWorks()
+        {
+            return new HelloRequest { Name = "ABC" };
+        }
+
+        private static object CheckGreeterGrpcProtobufPluginCodegenWorks()
+        {
+            return typeof(GreeterImpl);
+        }
+
+        // Test that codegen works well in case the .csproj has .proto files
+        // of the same name, but under different directories (see #17672).
+        // This method doesn't need to be used, it is enough to check that it builds.
+        private static object CheckDuplicateProtoFilesAreOk()
+        {
+            return new GrpcCsharpDistribtest.DuplicateProto.MessageFromDuplicateProto();
+        }
+    }
+
+    class GreeterImpl : Greeter.GreeterBase
+    {
+        // Server side handler of the SayHello RPC
+        public override Task<HelloReply> SayHello(HelloRequest request, ServerCallContext context)
+        {
+            return Task.FromResult(new HelloReply { Message = "Hello " + request.Name });
         }
     }
 }

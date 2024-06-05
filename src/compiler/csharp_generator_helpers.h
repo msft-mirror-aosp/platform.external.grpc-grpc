@@ -25,17 +25,34 @@
 namespace grpc_csharp_generator {
 
 inline bool ServicesFilename(const grpc::protobuf::FileDescriptor* file,
-                             grpc::string* file_name_or_error) {
-  *file_name_or_error =
-      grpc_generator::FileNameInUpperCamel(file, false) + "Grpc.cs";
+                             const std::string& file_suffix,
+                             const bool base_namespace_present,
+                             const std::string& base_namespace,
+                             std::string& out_file, std::string* error) {
+  // Support for base_namespace option is **experimental**.
+  //
+  // If base_namespace is provided then slightly different name mangling
+  // is used to generate the service file name. This is because this
+  // uses common code with protoc. For most file names this will not
+  // make a difference (only files with punctuation or numbers in the
+  // name.)
+  // Otherwise the behavior remains the same as before.
+  if (!base_namespace_present) {
+    out_file = grpc_generator::FileNameInUpperCamel(file, false) + file_suffix;
+  } else {
+    out_file = GRPC_CUSTOM_CSHARP_GETOUTPUTFILE(file, file_suffix, true,
+                                                base_namespace, error);
+    if (out_file.empty()) {
+      return false;
+    }
+  }
   return true;
 }
 
 // Get leading or trailing comments in a string. Comment lines start with "// ".
-// Leading detached comments are put in in front of leading comments.
+// Leading detached comments are put in front of leading comments.
 template <typename DescriptorType>
-inline grpc::string GetCsharpComments(const DescriptorType* desc,
-                                      bool leading) {
+inline std::string GetCsharpComments(const DescriptorType* desc, bool leading) {
   return grpc_generator::GetPrefixedComments(desc, leading, "//");
 }
 

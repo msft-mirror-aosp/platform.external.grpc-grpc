@@ -1,35 +1,35 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/core/util/reconnect_server.h"
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 #include <string.h>
 
-#include "src/core/lib/gpr/host_port.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "test/core/util/port.h"
 #include "test/core/util/test_tcp_server.h"
 
 static void pretty_print_backoffs(reconnect_server* server) {
@@ -57,30 +57,27 @@ static void pretty_print_backoffs(reconnect_server* server) {
 }
 
 static void on_connect(void* arg, grpc_endpoint* tcp,
-                       grpc_pollset* accepting_pollset,
+                       grpc_pollset* /*accepting_pollset*/,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
-  char* peer;
-  char* last_colon;
+  absl::string_view peer;
+  absl::string_view::size_type last_colon;
   reconnect_server* server = static_cast<reconnect_server*>(arg);
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   timestamp_list* new_tail;
   peer = grpc_endpoint_get_peer(tcp);
-  grpc_endpoint_shutdown(tcp,
-                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
+  grpc_endpoint_shutdown(tcp, GRPC_ERROR_CREATE("Connected"));
   grpc_endpoint_destroy(tcp);
-  if (peer) {
-    last_colon = strrchr(peer, ':');
-    if (server->peer == nullptr) {
-      server->peer = peer;
-    } else {
-      if (last_colon == nullptr) {
-        gpr_log(GPR_ERROR, "peer does not contain a ':'");
-      } else if (strncmp(server->peer, peer,
-                         static_cast<size_t>(last_colon - peer)) != 0) {
-        gpr_log(GPR_ERROR, "mismatched peer! %s vs %s", server->peer, peer);
-      }
-      gpr_free(peer);
+  last_colon = peer.rfind(':');
+  if (server->peer == nullptr) {
+    server->peer = new std::string(peer);
+  } else {
+    if (last_colon == std::string::npos) {
+      gpr_log(GPR_ERROR, "peer does not contain a ':'");
+    } else if (peer.compare(0, static_cast<size_t>(last_colon),
+                            *server->peer) != 0) {
+      gpr_log(GPR_ERROR, "mismatched peer! %s vs %s", server->peer->c_str(),
+              std::string(peer).c_str());
     }
   }
   new_tail = static_cast<timestamp_list*>(gpr_malloc(sizeof(timestamp_list)));
@@ -109,7 +106,7 @@ void reconnect_server_start(reconnect_server* server, int port) {
 }
 
 void reconnect_server_poll(reconnect_server* server, int seconds) {
-  test_tcp_server_poll(&server->tcp_server, seconds);
+  test_tcp_server_poll(&server->tcp_server, 1000 * seconds);
 }
 
 void reconnect_server_clear_timestamps(reconnect_server* server) {
@@ -120,7 +117,7 @@ void reconnect_server_clear_timestamps(reconnect_server* server) {
     server->head = new_head;
   }
   server->tail = nullptr;
-  gpr_free(server->peer);
+  delete server->peer;
   server->peer = nullptr;
 }
 

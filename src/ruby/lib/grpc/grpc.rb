@@ -16,8 +16,8 @@ begin
   ruby_version_dirname = /(\d+\.\d+)/.match(RUBY_VERSION).to_s
   distrib_lib_dir = File.expand_path(ruby_version_dirname,
                                      File.dirname(__FILE__))
-  if File.directory?(distrib_lib_dir)
-    require_relative "#{distrib_lib_dir}/grpc_c"
+  if !Dir.glob("#{distrib_lib_dir}/grpc_c*").empty?
+    require "#{distrib_lib_dir}/grpc_c"
   else
     require 'grpc/grpc_c'
   end

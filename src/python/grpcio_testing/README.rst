@@ -3,6 +3,10 @@ gRPC Python Testing Package
 
 Testing utilities for gRPC Python
 
+Supported Python Versions
+-------------------------
+Python >= 3.7
+
 Dependencies
 ------------
 

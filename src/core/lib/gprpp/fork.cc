@@ -1,42 +1,42 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/fork.h"
 
-#include <string.h>
+#include <utility>
 
-#include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/event_engine/thread_local.h"
+#include "src/core/lib/gprpp/no_destruct.h"
 
-/*
- * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
- *       AROUND VERY SPECIFIC USE CASES.
- */
+//
+// NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
+//       AROUND VERY SPECIFIC USE CASES.
+//
 
 namespace grpc_core {
-namespace internal {
+namespace {
 // The exec_ctx_count has 2 modes, blocked and unblocked.
 // When unblocked, the count is 2-indexed; exec_ctx_count=2 indicates
 // 0 active ExecCtxs, exex_ctx_count=3 indicates 1 active ExecCtxs...
@@ -44,7 +44,7 @@ namespace internal {
 // When blocked, the exec_ctx_count is 0-indexed.  Note that ExecCtx
 // creation can only be blocked if there is exactly 1 outstanding ExecCtx,
 // meaning that BLOCKED and UNBLOCKED counts partition the integers
-#define UNBLOCKED(n) (n + 2)
+#define UNBLOCKED(n) ((n) + 2)
 #define BLOCKED(n) (n)
 
 class ExecCtxState {
@@ -56,6 +56,11 @@ class ExecCtxState {
   }
 
   void IncExecCtxCount() {
+    // EventEngine is expected to terminate all threads before fork, and so this
+    // extra work is unnecessary
+    if (grpc_event_engine::experimental::ThreadLocal::IsEventEngineThread()) {
+      return;
+    }
     gpr_atm count = gpr_atm_no_barrier_load(&count_);
     while (true) {
       if (count <= BLOCKED(1)) {
@@ -75,7 +80,12 @@ class ExecCtxState {
     }
   }
 
-  void DecExecCtxCount() { gpr_atm_no_barrier_fetch_add(&count_, -1); }
+  void DecExecCtxCount() {
+    if (grpc_event_engine::experimental::ThreadLocal::IsEventEngineThread()) {
+      return;
+    }
+    gpr_atm_no_barrier_fetch_add(&count_, -1);
+  }
 
   bool BlockExecCtx() {
     // Assumes there is an active ExecCtx when this function is called
@@ -158,111 +168,75 @@ class ThreadState {
 
 void Fork::GlobalInit() {
   if (!override_enabled_) {
-#ifdef GRPC_ENABLE_FORK_SUPPORT
-    support_enabled_ = true;
-#else
-    support_enabled_ = false;
-#endif
-    bool env_var_set = false;
-    char* env = gpr_getenv("GRPC_ENABLE_FORK_SUPPORT");
-    if (env != nullptr) {
-      static const char* truthy[] = {"yes",  "Yes",  "YES", "true",
-                                     "True", "TRUE", "1"};
-      static const char* falsey[] = {"no",    "No",    "NO", "false",
-                                     "False", "FALSE", "0"};
-      for (size_t i = 0; i < GPR_ARRAY_SIZE(truthy); i++) {
-        if (0 == strcmp(env, truthy[i])) {
-          support_enabled_ = true;
-          env_var_set = true;
-          break;
-        }
-      }
-      if (!env_var_set) {
-        for (size_t i = 0; i < GPR_ARRAY_SIZE(falsey); i++) {
-          if (0 == strcmp(env, falsey[i])) {
-            support_enabled_ = false;
-            env_var_set = true;
-            break;
-          }
-        }
-      }
-      gpr_free(env);
-    }
-  }
-  if (support_enabled_) {
-    exec_ctx_state_ = grpc_core::New<internal::ExecCtxState>();
-    thread_state_ = grpc_core::New<internal::ThreadState>();
+    support_enabled_.store(ConfigVars::Get().EnableForkSupport(),
+                           std::memory_order_relaxed);
   }
 }
 
-void Fork::GlobalShutdown() {
-  if (support_enabled_) {
-    grpc_core::Delete(exec_ctx_state_);
-    grpc_core::Delete(thread_state_);
-  }
+bool Fork::Enabled() {
+  return support_enabled_.load(std::memory_order_relaxed);
 }
-
-bool Fork::Enabled() { return support_enabled_; }
 
 // Testing Only
 void Fork::Enable(bool enable) {
   override_enabled_ = true;
-  support_enabled_ = enable;
+  support_enabled_.store(enable, std::memory_order_relaxed);
 }
 
-void Fork::IncExecCtxCount() {
-  if (support_enabled_) {
-    exec_ctx_state_->IncExecCtxCount();
-  }
+void Fork::DoIncExecCtxCount() {
+  NoDestructSingleton<ExecCtxState>::Get()->IncExecCtxCount();
 }
 
-void Fork::DecExecCtxCount() {
-  if (support_enabled_) {
-    exec_ctx_state_->DecExecCtxCount();
-  }
+void Fork::DoDecExecCtxCount() {
+  NoDestructSingleton<ExecCtxState>::Get()->DecExecCtxCount();
 }
 
-void Fork::SetResetChildPollingEngineFunc(
+bool Fork::RegisterResetChildPollingEngineFunc(
     Fork::child_postfork_func reset_child_polling_engine) {
-  reset_child_polling_engine_ = reset_child_polling_engine;
+  if (reset_child_polling_engine_ == nullptr) {
+    reset_child_polling_engine_ = new std::set<Fork::child_postfork_func>();
+  }
+  auto ret = reset_child_polling_engine_->insert(reset_child_polling_engine);
+  return ret.second;
 }
-Fork::child_postfork_func Fork::GetResetChildPollingEngineFunc() {
-  return reset_child_polling_engine_;
+
+const std::set<Fork::child_postfork_func>&
+Fork::GetResetChildPollingEngineFunc() {
+  return *reset_child_polling_engine_;
 }
 
 bool Fork::BlockExecCtx() {
-  if (support_enabled_) {
-    return exec_ctx_state_->BlockExecCtx();
+  if (support_enabled_.load(std::memory_order_relaxed)) {
+    return NoDestructSingleton<ExecCtxState>::Get()->BlockExecCtx();
   }
   return false;
 }
 
 void Fork::AllowExecCtx() {
-  if (support_enabled_) {
-    exec_ctx_state_->AllowExecCtx();
+  if (support_enabled_.load(std::memory_order_relaxed)) {
+    NoDestructSingleton<ExecCtxState>::Get()->AllowExecCtx();
   }
 }
 
 void Fork::IncThreadCount() {
-  if (support_enabled_) {
-    thread_state_->IncThreadCount();
+  if (support_enabled_.load(std::memory_order_relaxed)) {
+    NoDestructSingleton<ThreadState>::Get()->IncThreadCount();
   }
 }
 
 void Fork::DecThreadCount() {
-  if (support_enabled_) {
-    thread_state_->DecThreadCount();
+  if (support_enabled_.load(std::memory_order_relaxed)) {
+    NoDestructSingleton<ThreadState>::Get()->DecThreadCount();
   }
 }
 void Fork::AwaitThreads() {
-  if (support_enabled_) {
-    thread_state_->AwaitThreads();
+  if (support_enabled_.load(std::memory_order_relaxed)) {
+    NoDestructSingleton<ThreadState>::Get()->AwaitThreads();
   }
 }
 
-internal::ExecCtxState* Fork::exec_ctx_state_ = nullptr;
-internal::ThreadState* Fork::thread_state_ = nullptr;
-bool Fork::support_enabled_ = false;
+std::atomic<bool> Fork::support_enabled_(false);
 bool Fork::override_enabled_ = false;
-Fork::child_postfork_func Fork::reset_child_polling_engine_ = nullptr;
+std::set<Fork::child_postfork_func>* Fork::reset_child_polling_engine_ =
+    nullptr;
 }  // namespace grpc_core

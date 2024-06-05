@@ -35,7 +35,22 @@ Clients should accept these arguments:
     * OAuth scope. For example, "https://www.googleapis.com/auth/xapi.zoo"
 * --service_account_key_file=PATH
     * The path to the service account JSON key file generated from GCE developer
-    console.
+      console.
+* --service_config_json=SERVICE_CONFIG_JSON
+    * Disables service config lookups and sets the provided string as the
+      default service config.
+* --additional_metadata=ADDITIONAL_METADATA
+    * Additional metadata to send in each request, as a semicolon-separated list
+      of key:value pairs. The first key/value pair is separated by the first colon.
+      The second key/value pair is separated by the next colon *following* the
+      next semi-colon thereafter, and so on. For example:
+      - `abc-key:abc-value;foo-key:foo-value`
+          - Key/value pairs: `abc-key`/`abc-value`, `foo-key`/`foo-value`.
+      - `abc-key:abc:value;foo-key:foo:value`
+          - Key/value pairs: `abc-key`/`abc:value`, `foo-key`/`foo:value`.
+
+      Keys must be ASCII only (no `-bin` headers allowed). Values may contain
+      any character except semi-colons.
 
 Clients must support TLS with ALPN. Clients must not disable certificate
 checking.
@@ -652,7 +667,7 @@ The test
 downloaded from https://console.developers.google.com. Alternately, if using a
 usable auth implementation, it may specify the file location in the environment
 variable GOOGLE_APPLICATION_CREDENTIALS
-- optionally uses the flag `--oauth_scope` for the oauth scope if implementator
+- optionally uses the flag `--oauth_scope` for the oauth scope if implementer
 wishes to use service account credential instead of JWT credential. For testing
 against grpc-test.sandbox.googleapis.com, oauth scope
 "https://www.googleapis.com/auth/xapi.zoo" should be used.
@@ -679,6 +694,81 @@ Client asserts:
 by the auth library. The client can optionally check the username matches the
 email address in the key file.
 
+### google_default_credentials
+
+Similar to the other auth tests, this test should only be run against prod
+servers. Different from some of the other auth tests however, this test
+may be also run from outside of GCP.
+
+This test verifies unary calls succeed when the client uses
+GoogleDefaultCredentials. The path to a service account key file in the
+GOOGLE_APPLICATION_CREDENTIALS environment variable may or may not be
+provided by the test runner. For example, the test runner might set
+this environment when outside of GCP but keep it unset when on GCP.
+
+The test uses `--default_service_account` with GCE service account email.
+
+Server features:
+* [UnaryCall][]
+* [Echo Authenticated Username][]
+
+Procedure:
+ 1. Client configures the channel to use GoogleDefaultCredentials
+     * Note: the term `GoogleDefaultCredentials` within the context
+       of this test description refers to an API which encapsulates
+       both "transport credentials" and "call credentials" and which
+       is capable of transport creds auto-selection (including ALTS).
+       Similar APIs involving only auto-selection of OAuth mechanisms
+       might work for this test but aren't the intended subjects.
+ 2. Client calls UnaryCall with:
+
+    ```
+    {
+      fill_username: true
+    }
+    ```
+
+Client asserts:
+* call was successful
+* received SimpleResponse.username matches the value of
+  `--default_service_account`
+
+### compute_engine_channel_credentials
+
+Similar to the other auth tests, this test should only be run against prod
+servers. Note that this test may only be ran on GCP.
+
+This test verifies unary calls succeed when the client uses
+ComputeEngineChannelCredentials. All that is needed by the test environment
+is for the client to be running on GCP.
+
+The test uses `--default_service_account` with GCE service account email. This
+email must identify the default service account of the GCP VM that the test
+is running on.
+
+Server features:
+* [UnaryCall][]
+* [Echo Authenticated Username][]
+
+Procedure:
+ 1. Client configures the channel to use ComputeEngineChannelCredentials
+     * Note: the term `ComputeEngineChannelCredentials` within the context
+       of this test description refers to an API which encapsulates
+       both "transport credentials" and "call credentials" and which
+       is capable of transport creds auto-selection (including ALTS).
+       The exact name of the API may vary per language.
+ 2. Client calls UnaryCall with:
+
+    ```
+    {
+      fill_username: true
+    }
+    ```
+
+Client asserts:
+* call was successful
+* received SimpleResponse.username matches the value of
+  `--default_service_account`
 
 ### custom_metadata
 
@@ -912,42 +1002,216 @@ Procedure:
 Client asserts:
 * Call completed with status DEADLINE_EXCEEDED.
 
-### concurrent_large_unary
+### rpc_soak
 
-Status: TODO
+The client performs many large_unary RPCs in sequence over the same channel.
+The client records the latency and status of each RPC in some data structure.
+If the test ever consumes `soak_overall_timeout_seconds` seconds and still hasn't
+completed `soak_iterations` RPCs, then the test should discontinue sending RPCs
+as soon as possible. After performing all RPCs, the test should examine
+previously recorded RPC latency and status results in a second pass and fail if
+either:
 
-Client performs 1000 large_unary tests in parallel on the same channel.
+a) not all `soak_iterations` RPCs were completed
 
-### Flow control. Pushback at client for large messages (TODO: fix name)
+b) the sum of RPCs that either completed with a non-OK status or exceeded
+   `max_acceptable_per_rpc_latency_ms` exceeds `soak_max_failures`
 
-Status: TODO
+Implementations should use a timer with sub-millisecond precision to measure
+latency. Also, implementations should avoid setting RPC deadlines and should
+instead wait for each RPC to complete. Doing so provides more data for
+debugging in case of failure. For example, if RPC deadlines are set to
+`soak_per_iteration_max_acceptable_latency_ms` and one of the RPCs hits that
+deadline, it's not clear if the RPC was late by a millisecond or a minute.
 
-This test verifies that a client sending faster than a server can drain sees
-pushback (i.e., attempts to send succeed only after appropriate delays).
+In order to make it easy to analyze results, implementations should log the
+results of each iteration (i.e. RPC) in a format the matches the following
+regexes:
+
+- Upon success:
+  - `soak iteration: \d+ elapsed_ms: \d+ peer: \S+ succeeded`
+
+- Upon failure:
+  - `soak iteration: \d+ elapsed_ms: \d+ peer: \S+ failed:`
+
+This test must be configurable via a few different command line flags:
+
+* `soak_iterations`: Controls the number of RPCs to perform. This should
+  default to 10.
+
+* `soak_max_failures`: An inclusive upper limit on the number of RPC failures
+  that should be tolerated (i.e. after which the test process should
+  still exit 0). A failure is considered to be either a non-OK status or an RPC
+  whose latency exceeds `soak_per_iteration_max_acceptable_latency_ms`. This
+  should default to 0.
+
+* `soak_per_iteration_max_acceptable_latency_ms`: An upper limit on the latency
+  of a single RPC in order for that RPC to be considered successful. This
+  should default to 1000.
+
+* `soak_overall_timeout_seconds`: The overall number of seconds after which
+  the test should stop and fail if `soak_iterations` have not yet been
+  completed. This should default to
+  `soak_per_iteration_max_acceptable_latency_ms` * `soak_iterations`.
+
+* `soak_min_time_ms_between_rpcs`: The minimum time in milliseconds between
+  consecutive RPCs. Useful for limiting QPS.
+
+The following is optional but encouraged to improve debuggability:
+
+* Implementations should log the number of milliseconds that each RPC takes.
+  Additionally, implementations should use a histogram of RPC latencies
+  to log interesting latency percentiles at the end of the test (e.g. median,
+  90th, and max latency percentiles).
+
+### channel_soak
+
+Similar to rpc_soak, but this time each RPC is performed on a new channel. The
+channel is created just before each RPC and is destroyed just after.
+
+This test is configured with the same command line flags that the rpc_soak test
+is configured with, with only one semantic difference: when measuring an RPCs
+latency to see if it exceeds `soak_per_iteration_max_acceptable_latency_ms` or
+not, the creation of the channel should be included in that
+latency measurement, but the teardown of that channel should **not** be
+included in that latency measurement (channel teardown semantics differ widely
+between languages). This latency measurement should also be the value that is
+logged and recorded in the latency histogram.
+
+
+### orca_per_rpc
+[orca_per_rpc]: #orca_per_rpc
+
+The client verifies that a custom LB policy, which is integrated with ORCA APIs, 
+will receive per-query metric reports from the backend. 
+
+The client will register the custom LB policy named 
+`test_backend_metrics_load_balancer`, which using ORCA APIs already installed a 
+per-query report listener. The interop-testing client will run with a service 
+config to select the load balancing config (using argument 
+`--service_config_json`), so that it effectively uses this newly registered 
+custom LB policy. A load report reference can be passed from the call to the LB 
+policy through, e.g. CallOptions, to receive metric reports. The LB policy will 
+fill in the reference with the latest load report from the report listener.
+This way, together with server behaviors we can verify the expected metric 
+reports are received.
+
+Server features:
+* [UnaryCall][]
+* [Backend Metrics Report][]
+
+Procedures:
+* The client sends a unary request: 
+    ```
+    {
+      orca_per_rpc_report:{
+        cpu_utilization: 0.8210
+        memory_utilization: 0.5847
+        request_cost: {
+          cost: 3456.32
+        }
+        utilization: {
+          util: 0.30499
+        }
+      }
+    }
+    ```
+
+The call carries a reference to receive the load report, e.g. using CallOptions.
+The reference is passed to the custom LB policy as part of the 
+`OrcaPerRequestReportListener` API.
+
+Client asserts:
+* The call is successful.
+* The per-query load report reference contains a metrics report that is 
+identical to the metrics data sent in the request shown above. 
+
+### orca_oob
+
+The client verifies that a custom LB policy, which is integrated with ORCA APIs, 
+will receive out-of-band metric reports from the backend.
+
+The client will register the custom LB policy named 
+`test_backend_metrics_load_balancer`. It has similar and additional functions as
+described in the [orca_per_rpc][] test. We use ORCA APIs to install an 
+out-of-band report listener (configure load report interval to be 1s) in the LB 
+policy. The interop-testing client will run with a service config to select the 
+load balancing config(using argument `--service_config_json`), so that it 
+effectively uses this newly registered custom LB policy. A load report reference
+can be passed from the call to the LB policy through, e.g. CallOptions, to 
+receive metric reports. The test framework will fill in the reference with the 
+latest load report from the report listener. This way, together with server 
+behaviors we can verify the expected metric reports are received.
+
+Server features:
+* [UnaryCall][]
+* [FullDuplexCall][]
+* [Backend Metrics Report][]
+
+Procedures:
+1. Client starts a full duplex call and sends: 
+    ```
+    {
+      orca_oob_report:{
+        cpu_utilization: 0.8210
+        memory_utilization: 0.5847
+        utilization: {
+          util: 0.30499
+        }
+      }
+      response_parameters:{
+        size: 1
+      }
+    }
+    ```
+2. After getting a response, client waits up to 10 seconds (or a total of 30s
+for the entire test case) to receive an OOB load report that matches the
+requested load report in step 1. To wait for load report, client may inject a
+callback to the custom LB policy, or poll the result by doing empty unary call
+that carries a reference, e.g. using CallOptions, that will be filled in by the
+custom LB policy as part of the `OrcaOobReportListener` API.
+3. Then client sends: 
+    ```
+    {
+      orca_oob_report:{
+        cpu_utilization: 0.29309
+        memory_utilization: 0.2
+        utilization: {
+          util: 0.2039
+        }
+      }
+      response_parameters:{
+        size: 1
+      }
+    }
+    ```
+4. After getting a response, client waits up to 10 seconds (or a total of 30s
+for the entire test case) to receive an OOB load report that matches the
+requested load report in step 3. Similar to step 2.
+5. Client half closes the stream, and asserts the streaming call is successful. 
 
 ### Experimental Tests
 
 These tests are not yet standardized, and are not yet implemented in all
 languages. Therefore they are not part of our interop matrix.
 
-#### rpc_soak
-
-The client performs many large_unary RPCs in sequence over the same channel. 
-The number of RPCs is configured by the experimental flag, `soak_iterations`.
-
-#### channel_soak
-
-The client performs many large_unary RPCs in sequence. Before each RPC, it 
-tears down and rebuilds the channel. The number of RPCs is configured by 
-the experimental flag, `soak_iterations`.
-
-This tests puts stress on several gRPC components; the resolver, the load 
-balancer, and the RPC hotpath.
-
 #### long_lived_channel
 
-The client performs a number of large_unary RPCs over a single long-lived 
+The client performs a number of large_unary RPCs over a single long-lived
 channel with a fixed but configurable interval between each RPC.
+
+#### concurrent_large_unary
+
+Status: TODO
+
+Client performs 1000 large_unary tests in parallel on the same channel.
+
+#### Flow control. Pushback at client for large messages (TODO: fix name)
+
+Status: TODO
+
+This test verifies that a client sending faster than a server can drain sees
+pushback (i.e., attempts to send succeed only after appropriate delays).
 
 ### TODO Tests
 
@@ -1046,7 +1310,7 @@ for the `SimpleRequest.response_type`. If the server does not support the
 Server gets the default SimpleRequest proto as the request. The content of the
 request is ignored. It returns the SimpleResponse proto with the payload set
 to current timestamp.  The timestamp is an integer representing current time
-with nanosecond resolution. This integer is formated as ASCII decimal in the
+with nanosecond resolution. This integer is formatted as ASCII decimal in the
 response. The format is not really important as long as the response payload
 is different for each request. In addition it adds
   1. cache control headers such that the response can be cached by proxies in
@@ -1097,7 +1361,7 @@ responses, it closes with OK.
 ### Echo Status
 [Echo Status]: #echo-status
 When the client sends a response_status in the request payload, the server closes
-the stream with the status code and messsage contained within said response_status.
+the stream with the status code and message contained within said response_status.
 The server will not process any further messages on the stream sent by the client.
 This can be used by clients to verify correct handling of different status codes and
 associated status messages end-to-end.
@@ -1114,7 +1378,7 @@ key and the corresponding value back to the client as trailing metadata.
 [Observe ResponseParameters.interval_us]: #observe-responseparametersinterval_us
 
 In StreamingOutputCall and FullDuplexCall, server delays sending a
-StreamingOutputCallResponse by the ResponseParameters's `interval_us` for that
+StreamingOutputCallResponse by the ResponseParameters' `interval_us` for that
 particular response, relative to the last response sent. That is, `interval_us`
 acts like a sleep *before* sending the response and accumulates from one
 response to the next.
@@ -1151,3 +1415,24 @@ Discussion:
 Ideally, this would be communicated via metadata and not in the
 request/response, but we want to use this test in code paths that don't yet
 fully communicate metadata.
+
+### Backend metrics report
+[Backend Metrics Report]: #backend-metrics-report
+
+Server reports backend metrics data in both per-query and out-of-band cases, 
+echoing metrics data from the unary or fullDuplex call.
+
+Using ORCA APIs we install the per-query metrics reporting server interceptor, 
+so that it can attach metrics per RPC. We also register the `OpenRCAService` 
+implementation to the server, so that it can report metrics periodically. 
+The minimum report interval in the ORCA service is set to 1 sec.
+
+If `SimpleRequest.orca_per_rpc_report` is set in unary call, the server will add
+the metric data from `orca_per_rpc_report` to the RPC using the language's 
+CallMetricRecorder.
+
+If `SimpleRequest.orca_oob_report` is set in fullDuplexCall call, the server 
+will first clear all the previous metrics data, and then add utilization metrics
+from `orca_oob_report` to the `OpenRCAService`.
+The server implementation should use a lock or similar mechanism to allow only
+one client to control the server's out-of-band reports until the end of the RPC.

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 // Test description at doc/connection-backoff-interop-test-description.md
 
@@ -25,32 +25,29 @@
 #include <mutex>
 #include <sstream>
 
-#include <gflags/gflags.h>
+#include "absl/flags/flag.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/util/reconnect_server.h"
 #include "test/cpp/util/test_config.h"
 
-DEFINE_int32(control_port, 0, "Server port for controlling the server.");
-DEFINE_int32(retry_port, 0,
-             "Server port for raw tcp connections. All incoming "
-             "connections will be closed immediately.");
+ABSL_FLAG(int32_t, control_port, 0, "Server port for controlling the server.");
+ABSL_FLAG(int32_t, retry_port, 0,
+          "Server port for raw tcp connections. All incoming "
+          "connections will be closed immediately.");
 
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
-using grpc::ServerCredentials;
-using grpc::ServerReader;
-using grpc::ServerReaderWriter;
-using grpc::ServerWriter;
-using grpc::SslServerCredentialsOptions;
 using grpc::Status;
 using grpc::testing::Empty;
 using grpc::testing::ReconnectInfo;
@@ -69,7 +66,7 @@ class ReconnectServiceImpl : public ReconnectService::Service {
     reconnect_server_init(&tcp_server_);
   }
 
-  ~ReconnectServiceImpl() {
+  ~ReconnectServiceImpl() override {
     if (server_started_) {
       reconnect_server_destroy(&tcp_server_);
     }
@@ -77,8 +74,8 @@ class ReconnectServiceImpl : public ReconnectService::Service {
 
   void Poll(int seconds) { reconnect_server_poll(&tcp_server_, seconds); }
 
-  Status Start(ServerContext* context, const ReconnectParams* request,
-               Empty* response) {
+  Status Start(ServerContext* /*context*/, const ReconnectParams* request,
+               Empty* /*response*/) override {
     bool start_server = true;
     std::unique_lock<std::mutex> lock(mu_);
     while (serving_ && !shutdown_) {
@@ -105,8 +102,8 @@ class ReconnectServiceImpl : public ReconnectService::Service {
     return Status::OK;
   }
 
-  Status Stop(ServerContext* context, const Empty* request,
-              ReconnectInfo* response) {
+  Status Stop(ServerContext* /*context*/, const Empty* /*request*/,
+              ReconnectInfo* response) override {
     // extract timestamps and set response
     Verify(response);
     reconnect_server_clear_timestamps(&tcp_server_);
@@ -161,8 +158,8 @@ class ReconnectServiceImpl : public ReconnectService::Service {
 
 void RunServer() {
   std::ostringstream server_address;
-  server_address << "0.0.0.0:" << FLAGS_control_port;
-  ReconnectServiceImpl service(FLAGS_retry_port);
+  server_address << "0.0.0.0:" << absl::GetFlag(FLAGS_control_port);
+  ReconnectServiceImpl service(absl::GetFlag(FLAGS_retry_port));
 
   ServerBuilder builder;
   builder.RegisterService(&service);
@@ -176,14 +173,14 @@ void RunServer() {
   service.Shutdown();
 }
 
-static void sigint_handler(int x) { got_sigint = true; }
+static void sigint_handler(int /*x*/) { got_sigint = true; }
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   signal(SIGINT, sigint_handler);
 
-  GPR_ASSERT(FLAGS_control_port != 0);
-  GPR_ASSERT(FLAGS_retry_port != 0);
+  GPR_ASSERT(absl::GetFlag(FLAGS_control_port) != 0);
+  GPR_ASSERT(absl::GetFlag(FLAGS_retry_port) != 0);
   RunServer();
 
   return 0;

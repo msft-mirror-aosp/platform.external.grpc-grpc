@@ -1,23 +1,23 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *is % allowed in string
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// is % allowed in string
+//
 
-#ifndef GRPC_TEST_CPP_STRESS_INTEROP_CLIENT_H
-#define GRPC_TEST_CPP_STRESS_INTEROP_CLIENT_H
+#ifndef GRPC_TEST_CPP_INTEROP_STRESS_INTEROP_CLIENT_H
+#define GRPC_TEST_CPP_INTEROP_STRESS_INTEROP_CLIENT_H
 
 #include <memory>
 #include <string>
@@ -55,7 +55,7 @@ enum TestCaseType {
   CUSTOM_METADATA
 };
 
-const vector<pair<TestCaseType, grpc::string>> kTestCaseList = {
+const vector<pair<TestCaseType, std::string>> kTestCaseList = {
     {EMPTY_UNARY, "empty_unary"},
     {LARGE_UNARY, "large_unary"},
     {CLIENT_COMPRESSED_UNARY, "client_compressed_unary"},
@@ -77,7 +77,8 @@ const vector<pair<TestCaseType, grpc::string>> kTestCaseList = {
 class WeightedRandomTestSelector {
  public:
   // Takes a vector of <test_case, weight> pairs as the input
-  WeightedRandomTestSelector(const vector<pair<TestCaseType, int>>& tests);
+  explicit WeightedRandomTestSelector(
+      const vector<pair<TestCaseType, int>>& tests);
 
   // Returns a weighted-randomly chosen test case based on the test cases and
   // weights passed in the constructor
@@ -90,7 +91,7 @@ class WeightedRandomTestSelector {
 
 class StressTestInteropClient {
  public:
-  StressTestInteropClient(int test_id, const grpc::string& server_address,
+  StressTestInteropClient(int test_id, const std::string& server_address,
                           ChannelCreationFunc channel_creation_func,
                           const WeightedRandomTestSelector& test_selector,
                           long test_duration_secs, long sleep_duration_ms,
@@ -104,7 +105,7 @@ class StressTestInteropClient {
   bool RunTest(TestCaseType test_case);
 
   int test_id_;
-  const grpc::string& server_address_;
+  const std::string& server_address_;
   ChannelCreationFunc channel_creation_func_;
   std::unique_ptr<InteropClient> interop_client_;
   const WeightedRandomTestSelector& test_selector_;
@@ -115,4 +116,4 @@ class StressTestInteropClient {
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // GRPC_TEST_CPP_STRESS_INTEROP_CLIENT_H
+#endif  // GRPC_TEST_CPP_INTEROP_STRESS_INTEROP_CLIENT_H

@@ -1,31 +1,39 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/core/util/cmdline.h"
 
 #include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+#include <algorithm>
+#include <vector>
+
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include "src/core/lib/gpr/string.h"
+
+#include "src/core/lib/gprpp/memory.h"
 
 typedef enum { ARGTYPE_INT, ARGTYPE_BOOL, ARGTYPE_STRING } argtype;
 
@@ -53,10 +61,10 @@ struct gpr_cmdline {
   int survive_failure;
 };
 
-static int normal_state(gpr_cmdline* cl, char* arg);
+static int normal_state(gpr_cmdline* cl, char* str);
 
 gpr_cmdline* gpr_cmdline_create(const char* description) {
-  gpr_cmdline* cl = static_cast<gpr_cmdline*>(gpr_zalloc(sizeof(gpr_cmdline)));
+  gpr_cmdline* cl = grpc_core::Zalloc<gpr_cmdline>();
 
   cl->description = description;
   cl->state = normal_state;
@@ -121,63 +129,45 @@ void gpr_cmdline_on_extra_arg(
   cl->extra_arg_help = help;
 }
 
-/* recursively descend argument list, adding the last element
-   to s first - so that arguments are added in the order they were
-   added to the list by api calls */
-static void add_args_to_usage(gpr_strvec* s, arg* a) {
-  char* tmp;
-
-  if (!a) return;
-  add_args_to_usage(s, a->next);
-
+// recursively descend argument list, adding the last element
+// to s first - so that arguments are added in the order they were
+// added to the list by api calls
+static void add_args_to_usage(arg* a, std::vector<std::string>* s) {
+  if (a == nullptr) return;
+  add_args_to_usage(a->next, s);
   switch (a->type) {
     case ARGTYPE_BOOL:
-      gpr_asprintf(&tmp, " [--%s|--no-%s]", a->name, a->name);
-      gpr_strvec_add(s, tmp);
+      s->push_back(absl::StrFormat(" [--%s|--no-%s]", a->name, a->name));
       break;
     case ARGTYPE_STRING:
-      gpr_asprintf(&tmp, " [--%s=string]", a->name);
-      gpr_strvec_add(s, tmp);
+      s->push_back(absl::StrFormat(" [--%s=string]", a->name));
       break;
     case ARGTYPE_INT:
-      gpr_asprintf(&tmp, " [--%s=int]", a->name);
-      gpr_strvec_add(s, tmp);
+      s->push_back(absl::StrFormat(" [--%s=int]", a->name));
       break;
   }
 }
 
-char* gpr_cmdline_usage_string(gpr_cmdline* cl, const char* argv0) {
-  /* TODO(ctiller): make this prettier */
-  gpr_strvec s;
-  char* tmp;
+std::string gpr_cmdline_usage_string(gpr_cmdline* cl, const char* argv0) {
   const char* name = strrchr(argv0, '/');
-
-  if (name) {
+  if (name != nullptr) {
     name++;
   } else {
     name = argv0;
   }
 
-  gpr_strvec_init(&s);
-
-  gpr_asprintf(&tmp, "Usage: %s", name);
-  gpr_strvec_add(&s, tmp);
-  add_args_to_usage(&s, cl->args);
+  std::vector<std::string> s;
+  s.push_back(absl::StrCat("Usage: ", name));
+  add_args_to_usage(cl->args, &s);
   if (cl->extra_arg) {
-    gpr_asprintf(&tmp, " [%s...]", cl->extra_arg_name);
-    gpr_strvec_add(&s, tmp);
+    s.push_back(absl::StrFormat(" [%s...]", cl->extra_arg_name));
   }
-  gpr_strvec_add(&s, gpr_strdup("\n"));
-
-  tmp = gpr_strvec_flatten(&s, nullptr);
-  gpr_strvec_destroy(&s);
-  return tmp;
+  s.push_back("\n");
+  return absl::StrJoin(s, "");
 }
 
 static int print_usage_and_die(gpr_cmdline* cl) {
-  char* usage = gpr_cmdline_usage_string(cl, cl->argv0);
-  fprintf(stderr, "%s", usage);
-  gpr_free(usage);
+  fprintf(stderr, "%s", gpr_cmdline_usage_string(cl, cl->argv0).c_str());
   if (!cl->survive_failure) {
     exit(1);
   }
@@ -261,7 +251,7 @@ static int normal_state(gpr_cmdline* cl, char* str) {
   if (str[0] == '-') {
     if (str[1] == '-') {
       if (str[2] == 0) {
-        /* handle '--' to move to just extra args */
+        // handle '--' to move to just extra args
         cl->state = extra_state;
         return 1;
       }
@@ -269,9 +259,9 @@ static int normal_state(gpr_cmdline* cl, char* str) {
     } else {
       str += 1;
     }
-    /* first byte of str is now past the leading '-' or '--' */
+    // first byte of str is now past the leading '-' or '--'
     if (str[0] == 'n' && str[1] == 'o' && str[2] == '-') {
-      /* str is of the form '--no-foo' - it's a flag disable */
+      // str is of the form '--no-foo' - it's a flag disable
       str += 3;
       cl->cur_arg = find_arg(cl, str);
       if (cl->cur_arg == nullptr) {
@@ -282,11 +272,11 @@ static int normal_state(gpr_cmdline* cl, char* str) {
         return print_usage_and_die(cl);
       }
       *static_cast<int*>(cl->cur_arg->value) = 0;
-      return 1; /* early out */
+      return 1;  // early out
     }
     eq = strchr(str, '=');
     if (eq != nullptr) {
-      /* copy the string into a temp buffer and extract the name */
+      // copy the string into a temp buffer and extract the name
       tmp = arg_name =
           static_cast<char*>(gpr_malloc(static_cast<size_t>(eq - str + 1)));
       memcpy(arg_name, str, static_cast<size_t>(eq - str));
@@ -299,13 +289,13 @@ static int normal_state(gpr_cmdline* cl, char* str) {
       return print_usage_and_die(cl);
     }
     if (eq != nullptr) {
-      /* str was of the type --foo=value, parse the value */
+      // str was of the type --foo=value, parse the value
       r = value_state(cl, eq + 1);
     } else if (cl->cur_arg->type != ARGTYPE_BOOL) {
-      /* flag types don't have a '--foo value' variant, other types do */
+      // flag types don't have a '--foo value' variant, other types do
       cl->state = value_state;
     } else {
-      /* flag parameter: just set the value */
+      // flag parameter: just set the value
       *static_cast<int*>(cl->cur_arg->value) = 1;
     }
   } else {

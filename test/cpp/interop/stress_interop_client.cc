@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *is % allowed in string
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// is % allowed in string
+//
 
 #include "test/cpp/interop/stress_interop_client.h"
 
@@ -22,9 +22,12 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/log.h>
 #include <grpcpp/create_channel.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/metrics_server.h"
 
@@ -67,13 +70,13 @@ TestCaseType WeightedRandomTestSelector::GetNextTest() const {
 }
 
 StressTestInteropClient::StressTestInteropClient(
-    int test_id, const grpc::string& server_address,
+    int test_id, const std::string& server_address,
     ChannelCreationFunc channel_creation_func,
     const WeightedRandomTestSelector& test_selector, long test_duration_secs,
     long sleep_duration_ms, bool do_not_abort_on_transient_failures)
     : test_id_(test_id),
       server_address_(server_address),
-      channel_creation_func_(channel_creation_func),
+      channel_creation_func_(std::move(channel_creation_func)),
       interop_client_(new InteropClient(channel_creation_func_, false,
                                         do_not_abort_on_transient_failures)),
       test_selector_(test_selector),
@@ -186,8 +189,7 @@ bool StressTestInteropClient::RunTest(TestCaseType test_case) {
       break;
     }
     default: {
-      gpr_log(GPR_ERROR, "Invalid test case (%d)", test_case);
-      GPR_ASSERT(false);
+      grpc_core::Crash(absl::StrFormat("Invalid test case (%d)", test_case));
       break;
     }
   }

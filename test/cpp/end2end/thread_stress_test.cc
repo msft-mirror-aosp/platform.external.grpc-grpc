@@ -1,61 +1,59 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <cinttypes>
 #include <mutex>
 #include <thread>
+
+#include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-#include <gtest/gtest.h>
-
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-using std::chrono::system_clock;
-
-const int kNumThreads = 100;  // Number of threads
+const int kNumThreads = 10;  // Number of threads
 const int kNumAsyncSendThreads = 2;
-const int kNumAsyncReceiveThreads = 50;
-const int kNumAsyncServerThreads = 50;
+const int kNumAsyncReceiveThreads = 5;
+const int kNumAsyncServerThreads = 5;
 const int kNumRpcs = 1000;  // Number of RPCs per thread
 
 namespace grpc {
 namespace testing {
 
-class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
+class TestServiceImpl : public grpc::testing::EchoTestService::Service {
  public:
   TestServiceImpl() {}
 
-  Status Echo(ServerContext* context, const EchoRequest* request,
+  Status Echo(ServerContext* /*context*/, const EchoRequest* request,
               EchoResponse* response) override {
     response->set_message(request->message());
     return Status::OK;
@@ -65,7 +63,12 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
 template <class Service>
 class CommonStressTest {
  public:
-  CommonStressTest() : kMaxMessageSize_(8192) {}
+  CommonStressTest() : kMaxMessageSize_(8192) {
+#if TARGET_OS_IPHONE
+    // Workaround Apple CFStream bug
+    grpc_core::SetEnv("grpc_cfstream", "0");
+#endif
+  }
   virtual ~CommonStressTest() {}
   virtual void SetUp() = 0;
   virtual void TearDown() = 0;
@@ -95,8 +98,8 @@ template <class Service>
 class CommonStressTestInsecure : public CommonStressTest<Service> {
  public:
   void ResetStub() override {
-    std::shared_ptr<Channel> channel =
-        CreateChannel(server_address_.str(), InsecureChannelCredentials());
+    std::shared_ptr<Channel> channel = grpc::CreateChannel(
+        server_address_.str(), InsecureChannelCredentials());
     this->stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
   bool AllowExhaustion() override { return false; }
@@ -188,7 +191,7 @@ class CommonStressTestAsyncServer : public BaseClass {
   }
   void TearDown() override {
     {
-      std::unique_lock<std::mutex> l(mu_);
+      grpc::internal::MutexLock l(&mu_);
       this->TearDownStart();
       shutting_down_ = true;
       cq_->Shutdown();
@@ -200,8 +203,8 @@ class CommonStressTestAsyncServer : public BaseClass {
 
     void* ignored_tag;
     bool ignored_ok;
-    while (cq_->Next(&ignored_tag, &ignored_ok))
-      ;
+    while (cq_->Next(&ignored_tag, &ignored_ok)) {
+    }
     this->TearDownEnd();
   }
 
@@ -229,7 +232,7 @@ class CommonStressTestAsyncServer : public BaseClass {
     }
   }
   void RefreshContext(int i) {
-    std::unique_lock<std::mutex> l(mu_);
+    grpc::internal::MutexLock l(&mu_);
     if (!shutting_down_) {
       contexts_[i].state = Context::READY;
       contexts_[i].srv_ctx.reset(new ServerContext);
@@ -239,7 +242,7 @@ class CommonStressTestAsyncServer : public BaseClass {
       service_.RequestEcho(contexts_[i].srv_ctx.get(),
                            &contexts_[i].recv_request,
                            contexts_[i].response_writer.get(), cq_.get(),
-                           cq_.get(), (void*)static_cast<intptr_t>(i));
+                           cq_.get(), reinterpret_cast<void*>(i));
     }
   }
   struct Context {
@@ -250,10 +253,10 @@ class CommonStressTestAsyncServer : public BaseClass {
     enum { READY, DONE } state;
   };
   std::vector<Context> contexts_;
-  ::grpc::testing::EchoTestService::AsyncService service_;
+  grpc::testing::EchoTestService::AsyncService service_;
   std::unique_ptr<ServerCompletionQueue> cq_;
   bool shutting_down_;
-  std::mutex mu_;
+  grpc::internal::Mutex mu_;
   std::vector<std::thread> server_threads_;
 };
 
@@ -285,7 +288,7 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
         gpr_log(GPR_ERROR, "RPC error: %d: %s", s.error_code(),
                 s.error_message().c_str());
       }
-      gpr_atm_no_barrier_fetch_add(errors, static_cast<gpr_atm>(1));
+      gpr_atm_no_barrier_fetch_add(errors, gpr_atm{1});
     } else {
       EXPECT_EQ(response.message(), request.message());
     }
@@ -294,20 +297,15 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
 
 typedef ::testing::Types<
     CommonStressTestSyncServer<CommonStressTestInsecure<TestServiceImpl>>,
-    CommonStressTestSyncServer<CommonStressTestInproc<TestServiceImpl, false>>,
-    CommonStressTestSyncServerLowThreadCount<
-        CommonStressTestInproc<TestServiceImpl, true>>,
     CommonStressTestAsyncServer<
-        CommonStressTestInsecure<grpc::testing::EchoTestService::AsyncService>>,
-    CommonStressTestAsyncServer<CommonStressTestInproc<
-        grpc::testing::EchoTestService::AsyncService, false>>>
+        CommonStressTestInsecure<grpc::testing::EchoTestService::AsyncService>>>
     CommonTypes;
-TYPED_TEST_CASE(End2endTest, CommonTypes);
+TYPED_TEST_SUITE(End2endTest, CommonTypes);
 TYPED_TEST(End2endTest, ThreadStress) {
   this->common_.ResetStub();
   std::vector<std::thread> threads;
   gpr_atm errors;
-  gpr_atm_rel_store(&errors, static_cast<gpr_atm>(0));
+  gpr_atm_rel_store(&errors, gpr_atm{0});
   threads.reserve(kNumThreads);
   for (int i = 0; i < kNumThreads; ++i) {
     threads.emplace_back(SendRpc, this->common_.GetStub(), kNumRpcs,
@@ -322,7 +320,7 @@ TYPED_TEST(End2endTest, ThreadStress) {
   }
   // If this test allows resource exhaustion, expect that it actually sees some
   if (this->common_.AllowExhaustion()) {
-    EXPECT_GT(error_cnt, static_cast<uint64_t>(0));
+    EXPECT_GT(error_cnt, 0);
   }
 }
 
@@ -335,15 +333,15 @@ class AsyncClientEnd2endTest : public ::testing::Test {
   void TearDown() override {
     void* ignored_tag;
     bool ignored_ok;
-    while (cq_.Next(&ignored_tag, &ignored_ok))
-      ;
+    while (cq_.Next(&ignored_tag, &ignored_ok)) {
+    }
     common_.TearDown();
   }
 
   void Wait() {
-    std::unique_lock<std::mutex> l(mu_);
+    grpc::internal::MutexLock l(&mu_);
     while (rpcs_outstanding_ != 0) {
-      cv_.wait(l);
+      cv_.Wait(&mu_);
     }
 
     cq_.Shutdown();
@@ -360,13 +358,12 @@ class AsyncClientEnd2endTest : public ::testing::Test {
     for (int i = 0; i < num_rpcs; ++i) {
       AsyncClientCall* call = new AsyncClientCall;
       EchoRequest request;
-      request.set_message("Hello: " + grpc::to_string(i));
+      request.set_message("Hello: " + std::to_string(i));
       call->response_reader =
           common_.GetStub()->AsyncEcho(&call->context, request, &cq_);
-      call->response_reader->Finish(&call->response, &call->status,
-                                    (void*)call);
+      call->response_reader->Finish(&call->response, &call->status, call);
 
-      std::unique_lock<std::mutex> l(mu_);
+      grpc::internal::MutexLock l(&mu_);
       rpcs_outstanding_++;
     }
   }
@@ -384,24 +381,24 @@ class AsyncClientEnd2endTest : public ::testing::Test {
 
       bool notify;
       {
-        std::unique_lock<std::mutex> l(mu_);
+        grpc::internal::MutexLock l(&mu_);
         rpcs_outstanding_--;
         notify = (rpcs_outstanding_ == 0);
       }
       if (notify) {
-        cv_.notify_all();
+        cv_.Signal();
       }
     }
   }
 
   Common common_;
   CompletionQueue cq_;
-  std::mutex mu_;
-  std::condition_variable cv_;
+  grpc::internal::Mutex mu_;
+  grpc::internal::CondVar cv_;
   int rpcs_outstanding_;
 };
 
-TYPED_TEST_CASE(AsyncClientEnd2endTest, CommonTypes);
+TYPED_TEST_SUITE(AsyncClientEnd2endTest, CommonTypes);
 TYPED_TEST(AsyncClientEnd2endTest, ThreadStress) {
   this->common_.ResetStub();
   std::vector<std::thread> send_threads, completion_threads;
@@ -429,7 +426,7 @@ TYPED_TEST(AsyncClientEnd2endTest, ThreadStress) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

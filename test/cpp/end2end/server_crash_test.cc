@@ -1,20 +1,24 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+
+#include <gtest/gtest.h>
+
+#include "absl/memory/memory.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
@@ -26,17 +30,15 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 
-#include <gtest/gtest.h>
-
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
-using std::chrono::system_clock;
 
 static std::string g_root;
 
@@ -45,12 +47,12 @@ namespace testing {
 
 namespace {
 
-class ServiceImpl final : public ::grpc::testing::EchoTestService::Service {
+class ServiceImpl final : public grpc::testing::EchoTestService::Service {
  public:
   ServiceImpl() : bidi_stream_count_(0), response_stream_count_(0) {}
 
   Status BidiStream(
-      ServerContext* context,
+      ServerContext* /*context*/,
       ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     bidi_stream_count_++;
     EchoRequest request;
@@ -65,7 +67,8 @@ class ServiceImpl final : public ::grpc::testing::EchoTestService::Service {
     return Status::OK;
   }
 
-  Status ResponseStream(ServerContext* context, const EchoRequest* request,
+  Status ResponseStream(ServerContext* /*context*/,
+                        const EchoRequest* /*request*/,
                         ServerWriter<EchoResponse>* writer) override {
     EchoResponse response;
     response_stream_count_++;
@@ -98,7 +101,8 @@ class CrashTest : public ::testing::Test {
     std::ostringstream addr_stream;
     addr_stream << "localhost:" << port;
     auto addr = addr_stream.str();
-    client_.reset(new SubProcess({g_root + "/server_crash_test_client",
+    client_ = std::make_unique<SubProcess>(
+        std::vector<std::string>({g_root + "/server_crash_test_client",
                                   "--address=" + addr, "--mode=" + mode}));
     GPR_ASSERT(client_);
 
@@ -153,7 +157,7 @@ int main(int argc, char** argv) {
     g_root = ".";
   }
 
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

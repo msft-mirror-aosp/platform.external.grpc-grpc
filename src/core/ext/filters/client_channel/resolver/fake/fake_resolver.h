@@ -14,15 +14,26 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
-#include "src/core/ext/filters/client_channel/uri_parser.h"
-#include "src/core/lib/channel/channel_args.h"
+#include <utility>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
+#include "absl/types/optional.h"
+
+#include <grpc/grpc.h>
+
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/resolver/resolver.h"
 
 #define GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR \
   "grpc.fake_resolver.response_generator"
@@ -33,8 +44,7 @@ class FakeResolver;
 
 /// A mechanism for generating responses for the fake resolver.
 /// An instance of this class is passed to the fake resolver via a channel
-/// argument (see \a MakeChannelArg()) and used to inject and trigger custom
-/// resolutions.
+/// argument and used to inject and trigger custom resolutions.
 // TODO(roth): I would ideally like this to be InternallyRefCounted
 // instead of RefCounted, but external refs are currently needed to
 // encode this in channel args.  Once channel_args are converted to C++,
@@ -42,43 +52,78 @@ class FakeResolver;
 class FakeResolverResponseGenerator
     : public RefCounted<FakeResolverResponseGenerator> {
  public:
-  FakeResolverResponseGenerator() {}
+  static const grpc_arg_pointer_vtable kChannelArgPointerVtable;
+
+  FakeResolverResponseGenerator();
+  ~FakeResolverResponseGenerator() override;
 
   // Instructs the fake resolver associated with the response generator
-  // instance to trigger a new resolution with the specified response.
-  void SetResponse(grpc_channel_args* next_response);
+  // instance to trigger a new resolution with the specified result. If the
+  // resolver is not available yet, delays response setting until it is. This
+  // can be called at most once before the resolver is available.
+  // notify_when_set is an optional notification to signal when the response has
+  // been set.
+  void SetResponseAndNotify(Resolver::Result result,
+                            Notification* notify_when_set);
 
-  // Sets the re-resolution response, which is returned by the fake resolver
-  // when re-resolution is requested (via \a RequestReresolutionLocked()).
-  // The new re-resolution response replaces any previous re-resolution
-  // response that may have been set by a previous call.
-  // If the re-resolution response is set to NULL, then the fake
-  // resolver will not return anything when \a RequestReresolutionLocked()
-  // is called.
-  void SetReresolutionResponse(grpc_channel_args* response);
+  // Same as SetResponseAndNotify(), assume that async setting is fine
+  void SetResponseAsync(Resolver::Result result) {
+    SetResponseAndNotify(std::move(result), nullptr);
+  }
 
-  // Tells the resolver to return a transient failure (signalled by
-  // returning a null result with no error).
-  void SetFailure();
+  // Same as SetResponseAndNotify(), but create and wait for the notification
+  void SetResponseSynchronously(Resolver::Result result) {
+    Notification n;
+    SetResponseAndNotify(std::move(result), &n);
+    n.WaitForNotification();
+  }
 
-  // Returns a channel arg containing \a generator.
-  static grpc_arg MakeChannelArg(FakeResolverResponseGenerator* generator);
+  // Waits up to timeout for a re-resolution request.  Returns true if a
+  // re-resolution request is seen, or false if timeout occurs.  Returns
+  // true immediately if there was a re-resolution request since the
+  // last time this method was called.
+  bool WaitForReresolutionRequest(absl::Duration timeout);
 
-  // Returns the response generator in \a args, or null if not found.
-  static FakeResolverResponseGenerator* GetFromArgs(
-      const grpc_channel_args* args);
+  // Wait for a resolver to be set (setting may be happening asynchronously, so
+  // this may block - consider it test only).
+  bool WaitForResolverSet(absl::Duration timeout);
+
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR;
+  }
+
+  static int ChannelArgsCompare(const FakeResolverResponseGenerator* a,
+                                const FakeResolverResponseGenerator* b) {
+    return QsortCompare(a, b);
+  }
 
  private:
   friend class FakeResolver;
 
-  static void SetResponseLocked(void* arg, grpc_error* error);
-  static void SetReresolutionResponseLocked(void* arg, grpc_error* error);
-  static void SetFailureLocked(void* arg, grpc_error* error);
+  // Set the corresponding FakeResolver to this generator.
+  void SetFakeResolver(RefCountedPtr<FakeResolver> resolver);
 
-  FakeResolver* resolver_ = nullptr;  // Do not own.
+  // Called by FakeResolver when re-resolution is requested.
+  void ReresolutionRequested();
+
+  // Helper function to send a result to the resolver.
+  static void SendResultToResolver(RefCountedPtr<FakeResolver> resolver,
+                                   Resolver::Result result,
+                                   Notification* notify_when_set);
+
+  // Mutex protecting the members below.
+  Mutex mu_;
+  CondVar* resolver_set_cv_ ABSL_GUARDED_BY(mu_) = nullptr;
+  RefCountedPtr<FakeResolver> resolver_ ABSL_GUARDED_BY(mu_);
+  // Temporarily stores the result when it gets set before the response
+  // generator is seen by the FakeResolver.
+  absl::optional<Resolver::Result> result_ ABSL_GUARDED_BY(mu_);
+
+  Mutex reresolution_mu_;
+  CondVar* reresolution_cv_ ABSL_GUARDED_BY(reresolution_mu_) = nullptr;
+  bool reresolution_requested_ ABSL_GUARDED_BY(reresolution_mu_) = false;
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H \
-        */
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H

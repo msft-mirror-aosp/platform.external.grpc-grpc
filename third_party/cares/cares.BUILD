@@ -1,49 +1,3 @@
-config_setting(
-    name = "darwin",
-    values = {"cpu": "darwin"},
-)
-
-config_setting(
-    name = "darwin_x86_64",
-    values = {"cpu": "darwin_x86_64"},
-)
-
-config_setting(
-    name = "windows",
-    values = {"cpu": "x64_windows"},
-)
-
-# Android is not officially supported through C++.
-# This just helps with the build for now.
-config_setting(
-    name = "android",
-    values = {
-        "crosstool_top": "//external:android/crosstool",
-    },
-)
-
-# iOS is not officially supported through C++.
-# This just helps with the build for now.
-config_setting(
-    name = "ios_x86_64",
-    values = {"cpu": "ios_x86_64"},
-)
-
-config_setting(
-    name = "ios_armv7",
-    values = {"cpu": "ios_armv7"},
-)
-
-config_setting(
-    name = "ios_armv7s",
-    values = {"cpu": "ios_armv7s"},
-)
-
-config_setting(
-    name = "ios_arm64",
-    values = {"cpu": "ios_arm64"},
-)
-
 genrule(
     name = "ares_build_h",
     srcs = ["@com_github_grpc_grpc//third_party/cares:ares_build.h"],
@@ -54,14 +8,10 @@ genrule(
 genrule(
     name = "ares_config_h",
     srcs = select({
-        ":ios_x86_64": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
-        ":ios_armv7": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
-        ":ios_armv7s": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
-        ":ios_arm64": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
-        ":darwin": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
-        ":darwin_x86_64": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
-        ":windows": ["@com_github_grpc_grpc//third_party/cares:config_windows/ares_config.h"],
-        ":android": ["@com_github_grpc_grpc//third_party/cares:config_android/ares_config.h"],
+        "@platforms//os:ios": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
+        "@platforms//os:macos": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
+        "@platforms//os:windows": ["@com_github_grpc_grpc//third_party/cares:config_windows/ares_config.h"],
+        "@platforms//os:android": ["@com_github_grpc_grpc//third_party/cares:config_android/ares_config.h"],
         "//conditions:default": ["@com_github_grpc_grpc//third_party/cares:config_linux/ares_config.h"],
     }),
     outs = ["ares_config.h"],
@@ -155,7 +105,7 @@ cc_library(
         "-D_HAS_EXCEPTIONS=0",
         "-DHAVE_CONFIG_H",
     ] + select({
-        ":windows": [
+        "@platforms//os:windows": [
             "-DNOMINMAX",
             "-D_CRT_SECURE_NO_DEPRECATE",
             "-D_CRT_NONSTDC_NO_DEPRECATE",
@@ -166,7 +116,7 @@ cc_library(
     defines = ["CARES_STATICLIB"],
     includes = ["."],
     linkopts = select({
-        ":windows": ["-defaultlib:ws2_32.lib"],
+        "@platforms//os:windows": ["-defaultlib:ws2_32.lib"],
         "//conditions:default": [],
     }),
     linkstatic = 1,

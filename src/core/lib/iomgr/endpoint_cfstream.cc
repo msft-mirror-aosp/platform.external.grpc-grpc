@@ -355,10 +355,10 @@ grpc_endpoint* grpc_cfstream_endpoint_create(
   CFSTREAM_HANDLE_REF(ep_impl->stream_sync, "endpoint create");
 
   ep_impl->peer_string = gpr_strdup(peer_string);
-  ep_impl->read_cb = nil;
-  ep_impl->write_cb = nil;
-  ep_impl->read_slices = nil;
-  ep_impl->write_slices = nil;
+  ep_impl->read_cb = nullptr;
+  ep_impl->write_cb = nullptr;
+  ep_impl->read_slices = nullptr;
+  ep_impl->write_slices = nullptr;
   GRPC_CLOSURE_INIT(&ep_impl->read_action, ReadAction,
                     static_cast<void*>(ep_impl), grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&ep_impl->write_action, WriteAction,

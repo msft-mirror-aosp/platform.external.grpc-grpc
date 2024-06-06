@@ -131,7 +131,7 @@ CFStreamHandle::CFStreamHandle(CFReadStreamRef read_stream,
   dispatch_queue_ = dispatch_queue_create(nullptr, DISPATCH_QUEUE_SERIAL);
   CFStreamClientContext ctx = {0, static_cast<void*>(this),
                                CFStreamHandle::Retain, CFStreamHandle::Release,
-                               nil};
+                               nullptr};
   CFReadStreamSetClient(
       read_stream,
       kCFStreamEventOpenCompleted | kCFStreamEventHasBytesAvailable |

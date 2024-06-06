@@ -54,23 +54,8 @@ config_setting(
 )
 
 config_setting(
-    name = "windows",
-    values = {"cpu": "x64_windows"},
-)
-
-config_setting(
-    name = "windows_msvc",
-    values = {"cpu": "x64_windows_msvc"},
-)
-
-config_setting(
     name = "python3",
     values = {"python_path": "python3"},
-)
-
-config_setting(
-    name = "mac_x86_64",
-    values = {"cpu": "darwin"},
 )
 
 # This should be updated along with build.yaml

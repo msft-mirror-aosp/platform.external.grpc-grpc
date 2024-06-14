@@ -121,13 +121,40 @@ class TestScenario {
   XdsBootstrapSource bootstrap_source_;
 };
 
+// A PluginOption that injects `ServiceMeshLabelsInjector`. (This is different
+// from CsmOpenTelemetryPluginOption since it does not restrict itself to just
+// CSM channels and servers.)
+class MeshLabelsPluginOption
+    : public grpc::internal::InternalOpenTelemetryPluginOption {
+ public:
+  explicit MeshLabelsPluginOption(
+      const opentelemetry::sdk::common::AttributeMap& map)
+      : labels_injector_(
+            std::make_unique<grpc::internal::ServiceMeshLabelsInjector>(map)) {}
+
+  bool IsActiveOnClientChannel(absl::string_view /*target*/) const override {
+    return true;
+  }
+
+  bool IsActiveOnServer(const grpc_core::ChannelArgs& /*args*/) const override {
+    return true;
+  }
+
+  const grpc::internal::LabelsInjector* labels_injector() const override {
+    return labels_injector_.get();
+  }
+
+ private:
+  std::unique_ptr<grpc::internal::ServiceMeshLabelsInjector> labels_injector_;
+};
+
 class MetadataExchangeTest
     : public OpenTelemetryPluginEnd2EndTest,
       public ::testing::WithParamInterface<TestScenario> {
  protected:
-  void Init(const absl::flat_hash_set<absl::string_view>& metric_names,
+  void Init(absl::flat_hash_set<absl::string_view> metric_names,
             bool enable_client_side_injector = true,
-            const std::map<std::string, std::string>& labels_to_inject = {}) {
+            std::map<std::string, std::string> labels_to_inject = {}) {
     const char* kBootstrap =
         "{\"node\": {\"id\": "
         "\"projects/1234567890/networks/mesh:mesh-id/nodes/"
@@ -146,16 +173,16 @@ class MetadataExchangeTest
         grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP_CONFIG", kBootstrap);
         break;
     }
-    OpenTelemetryPluginEnd2EndTest::Init(
-        metric_names, /*resource=*/GetParam().GetTestResource(),
-        /*labels_injector=*/
-        std::make_unique<grpc::internal::ServiceMeshLabelsInjector>(
-            GetParam().GetTestResource().GetAttributes()),
-        /*test_no_meter_provider=*/false, labels_to_inject,
-        /*target_selector=*/
-        [enable_client_side_injector](absl::string_view /*target*/) {
-          return enable_client_side_injector;
-        });
+    OpenTelemetryPluginEnd2EndTest::Init(std::move(
+        Options()
+            .set_metric_names(std::move(metric_names))
+            .add_plugin_option(std::make_unique<MeshLabelsPluginOption>(
+                GetParam().GetTestResource().GetAttributes()))
+            .set_labels_to_inject(std::move(labels_to_inject))
+            .set_target_selector(
+                [enable_client_side_injector](absl::string_view /*target*/) {
+                  return enable_client_side_injector;
+                })));
   }
 
   ~MetadataExchangeTest() override {

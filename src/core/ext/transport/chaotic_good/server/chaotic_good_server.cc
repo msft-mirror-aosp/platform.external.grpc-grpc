@@ -38,7 +38,9 @@
 #include "src/core/ext/transport/chaotic_good/settings_metadata.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
+#include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -57,6 +59,7 @@
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/server.h"
@@ -70,7 +73,7 @@ namespace grpc_core {
 namespace chaotic_good {
 
 namespace {
-const Duration kConnectionDeadline = Duration::Seconds(5);
+const Duration kConnectionDeadline = Duration::Seconds(120);
 }  // namespace
 
 using grpc_event_engine::experimental::EventEngine;
@@ -331,37 +334,29 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     ControlEndpointWriteSettingsFrame(RefCountedPtr<HandshakingState> self) {
+  self->connection_->NewConnectionID();
+  SettingsFrame frame;
+  frame.headers =
+      SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
+                       absl::nullopt}
+          .ToMetadataBatch();
+  auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_);
   return TrySeq(
-      [self]() {
-        self->connection_->NewConnectionID();
-        SettingsFrame frame;
-        frame.headers =
-            SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
-                             absl::nullopt}
-                .ToMetadataBatch(GetContext<Arena>());
-        auto write_buffer =
-            frame.Serialize(&self->connection_->hpack_compressor_);
-        return self->connection_->endpoint_.Write(
-            std::move(write_buffer.control));
-      },
+      self->connection_->endpoint_.Write(std::move(write_buffer.control)),
       WaitForDataEndpointSetup(self));
 }
 
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     DataEndpointWriteSettingsFrame(RefCountedPtr<HandshakingState> self) {
+  // Send data endpoint setting frame
+  SettingsFrame frame;
+  frame.headers =
+      SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
+                       self->connection_->data_alignment_}
+          .ToMetadataBatch();
+  auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_);
   return TrySeq(
-      [self]() {
-        // Send data endpoint setting frame
-        SettingsFrame frame;
-        frame.headers =
-            SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
-                             self->connection_->data_alignment_}
-                .ToMetadataBatch(GetContext<Arena>());
-        auto write_buffer =
-            frame.Serialize(&self->connection_->hpack_compressor_);
-        return self->connection_->endpoint_.Write(
-            std::move(write_buffer.control));
-      },
+      self->connection_->endpoint_.Write(std::move(write_buffer.control)),
       [self]() mutable {
         MutexLock lock(&self->connection_->listener_->mu_);
         // Set endpoint to latch
@@ -380,8 +375,10 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     EndpointWriteSettingsFrame(RefCountedPtr<HandshakingState> self,
                                bool is_control_endpoint) {
-  return If(is_control_endpoint, ControlEndpointWriteSettingsFrame(self),
-            DataEndpointWriteSettingsFrame(self));
+  return If(
+      is_control_endpoint,
+      [&self] { return ControlEndpointWriteSettingsFrame(self); },
+      [&self] { return DataEndpointWriteSettingsFrame(self); });
 }
 
 void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
@@ -403,22 +400,33 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
   }
   GPR_ASSERT(grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
       args->endpoint));
-  self->connection_->endpoint_ = PromiseEndpoint(
+  auto ee_endpoint =
       grpc_event_engine::experimental::grpc_take_wrapped_event_engine_endpoint(
-          args->endpoint),
-      SliceBuffer());
+          args->endpoint);
+  auto* chaotic_good_ext = grpc_event_engine::experimental::QueryExtension<
+      grpc_event_engine::experimental::ChaoticGoodExtension>(ee_endpoint.get());
+  self->connection_->endpoint_ =
+      PromiseEndpoint(std::move(ee_endpoint), SliceBuffer());
   auto activity = MakeActivity(
-      [self]() {
-        return TrySeq(Race(EndpointReadSettingsFrame(self),
-                           TrySeq(Sleep(Timestamp::Now() + kConnectionDeadline),
-                                  []() -> absl::StatusOr<bool> {
-                                    return absl::DeadlineExceededError(
-                                        "Waiting for initial settings frame");
-                                  })),
-                      [self](bool is_control_endpoint) {
-                        return EndpointWriteSettingsFrame(self,
-                                                          is_control_endpoint);
-                      });
+      [self, chaotic_good_ext]() {
+        return TrySeq(
+            Race(EndpointReadSettingsFrame(self),
+                 TrySeq(Sleep(Timestamp::Now() + kConnectionDeadline),
+                        []() -> absl::StatusOr<bool> {
+                          return absl::DeadlineExceededError(
+                              "Waiting for initial settings frame");
+                        })),
+            [self, chaotic_good_ext](bool is_control_endpoint) {
+              if (chaotic_good_ext != nullptr) {
+                chaotic_good_ext->EnableStatsCollection(is_control_endpoint);
+                if (is_control_endpoint) {
+                  // Control endpoint should use the default memory quota
+                  chaotic_good_ext->UseMemoryQuota(
+                      ResourceQuota::Default()->memory_quota());
+                }
+              }
+              return EndpointWriteSettingsFrame(self, is_control_endpoint);
+            });
       },
       EventEngineWakeupScheduler(self->connection_->listener_->event_engine_),
       [self](absl::Status status) {

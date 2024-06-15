@@ -69,11 +69,10 @@ class PromiseLike;
 template <>
 class PromiseLike<void>;
 
-// Android local modification: Android builds grpc with C++20, which removes
-// std::result_of. Use std::invoke_result_t instead.
 template <typename F>
 class PromiseLike<F, absl::enable_if_t<!std::is_void<
-#if __cplusplus >= 201703L
+#if (defined(__cpp_lib_is_invocable) && __cpp_lib_is_invocable >= 201703L) || \
+    (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
                          std::invoke_result_t<F>
 #else
                          typename std::result_of<F()>::type

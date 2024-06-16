@@ -20,6 +20,7 @@ cc_library_static {
         "naive.c",
         "range2-neon.c",
         "range2-sse.c",
+        "utf8_range.c",
     ],
     export_include_dirs: [
         ".",

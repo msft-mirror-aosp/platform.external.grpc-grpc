@@ -868,6 +868,11 @@ cc_library_static {
         "libgrpc_upb_protos",
     ],
     shared_libs: ["liblog"],
+    apex_available: [
+        "//apex_available:anyapex",
+        "//apex_available:platform",
+    ],
+
 }
 
 // gRPC C++ library target with no encryption or authentication
@@ -926,6 +931,11 @@ cc_library_shared {
         "include",
     ],
     visibility: ["//visibility:public"],
+    apex_available: [
+        "//apex_available:anyapex",
+        "//apex_available:platform",
+    ],
+
 }
 
 cc_library_static {
@@ -942,6 +952,11 @@ cc_library_static {
     header_libs: [
         "libgrpc_third_party_upb_headers",
     ],
+    apex_available: [
+        "//apex_available:anyapex",
+        "//apex_available:platform",
+    ],
+
 }
 
 cc_library_static {

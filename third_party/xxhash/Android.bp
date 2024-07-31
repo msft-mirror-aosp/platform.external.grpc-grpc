@@ -17,4 +17,9 @@ cc_library_headers {
     name: "libgrpc_third_party_xxhash",
     defaults: ["grpc_deps_defaults"],
     export_include_dirs: ["."],
+    apex_available: [
+        "//apex_available:anyapex",
+        "//apex_available:platform",
+    ],
+
 }

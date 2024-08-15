@@ -19,6 +19,11 @@ cc_library_headers {
     export_include_dirs: [
         ".",
     ],
+    apex_available: [
+        "//apex_available:anyapex",
+        "//apex_available:platform",
+    ],
+
 }
 
 cc_library_static {
@@ -35,22 +40,28 @@ cc_library_static {
         "upb/lex/unicode.c",
         "upb/mem/alloc.c",
         "upb/mem/arena.c",
+        "upb/message/internal/extension.c",
+        "upb/message/internal/message.c",
         "upb/message/accessors.c",
         "upb/message/array.c",
+        "upb/message/compare.c",
+        "upb/message/compat.c",
         "upb/message/copy.c",
         "upb/message/map.c",
         "upb/message/map_sorter.c",
         "upb/message/message.c",
         "upb/message/promote.c",
-        "upb/mini_descriptor/build_enum.c",
-        "upb/mini_descriptor/decode.c",
         "upb/mini_descriptor/internal/base92.c",
         "upb/mini_descriptor/internal/encode.c",
+        "upb/mini_descriptor/build_enum.c",
+        "upb/mini_descriptor/decode.c",
         "upb/mini_descriptor/link.c",
+        "upb/mini_table/internal/message.c",
         "upb/mini_table/compat.c",
         "upb/mini_table/extension_registry.c",
-        "upb/mini_table/internal/message.c",
         "upb/mini_table/message.c",
+        "upb/reflection/internal/def_builder.c",
+        "upb/reflection/internal/strdup2.c",
         "upb/reflection/def_pool.c",
         "upb/reflection/def_type.c",
         "upb/reflection/desc_state.c",
@@ -60,8 +71,6 @@ cc_library_static {
         "upb/reflection/extension_range.c",
         "upb/reflection/field_def.c",
         "upb/reflection/file_def.c",
-        "upb/reflection/internal/def_builder.c",
-        "upb/reflection/internal/strdup2.c",
         "upb/reflection/message.c",
         "upb/reflection/message_def.c",
         "upb/reflection/message_reserved_range.c",
@@ -70,7 +79,6 @@ cc_library_static {
         "upb/reflection/service_def.c",
         "upb/text/encode.c",
         "upb/wire/decode.c",
-        "upb/wire/decode_fast.c",
         "upb/wire/encode.c",
         "upb/wire/eps_copy_input_stream.c",
         "upb/wire/reader.c",
@@ -85,4 +93,9 @@ cc_library_static {
     export_include_dirs: [
         ".",
     ],
+    apex_available: [
+        "//apex_available:anyapex",
+        "//apex_available:platform",
+    ],
+
 }

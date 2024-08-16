@@ -792,8 +792,8 @@ genrule {
     ],
 }
 
-cc_library_host_static {
-    name: "libgrpc++_reflection",
+cc_defaults {
+    name: "grpc_reflection_defaults",
     defaults: ["grpc_defaults"],
     srcs: [
         "src/cpp/ext/proto_server_reflection.cc",
@@ -810,9 +810,21 @@ cc_library_host_static {
     ],
     static_libs: [
         "libgrpc++_common",
+    ],
+    shared_libs: [
         "libprotobuf-cpp-full",
     ],
     visibility: ["//visibility:public"],
+}
+
+cc_library_host_static {
+    name: "libgrpc++_reflection",
+    defaults: ["grpc_reflection_defaults"],
+}
+
+cc_library_static {
+    name: "libgrpc++_reflection_target",
+    defaults: ["grpc_reflection_defaults"],
 }
 
 cc_library_host_static {

@@ -19,6 +19,11 @@ cc_library_headers {
     export_include_dirs: [
         ".",
     ],
+    apex_available: [
+        "//apex_available:anyapex",
+        "//apex_available:platform",
+    ],
+
 }
 
 cc_library_static {
@@ -88,4 +93,9 @@ cc_library_static {
     export_include_dirs: [
         ".",
     ],
+    apex_available: [
+        "//apex_available:anyapex",
+        "//apex_available:platform",
+    ],
+
 }

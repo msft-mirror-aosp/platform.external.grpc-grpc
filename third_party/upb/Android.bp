@@ -86,6 +86,8 @@ cc_library_static {
     cflags: [
         "-Wno-unused-parameter",
     ],
+    // Pin this project to C17 until we have upstream's NULL/false confusion fixes.
+    c_std: "gnu17",
     static_libs: [
         "libgrpc_third_party_utf8_range",
         "libgrpc_upb_protos",

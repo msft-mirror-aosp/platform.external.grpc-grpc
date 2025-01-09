@@ -333,6 +333,13 @@
     endforeach()
 
     set(GRPC_PROTO_GEN "")
+    set(_LOCAL_GRPC "<%text>${ANDROID_QEMU2_TOP_DIR}/../grpc/emulator</%text>")
+
+    if (WIN32)
+      set(exe <%text>"${_LOCAL_GRPC}/compile_grpc.cmd"</%text>)
+    else()
+      set(exe <%text>"${_LOCAL_GRPC}/compile_grpc.sh"</%text>)
+    endif()
     foreach(FIL <%text>${grpc_SOURCES}</%text>)
       get_filename_component(ABS_FIL <%text>${FIL}</%text> ABSOLUTE)
       <%text>if(NOT EXISTS "${ABS_FIL}")</%text>
@@ -341,7 +348,7 @@
       get_filename_component(FIL_WE <%text>${FIL}</%text> NAME_WE)
       file(RELATIVE_PATH REL_FIL <%text>${grpc_SOURCE_DIR}</%text> <%text>${ABS_FIL}</%text>)
       get_filename_component(REL_DIR <%text>${REL_FIL}</%text> DIRECTORY)
-   set(RELFIL_WE "<%text>${REL_DIR}/${FIL_WE}</%text>")
+      set(RELFIL_WE "<%text>${REL_DIR}/${FIL_WE}</%text>")
 
       add_custom_command(
         OUTPUT <%text>"${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.cc"</%text>
@@ -349,7 +356,7 @@
                <%text>"${grpc_OUTPUT_DIR}/${RELFIL_WE}_mock.grpc.pb.h"</%text>
                <%text>"${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.cc"</%text>
                <%text>"${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.h"</%text>
-        COMMAND <%text>${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}</%text>
+        COMMAND <%text>$${exe} ${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}</%text>
         ARGS --grpc_out=<%text>generate_mock_code=true:${grpc_OUTPUT_DIR}</%text>
              --cpp_out=<%text>${grpc_OUTPUT_DIR}</%text>
              --plugin=protoc-gen-grpc=<%text>${_gRPC_CPP_PLUGIN_EXECUTABLE}</%text>
@@ -357,7 +364,7 @@
              <%text>${REL_FIL}</%text>
         DEPENDS <%text>${ABS_FIL}</%text> <%text>${_gRPC_PROTOBUF_PROTOC_EXECUTABLE} ${_gRPC_CPP_PLUGIN_EXECUTABLE}</%text>
         WORKING_DIRECTORY <%text>${grpc_SOURCE_DIR}</%text>
-        COMMENT "Running gRPC C++ protocol buffer compiler on <%text>${FIL}</%text>"
+        COMMENT "Running gRPC C++ protocol buffer compiler on <%text>${FIL} (using ${exe})</%text>"
         VERBATIM)
 
         <%text>list(APPEND GRPC_PROTO_GEN "${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.cc")</%text>

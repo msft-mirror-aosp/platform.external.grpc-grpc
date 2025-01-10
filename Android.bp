@@ -659,6 +659,7 @@ cc_defaults {
     host_supported: true,
     vendor_available: true,
     product_available: true,
+    recovery_available: true,
     apex_available: [
         "//apex_available:platform",
     ],
@@ -995,6 +996,7 @@ cc_defaults {
     header_libs: ["libgrpc++_internal_headers"],
     static_libs: ["libgpr_test_util"],
     shared_libs: ["libgrpc++_unsecure"],
+    recovery_available: false,
 }
 
 cc_test {

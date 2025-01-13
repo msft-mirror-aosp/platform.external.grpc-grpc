@@ -884,7 +884,7 @@ cc_library_static {
         "//apex_available:anyapex",
         "//apex_available:platform",
     ],
-
+    min_sdk_version: "apex_inherit",
 }
 
 // gRPC C++ library target with no encryption or authentication
@@ -947,7 +947,7 @@ cc_library_shared {
         "//apex_available:anyapex",
         "//apex_available:platform",
     ],
-
+    min_sdk_version: "apex_inherit",
 }
 
 cc_library_static {
@@ -968,7 +968,7 @@ cc_library_static {
         "//apex_available:anyapex",
         "//apex_available:platform",
     ],
-
+    min_sdk_version: "apex_inherit",
 }
 
 cc_library_static {

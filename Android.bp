@@ -659,6 +659,7 @@ cc_defaults {
     host_supported: true,
     vendor_available: true,
     product_available: true,
+    recovery_available: true,
     apex_available: [
         "//apex_available:platform",
     ],
@@ -884,7 +885,7 @@ cc_library_static {
         "//apex_available:anyapex",
         "//apex_available:platform",
     ],
-
+    min_sdk_version: "apex_inherit",
 }
 
 // gRPC C++ library target with no encryption or authentication
@@ -947,7 +948,7 @@ cc_library_shared {
         "//apex_available:anyapex",
         "//apex_available:platform",
     ],
-
+    min_sdk_version: "apex_inherit",
 }
 
 cc_library_static {
@@ -968,7 +969,7 @@ cc_library_static {
         "//apex_available:anyapex",
         "//apex_available:platform",
     ],
-
+    min_sdk_version: "apex_inherit",
 }
 
 cc_library_static {
@@ -995,6 +996,7 @@ cc_defaults {
     header_libs: ["libgrpc++_internal_headers"],
     static_libs: ["libgpr_test_util"],
     shared_libs: ["libgrpc++_unsecure"],
+    recovery_available: false,
 }
 
 cc_test {

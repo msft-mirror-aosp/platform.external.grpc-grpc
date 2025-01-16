@@ -328,6 +328,13 @@ function(protobuf_generate_grpc_cpp)
   endforeach()
 
   set(GRPC_PROTO_GEN "")
+  set(_LOCAL_GRPC "${ANDROID_QEMU2_TOP_DIR}/../grpc/emulator")
+
+  if (WIN32)
+    set(exe "${_LOCAL_GRPC}/compile_grpc.cmd")
+  else()
+    set(exe "${_LOCAL_GRPC}/compile_grpc.sh")
+  endif()
   foreach(FIL ${grpc_SOURCES})
     get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
     if(NOT EXISTS "${ABS_FIL}")
@@ -336,31 +343,31 @@ function(protobuf_generate_grpc_cpp)
     get_filename_component(FIL_WE ${FIL} NAME_WE)
     file(RELATIVE_PATH REL_FIL ${grpc_SOURCE_DIR} ${ABS_FIL})
     get_filename_component(REL_DIR ${REL_FIL} DIRECTORY)
- set(RELFIL_WE "${REL_DIR}/${FIL_WE}")
+    set(RELFIL_WE "${REL_DIR}/${FIL_WE}")
 
     add_custom_command(
       OUTPUT "${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.cc"
-             "${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.h"
-             "${grpc_OUTPUT_DIR}/${RELFIL_WE}_mock.grpc.pb.h"
-             "${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.cc"
-             "${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.h"
-      COMMAND ${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}
+              "${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.h"
+              "${grpc_OUTPUT_DIR}/${RELFIL_WE}_mock.grpc.pb.h"
+              "${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.cc"
+              "${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.h"
+      COMMAND ${exe} ${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}
       ARGS --grpc_out=generate_mock_code=true:${grpc_OUTPUT_DIR}
-           --cpp_out=${grpc_OUTPUT_DIR}
-           --plugin=protoc-gen-grpc=${_gRPC_CPP_PLUGIN_EXECUTABLE}
-           ${GRPC_INCLUDES}
-           ${REL_FIL}
+            --cpp_out=${grpc_OUTPUT_DIR}
+            --plugin=protoc-gen-grpc=${_gRPC_CPP_PLUGIN_EXECUTABLE}
+            ${GRPC_INCLUDES}
+            ${REL_FIL}
       DEPENDS ${ABS_FIL} ${_gRPC_PROTOBUF_PROTOC_EXECUTABLE} ${_gRPC_CPP_PLUGIN_EXECUTABLE}
       WORKING_DIRECTORY ${grpc_SOURCE_DIR}
-      COMMENT "Running gRPC C++ protocol buffer compiler on ${FIL}"
+      COMMENT "Running gRPC C++ protocol buffer compiler on ${FIL} (using ${exe})"
       VERBATIM)
 
-      list(APPEND GRPC_PROTO_GEN "${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.cc")
-      list(APPEND GRPC_PROTO_GEN "${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.h")
-      list(APPEND GRPC_PROTO_GEN "${grpc_OUTPUT_DIR}/${RELFIL_WE}_mock.grpc.pb.h")
-      list(APPEND GRPC_PROTO_GEN "${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.cc")
-      list(APPEND GRPC_PROTO_GEN "${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.h")
-      set_source_files_properties("${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.cc" "${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.h"  "${grpc_OUTPUT_DIR}/${RELFIL_WE}_mock.grpc.pb.h" "${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.cc" "${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.h" PROPERTIES GENERATED TRUE)
+    list(APPEND GRPC_PROTO_GEN "${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.cc")
+    list(APPEND GRPC_PROTO_GEN "${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.h")
+    list(APPEND GRPC_PROTO_GEN "${grpc_OUTPUT_DIR}/${RELFIL_WE}_mock.grpc.pb.h")
+    list(APPEND GRPC_PROTO_GEN "${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.cc")
+    list(APPEND GRPC_PROTO_GEN "${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.h")
+    set_source_files_properties("${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.cc" "${grpc_OUTPUT_DIR}/${RELFIL_WE}.grpc.pb.h"  "${grpc_OUTPUT_DIR}/${RELFIL_WE}_mock.grpc.pb.h" "${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.cc" "${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.h" PROPERTIES GENERATED TRUE)
   endforeach()
   if (grpc_GENERATED)
     set(${grpc_GENERATED} "${GRPC_PROTO_GEN}" PARENT_SCOPE)

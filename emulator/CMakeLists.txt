@@ -330,11 +330,13 @@ function(protobuf_generate_grpc_cpp)
   set(GRPC_PROTO_GEN "")
   set(_LOCAL_GRPC "${ANDROID_QEMU2_TOP_DIR}/../grpc/emulator")
 
-  if (WIN32)
-    set(exe "${_LOCAL_GRPC}/compile_grpc.cmd")
-  else()
-    set(exe "${_LOCAL_GRPC}/compile_grpc.sh")
+  if(NOT Python3_EXECUTABLE)
+    find_package(Python3 COMPONENTS Interpreter)
+    if(NOT Python3_FOUND)
+      message(FATAL_ERROR "A python interpreter is required. ")
+    endif()
   endif()
+  set(exe "${_LOCAL_GRPC}/compile_grpc.py")
   foreach(FIL ${grpc_SOURCES})
     get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
     if(NOT EXISTS "${ABS_FIL}")
@@ -351,7 +353,7 @@ function(protobuf_generate_grpc_cpp)
               "${grpc_OUTPUT_DIR}/${RELFIL_WE}_mock.grpc.pb.h"
               "${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.cc"
               "${grpc_OUTPUT_DIR}/${RELFIL_WE}.pb.h"
-      COMMAND ${exe} ${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}
+      COMMAND ${Python3_EXECUTABLE} ${exe} ${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}
       ARGS --grpc_out=generate_mock_code=true:${grpc_OUTPUT_DIR}
             --cpp_out=${grpc_OUTPUT_DIR}
             --plugin=protoc-gen-grpc=${_gRPC_CPP_PLUGIN_EXECUTABLE}
@@ -428,13 +430,24 @@ function(protobuf_generate_grpc_cpp_with_import_path_correction FILE_LOCATION IM
   file(MAKE_DIRECTORY ${_gRPC_PROTO_SRCS_DIR}/${REL_DIR})
   file(COPY ${_gRPC_ROOT}/${FILE_LOCATION} DESTINATION ${_gRPC_PROTO_SRCS_DIR}/${REL_DIR})
 
+
+  set(_LOCAL_GRPC "${ANDROID_QEMU2_TOP_DIR}/../grpc/emulator")
+
+  if(NOT Python3_EXECUTABLE)
+    find_package(Python3 COMPONENTS Interpreter)
+    if(NOT Python3_FOUND)
+      message(FATAL_ERROR "A python interpreter is required. ")
+    endif()
+  endif()
+  set(exe "${_LOCAL_GRPC}/compile_grpc.py")
+
   add_custom_command(
     OUTPUT "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc"
           "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"
           "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h"
           "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc"
           "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h"
-    COMMAND ${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}
+    COMMAND ${Python3_EXECUTABLE} ${exe} ${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}
     ARGS --grpc_out=generate_mock_code=true:${_gRPC_PROTO_GENS_DIR}
          --cpp_out=${_gRPC_PROTO_GENS_DIR}
          --plugin=protoc-gen-grpc=${_gRPC_CPP_PLUGIN_EXECUTABLE}

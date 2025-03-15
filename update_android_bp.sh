@@ -58,6 +58,16 @@ echo 'GRPC_UNSECURE_SRCS = [' >> $OUT
 cat $TEMP/grpc_unsecure_srcs.txt >> $OUT
 echo ']' >> $OUT
 
+# update the cython cpp file
+BAZEL_ROOT="/tmp/grpc_bazel"
+BAZEL_OUT="${BAZEL_ROOT}/output"
+mkdir -p "${BAZEL_OUT}"
+
+if ! /usr/bin/bazel --output_base="${BAZEL_OUT}" --output_user_root="${BAZEL_ROOT}" build --experimental_convenience_symlinks=ignore //src/python/grpcio/grpc/_cython:cygrpc.pyx_cython_translation; then
+  echo "Failed to build cygrpc.pyx_cython_translation"
+  exit 1
+fi
+
 popd
 
 BPOUT=Android.bp
@@ -72,3 +82,7 @@ sed -i -e "\@$LIST_START@,\@$LIST_END@{ \@$LIST_START@{p; r $OUT
         }; \@$LIST_END@p; d }" $BPOUT
 
 echo "Android.bp file lists updated."
+
+
+cp "$(find "${BAZEL_OUT}" -name 'cygrpc.cpp')" "${GRPC_PATH}/src/python/grpcio/grpc/_cython/cygrpc.cpp"
+echo "cygrpc.cpp file updated."

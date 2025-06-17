@@ -19,13 +19,14 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_REF_COUNTED_H
 #define GRPC_SRC_CORE_LIB_GPRPP_REF_COUNTED_H
 
-#include <grpc/support/port_platform.h>
-
 #include <atomic>
 #include <cassert>
 #include <cinttypes>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/atomic_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -165,7 +166,7 @@ class RefCount {
       gpr_log(GPR_INFO, "%s:%p unref %" PRIdPTR " -> %" PRIdPTR, trace, this,
               prior, prior - 1);
     }
-    GPR_DEBUG_ASSERT(prior > 0);
+    DCHECK_GT(prior, 0);
 #endif
     return prior == 1;
   }
@@ -183,7 +184,7 @@ class RefCount {
               trace, this, location.file(), location.line(), prior, prior - 1,
               reason);
     }
-    GPR_DEBUG_ASSERT(prior > 0);
+    DCHECK_GT(prior, 0);
 #else
     // Avoid unused-parameter warnings for debug-only parameters
     (void)location;

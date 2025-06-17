@@ -58,7 +58,9 @@ def if_windows(a):
 def _get_external_deps(external_deps):
     ret = []
     for dep in external_deps:
-        if dep == "address_sorting":
+        if dep.startswith("@"):
+            ret.append(dep)
+        elif dep == "address_sorting":
             ret.append("//third_party/address_sorting")
         elif dep == "xxhash":
             ret.append("//third_party/xxhash")
@@ -100,20 +102,25 @@ def _update_visibility(visibility):
         "chaotic_good": PRIVATE,
         "client_channel": PRIVATE,
         "cli": PRIVATE,
+        "core_credentials": PRIVATE,
         "debug_location": PRIVATE,
         "endpoint_tests": PRIVATE,
         "exec_ctx": PRIVATE,
+        "gpr_public_hdrs": PRIVATE,
         "grpclb": PRIVATE,
         "grpc_experiments": PRIVATE,
         "grpc_opencensus_plugin": PUBLIC,
+        "grpc_public_hdrs": PRIVATE,
         "grpcpp_gcp_observability": PUBLIC,
         "grpc_resolver_fake": PRIVATE,
+        "grpc++_public_hdrs": PUBLIC,
         "grpc++_test": PRIVATE,
         "http": PRIVATE,
         "httpcli": PRIVATE,
         "iomgr_internal_errqueue": PRIVATE,
         "iomgr_buffer_list": PRIVATE,
         "json_reader_legacy": PRIVATE,
+        "otel_plugin": PRIVATE,
         "public": PUBLIC,
         "ref_counted_ptr": PRIVATE,
         "tcp_tracer": PRIVATE,
@@ -532,7 +539,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c11"])
 
-    core_deps = deps + _get_external_deps(external_deps) + ["//test/core/util:grpc_suppressions"]
+    core_deps = deps + _get_external_deps(external_deps) + ["//test/core/test_util:grpc_suppressions"]
 
     # Test args for all tests
     test_args = {
@@ -610,7 +617,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         data = data,
         testonly = testonly,
         linkshared = linkshared,
-        deps = deps + _get_external_deps(external_deps) + ["//test/core/util:grpc_suppressions"],
+        deps = deps + _get_external_deps(external_deps) + ["//test/core/test_util:grpc_suppressions"],
         copts = GRPC_DEFAULT_COPTS + copts,
         linkopts = if_not_windows(["-pthread"]) + linkopts,
         tags = tags,

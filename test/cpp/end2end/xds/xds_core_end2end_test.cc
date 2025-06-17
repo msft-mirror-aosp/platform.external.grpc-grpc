@@ -27,9 +27,9 @@
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/proto/grpc/testing/xds/v3/listener.pb.h"
-#include "test/core/util/fake_stats_plugin.h"
-#include "test/core/util/resolve_localhost_ip46.h"
-#include "test/core/util/scoped_env_var.h"
+#include "test/core/test_util/fake_stats_plugin.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "test/cpp/end2end/xds/xds_server.h"
 
@@ -1130,6 +1130,23 @@ TEST_P(XdsMetricsTest, MetricDefinitionResourceUpdatesInvalid) {
   EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
 }
 
+TEST_P(XdsMetricsTest, MetricDefinitionServerFailure) {
+  const auto* descriptor =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
+          "grpc.xds_client.server_failure");
+  ASSERT_NE(descriptor, nullptr);
+  EXPECT_EQ(descriptor->value_type,
+            grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64);
+  EXPECT_EQ(descriptor->instrument_type,
+            grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCounter);
+  EXPECT_EQ(descriptor->enable_by_default, false);
+  EXPECT_EQ(descriptor->name, "grpc.xds_client.server_failure");
+  EXPECT_EQ(descriptor->unit, "{failure}");
+  EXPECT_THAT(descriptor->label_keys,
+              ::testing::ElementsAre("grpc.target", "grpc.xds.server"));
+  EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
+}
+
 TEST_P(XdsMetricsTest, MetricDefinitionConnected) {
   const auto* descriptor =
       grpc_core::GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
@@ -1179,6 +1196,10 @@ TEST_P(XdsMetricsTest, MetricValues) {
           FindUInt64CounterHandleByName(
               "grpc.xds_client.resource_updates_invalid")
               .value();
+  const auto kMetricServerFailure =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindUInt64CounterHandleByName("grpc.xds_client.server_failure")
+              .value();
   const auto kMetricConnected =
       grpc_core::GlobalInstrumentsRegistryTestPeer::
           FindCallbackInt64GaugeHandleByName("grpc.xds_client.connected")
@@ -1199,6 +1220,9 @@ TEST_P(XdsMetricsTest, MetricValues) {
   EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(kMetricConnected,
                                                    {kTarget, kXdsServer}, {}),
               ::testing::Optional(1));
+  EXPECT_THAT(stats_plugin_->GetCounterValue(kMetricServerFailure,
+                                             {kTarget, kXdsServer}, {}),
+              absl::nullopt);
   for (absl::string_view type_url :
        {"envoy.config.listener.v3.Listener",
         "envoy.config.route.v3.RouteConfiguration",
@@ -1220,6 +1244,9 @@ TEST_P(XdsMetricsTest, MetricValues) {
   EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(kMetricConnected,
                                                    {"#server", kXdsServer}, {}),
               ::testing::Optional(1));
+  EXPECT_THAT(stats_plugin_->GetCounterValue(kMetricServerFailure,
+                                             {"#server", kXdsServer}, {}),
+              absl::nullopt);
   for (absl::string_view type_url :
        {"envoy.config.listener.v3.Listener",
         "envoy.config.route.v3.RouteConfiguration"}) {
@@ -1235,6 +1262,26 @@ TEST_P(XdsMetricsTest, MetricValues) {
         stats_plugin_->GetCallbackGaugeValue(
             kMetricResources, {"#server", "#old", type_url, "acked"}, {}),
         ::testing::Optional(1));
+  }
+  // Shut down balancer and wait for metrics to show the failure.
+  balancer_->Shutdown();
+  for (const char* target : {kTarget.c_str(), "#server"}) {
+    const absl::Time deadline =
+        absl::Now() + absl::Seconds(5 * grpc_test_slowdown_factor());
+    while (true) {
+      auto value = stats_plugin_->GetCounterValue(kMetricServerFailure,
+                                                  {target, kXdsServer}, {});
+      if (value.has_value()) {
+        EXPECT_EQ(1, *value);
+        break;
+      }
+      ASSERT_LE(absl::Now(), deadline);
+      absl::SleepFor(absl::Seconds(1));
+    }
+    stats_plugin_->TriggerCallbacks();
+    EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(kMetricConnected,
+                                                     {target, kXdsServer}, {}),
+                ::testing::Optional(0));
   }
 }
 

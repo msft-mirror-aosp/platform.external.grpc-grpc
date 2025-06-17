@@ -23,6 +23,7 @@
 #include <thread>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
@@ -39,7 +40,7 @@
 #include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/counted_service.h"
 
 namespace grpc {
@@ -367,8 +368,8 @@ class AdsServiceImpl
     if (request.response_nonce().empty()) {
       int client_resource_type_version = 0;
       if (!request.version_info().empty()) {
-        GPR_ASSERT(absl::SimpleAtoi(request.version_info(),
-                                    &client_resource_type_version));
+        CHECK(absl::SimpleAtoi(request.version_info(),
+                               &client_resource_type_version));
       }
       if (check_version_callack_ != nullptr) {
         check_version_callack_(request.type_url(),
@@ -376,7 +377,7 @@ class AdsServiceImpl
       }
     } else {
       int client_nonce;
-      GPR_ASSERT(absl::SimpleAtoi(request.response_nonce(), &client_nonce));
+      CHECK(absl::SimpleAtoi(request.response_nonce(), &client_nonce));
       // Check for ACK or NACK.
       ResponseState response_state;
       if (!request.has_error_detail()) {

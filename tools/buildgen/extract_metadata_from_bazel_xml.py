@@ -237,7 +237,7 @@ def _try_extract_source_file_path(label: str) -> str:
         # labels in form //:src/core/lib/surface/call_test_only.h
         if label.startswith(":"):
             label = label[len(":") :]
-        # labels in form //test/core/util:port.cc
+        # labels in form //test/core/test_util:port.cc
         return label.replace(":", "/")
 
 
@@ -604,9 +604,8 @@ def _expand_upb_proto_library_rules(bazel_rules):
             # deps is not properly fetched from bazel query for upb_c_proto_library target
             # so add the upb dependency manually
             bazel_rule["deps"] = [
-                "//external:upb_lib",
-                "//external:upb_lib_descriptor",
-                "//external:upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+                "@com_google_protobuf//upb:descriptor_upb_proto",
+                "@com_google_protobuf//upb:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
             ]
             # populate the upb_c_proto_library rule with pre-generated upb headers
             # and sources using proto_rule
@@ -829,7 +828,9 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
         test
         for test in tests
         if not test.startswith("test/cpp/ext/filters/census:")
-        and not test.startswith("test/core/xds:xds_channel_stack_modifier_test")
+        and not test.startswith(
+            "test/core/server:xds_channel_stack_modifier_test"
+        )
         and not test.startswith("test/cpp/ext/gcp:")
         and not test.startswith("test/cpp/ext/filters/logging:")
         and not test.startswith("test/cpp/interop:observability_interop")
@@ -1220,12 +1221,12 @@ _BUILD_EXTRA_METADATA = {
     },
     # TODO(jtattermusch): consider adding grpc++_core_stats
     # test support libraries
-    "test/core/util:grpc_test_util": {
+    "test/core/test_util:grpc_test_util": {
         "language": "c",
         "build": "private",
         "_RENAME": "grpc_test_util",
     },
-    "test/core/util:grpc_test_util_unsecure": {
+    "test/core/test_util:grpc_test_util_unsecure": {
         "language": "c",
         "build": "private",
         "_RENAME": "grpc_test_util_unsecure",
@@ -1338,7 +1339,7 @@ _BAZEL_DEPS_QUERIES = [
     'deps(kind("^proto_library", @envoy_api//envoy/...))',
     # Make sure we have source info for all the targets that _expand_upb_proto_library_rules artificially adds
     # as upb_c_proto_library dependencies.
-    'deps("//external:upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me")',
+    'deps("@com_google_protobuf//upb:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me")',
 ]
 
 # Step 1: run a bunch of "bazel query --output xml" queries to collect

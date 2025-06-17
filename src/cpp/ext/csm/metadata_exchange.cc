@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/ext/csm/metadata_exchange.h"
 
 #include <stddef.h>
@@ -27,6 +25,7 @@
 #include <cstdint>
 #include <unordered_map>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_split.h"
@@ -38,6 +37,7 @@
 #include "upb/base/string_view.h"
 
 #include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/gprpp/env.h"
@@ -264,7 +264,7 @@ NextFromAttributeList(absl::Span<const RemoteAttribute> attributes,
                       size_t start_index, size_t curr,
                       google_protobuf_Struct* decoded_metadata,
                       upb_Arena* arena) {
-  GPR_DEBUG_ASSERT(curr >= start_index);
+  DCHECK_GE(curr, start_index);
   const size_t index = curr - start_index;
   if (index >= attributes.size()) return absl::nullopt;
   const auto& attribute = attributes[index];

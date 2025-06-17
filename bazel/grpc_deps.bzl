@@ -21,56 +21,6 @@ def grpc_deps():
     """Loads dependencies need to compile and test the grpc library."""
 
     native.bind(
-        name = "upb_amalgamation_lib",
-        actual = "@com_google_protobuf//upb:amalgamation",
-    )
-
-    native.bind(
-        name = "upb_base_lib",
-        actual = "@com_google_protobuf//upb/base",
-    )
-
-    native.bind(
-        name = "upb_message_lib",
-        actual = "@com_google_protobuf//upb:message",
-    )
-
-    native.bind(
-        name = "upb_mem_lib",
-        actual = "@com_google_protobuf//upb/mem",
-    )
-
-    native.bind(
-        name = "upb_reflection",
-        actual = "@com_google_protobuf//upb:reflection",
-    )
-
-    native.bind(
-        name = "upb_lib_descriptor",
-        actual = "@com_google_protobuf//upb:descriptor_upb_proto",
-    )
-
-    native.bind(
-        name = "upb_lib_descriptor_reflection",
-        actual = "@com_google_protobuf//upb:descriptor_upb_proto_reflection",
-    )
-
-    native.bind(
-        name = "upb_textformat_lib",
-        actual = "@com_google_protobuf//upb/text",
-    )
-
-    native.bind(
-        name = "upb_json_lib",
-        actual = "@com_google_protobuf//upb/json",
-    )
-
-    native.bind(
-        name = "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-        actual = "@com_google_protobuf//upb:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    )
-
-    native.bind(
         name = "libssl",
         actual = "@boringssl//:ssl",
     )
@@ -240,11 +190,11 @@ def grpc_deps():
             name = "boringssl",
             # Use github mirror instead of https://boringssl.googlesource.com/boringssl
             # to obtain a boringssl archive with consistent sha256
-            sha256 = "06ba43ff1825c8a9a45dae7f85e532153a531707f6a3e56be1e892fd2d3b75f6",
-            strip_prefix = "boringssl-e14d29f68c2d1b02e06f10c83b9b8ea4d061f8df",
+            sha256 = "c4cccc0ea8b149d2853da77254655c0d5a5739dd4bbdff9a5b586c06a627de6c",
+            strip_prefix = "boringssl-5a2bca2124800f2861263959b72bc35cdf18949b",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/e14d29f68c2d1b02e06f10c83b9b8ea4d061f8df.tar.gz",
-                "https://github.com/google/boringssl/archive/e14d29f68c2d1b02e06f10c83b9b8ea4d061f8df.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/5a2bca2124800f2861263959b72bc35cdf18949b.tar.gz",
+                "https://github.com/google/boringssl/archive/5a2bca2124800f2861263959b72bc35cdf18949b.tar.gz",
             ],
         )
 
@@ -456,10 +406,10 @@ def grpc_deps():
     if "bazel_gazelle" not in native.existing_rules():
         http_archive(
             name = "bazel_gazelle",
-            sha256 = "de69a09dc70417580aabf20a28619bb3ef60d038470c7cf8442fafcf627c21cb",
+            sha256 = "d76bf7a60fd8b050444090dfa2837a4eaf9829e1165618ee35dceca5cbdf58d5",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.24.0/bazel-gazelle-v0.24.0.tar.gz",
-                "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.24.0/bazel-gazelle-v0.24.0.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.37.0/bazel-gazelle-v0.37.0.tar.gz",
+                "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.37.0/bazel-gazelle-v0.37.0.tar.gz",
             ],
         )
 

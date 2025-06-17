@@ -25,7 +25,7 @@ grpc_cc_test(
     external_deps = [
         "benchmark",
     ],
-    deps = ["//test/core/util:grpc_test_util"],
+    deps = ["//test/core/test_util:grpc_test_util"],
 )
 
 grpc_cc_test(
@@ -38,7 +38,7 @@ grpc_cc_test(
     deps = [
         "//:grpc++",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -52,7 +52,7 @@ grpc_cc_test(
     deps = [
         "//:grpc++",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -74,6 +74,7 @@ grpc_cc_test(
     srcs = ["bm_event_engine_run.cc"],
     args = grpc_benchmark_args(),
     external_deps = [
+        "absl/log:check",
         "absl/debugging:leak_check",
         "benchmark",
     ],
@@ -90,6 +91,7 @@ grpc_cc_test(
     srcs = ["bm_thread_pool.cc"],
     args = grpc_benchmark_args(),
     external_deps = [
+        "absl/log:check",
         "benchmark",
     ],
     uses_event_engine = False,
@@ -110,13 +112,14 @@ grpc_cc_library(
         "helpers.h",
     ],
     external_deps = [
+        "absl/log:check",
         "benchmark",
     ],
     deps = [
         "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:grpc_test_util_base",
-        "//test/core/util:grpc_test_util_unsecure",
+        "//test/core/test_util:grpc_test_util_base",
+        "//test/core/test_util:grpc_test_util_unsecure",
         "//test/cpp/util:test_config",
     ],
 )
@@ -132,13 +135,14 @@ grpc_cc_library(
         "helpers.h",
     ],
     external_deps = [
+        "absl/log:check",
         "benchmark",
     ],
     deps = [
         "//:grpc++",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
         "//test/cpp/util:test_config",
     ],
 )
@@ -204,6 +208,9 @@ grpc_cc_test(
     name = "bm_byte_buffer",
     srcs = ["bm_byte_buffer.cc"],
     args = grpc_benchmark_args(),
+    external_deps = [
+        "absl/log:check",
+    ],
     tags = [
         "no_mac",
         "no_windows",
@@ -230,6 +237,9 @@ grpc_cc_test(
     name = "bm_cq",
     srcs = ["bm_cq.cc"],
     args = grpc_benchmark_args(),
+    external_deps = [
+        "absl/log:check",
+    ],
     tags = [
         "no_mac",
         "no_windows",
@@ -241,6 +251,9 @@ grpc_cc_test(
     name = "bm_cq_multiple_threads",
     srcs = ["bm_cq_multiple_threads.cc"],
     args = grpc_benchmark_args(),
+    external_deps = [
+        "absl/log:check",
+    ],
     tags = [
         "no_mac",
         "no_windows",
@@ -255,6 +268,9 @@ grpc_cc_library(
     testonly = 1,
     hdrs = [
         "fullstack_streaming_ping_pong.h",
+    ],
+    external_deps = [
+        "absl/log:check",
     ],
     tags = [
         "no_mac",
@@ -284,6 +300,9 @@ grpc_cc_library(
     hdrs = [
         "fullstack_streaming_pump.h",
     ],
+    external_deps = [
+        "absl/log:check",
+    ],
     deps = [":helpers"],
 )
 
@@ -305,6 +324,9 @@ grpc_cc_library(
     testonly = 1,
     hdrs = [
         "fullstack_unary_ping_pong.h",
+    ],
+    external_deps = [
+        "absl/log:check",
     ],
     deps = [":helpers_secure"],
 )
@@ -331,6 +353,7 @@ grpc_cc_test(
     ],
     args = grpc_benchmark_args(),
     tags = [
+        "manual",  # See https://github.com/grpc/grpc/pull/36839
         "no_mac",  # to emulate "excluded_poll_engines: poll"
         "no_windows",
     ],
@@ -344,6 +367,9 @@ grpc_cc_test(
     name = "bm_chttp2_hpack",
     srcs = ["bm_chttp2_hpack.cc"],
     args = grpc_benchmark_args(),
+    external_deps = [
+        "absl/log:check",
+    ],
     tags = [
         "no_mac",
         "no_windows",
@@ -352,22 +378,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":helpers",
-        "//src/core:slice",
-    ],
-)
-
-grpc_cc_test(
-    name = "bm_chttp2_transport",
-    srcs = ["bm_chttp2_transport.cc"],
-    args = grpc_benchmark_args(),
-    tags = [
-        "no_mac",
-        "no_windows",
-        "nomsan",
-    ],
-    deps = [
-        ":helpers",
-        "//src/core:closure",
         "//src/core:slice",
     ],
 )
@@ -390,6 +400,7 @@ grpc_cc_library(
     srcs = ["callback_test_service.cc"],
     hdrs = ["callback_test_service.h"],
     external_deps = [
+        "absl/log:check",
         "benchmark",
     ],
     deps = [
@@ -404,6 +415,9 @@ grpc_cc_library(
     testonly = 1,
     hdrs = [
         "callback_unary_ping_pong.h",
+    ],
+    external_deps = [
+        "absl/log:check",
     ],
     deps = [
         ":bm_callback_test_service_impl",
@@ -433,6 +447,9 @@ grpc_cc_library(
     hdrs = [
         "callback_streaming_ping_pong.h",
     ],
+    external_deps = [
+        "absl/log:check",
+    ],
     deps = [
         ":bm_callback_test_service_impl",
         ":helpers",
@@ -460,7 +477,10 @@ grpc_cc_test(
     name = "bm_basic_work_queue",
     srcs = ["bm_basic_work_queue.cc"],
     args = grpc_benchmark_args(),
-    external_deps = ["benchmark"],
+    external_deps = [
+        "absl/log:check",
+        "benchmark",
+    ],
     tags = [
         "manual",
         "no_windows",
@@ -472,6 +492,6 @@ grpc_cc_test(
         "//:gpr",
         "//src/core:common_event_engine_closures",
         "//src/core:event_engine_basic_work_queue",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

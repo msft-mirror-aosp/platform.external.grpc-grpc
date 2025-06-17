@@ -11,11 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/iomgr/port.h"
@@ -54,6 +53,7 @@
 
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -225,7 +225,7 @@ bool ResolvedAddressIsV4Mapped(
 bool ResolvedAddressToV4Mapped(
     const EventEngine::ResolvedAddress& resolved_addr,
     EventEngine::ResolvedAddress* resolved_addr6_out) {
-  GPR_ASSERT(&resolved_addr != resolved_addr6_out);
+  CHECK(&resolved_addr != resolved_addr6_out);
   const sockaddr* addr = resolved_addr.address();
   sockaddr_in6* addr6_out = const_cast<sockaddr_in6*>(
       reinterpret_cast<const sockaddr_in6*>(resolved_addr6_out->address()));
@@ -247,7 +247,8 @@ EventEngine::ResolvedAddress ResolvedAddressMakeWild6(int port) {
   EventEngine::ResolvedAddress resolved_wild_out;
   sockaddr_in6* wild_out = reinterpret_cast<sockaddr_in6*>(
       const_cast<sockaddr*>(resolved_wild_out.address()));
-  GPR_ASSERT(port >= 0 && port < 65536);
+  CHECK_GE(port, 0);
+  CHECK_LT(port, 65536);
   memset(wild_out, 0, sizeof(sockaddr_in6));
   wild_out->sin6_family = AF_INET6;
   wild_out->sin6_port = htons(static_cast<uint16_t>(port));
@@ -260,7 +261,8 @@ EventEngine::ResolvedAddress ResolvedAddressMakeWild4(int port) {
   EventEngine::ResolvedAddress resolved_wild_out;
   sockaddr_in* wild_out = reinterpret_cast<sockaddr_in*>(
       const_cast<sockaddr*>(resolved_wild_out.address()));
-  GPR_ASSERT(port >= 0 && port < 65536);
+  CHECK_GE(port, 0);
+  CHECK_LT(port, 65536);
   memset(wild_out, 0, sizeof(sockaddr_in));
   wild_out->sin_family = AF_INET;
   wild_out->sin_port = htons(static_cast<uint16_t>(port));
@@ -296,12 +298,14 @@ void ResolvedAddressSetPort(EventEngine::ResolvedAddress& resolved_addr,
   sockaddr* addr = const_cast<sockaddr*>(resolved_addr.address());
   switch (addr->sa_family) {
     case AF_INET:
-      GPR_ASSERT(port >= 0 && port < 65536);
+      CHECK_GE(port, 0);
+      CHECK_LT(port, 65536);
       (reinterpret_cast<sockaddr_in*>(addr))->sin_port =
           htons(static_cast<uint16_t>(port));
       return;
     case AF_INET6:
-      GPR_ASSERT(port >= 0 && port < 65536);
+      CHECK_GE(port, 0);
+      CHECK_LT(port, 65536);
       (reinterpret_cast<sockaddr_in6*>(addr))->sin6_port =
           htons(static_cast<uint16_t>(port));
       return;
@@ -447,7 +451,7 @@ absl::StatusOr<EventEngine::ResolvedAddress> URIToResolvedAddress(
             uri.status().ToString().c_str());
   }
   GRPC_RETURN_IF_ERROR(uri.status());
-  GPR_ASSERT(grpc_parse_uri(*uri, &addr));
+  CHECK(grpc_parse_uri(*uri, &addr));
   return EventEngine::ResolvedAddress(
       reinterpret_cast<const sockaddr*>(addr.addr), addr.len);
 }

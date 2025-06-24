@@ -46,6 +46,7 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/log:check",
+        "absl/log:log",
         "absl/time:time",
     ],
     language = "C++",
@@ -157,6 +158,7 @@ grpc_cc_binary(
     language = "C++",
     deps = [
         "//:grpc++",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:metrics_server_lib",
         "//test/cpp/util:test_config",
     ],
@@ -205,6 +207,8 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/log:check",
+        "absl/log:globals",
+        "absl/log:log",
     ],
     deps = [
         ":client_helper_lib",
@@ -429,6 +433,7 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/log:check",
+        "absl/log:log",
     ],
     deps = [
         "//:grpc++",

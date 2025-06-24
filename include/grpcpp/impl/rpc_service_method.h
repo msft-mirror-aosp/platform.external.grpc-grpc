@@ -28,7 +28,6 @@
 #include "absl/log/absl_check.h"
 #include "absl/log/absl_log.h"
 
-#include <grpc/support/log.h>
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/config.h>

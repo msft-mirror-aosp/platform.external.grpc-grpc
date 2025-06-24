@@ -30,12 +30,12 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/util/useful.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/test_util/port.h"
 
@@ -47,9 +47,6 @@
 // IWYU pragma: no_include <sys/socket.h>
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
-
-static grpc_core::TraceFlag trace_writes(false, "fuzzing_ee_writes");
-static grpc_core::TraceFlag trace_timers(false, "fuzzing_ee_timers");
 
 using namespace std::chrono_literals;
 
@@ -317,10 +314,8 @@ bool FuzzingEventEngine::EndpointMiddle::Write(SliceBuffer* data, int index) {
   // If the write_len is zero, we still need to write something, so we write one
   // byte.
   if (write_len == 0) write_len = 1;
-  if (trace_writes.enabled()) {
-    gpr_log(GPR_INFO, "WRITE[%p:%d]: %" PRIdPTR " bytes", this, index,
-            write_len);
-  }
+  GRPC_TRACE_LOG(fuzzing_ee_writes, INFO)
+      << "WRITE[" << this << ":" << index << "]: " << write_len << " bytes";
   // Expand the pending buffer.
   size_t prev_len = pending[index].size();
   pending[index].resize(prev_len + write_len);
@@ -577,14 +572,12 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfterLocked(
     now = now_;
     tasks_by_time_.emplace(final_time, std::move(task));
   }
-  if (trace_timers.enabled()) {
-    gpr_log(GPR_INFO,
-            "Schedule timer %" PRIx64 " @ %" PRIu64 " (now=%" PRIu64
-            "; delay=%" PRIu64 "; fuzzing_added=%" PRIu64 "; type=%d)",
-            id, static_cast<uint64_t>(final_time.time_since_epoch().count()),
-            now.time_since_epoch().count(), when.count(), delay_taken.count(),
-            static_cast<int>(run_type));
-  }
+  GRPC_TRACE_LOG(fuzzing_ee_timers, INFO)
+      << "Schedule timer " << id << " @ "
+      << static_cast<uint64_t>(final_time.time_since_epoch().count())
+      << " (now=" << now.time_since_epoch().count()
+      << "; delay=" << when.count() << "; fuzzing_added=" << delay_taken.count()
+      << "; type=" << static_cast<int>(run_type) << ")";
   return TaskHandle{id, kTaskHandleSalt};
 }
 
@@ -599,9 +592,7 @@ bool FuzzingEventEngine::Cancel(TaskHandle handle) {
   if (it->second->closure == nullptr) {
     return false;
   }
-  if (trace_timers.enabled()) {
-    gpr_log(GPR_INFO, "Cancel timer %" PRIx64, id);
-  }
+  GRPC_TRACE_LOG(fuzzing_ee_timers, INFO) << "Cancel timer " << id;
   it->second->closure = nullptr;
   return true;
 }

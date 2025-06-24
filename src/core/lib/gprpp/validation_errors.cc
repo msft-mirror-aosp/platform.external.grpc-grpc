@@ -14,8 +14,11 @@
 
 #include "src/core/lib/gprpp/validation_errors.h"
 
+#include <inttypes.h>
+
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
@@ -34,7 +37,13 @@ void ValidationErrors::PushField(absl::string_view ext) {
 void ValidationErrors::PopField() { fields_.pop_back(); }
 
 void ValidationErrors::AddError(absl::string_view error) {
-  field_errors_[absl::StrJoin(fields_, "")].emplace_back(error);
+  auto key = absl::StrJoin(fields_, "");
+  if (field_errors_[key].size() >= max_error_count_) {
+    VLOG(2) << "Ignoring validation error: too many errors found ("
+            << max_error_count_ << ")";
+    return;
+  }
+  field_errors_[key].emplace_back(error);
 }
 
 bool ValidationErrors::FieldHasErrors() const {

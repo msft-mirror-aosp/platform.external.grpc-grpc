@@ -22,6 +22,8 @@
 #include <stdlib.h>
 
 #include "absl/debugging/failure_signal_handler.h"
+#include "absl/log/globals.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
@@ -126,14 +128,19 @@ void grpc_test_init(int* argc, char** argv) {
   grpc_core::testing::InitializeStackTracer(argv[0]);
   absl::FailureSignalHandlerOptions options;
   absl::InstallFailureSignalHandler(options);
-  gpr_log(GPR_DEBUG,
-          "test slowdown factor: sanitizer=%" PRId64 ", fixture=%" PRId64
-          ", poller=%" PRId64 ", total=%" PRId64,
-          grpc_test_sanitizer_slowdown_factor(), g_fixture_slowdown_factor,
-          g_poller_slowdown_factor, grpc_test_slowdown_factor());
+  VLOG(2) << "test slowdown factor: sanitizer="
+          << grpc_test_sanitizer_slowdown_factor()
+          << ", fixture=" << g_fixture_slowdown_factor
+          << ", poller=" << g_poller_slowdown_factor
+          << ", total=" << grpc_test_slowdown_factor();
   // seed rng with pid, so we don't end up with the same random numbers as a
   // concurrently running test binary
   srand(seed());
+}
+
+void grpc_set_absl_verbosity_debug() {
+  absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
+  absl::SetVLogLevel("*grpc*/*", 2);
 }
 
 bool grpc_wait_until_shutdown(int64_t time_s) {
@@ -149,6 +156,11 @@ bool grpc_wait_until_shutdown(int64_t time_s) {
   return true;
 }
 
+void grpc_disable_all_absl_logs() {
+  absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
+  absl::SetVLogLevel("*grpc*/*", -1);
+}
+
 namespace grpc {
 namespace testing {
 
@@ -160,7 +172,7 @@ TestEnvironment::~TestEnvironment() {
   // This will wait until gRPC shutdown has actually happened to make sure
   // no gRPC resources (such as thread) are active. (timeout = 10s)
   if (!grpc_wait_until_shutdown(10)) {
-    gpr_log(GPR_ERROR, "Timeout in waiting for gRPC shutdown");
+    LOG(ERROR) << "Timeout in waiting for gRPC shutdown";
   }
   if (BuiltUnderMsan()) {
     // This is a workaround for MSAN. MSAN doesn't like having shutdown thread
@@ -171,7 +183,7 @@ TestEnvironment::~TestEnvironment() {
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                  gpr_time_from_millis(500, GPR_TIMESPAN)));
   }
-  gpr_log(GPR_INFO, "TestEnvironment ends");
+  LOG(INFO) << "TestEnvironment ends";
 }
 
 TestGrpcScope::TestGrpcScope() { grpc_init(); }
@@ -179,7 +191,7 @@ TestGrpcScope::TestGrpcScope() { grpc_init(); }
 TestGrpcScope::~TestGrpcScope() {
   grpc_shutdown();
   if (!grpc_wait_until_shutdown(10)) {
-    gpr_log(GPR_ERROR, "Timeout in waiting for gRPC shutdown");
+    LOG(ERROR) << "Timeout in waiting for gRPC shutdown";
   }
 }
 

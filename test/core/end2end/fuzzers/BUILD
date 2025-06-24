@@ -36,6 +36,7 @@ grpc_cc_library(
     hdrs = ["fuzzing_common.h"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "absl/strings",
     ],
     deps = [
@@ -50,6 +51,7 @@ grpc_proto_fuzzer(
     name = "api_fuzzer",
     srcs = ["api_fuzzer.cc"],
     corpus = "api_fuzzer_corpus",
+    end2end_fuzzer = True,
     external_deps = ["absl/log:check"],
     language = "C++",
     proto = None,
@@ -92,6 +94,7 @@ grpc_cc_library(
     name = "network_input",
     srcs = ["network_input.cc"],
     hdrs = ["network_input.h"],
+    external_deps = ["absl/log:log"],
     deps = [
         "fuzzer_input_proto",
         "//:chttp2_frame",
@@ -106,6 +109,7 @@ grpc_proto_fuzzer(
     name = "client_fuzzer",
     srcs = ["client_fuzzer.cc"],
     corpus = "client_fuzzer_corpus",
+    end2end_fuzzer = True,
     external_deps = ["absl/log:check"],
     language = "C++",
     proto = None,
@@ -149,6 +153,7 @@ grpc_proto_fuzzer(
     name = "server_fuzzer_chttp2",
     srcs = ["server_fuzzer_chttp2.cc"],
     corpus = "server_fuzzer_chttp2_corpus",
+    end2end_fuzzer = True,
     language = "C++",
     proto = None,
     tags = [
@@ -167,6 +172,7 @@ grpc_proto_fuzzer(
     name = "server_fuzzer_chaotic_good",
     srcs = ["server_fuzzer_chaotic_good.cc"],
     corpus = "server_fuzzer_chaotic_good_corpus",
+    end2end_fuzzer = True,
     external_deps = ["absl/log:check"],
     language = "C++",
     proto = None,

@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
 
 #include <stddef.h>
@@ -29,6 +27,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -41,11 +40,12 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -63,10 +63,10 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/server/server.h"
 
 #define INPROC_LOG(...)                               \
   do {                                                \
@@ -102,8 +102,7 @@ struct shared_mu {
   gpr_refcount refs;
 };
 
-struct inproc_transport final : public grpc_core::Transport,
-                                public grpc_core::FilterStackTransport {
+struct inproc_transport final : public grpc_core::FilterStackTransport {
   inproc_transport(shared_mu* mu, bool is_client)
       : mu(mu),
         is_client(is_client),
@@ -1268,7 +1267,7 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
     auto new_channel = grpc_core::ChannelCreate(
         "inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
     if (!new_channel.ok()) {
-      GPR_ASSERT(!channel);
+      CHECK(!channel);
       gpr_log(GPR_ERROR, "Failed to create client channel: %s",
               grpc_core::StatusToString(error).c_str());
       intptr_t integer;
@@ -1286,7 +1285,7 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
       channel = new_channel->release()->c_ptr();
     }
   } else {
-    GPR_ASSERT(!channel);
+    CHECK(!channel);
     gpr_log(GPR_ERROR, "Failed to create server channel: %s",
             grpc_core::StatusToString(error).c_str());
     intptr_t integer;

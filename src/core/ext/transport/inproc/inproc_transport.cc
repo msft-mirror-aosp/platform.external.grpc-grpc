@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 
 #include <atomic>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -28,14 +29,13 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/surface/channel_create.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/server/server.h"
 
 namespace grpc_core {
 
 namespace {
 class InprocServerTransport final : public RefCounted<InprocServerTransport>,
-                                    public Transport,
                                     public ServerTransport {
  public:
   void SetAcceptor(Acceptor* acceptor) override {
@@ -84,7 +84,7 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
                             "inproc transport disconnected");
   }
 
-  absl::StatusOr<CallInitiator> AcceptCall(ClientMetadata& md) {
+  absl::StatusOr<CallInitiator> AcceptCall(ClientMetadataHandle md) {
     switch (state_.load(std::memory_order_acquire)) {
       case ConnectionState::kInitial:
         return absl::InternalError(
@@ -94,7 +94,7 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
       case ConnectionState::kReady:
         break;
     }
-    return acceptor_->CreateCall(md, acceptor_->CreateArena());
+    return acceptor_->CreateCall(std::move(md), acceptor_->CreateArena());
   }
 
  private:
@@ -109,7 +109,7 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
       "inproc_server_transport", GRPC_CHANNEL_CONNECTING};
 };
 
-class InprocClientTransport final : public Transport, public ClientTransport {
+class InprocClientTransport final : public ClientTransport {
  public:
   void StartCall(CallHandler call_handler) override {
     call_handler.SpawnGuarded(
@@ -117,10 +117,10 @@ class InprocClientTransport final : public Transport, public ClientTransport {
         TrySeq(call_handler.PullClientInitialMetadata(),
                [server_transport = server_transport_,
                 call_handler](ClientMetadataHandle md) {
-                 auto call_initiator = server_transport->AcceptCall(*md);
+                 auto call_initiator =
+                     server_transport->AcceptCall(std::move(md));
                  if (!call_initiator.ok()) return call_initiator.status();
-                 ForwardCall(call_handler, std::move(*call_initiator),
-                             std::move(md));
+                 ForwardCall(call_handler, std::move(*call_initiator));
                  return absl::OkStatus();
                }));
   }
@@ -152,8 +152,8 @@ class InprocClientTransport final : public Transport, public ClientTransport {
 
 bool UsePromiseBasedTransport() {
   if (!IsPromiseBasedInprocTransportEnabled()) return false;
-  GPR_ASSERT(IsPromiseBasedClientCallEnabled());
-  GPR_ASSERT(IsPromiseBasedServerCallEnabled());
+  CHECK(IsPromiseBasedClientCallEnabled());
+  CHECK(IsPromiseBasedServerCallEnabled());
   return true;
 }
 

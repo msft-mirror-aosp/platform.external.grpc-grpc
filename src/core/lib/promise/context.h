@@ -15,13 +15,13 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_CONTEXT_H
 #define GRPC_SRC_CORE_LIB_PROMISE_CONTEXT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/down_cast.h"
 
@@ -115,7 +115,7 @@ bool HasContext() {
 template <typename T>
 T* GetContext() {
   auto* p = promise_detail::Context<T>::get();
-  GPR_ASSERT(p != nullptr);
+  CHECK_NE(p, nullptr);
   return p;
 }
 

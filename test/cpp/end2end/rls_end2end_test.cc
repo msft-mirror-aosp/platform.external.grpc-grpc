@@ -28,10 +28,12 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 
+#include <grpc/credentials.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
@@ -56,11 +58,11 @@
 #include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/fake_stats_plugin.h"
-#include "test/core/util/port.h"
-#include "test/core/util/resolve_localhost_ip46.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/test_lb_policies.h"
+#include "test/core/test_util/fake_stats_plugin.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/test_lb_policies.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/rls_server.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -413,7 +415,7 @@ class RlsEnd2endTest : public ::testing::Test {
 
     void Start() {
       gpr_log(GPR_INFO, "starting %s server on port %d", type_.c_str(), port_);
-      GPR_ASSERT(!running_);
+      CHECK(!running_);
       running_ = true;
       service_.Start();
       grpc::internal::Mutex mu;

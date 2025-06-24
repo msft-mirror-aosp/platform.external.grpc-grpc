@@ -32,6 +32,7 @@ EXPERIMENT_ENABLES = {
     "multiping": "multiping",
     "peer_state_based_framing": "peer_state_based_framing",
     "pending_queue_cap": "pending_queue_cap",
+    "pick_first_new": "pick_first_new",
     "promise_based_client_call": "event_engine_client,event_engine_listener,promise_based_client_call",
     "promise_based_server_call": "promise_based_server_call",
     "chaotic_good": "chaotic_good,event_engine_client,event_engine_listener,promise_based_client_call,promise_based_server_call",
@@ -59,14 +60,15 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "promise_based_server_call",
-            ],
-            "cpp_end2end_test": [
+                "event_engine_client",
                 "promise_based_server_call",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "event_engine_client_test": [
+                "event_engine_client",
             ],
             "flow_control_test": [
                 "multiping",
@@ -82,16 +84,22 @@ EXPERIMENTS = {
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
             ],
-            "xds_end2end_test": [
-                "promise_based_server_call",
-            ],
         },
         "on": {
             "core_end2end_test": [
                 "event_engine_listener",
             ],
+            "cpp_lb_end2end_test": [
+                "pick_first_new",
+            ],
             "event_engine_listener_test": [
                 "event_engine_listener",
+            ],
+            "lb_unit_test": [
+                "pick_first_new",
+            ],
+            "xds_end2end_test": [
+                "pick_first_new",
             ],
         },
     },
@@ -102,9 +110,6 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "promise_based_server_call",
             ],
-            "cpp_end2end_test": [
-                "promise_based_server_call",
-            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -123,11 +128,17 @@ EXPERIMENTS = {
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
             ],
-            "xds_end2end_test": [
-                "promise_based_server_call",
-            ],
         },
         "on": {
+            "cpp_lb_end2end_test": [
+                "pick_first_new",
+            ],
+            "lb_unit_test": [
+                "pick_first_new",
+            ],
+            "xds_end2end_test": [
+                "pick_first_new",
+            ],
         },
     },
     "posix": {
@@ -135,12 +146,8 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "chaotic_good",
                 "event_engine_client",
                 "promise_based_client_call",
-                "promise_based_server_call",
-            ],
-            "cpp_end2end_test": [
                 "promise_based_server_call",
             ],
             "endpoint_test": [
@@ -167,9 +174,6 @@ EXPERIMENTS = {
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
             ],
-            "xds_end2end_test": [
-                "promise_based_server_call",
-            ],
         },
         "on": {
             "cancel_ares_query_test": [
@@ -182,16 +186,21 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "work_serializer_dispatch",
             ],
+            "cpp_lb_end2end_test": [
+                "pick_first_new",
+            ],
             "event_engine_listener_test": [
                 "event_engine_listener",
             ],
             "lb_unit_test": [
+                "pick_first_new",
                 "work_serializer_dispatch",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
             ],
             "xds_end2end_test": [
+                "pick_first_new",
                 "work_serializer_dispatch",
             ],
         },

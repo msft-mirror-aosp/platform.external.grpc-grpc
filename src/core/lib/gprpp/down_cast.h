@@ -15,13 +15,13 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_DOWN_CAST_H
 #define GRPC_SRC_CORE_LIB_GPRPP_DOWN_CAST_H
 
-#include <grpc/support/port_platform.h>
-
 #include <type_traits>
 
 #include "absl/base/config.h"
+#include "absl/log/check.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -33,7 +33,7 @@ inline To DownCast(From* f) {
 // If we have RTTI & we're in debug, assert that the cast is legal.
 #if ABSL_INTERNAL_HAS_RTTI
 #ifndef NDEBUG
-  if (f != nullptr) GPR_ASSERT(dynamic_cast<To>(f) != nullptr);
+  if (f != nullptr) CHECK_NE(dynamic_cast<To>(f), nullptr);
 #endif
 #endif
   return static_cast<To>(f);

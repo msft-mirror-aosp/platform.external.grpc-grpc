@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_PARTY_H
 #define GRPC_SRC_CORE_LIB_PROMISE_PARTY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -26,10 +24,12 @@
 
 #include "absl/base/attributes.h"
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -116,7 +116,7 @@ class PartySyncUsingAtomics {
                                     std::memory_order_acquire);
       LogStateChange("Run", prev_state,
                      prev_state & (kRefMask | kLocked | kAllocatedMask));
-      GPR_ASSERT(prev_state & kLocked);
+      CHECK(prev_state & kLocked);
       if (prev_state & kDestroying) return true;
       // From the previous state, extract which participants we're to wakeup.
       uint64_t wakeups = prev_state & kWakeupMask;
@@ -196,7 +196,7 @@ class PartySyncUsingAtomics {
         slots[n++] = bit;
         allocated |= 1 << bit;
       }
-      GPR_ASSERT(n == count);
+      CHECK(n == count);
       // Try to allocate this slot and take a ref (atomically).
       // Ref needs to be taken because once we store the participant it could be
       // spuriously woken up and unref the party.
@@ -294,7 +294,7 @@ class PartySyncUsingMutex {
     WakeupMask freed = 0;
     while (true) {
       ReleasableMutexLock lock(&mu_);
-      GPR_ASSERT(locked_);
+      CHECK(locked_);
       allocated_ &= ~std::exchange(freed, 0);
       auto wakeup = std::exchange(wakeups_, 0);
       if (wakeup == 0) {
@@ -323,7 +323,7 @@ class PartySyncUsingMutex {
       wakeup_mask |= 1 << bit;
       allocated_ |= 1 << bit;
     }
-    GPR_ASSERT(n == count);
+    CHECK(n == count);
     store(slots);
     wakeups_ |= wakeup_mask;
     return !std::exchange(locked_, true);
@@ -391,7 +391,7 @@ class Party : public Activity, private Wakeable {
   // Activity implementation: not allowed to be overridden by derived types.
   void ForceImmediateRepoll(WakeupMask mask) final;
   WakeupMask CurrentParticipant() const final {
-    GPR_DEBUG_ASSERT(currently_polling_ != kNotPolling);
+    DCHECK(currently_polling_ != kNotPolling);
     return 1u << currently_polling_;
   }
   Waker MakeOwningWaker() final;
@@ -412,10 +412,10 @@ class Party : public Activity, private Wakeable {
   // This is useful for implementing batching and the like: we can hold some
   // action until the rest of the party resolves itself.
   auto AfterCurrentPoll() {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == this);
+    DCHECK(GetContext<Activity>() == this);
     sync_.WakeAfterPoll(CurrentParticipant());
     return [this, iteration = sync_.iteration()]() -> Poll<Empty> {
-      GPR_DEBUG_ASSERT(GetContext<Activity>() == this);
+      DCHECK(GetContext<Activity>() == this);
       if (iteration == sync_.iteration()) return Pending{};
       return Empty{};
     };

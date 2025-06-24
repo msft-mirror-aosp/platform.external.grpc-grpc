@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CPP_EXT_OTEL_OTEL_CLIENT_CALL_TRACER_H
 #define GRPC_SRC_CPP_EXT_OTEL_OTEL_CLIENT_CALL_TRACER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <memory>
@@ -31,6 +29,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/call_tracer.h"
@@ -96,6 +95,8 @@ class OpenTelemetryPlugin::ClientCallTracer
                           grpc_core::RefCountedStringValue value) override;
 
    private:
+    void PopulateLabelInjectors(grpc_metadata_batch* metadata);
+
     const ClientCallTracer* parent_;
     const bool arena_allocated_;
     // Start time (for measuring latency).
@@ -107,6 +108,7 @@ class OpenTelemetryPlugin::ClientCallTracer
         optional_labels_;
     std::vector<std::unique_ptr<LabelsIterable>>
         injected_labels_from_plugin_options_;
+    bool is_trailers_only_ = false;
   };
 
   ClientCallTracer(

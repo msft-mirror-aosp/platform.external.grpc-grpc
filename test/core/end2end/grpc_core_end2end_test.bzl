@@ -43,6 +43,9 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = []):
         srcs = [
             "tests/%s.cc" % name,
         ],
+        external_deps = [
+            "absl/log:log",
+        ],
         deps = [
             "cq_verifier",
             "end2end_test_lib",
@@ -60,7 +63,6 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = []):
             "//:grpc_security_base",
             "//:grpc_trace",
             "//:grpc_unsecure",
-            "//:legacy_context",
             "//:orphanable",
             "//:promise",
             "//:ref_counted_ptr",
@@ -109,7 +111,7 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = []):
             "end2end_test_main",
             "%s_library" % name,
         ],
-        tags = ["core_end2end_test"] + tags,
+        tags = ["core_end2end_test", "thready_tsan"] + tags,
     )
 
     grpc_proto_fuzzer(

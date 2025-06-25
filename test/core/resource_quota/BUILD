@@ -117,6 +117,7 @@ grpc_cc_test(
     srcs = ["memory_quota_stress_test.cc"],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:log",
         "absl/strings",
         "absl/types:optional",
         "gtest",
@@ -168,5 +169,6 @@ grpc_proto_fuzzer(
         "//src/core:memory_quota",
         "//src/core:useful",
         "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

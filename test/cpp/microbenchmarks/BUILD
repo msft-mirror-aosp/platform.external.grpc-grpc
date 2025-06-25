@@ -353,7 +353,6 @@ grpc_cc_test(
     ],
     args = grpc_benchmark_args(),
     tags = [
-        "manual",  # See https://github.com/grpc/grpc/pull/36839
         "no_mac",  # to emulate "excluded_poll_engines: poll"
         "no_windows",
     ],

@@ -24,6 +24,10 @@
 #define GRPC_EVENT_ENGINE_POSIX
 #include <arpa/inet.h>
 #include <netdb.h>
+// Android local modification: this netdb.h macro conflicts with a proto enum:
+// hardware/interfaces/automotive/vehicle/aidl/impl/current/proto/android/hardware/automotive/vehicle/StatusCode.proto
+// TODO: b/427539387: rename the enum to avoid this conflict.
+#undef TRY_AGAIN
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>

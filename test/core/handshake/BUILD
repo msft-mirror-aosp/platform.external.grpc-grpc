@@ -26,10 +26,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -43,10 +40,7 @@ grpc_cc_library(
     name = "server_ssl_common",
     srcs = ["server_ssl_common.cc"],
     hdrs = ["server_ssl_common.h"],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-    ],
+    external_deps = ["absl/log:check"],
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -106,7 +100,6 @@ grpc_cc_test(
 #    ],
 #    external_deps = [
 #        "absl/log:check",
-#        "absl/log:log",
 #    ],
 #    language = "C++",
 #    tags = ["no_mac", no_windows"],

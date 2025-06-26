@@ -21,14 +21,13 @@
 #include <cstdint>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/down_cast.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 namespace grpc_core {
@@ -47,15 +46,14 @@ namespace grpc_core {
 //
 // This will be used by CRTP (curiously-recurring template pattern), e.g.:
 //   class MyClass : public RefCounted<MyClass> { ... };
-//
-// Impl & UnrefBehavior are as per RefCounted.
-template <typename Child, typename Impl = PolymorphicRefCount,
-          typename UnrefBehavior = UnrefDelete>
-class DualRefCounted : public Impl {
+template <typename Child>
+class DualRefCounted {
  public:
   // Not copyable nor movable.
   DualRefCounted(const DualRefCounted&) = delete;
   DualRefCounted& operator=(const DualRefCounted&) = delete;
+
+  virtual ~DualRefCounted() = default;
 
   GRPC_MUST_USE_RESULT RefCountedPtr<Child> Ref() {
     IncrementRefCount();
@@ -93,9 +91,8 @@ class DualRefCounted : public Impl {
 #ifndef NDEBUG
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     if (trace_ != nullptr) {
-      VLOG(2) << trace_ << ":" << this << " unref " << strong_refs << " -> "
-              << strong_refs - 1 << ", weak_ref " << weak_refs << " -> "
-              << weak_refs + 1;
+      gpr_log(GPR_INFO, "%s:%p unref %d -> %d, weak_ref %d -> %d", trace_, this,
+              strong_refs, strong_refs - 1, weak_refs, weak_refs + 1);
     }
     CHECK_GT(strong_refs, 0u);
 #endif
@@ -112,10 +109,9 @@ class DualRefCounted : public Impl {
 #ifndef NDEBUG
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     if (trace_ != nullptr) {
-      VLOG(2) << trace_ << ":" << this << " " << location.file() << ":"
-              << location.line() << " unref " << strong_refs << " -> "
-              << strong_refs - 1 << ", weak_ref " << weak_refs << " -> "
-              << weak_refs + 1 << ") " << reason;
+      gpr_log(GPR_INFO, "%s:%p %s:%d unref %d -> %d, weak_ref %d -> %d) %s",
+              trace_, this, location.file(), location.line(), strong_refs,
+              strong_refs - 1, weak_refs, weak_refs + 1, reason);
     }
     CHECK_GT(strong_refs, 0u);
 #else
@@ -137,9 +133,8 @@ class DualRefCounted : public Impl {
 #ifndef NDEBUG
       const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
       if (trace_ != nullptr) {
-        VLOG(2) << trace_ << ":" << this << " ref_if_non_zero " << strong_refs
-                << " -> " << strong_refs + 1 << " (weak_refs=" << weak_refs
-                << ")";
+        gpr_log(GPR_INFO, "%s:%p ref_if_non_zero %d -> %d (weak_refs=%d)",
+                trace_, this, strong_refs, strong_refs + 1, weak_refs);
       }
 #endif
       if (strong_refs == 0) return nullptr;
@@ -156,10 +151,10 @@ class DualRefCounted : public Impl {
 #ifndef NDEBUG
       const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
       if (trace_ != nullptr) {
-        VLOG(2) << trace_ << ":" << this << " " << location.file() << ":"
-                << location.line() << " ref_if_non_zero " << strong_refs
-                << " -> " << strong_refs + 1 << " (weak_refs=" << weak_refs
-                << ") " << reason;
+        gpr_log(GPR_INFO,
+                "%s:%p %s:%d ref_if_non_zero %d -> %d (weak_refs=%d) %s",
+                trace_, this, location.file(), location.line(), strong_refs,
+                strong_refs + 1, weak_refs, reason);
       }
 #else
       // Avoid unused-parameter warnings for debug-only parameters
@@ -214,13 +209,13 @@ class DualRefCounted : public Impl {
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     if (trace != nullptr) {
-      VLOG(2) << trace << ":" << this << " weak_unref " << weak_refs << " -> "
-              << weak_refs - 1 << " (refs=" << strong_refs << ")";
+      gpr_log(GPR_INFO, "%s:%p weak_unref %d -> %d (refs=%d)", trace, this,
+              weak_refs, weak_refs - 1, strong_refs);
     }
     CHECK_GT(weak_refs, 0u);
 #endif
     if (GPR_UNLIKELY(prev_ref_pair == MakeRefPair(0, 1))) {
-      unref_behavior_(static_cast<Child*>(this));
+      delete static_cast<Child*>(this);
     }
   }
   void WeakUnref(const DebugLocation& location, const char* reason) {
@@ -236,9 +231,9 @@ class DualRefCounted : public Impl {
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     if (trace != nullptr) {
-      VLOG(2) << trace << ":" << this << " " << location.file() << ":"
-              << location.line() << " weak_unref " << weak_refs << " -> "
-              << weak_refs - 1 << " (refs=" << strong_refs << ") " << reason;
+      gpr_log(GPR_INFO, "%s:%p %s:%d weak_unref %d -> %d (refs=%d) %s", trace,
+              this, location.file(), location.line(), weak_refs, weak_refs - 1,
+              strong_refs, reason);
     }
     CHECK_GT(weak_refs, 0u);
 #else
@@ -247,7 +242,7 @@ class DualRefCounted : public Impl {
     (void)reason;
 #endif
     if (GPR_UNLIKELY(prev_ref_pair == MakeRefPair(0, 1))) {
-      unref_behavior_(static_cast<const Child*>(this));
+      delete static_cast<Child*>(this);
     }
   }
 
@@ -270,9 +265,6 @@ class DualRefCounted : public Impl {
 
   // Ref count has dropped to zero, so the object is now orphaned.
   virtual void Orphaned() = 0;
-
-  // Note: Depending on the Impl used, this dtor can be implicitly virtual.
-  ~DualRefCounted() = default;
 
  private:
   // Allow RefCountedPtr<> to access IncrementRefCount().
@@ -301,8 +293,8 @@ class DualRefCounted : public Impl {
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     CHECK_NE(strong_refs, 0u);
     if (trace_ != nullptr) {
-      VLOG(2) << trace_ << ":" << this << " ref " << strong_refs << " -> "
-              << strong_refs + 1 << "; (weak_refs=" << weak_refs << ")";
+      gpr_log(GPR_INFO, "%s:%p ref %d -> %d; (weak_refs=%d)", trace_, this,
+              strong_refs, strong_refs + 1, weak_refs);
     }
 #else
     refs_.fetch_add(MakeRefPair(1, 0), std::memory_order_relaxed);
@@ -316,10 +308,9 @@ class DualRefCounted : public Impl {
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     CHECK_NE(strong_refs, 0u);
     if (trace_ != nullptr) {
-      VLOG(2) << trace_ << ":" << this << " " << location.file() << ":"
-              << location.line() << " ref " << strong_refs << " -> "
-              << strong_refs + 1 << " (weak_refs=" << weak_refs << ") "
-              << reason;
+      gpr_log(GPR_INFO, "%s:%p %s:%d ref %d -> %d (weak_refs=%d) %s", trace_,
+              this, location.file(), location.line(), strong_refs,
+              strong_refs + 1, weak_refs, reason);
     }
 #else
     // Use conditionally-important parameters
@@ -336,10 +327,9 @@ class DualRefCounted : public Impl {
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     if (trace_ != nullptr) {
-      VLOG(2) << trace_ << ":" << this << " weak_ref " << weak_refs << " -> "
-              << weak_refs + 1 << "; (refs=" << strong_refs << ")";
+      gpr_log(GPR_INFO, "%s:%p weak_ref %d -> %d; (refs=%d)", trace_, this,
+              weak_refs, weak_refs + 1, strong_refs);
     }
-    if (strong_refs == 0) CHECK_NE(weak_refs, 0u);
 #else
     refs_.fetch_add(MakeRefPair(0, 1), std::memory_order_relaxed);
 #endif
@@ -352,11 +342,10 @@ class DualRefCounted : public Impl {
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     if (trace_ != nullptr) {
-      VLOG(2) << trace_ << ":" << this << " " << location.file() << ":"
-              << location.line() << " weak_ref " << weak_refs << " -> "
-              << weak_refs + 1 << " (refs=" << strong_refs << ") " << reason;
+      gpr_log(GPR_INFO, "%s:%p %s:%d weak_ref %d -> %d (refs=%d) %s", trace_,
+              this, location.file(), location.line(), weak_refs, weak_refs + 1,
+              strong_refs, reason);
     }
-    if (strong_refs == 0) CHECK_NE(weak_refs, 0u);
 #else
     // Use conditionally-important parameters
     (void)location;
@@ -369,7 +358,6 @@ class DualRefCounted : public Impl {
   const char* trace_;
 #endif
   std::atomic<uint64_t> refs_{0};
-  GPR_NO_UNIQUE_ADDRESS UnrefBehavior unref_behavior_;
 };
 
 }  // namespace grpc_core

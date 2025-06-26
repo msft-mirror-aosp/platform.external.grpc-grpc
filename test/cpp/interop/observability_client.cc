@@ -20,20 +20,20 @@
 #include <unordered_map>
 
 #include "absl/flags/flag.h"
-#include "absl/log/log.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/ext/gcp_observability.h>
 #include <grpcpp/ext/otel_plugin.h>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/util/string.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
@@ -160,8 +160,8 @@ bool ParseAdditionalMetadataFlag(
   while (start_pos < flag.length()) {
     size_t colon_pos = flag.find(':', start_pos);
     if (colon_pos == std::string::npos) {
-      LOG(ERROR)
-          << "Couldn't parse metadata flag: extra characters at end of flag";
+      gpr_log(GPR_ERROR,
+              "Couldn't parse metadata flag: extra characters at end of flag");
       return false;
     }
     size_t semicolon_pos = flag.find(';', colon_pos);
@@ -175,9 +175,10 @@ bool ParseAdditionalMetadataFlag(
         "abcdefghijklmnopqrstuvwxyz"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     if (key.find_first_not_of(alphanum_and_hyphen) != std::string::npos) {
-      LOG(ERROR) << "Couldn't parse metadata flag: key contains characters "
-                    "other than alphanumeric and hyphens: "
-                 << key;
+      gpr_log(GPR_ERROR,
+              "Couldn't parse metadata flag: key contains characters other "
+              "than alphanumeric and hyphens: %s",
+              key.c_str());
       return false;
     }
 
@@ -188,8 +189,8 @@ bool ParseAdditionalMetadataFlag(
       }
     }
 
-    LOG(INFO) << "Adding additional metadata with key " << key << " and value "
-              << value;
+    gpr_log(GPR_INFO, "Adding additional metadata with key %s and value %s",
+            key.c_str(), value.c_str());
     additional_metadata->insert({key, value});
 
     if (semicolon_pos == std::string::npos) {
@@ -207,14 +208,15 @@ bool ParseAdditionalMetadataFlag(
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
-  LOG(INFO) << "Testing these cases: " << absl::GetFlag(FLAGS_test_case);
+  gpr_log(GPR_INFO, "Testing these cases: %s",
+          absl::GetFlag(FLAGS_test_case).c_str());
   int ret = 0;
 
   if (absl::GetFlag(FLAGS_enable_observability)) {
     // TODO(someone): remove deprecated usage
     // NOLINTNEXTLINE(clang-diagnostic-deprecated-declarations)
     auto status = grpc::experimental::GcpObservabilityInit();
-    VLOG(2) << "GcpObservabilityInit() status_code: " << status.code();
+    gpr_log(GPR_DEBUG, "GcpObservabilityInit() status_code: %d", status.code());
     if (!status.ok()) {
       return 1;
     }
@@ -223,7 +225,7 @@ int main(int argc, char** argv) {
   // TODO(stanleycheung): switch to CsmObservabilityBuilder once xds setup is
   // ready
   if (absl::GetFlag(FLAGS_enable_otel_plugin)) {
-    VLOG(2) << "Registering Prometheus exporter";
+    gpr_log(GPR_DEBUG, "Registering Prometheus exporter");
     opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
     // default was "localhost:9464" which causes connection issue across GKE
     // pods
@@ -387,9 +389,8 @@ int main(int argc, char** argv) {
       if (!test_cases.empty()) test_cases += "\n";
       test_cases += action.first;
     }
-    LOG(ERROR) << "Unsupported test case " << absl::GetFlag(FLAGS_test_case)
-               << ". Valid options are\n"
-               << test_cases;
+    gpr_log(GPR_ERROR, "Unsupported test case %s. Valid options are\n%s",
+            absl::GetFlag(FLAGS_test_case).c_str(), test_cases.c_str());
     ret = 1;
   }
 

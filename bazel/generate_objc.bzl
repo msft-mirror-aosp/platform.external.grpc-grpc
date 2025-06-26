@@ -180,7 +180,7 @@ generate_objc = rule(
             default = "@com_google_protobuf//:well_known_type_protos",
         ),
         "_protoc": attr.label(
-            default = Label("@com_google_protobuf//:protoc"),
+            default = Label("//external:protocol_compiler"),
             executable = True,
             cfg = "exec",
         ),

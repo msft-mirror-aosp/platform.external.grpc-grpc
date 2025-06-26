@@ -21,9 +21,8 @@
 
 #include <vector>
 
-#include "absl/log/log.h"
-
 #include <grpc/support/cpu.h>
+#include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/security/server_credentials.h>
@@ -134,8 +133,8 @@ class Server {
                                       channel_arg.int_value());
           break;
         case ChannelArg::VALUE_NOT_SET:
-          LOG(ERROR) << "Channel arg '" << channel_arg.name()
-                     << "' does not have a value";
+          gpr_log(GPR_ERROR, "Channel arg '%s' does not have a value",
+                  channel_arg.name().c_str());
           break;
       }
     }

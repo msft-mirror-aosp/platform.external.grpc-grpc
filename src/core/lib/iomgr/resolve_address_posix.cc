@@ -30,6 +30,8 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -42,8 +44,6 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/util/string.h"
-#include "src/core/util/useful.h"
 
 namespace grpc_core {
 namespace {
@@ -106,13 +106,14 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
   // parse name, splitting it into host and port parts
   SplitHostPort(name, &host, &port);
   if (host.empty()) {
-    err =
-        GRPC_ERROR_CREATE(absl::StrCat("unparseable host:port \"", name, "\""));
+    err = grpc_error_set_str(GRPC_ERROR_CREATE("unparseable host:port"),
+                             StatusStrProperty::kTargetAddress, name);
     goto done;
   }
   if (port.empty()) {
     if (default_port.empty()) {
-      err = GRPC_ERROR_CREATE(absl::StrCat("no port in name \"", name, "\""));
+      err = grpc_error_set_str(GRPC_ERROR_CREATE("no port in name"),
+                               StatusStrProperty::kTargetAddress, name);
       goto done;
     }
     port = std::string(default_port);
@@ -138,8 +139,14 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
     }
   }
   if (s != 0) {
-    err = absl::UnknownError(absl::StrCat(
-        "getaddrinfo(\"", name, "\"): ", gai_strerror(s), " (", s, ")"));
+    err = grpc_error_set_str(
+        grpc_error_set_str(
+            grpc_error_set_str(
+                grpc_error_set_int(GRPC_ERROR_CREATE(gai_strerror(s)),
+                                   StatusIntProperty::kErrorNo, s),
+                StatusStrProperty::kOsError, gai_strerror(s)),
+            StatusStrProperty::kSyscall, "getaddrinfo"),
+        StatusStrProperty::kTargetAddress, name);
     goto done;
   }
   // Success path: fill in addrs

@@ -17,7 +17,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
@@ -105,7 +104,7 @@ class OrcaServiceEnd2endTest : public ::testing::Test {
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
     builder.RegisterService(&orca_service_);
     server_ = builder.BuildAndStart();
-    LOG(INFO) << "server started on " << server_address_;
+    gpr_log(GPR_INFO, "server started on %s", server_address_.c_str());
     auto channel = CreateChannel(server_address, InsecureChannelCredentials());
     stub_ = OpenRcaService::NewStub(channel);
   }
@@ -130,13 +129,13 @@ TEST_F(OrcaServiceEnd2endTest, Basic) {
   Stream stream1(stub_.get(), grpc_core::Duration::Milliseconds(5000));
   Stream stream2(stub_.get(), grpc_core::Duration::Milliseconds(2500));
   auto ReadResponses = [&](std::function<void(const OrcaLoadReport&)> checker) {
-    LOG(INFO) << "reading response from stream1";
+    gpr_log(GPR_INFO, "reading response from stream1");
     OrcaLoadReport response = stream1.ReadResponse();
     checker(response);
-    LOG(INFO) << "reading response from stream2";
+    gpr_log(GPR_INFO, "reading response from stream2");
     response = stream2.ReadResponse();
     checker(response);
-    LOG(INFO) << "reading response from stream2";
+    gpr_log(GPR_INFO, "reading response from stream2");
     response = stream2.ReadResponse();
     checker(response);
   };

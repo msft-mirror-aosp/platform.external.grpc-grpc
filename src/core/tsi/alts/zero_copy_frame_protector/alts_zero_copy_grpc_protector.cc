@@ -24,7 +24,6 @@
 #include <utility>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -94,7 +93,7 @@ static bool read_frame_size(const grpc_slice_buffer* sb,
                         (static_cast<uint32_t>(frame_size_buffer[1]) << 8) |
                         static_cast<uint32_t>(frame_size_buffer[0]);
   if (frame_size > kMaxFrameLength) {
-    LOG(ERROR) << "Frame size is larger than maximum frame size";
+    gpr_log(GPR_ERROR, "Frame size is larger than maximum frame size");
     return false;
   }
   // Returns frame size including frame length field.
@@ -125,7 +124,7 @@ static tsi_result create_alts_grpc_record_protocol(
                                             kAesGcmTagLength, &crypter,
                                             &error_details);
   if (status != GRPC_STATUS_OK) {
-    LOG(ERROR) << "Failed to create AEAD crypter, " << error_details;
+    gpr_log(GPR_ERROR, "Failed to create AEAD crypter, %s", error_details);
     gpr_free(error_details);
     return TSI_INTERNAL_ERROR;
   }
@@ -154,7 +153,7 @@ static tsi_result alts_zero_copy_grpc_protector_protect(
     grpc_slice_buffer* protected_slices) {
   if (self == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
-    LOG(ERROR) << "Invalid nullptr arguments to zero-copy grpc protect.";
+    gpr_log(GPR_ERROR, "Invalid nullptr arguments to zero-copy grpc protect.");
     return TSI_INVALID_ARGUMENT;
   }
   alts_zero_copy_grpc_protector* protector =

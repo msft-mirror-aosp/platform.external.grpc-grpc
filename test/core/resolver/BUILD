@@ -40,7 +40,6 @@ grpc_cc_test(
     name = "binder_resolver_test",
     srcs = ["binder_resolver_test.cc"],
     external_deps = [
-        "absl/log:log",
         "gtest",
     ],
     language = "C++",
@@ -55,10 +54,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "dns_resolver_test",
     srcs = ["dns_resolver_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -70,10 +66,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "dns_resolver_cooldown_test",
     srcs = ["dns_resolver_cooldown_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -87,10 +80,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "sockaddr_resolver_test",
     srcs = ["sockaddr_resolver_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",

@@ -18,7 +18,7 @@
 
 #include <set>
 
-#include "absl/log/log.h"
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "test/core/test_util/test_config.h"
@@ -36,7 +36,7 @@ static const int WARMUP = 1;
 static const int BENCHMARK = 3;
 
 static void RunQPS() {
-  LOG(INFO) << "Running QPS test, open-loop";
+  gpr_log(GPR_INFO, "Running QPS test, open-loop");
 
   ClientConfig client_config;
   client_config.set_client_type(ASYNC_CLIENT);

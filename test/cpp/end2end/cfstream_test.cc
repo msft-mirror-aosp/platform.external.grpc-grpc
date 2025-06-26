@@ -25,11 +25,11 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
+#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
@@ -102,13 +102,13 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
   }
 
   void NetworkUp() {
-    VLOG(2) << "Bringing network up";
+    gpr_log(GPR_DEBUG, "Bringing network up");
     InterfaceUp();
     DNSUp();
   }
 
   void NetworkDown() {
-    VLOG(2) << "Bringing network down";
+    gpr_log(GPR_DEBUG, "Bringing network down");
     InterfaceDown();
     DNSDown();
   }
@@ -156,10 +156,10 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
     ClientContext context;
     Status status = stub->Echo(&context, request, response.get());
     if (status.ok()) {
-      VLOG(2) << "RPC with succeeded";
+      gpr_log(GPR_DEBUG, "RPC with succeeded");
       EXPECT_EQ(msg, response->message());
     } else {
-      VLOG(2) << "RPC failed: " << status.error_message();
+      gpr_log(GPR_DEBUG, "RPC failed: %s", status.error_message().c_str());
     }
     if (expect_success) {
       EXPECT_TRUE(status.ok());
@@ -241,7 +241,7 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
         : port_(port), creds_(creds) {}
 
     void Start(const std::string& server_host) {
-      LOG(INFO) << "starting server on port " << port_;
+      gpr_log(GPR_INFO, "starting server on port %d", port_);
       std::mutex mu;
       std::unique_lock<std::mutex> lock(mu);
       std::condition_variable cond;
@@ -249,7 +249,7 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
           std::bind(&ServerData::Serve, this, server_host, &mu, &cond)));
       cond.wait(lock, [this] { return server_ready_; });
       server_ready_ = false;
-      LOG(INFO) << "server startup complete";
+      gpr_log(GPR_INFO, "server startup complete");
     }
 
     void Serve(const std::string& server_host, std::mutex* mu,
@@ -380,14 +380,15 @@ TEST_P(CFStreamTest, NetworkFlapRpcsInFlight) {
       CHECK(ok);
       AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
       if (!call->status.ok()) {
-        VLOG(2) << "RPC failed with error: " << call->status.error_message();
+        gpr_log(GPR_DEBUG, "RPC failed with error: %s",
+                call->status.error_message().c_str());
         // Bring network up when RPCs start failing
         if (network_down) {
           NetworkUp();
           network_down = false;
         }
       } else {
-        VLOG(2) << "RPC succeeded";
+        gpr_log(GPR_DEBUG, "RPC succeeded");
       }
       delete call;
     }
@@ -426,10 +427,11 @@ TEST_P(CFStreamTest, ConcurrentRpc) {
       CHECK(ok);
       AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
       if (!call->status.ok()) {
-        VLOG(2) << "RPC failed with error: " << call->status.error_message();
+        gpr_log(GPR_DEBUG, "RPC failed with error: %s",
+                call->status.error_message().c_str());
         // Bring network up when RPCs start failing
       } else {
-        VLOG(2) << "RPC succeeded";
+        gpr_log(GPR_DEBUG, "RPC succeeded");
       }
       delete call;
     }

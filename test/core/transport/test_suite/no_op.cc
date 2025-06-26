@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/transport/test_suite/transport_test.h"
+#include "test/core/transport/test_suite/test.h"
 
 namespace grpc_core {
 
@@ -20,8 +20,8 @@ TRANSPORT_TEST(NoOp) {}
 
 TRANSPORT_TEST(WaitForAllPendingWork) { WaitForAllPendingWork(); }
 
-TRANSPORT_TEST(SetServerCallDestinationAndFinish) {
-  SetServerCallDestination();
+TRANSPORT_TEST(SetServerAcceptorAndFinish) {
+  SetServerAcceptor();
   WaitForAllPendingWork();
 }
 

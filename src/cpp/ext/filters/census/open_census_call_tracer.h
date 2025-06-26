@@ -37,6 +37,9 @@
 #include <grpc/support/time.h>
 #include <grpcpp/opencensus.h>
 
+#include "src/core/lib/channel/call_tracer.h"
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -44,8 +47,6 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/telemetry/call_tracer.h"
-#include "src/core/telemetry/tcp_tracer.h"
 
 // TODO(yashykt): This might not be the right place for this channel arg, but we
 // don't have a better place for this right now.
@@ -123,7 +124,8 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
     absl::StatusCode status_code_;
   };
 
-  explicit OpenCensusCallTracer(grpc_core::Slice path, grpc_core::Arena* arena,
+  explicit OpenCensusCallTracer(grpc_call_context_element* call_context,
+                                grpc_core::Slice path, grpc_core::Arena* arena,
                                 bool tracing_enabled);
   ~OpenCensusCallTracer() override;
 
@@ -148,6 +150,7 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
  private:
   experimental::CensusContext CreateCensusContextForCallAttempt();
 
+  const grpc_call_context_element* call_context_;
   // Client method.
   grpc_core::Slice path_;
   absl::string_view method_;

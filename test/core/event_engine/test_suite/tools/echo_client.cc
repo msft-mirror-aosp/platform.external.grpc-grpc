@@ -39,7 +39,6 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -47,6 +46,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -93,12 +93,14 @@ void ReceiveAndEchoMessage(EventEngine::Endpoint* endpoint, int message_id) {
   endpoint->Read(
       [&](absl::Status status) {
         if (!status.ok()) {
-          LOG(ERROR) << "Error reading from endpoint: " << status;
+          gpr_log(GPR_ERROR, "Error reading from endpoint: %s",
+                  status.ToString().c_str());
           exit(1);
         }
         Slice received = buf.TakeFirst();
-        LOG(ERROR) << "Received message " << message_id << ": "
-                   << received.as_string_view();
+        gpr_log(GPR_ERROR, "Received message %d: %.*s", message_id,
+                static_cast<int>(received.as_string_view().length()),
+                received.as_string_view().data());
         read_done.Notify();
       },
       &buf, nullptr);
@@ -122,7 +124,8 @@ void RunUntilInterrupted() {
   engine->Connect(
       [&](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
         if (!ep.ok()) {
-          LOG(ERROR) << "Error connecting: " << ep.status().ToString();
+          gpr_log(GPR_ERROR, "Error connecting: %s",
+                  ep.status().ToString().c_str());
           exit(1);
         }
         endpoint = std::move(*ep);
@@ -131,10 +134,10 @@ void RunUntilInterrupted() {
       *addr, config, memory_quota->CreateMemoryAllocator("client"), 2h);
   connected.WaitForNotification();
   CHECK_NE(endpoint.get(), nullptr);
-  VLOG(2) << "peer addr: "
-          << ResolvedAddressToString(endpoint->GetPeerAddress());
-  VLOG(2) << "local addr: "
-          << ResolvedAddressToString(endpoint->GetLocalAddress());
+  gpr_log(GPR_DEBUG, "peer addr: %s",
+          ResolvedAddressToString(endpoint->GetPeerAddress())->c_str());
+  gpr_log(GPR_DEBUG, "local addr: %s",
+          ResolvedAddressToString(endpoint->GetLocalAddress())->c_str());
   int message_id = 0;
   while (true) {
     SendMessage(endpoint.get(), message_id++);

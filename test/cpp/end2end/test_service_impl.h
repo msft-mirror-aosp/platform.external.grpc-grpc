@@ -28,9 +28,9 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
@@ -98,34 +98,35 @@ class TestServiceSignaller {
   // is whatever the number of RPCs waiting for server notification is
   // at that time.
   int ClientWaitUntilNRpcsStarted(int desired_rpcs, absl::Duration timeout) {
-    VLOG(2) << "*** enter ClientWaitUntilNRpcsStarted ***";
+    gpr_log(GPR_DEBUG, "*** enter ClientWaitUntilNRpcsStarted ***");
     absl::Time deadline = absl::Now() + timeout;
     std::chrono::system_clock::time_point chrono_deadline =
         absl::ToChronoTime(deadline);
     std::unique_lock<std::mutex> lock(mu_);
     cv_rpc_started_.wait_until(lock, chrono_deadline, [this, desired_rpcs] {
-      VLOG(2) << "*** desired_rpcs: " << desired_rpcs
-              << " rpcs_waiting_for_server_to_continue_: "
-              << rpcs_waiting_for_server_to_continue_ << " ***";
+      gpr_log(
+          GPR_DEBUG,
+          "*** desired_rpcs: %d rpcs_waiting_for_server_to_continue_: %d ***",
+          desired_rpcs, rpcs_waiting_for_server_to_continue_);
       return rpcs_waiting_for_server_to_continue_ >= desired_rpcs;
     });
-    VLOG(2) << "*** leave ClientWaitUntilNRpcsStarted ***";
+    gpr_log(GPR_DEBUG, "*** leave ClientWaitUntilNRpcsStarted ***");
     return rpcs_waiting_for_server_to_continue_;
   }
   void ServerWaitToContinue() {
-    VLOG(2) << "*** enter ServerWaitToContinue ***";
+    gpr_log(GPR_DEBUG, "*** enter ServerWaitToContinue ***");
     std::unique_lock<std::mutex> lock(mu_);
     cv_server_continue_.wait(lock, [this] { return server_should_continue_; });
-    VLOG(2) << "*** leave ServerWaitToContinue ***";
+    gpr_log(GPR_DEBUG, "*** leave ServerWaitToContinue ***");
   }
   void SignalClientThatRpcStarted() {
-    VLOG(2) << "*** SignalClientThatRpcStarted ***";
+    gpr_log(GPR_DEBUG, "*** SignalClientThatRpcStarted ***");
     std::unique_lock<std::mutex> lock(mu_);
     ++rpcs_waiting_for_server_to_continue_;
     cv_rpc_started_.notify_all();
   }
   void SignalServerToContinue() {
-    VLOG(2) << "*** SignalServerToContinue ***";
+    gpr_log(GPR_DEBUG, "*** SignalServerToContinue ***");
     std::unique_lock<std::mutex> lock(mu_);
     server_should_continue_ = true;
     cv_server_continue_.notify_all();
@@ -169,7 +170,7 @@ class TestMultipleServiceImpl : public RpcService {
     }
 
     if (request->has_param() && request->param().server_die()) {
-      LOG(ERROR) << "The request should not reach application handler.";
+      gpr_log(GPR_ERROR, "The request should not reach application handler.");
       CHECK(0);
     }
     if (request->has_param() && request->param().has_expected_error()) {
@@ -329,7 +330,7 @@ class TestMultipleServiceImpl : public RpcService {
     while (reader->Read(&request)) {
       response->mutable_message()->append(request.message());
     }
-    LOG(INFO) << "Read: " << num_msgs_read << " messages";
+    gpr_log(GPR_INFO, "Read: %d messages", num_msgs_read);
 
     if (server_try_cancel_thd != nullptr) {
       server_try_cancel_thd->join();
@@ -440,7 +441,7 @@ class TestMultipleServiceImpl : public RpcService {
     int read_counts = 0;
     while (stream->Read(&request)) {
       read_counts++;
-      LOG(INFO) << "recv msg " << request.message();
+      gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
       response.set_message(request.message());
       if (read_counts == server_write_last) {
         stream->WriteLast(response, WriteOptions());

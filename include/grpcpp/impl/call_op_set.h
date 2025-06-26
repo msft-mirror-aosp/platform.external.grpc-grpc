@@ -31,6 +31,7 @@
 #include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>
@@ -771,9 +772,7 @@ class CallOpRecvInitialMetadata {
 class CallOpClientRecvStatus {
  public:
   CallOpClientRecvStatus()
-      : metadata_map_(nullptr),
-        recv_status_(nullptr),
-        debug_error_string_(nullptr) {}
+      : recv_status_(nullptr), debug_error_string_(nullptr) {}
 
   void ClientRecvStatus(grpc::ClientContext* context, Status* status) {
     client_context_ = context;

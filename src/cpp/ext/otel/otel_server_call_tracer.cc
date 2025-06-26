@@ -37,19 +37,19 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/telemetry/tcp_tracer.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
 namespace internal {
 
-void OpenTelemetryPluginImpl::ServerCallTracer::RecordReceivedInitialMetadata(
+void OpenTelemetryPlugin::ServerCallTracer::RecordReceivedInitialMetadata(
     grpc_metadata_batch* recv_initial_metadata) {
   path_ =
       recv_initial_metadata->get_pointer(grpc_core::HttpPathMetadata())->Ref();
@@ -80,7 +80,7 @@ void OpenTelemetryPluginImpl::ServerCallTracer::RecordReceivedInitialMetadata(
   }
 }
 
-void OpenTelemetryPluginImpl::ServerCallTracer::RecordSendInitialMetadata(
+void OpenTelemetryPlugin::ServerCallTracer::RecordSendInitialMetadata(
     grpc_metadata_batch* send_initial_metadata) {
   scope_config_->active_plugin_options_view().ForEach(
       [&](const InternalOpenTelemetryPluginOption& plugin_option,
@@ -96,14 +96,14 @@ void OpenTelemetryPluginImpl::ServerCallTracer::RecordSendInitialMetadata(
       otel_plugin_);
 }
 
-void OpenTelemetryPluginImpl::ServerCallTracer::RecordSendTrailingMetadata(
+void OpenTelemetryPlugin::ServerCallTracer::RecordSendTrailingMetadata(
     grpc_metadata_batch* /*send_trailing_metadata*/) {
   // We need to record the time when the trailing metadata was sent to
   // mark the completeness of the request.
   elapsed_time_ = absl::Now() - start_time_;
 }
 
-void OpenTelemetryPluginImpl::ServerCallTracer::RecordEnd(
+void OpenTelemetryPlugin::ServerCallTracer::RecordEnd(
     const grpc_call_final_info* final_info) {
   std::array<std::pair<absl::string_view, absl::string_view>, 2>
       additional_labels = {

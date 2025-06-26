@@ -37,6 +37,8 @@
 struct grpc_closure;
 typedef struct grpc_closure grpc_closure;
 
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_closure;
+
 typedef struct grpc_closure_list {
   grpc_closure* head;
   grpc_closure* tail;
@@ -292,7 +294,7 @@ class Closure {
       return;
     }
 #ifndef NDEBUG
-    if (GRPC_TRACE_FLAG_ENABLED(closure)) {
+    if (grpc_trace_closure.enabled()) {
       gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: run [%s:%d]",
               closure, closure->file_created, closure->line_created,
               location.file(), location.line());
@@ -301,7 +303,7 @@ class Closure {
 #endif
     closure->cb(closure->cb_arg, error);
 #ifndef NDEBUG
-    if (GRPC_TRACE_FLAG_ENABLED(closure)) {
+    if (grpc_trace_closure.enabled()) {
       gpr_log(GPR_DEBUG, "closure %p finished", closure);
     }
 #endif

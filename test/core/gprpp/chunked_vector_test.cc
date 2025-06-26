@@ -31,14 +31,20 @@ namespace testing {
 static constexpr size_t kInitialArenaSize = 1024;
 static constexpr size_t kChunkSize = 3;
 
-TEST(ChunkedVectorTest, Noop) {
-  auto arena = SimpleArenaAllocator(kInitialArenaSize)->MakeArena();
+class ChunkedVectorTest : public ::testing::Test {
+ protected:
+  MemoryAllocator memory_allocator_ = MemoryAllocator(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
+};
+
+TEST_F(ChunkedVectorTest, Noop) {
+  auto arena = MakeScopedArena(kInitialArenaSize, &memory_allocator_);
   ChunkedVector<int, kChunkSize> v(arena.get());
   EXPECT_EQ(0, v.size());
 }
 
-TEST(ChunkedVectorTest, Stack) {
-  auto arena = SimpleArenaAllocator(kInitialArenaSize)->MakeArena();
+TEST_F(ChunkedVectorTest, Stack) {
+  auto arena = MakeScopedArena(kInitialArenaSize, &memory_allocator_);
   ChunkedVector<int, kChunkSize> v(arena.get());
 
   // Populate 2 chunks of memory, and 2/3 of a final chunk.
@@ -79,8 +85,8 @@ TEST(ChunkedVectorTest, Stack) {
   EXPECT_EQ(0, v.size());
 }
 
-TEST(ChunkedVectorTest, Iterate) {
-  auto arena = SimpleArenaAllocator(kInitialArenaSize)->MakeArena();
+TEST_F(ChunkedVectorTest, Iterate) {
+  auto arena = MakeScopedArena(kInitialArenaSize, &memory_allocator_);
   ChunkedVector<int, kChunkSize> v(arena.get());
   v.EmplaceBack(1);
   v.EmplaceBack(2);
@@ -111,8 +117,8 @@ TEST(ChunkedVectorTest, Iterate) {
   EXPECT_EQ(v.end(), it);
 }
 
-TEST(ChunkedVectorTest, ConstIterate) {
-  auto arena = SimpleArenaAllocator(kInitialArenaSize)->MakeArena();
+TEST_F(ChunkedVectorTest, ConstIterate) {
+  auto arena = MakeScopedArena(kInitialArenaSize, &memory_allocator_);
   ChunkedVector<int, kChunkSize> v(arena.get());
   v.EmplaceBack(1);
   v.EmplaceBack(2);
@@ -143,8 +149,8 @@ TEST(ChunkedVectorTest, ConstIterate) {
   EXPECT_EQ(v.cend(), it);
 }
 
-TEST(ChunkedVectorTest, Clear) {
-  auto arena = SimpleArenaAllocator(kInitialArenaSize)->MakeArena();
+TEST_F(ChunkedVectorTest, Clear) {
+  auto arena = MakeScopedArena(kInitialArenaSize, &memory_allocator_);
   ChunkedVector<int, kChunkSize> v(arena.get());
   v.EmplaceBack(1);
   EXPECT_EQ(v.size(), 1);
@@ -153,8 +159,8 @@ TEST(ChunkedVectorTest, Clear) {
   EXPECT_EQ(v.begin(), v.end());
 }
 
-TEST(ChunkedVectorTest, RemoveIf) {
-  auto arena = SimpleArenaAllocator(kInitialArenaSize)->MakeArena();
+TEST_F(ChunkedVectorTest, RemoveIf) {
+  auto arena = MakeScopedArena(kInitialArenaSize, &memory_allocator_);
   ChunkedVector<int, kChunkSize> v(arena.get());
   v.EmplaceBack(1);
   v.SetEnd(std::remove_if(v.begin(), v.end(), [](int i) { return i == 1; }));

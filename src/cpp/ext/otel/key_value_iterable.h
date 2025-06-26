@@ -47,7 +47,7 @@ inline opentelemetry::nostd::string_view AbslStrViewToOpenTelemetryStrView(
 // An iterable class based on opentelemetry::common::KeyValueIterable that
 // allows gRPC to iterate on its various sources of attributes and avoid an
 // allocation in cases wherever possible.
-class OpenTelemetryPluginImpl::KeyValueIterable
+class OpenTelemetryPlugin::KeyValueIterable
     : public opentelemetry::common::KeyValueIterable {
  public:
   KeyValueIterable(
@@ -55,10 +55,10 @@ class OpenTelemetryPluginImpl::KeyValueIterable
           injected_labels_from_plugin_options,
       absl::Span<const std::pair<absl::string_view, absl::string_view>>
           additional_labels,
-      const OpenTelemetryPluginImpl::ActivePluginOptionsView*
+      const OpenTelemetryPlugin::ActivePluginOptionsView*
           active_plugin_options_view,
       absl::Span<const grpc_core::RefCountedStringValue> optional_labels,
-      bool is_client, const OpenTelemetryPluginImpl* otel_plugin)
+      bool is_client, const OpenTelemetryPlugin* otel_plugin)
       : injected_labels_from_plugin_options_(
             injected_labels_from_plugin_options),
         additional_labels_(additional_labels),
@@ -149,11 +149,11 @@ class OpenTelemetryPluginImpl::KeyValueIterable
       injected_labels_from_plugin_options_;
   absl::Span<const std::pair<absl::string_view, absl::string_view>>
       additional_labels_;
-  const OpenTelemetryPluginImpl::ActivePluginOptionsView*
+  const OpenTelemetryPlugin::ActivePluginOptionsView*
       active_plugin_options_view_;
   absl::Span<const grpc_core::RefCountedStringValue> optional_labels_;
   bool is_client_;
-  const OpenTelemetryPluginImpl* otel_plugin_;
+  const OpenTelemetryPlugin* otel_plugin_;
 };
 
 }  // namespace internal

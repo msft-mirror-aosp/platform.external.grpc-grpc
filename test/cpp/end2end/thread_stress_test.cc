@@ -22,8 +22,6 @@
 
 #include <gtest/gtest.h>
 
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
@@ -287,8 +285,8 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
     if (!s.ok()) {
       if (!(allow_exhaustion &&
             s.error_code() == StatusCode::RESOURCE_EXHAUSTED)) {
-        LOG(ERROR) << "RPC error: " << s.error_code() << ": "
-                   << s.error_message();
+        gpr_log(GPR_ERROR, "RPC error: %d: %s", s.error_code(),
+                s.error_message().c_str());
       }
       gpr_atm_no_barrier_fetch_add(errors, gpr_atm{1});
     } else {
@@ -318,7 +316,7 @@ TYPED_TEST(End2endTest, ThreadStress) {
   }
   uint64_t error_cnt = static_cast<uint64_t>(gpr_atm_no_barrier_load(&errors));
   if (error_cnt != 0) {
-    LOG(INFO) << "RPC error count: " << error_cnt;
+    gpr_log(GPR_INFO, "RPC error count: %" PRIu64, error_cnt);
   }
   // If this test allows resource exhaustion, expect that it actually sees some
   if (this->common_.AllowExhaustion()) {
@@ -377,7 +375,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
       if (!cq_.Next(&got_tag, &ok)) break;
       AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
       if (!ok) {
-        VLOG(2) << "Error: " << call->status.error_code();
+        gpr_log(GPR_DEBUG, "Error: %d", call->status.error_code());
       }
       delete call;
 

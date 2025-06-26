@@ -40,6 +40,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -50,12 +51,10 @@ namespace grpc_core {
 const NoInterceptor ClientMessageSizeFilter::Call::OnClientInitialMetadata;
 const NoInterceptor ClientMessageSizeFilter::Call::OnServerInitialMetadata;
 const NoInterceptor ClientMessageSizeFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor ClientMessageSizeFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ClientMessageSizeFilter::Call::OnFinalize;
 const NoInterceptor ServerMessageSizeFilter::Call::OnClientInitialMetadata;
 const NoInterceptor ServerMessageSizeFilter::Call::OnServerInitialMetadata;
 const NoInterceptor ServerMessageSizeFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor ServerMessageSizeFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ServerMessageSizeFilter::Call::OnFinalize;
 
 //
@@ -63,8 +62,11 @@ const NoInterceptor ServerMessageSizeFilter::Call::OnFinalize;
 //
 
 const MessageSizeParsedConfig* MessageSizeParsedConfig::GetFromCallContext(
-    Arena* arena, size_t service_config_parser_index) {
-  auto* svc_cfg_call_data = arena->GetContext<ServiceConfigCallData>();
+    const grpc_call_context_element* context,
+    size_t service_config_parser_index) {
+  if (context == nullptr) return nullptr;
+  auto* svc_cfg_call_data = static_cast<ServiceConfigCallData*>(
+      context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
   if (svc_cfg_call_data == nullptr) return nullptr;
   return static_cast<const MessageSizeParsedConfig*>(
       svc_cfg_call_data->GetMethodParsedConfig(service_config_parser_index));
@@ -159,7 +161,7 @@ ServerMetadataHandle CheckPayload(const Message& msg,
                                   absl::optional<uint32_t> max_length,
                                   bool is_client, bool is_send) {
   if (!max_length.has_value()) return nullptr;
-  if (GRPC_TRACE_FLAG_ENABLED(call)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_call_trace)) {
     gpr_log(GPR_INFO, "%s[message_size] %s len:%" PRIdPTR " max:%d",
             GetContext<Activity>()->DebugTag().c_str(),
             is_send ? "send" : "recv", msg.payload()->Length(), *max_length);
@@ -184,7 +186,8 @@ ClientMessageSizeFilter::Call::Call(ClientMessageSizeFilter* filter)
   // size to the receive limit.
   const MessageSizeParsedConfig* config_from_call_context =
       MessageSizeParsedConfig::GetFromCallContext(
-          GetContext<Arena>(), filter->service_config_parser_index_);
+          GetContext<grpc_call_context_element>(),
+          filter->service_config_parser_index_);
   if (config_from_call_context != nullptr) {
     absl::optional<uint32_t> max_send_size = limits_.max_send_size();
     absl::optional<uint32_t> max_recv_size = limits_.max_recv_size();

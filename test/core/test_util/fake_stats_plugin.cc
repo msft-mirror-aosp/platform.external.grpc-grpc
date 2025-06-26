@@ -57,7 +57,11 @@ ArenaPromise<ServerMetadataHandle> FakeStatsClientFilter::MakeCallPromise(
   FakeClientCallTracer* client_call_tracer =
       fake_client_call_tracer_factory_->CreateFakeClientCallTracer();
   if (client_call_tracer != nullptr) {
-    SetContext<CallTracerAnnotationInterface>(client_call_tracer);
+    auto* call_context = GetContext<grpc_call_context_element>();
+    call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value =
+        client_call_tracer;
+    call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].destroy =
+        nullptr;
   }
   return next_promise_factory(std::move(call_args));
 }
@@ -121,8 +125,8 @@ void GlobalInstrumentsRegistryTestPeer::ResetGlobalInstrumentsRegistry() {
 
 namespace {
 
-absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
-FindInstrument(
+template <typename HandleType>
+absl::optional<HandleType> FindInstrument(
     const std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>&
         instruments,
     absl::string_view name, GlobalInstrumentsRegistry::ValueType value_type,
@@ -130,7 +134,7 @@ FindInstrument(
   for (const auto& descriptor : instruments) {
     if (descriptor.name == name && descriptor.value_type == value_type &&
         descriptor.instrument_type == instrument_type) {
-      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle;
+      HandleType handle;
       handle.index = descriptor.index;
       return handle;
     }
@@ -140,51 +144,57 @@ FindInstrument(
 
 }  // namespace
 
-absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+absl::optional<GlobalInstrumentsRegistry::GlobalUInt64CounterHandle>
 GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
     absl::string_view name) {
-  return FindInstrument(GlobalInstrumentsRegistry::GetInstrumentList(), name,
-                        GlobalInstrumentsRegistry::ValueType::kUInt64,
-                        GlobalInstrumentsRegistry::InstrumentType::kCounter);
+  return FindInstrument<GlobalInstrumentsRegistry::GlobalUInt64CounterHandle>(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kUInt64,
+      GlobalInstrumentsRegistry::InstrumentType::kCounter);
 }
 
-absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+absl::optional<GlobalInstrumentsRegistry::GlobalDoubleCounterHandle>
 GlobalInstrumentsRegistryTestPeer::FindDoubleCounterHandleByName(
     absl::string_view name) {
-  return FindInstrument(GlobalInstrumentsRegistry::GetInstrumentList(), name,
-                        GlobalInstrumentsRegistry::ValueType::kDouble,
-                        GlobalInstrumentsRegistry::InstrumentType::kCounter);
+  return FindInstrument<GlobalInstrumentsRegistry::GlobalDoubleCounterHandle>(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kDouble,
+      GlobalInstrumentsRegistry::InstrumentType::kCounter);
 }
 
-absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+absl::optional<GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle>
 GlobalInstrumentsRegistryTestPeer::FindUInt64HistogramHandleByName(
     absl::string_view name) {
-  return FindInstrument(GlobalInstrumentsRegistry::GetInstrumentList(), name,
-                        GlobalInstrumentsRegistry::ValueType::kUInt64,
-                        GlobalInstrumentsRegistry::InstrumentType::kHistogram);
+  return FindInstrument<GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle>(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kUInt64,
+      GlobalInstrumentsRegistry::InstrumentType::kHistogram);
 }
 
-absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+absl::optional<GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle>
 GlobalInstrumentsRegistryTestPeer::FindDoubleHistogramHandleByName(
     absl::string_view name) {
-  return FindInstrument(GlobalInstrumentsRegistry::GetInstrumentList(), name,
-                        GlobalInstrumentsRegistry::ValueType::kDouble,
-                        GlobalInstrumentsRegistry::InstrumentType::kHistogram);
+  return FindInstrument<GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle>(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kDouble,
+      GlobalInstrumentsRegistry::InstrumentType::kHistogram);
 }
 
-absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+absl::optional<GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle>
 GlobalInstrumentsRegistryTestPeer::FindCallbackInt64GaugeHandleByName(
     absl::string_view name) {
-  return FindInstrument(
+  return FindInstrument<
+      GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle>(
       GlobalInstrumentsRegistry::GetInstrumentList(), name,
       GlobalInstrumentsRegistry::ValueType::kInt64,
       GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
 }
 
-absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+absl::optional<GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle>
 GlobalInstrumentsRegistryTestPeer::FindCallbackDoubleGaugeHandleByName(
     absl::string_view name) {
-  return FindInstrument(
+  return FindInstrument<
+      GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle>(
       GlobalInstrumentsRegistry::GetInstrumentList(), name,
       GlobalInstrumentsRegistry::ValueType::kDouble,
       GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);

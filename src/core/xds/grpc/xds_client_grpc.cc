@@ -24,7 +24,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -41,6 +40,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -55,7 +55,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/telemetry/metrics.h"
 #include "src/core/xds/grpc/upb_utils.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_transport_grpc.h"
@@ -100,20 +99,20 @@ const auto kMetricResourceUpdatesValid =
         "EXPERIMENTAL.  A counter of resources received that were considered "
         "valid.  The counter will be incremented even for resources that "
         "have not changed.",
-        "{resource}", false)
-        .Labels(kMetricLabelTarget, kMetricLabelXdsServer,
-                kMetricLabelXdsResourceType)
-        .Build();
+        "{resource}",
+        {kMetricLabelTarget, kMetricLabelXdsServer,
+         kMetricLabelXdsResourceType},
+        {}, false);
 
 const auto kMetricResourceUpdatesInvalid =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.xds_client.resource_updates_invalid",
         "EXPERIMENTAL.  A counter of resources received that were considered "
         "invalid.",
-        "{resource}", false)
-        .Labels(kMetricLabelTarget, kMetricLabelXdsServer,
-                kMetricLabelXdsResourceType)
-        .Build();
+        "{resource}",
+        {kMetricLabelTarget, kMetricLabelXdsServer,
+         kMetricLabelXdsResourceType},
+        {}, false);
 
 const auto kMetricServerFailure =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
@@ -122,9 +121,7 @@ const auto kMetricServerFailure =
         "unhealthy.  A server goes unhealthy when we have a connectivity "
         "failure or when the ADS stream fails without seeing a response "
         "message, as per gRFC A57.",
-        "{failure}", false)
-        .Labels(kMetricLabelTarget, kMetricLabelXdsServer)
-        .Build();
+        "{failure}", {kMetricLabelTarget, kMetricLabelXdsServer}, {}, false);
 
 const auto kMetricConnected =
     GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
@@ -135,17 +132,15 @@ const auto kMetricConnected =
         "ADS stream fails without seeing a response message, as per gRFC "
         "A57.  It will be set to 1 when we receive the first response on "
         "an ADS stream.",
-        "{bool}", false)
-        .Labels(kMetricLabelTarget, kMetricLabelXdsServer)
-        .Build();
+        "{bool}", {kMetricLabelTarget, kMetricLabelXdsServer}, {}, false);
 
 const auto kMetricResources =
     GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
         "grpc.xds_client.resources", "EXPERIMENTAL.  Number of xDS resources.",
-        "{resource}", false)
-        .Labels(kMetricLabelTarget, kMetricLabelXdsAuthority,
-                kMetricLabelXdsResourceType, kMetricLabelXdsCacheState)
-        .Build();
+        "{resource}",
+        {kMetricLabelTarget, kMetricLabelXdsAuthority,
+         kMetricLabelXdsResourceType, kMetricLabelXdsCacheState},
+        {}, false);
 
 }  // namespace
 
@@ -198,7 +193,7 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
   // First, try GRPC_XDS_BOOTSTRAP env var.
   auto path = GetEnv("GRPC_XDS_BOOTSTRAP");
   if (path.has_value()) {
-    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
               "Got bootstrap file location from GRPC_XDS_BOOTSTRAP "
               "environment variable: %s",
@@ -211,7 +206,7 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
   // Next, try GRPC_XDS_BOOTSTRAP_CONFIG env var.
   auto env_config = GetEnv("GRPC_XDS_BOOTSTRAP_CONFIG");
   if (env_config.has_value()) {
-    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
               "Got bootstrap contents from GRPC_XDS_BOOTSTRAP_CONFIG "
               "environment variable");
@@ -220,8 +215,9 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
   }
   // Finally, try fallback config.
   if (fallback_config != nullptr) {
-    GRPC_TRACE_LOG(xds_client, INFO)
-        << "Got bootstrap contents from fallback config";
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO, "Got bootstrap contents from fallback config");
+    }
     return fallback_config;
   }
   // No bootstrap config found.
@@ -260,7 +256,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   // Find bootstrap contents.
   auto bootstrap_contents = GetBootstrapContents(g_fallback_bootstrap_config);
   if (!bootstrap_contents.ok()) return bootstrap_contents.status();
-  if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "xDS bootstrap contents: %s",
             bootstrap_contents->c_str());
   }
@@ -273,7 +269,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
       key, std::move(*bootstrap), channel_args,
       MakeOrphanable<GrpcXdsTransportFactory>(channel_args));
   g_xds_client_map->emplace(xds_client->key(), xds_client.get());
-  if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] Created xDS client for key %s",
             xds_client.get(), std::string(key).c_str());
   }
@@ -320,7 +316,7 @@ GrpcXdsClient::GrpcXdsClient(
           [this](CallbackMetricReporter& reporter) {
             ReportCallbackMetrics(reporter);
           },
-          Duration::Seconds(5), kMetricConnected, kMetricResources)) {}
+          {kMetricConnected, kMetricResources})) {}
 
 void GrpcXdsClient::Orphaned() {
   registered_metric_callback_.reset();

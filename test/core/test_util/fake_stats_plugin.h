@@ -17,23 +17,21 @@
 
 #include <memory>
 #include <string>
-#include <type_traits>
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
 
+#include "src/core/lib/channel/call_tracer.h"
+#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/telemetry/call_tracer.h"
-#include "src/core/telemetry/metrics.h"
-#include "src/core/telemetry/tcp_tracer.h"
 
 namespace grpc_core {
 
@@ -210,15 +208,15 @@ class FakeStatsPlugin : public StatsPlugin {
           bool(const experimental::StatsPluginChannelScope& /*scope*/) const>
           channel_filter = nullptr,
       bool use_disabled_by_default_metrics = false)
-      : channel_filter_(std::move(channel_filter)),
-        use_disabled_by_default_metrics_(use_disabled_by_default_metrics) {
+      : channel_filter_(std::move(channel_filter)) {
     GlobalInstrumentsRegistry::ForEach(
         [&](const GlobalInstrumentsRegistry::GlobalInstrumentDescriptor&
                 descriptor) {
           if (!use_disabled_by_default_metrics &&
               !descriptor.enable_by_default) {
-            LOG(INFO) << "FakeStatsPlugin[" << this
-                      << "]: skipping disabled metric: " << descriptor.name;
+            gpr_log(GPR_INFO,
+                    "FakeStatsPlugin[%p]: skipping disabled metric: %s", this,
+                    std::string(descriptor.name).c_str());
             return;
           }
           switch (descriptor.instrument_type) {
@@ -270,18 +268,10 @@ class FakeStatsPlugin : public StatsPlugin {
       const ChannelArgs& /*args*/) const override {
     return {true, nullptr};
   }
-  std::shared_ptr<StatsPlugin::ScopeConfig> GetChannelScopeConfig(
-      const experimental::StatsPluginChannelScope& /*scope*/) const override {
-    return nullptr;
-  }
-  std::shared_ptr<StatsPlugin::ScopeConfig> GetServerScopeConfig(
-      const ChannelArgs& /*args*/) const override {
-    return nullptr;
-  }
 
   void AddCounter(
-      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, uint64_t value,
-      absl::Span<const absl::string_view> label_values,
+      GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
+      uint64_t value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override {
     // The problem with this approach is that we initialize uint64_counters_ in
     // BuildAndRegister by querying the GlobalInstrumentsRegistry at the time.
@@ -292,70 +282,69 @@ class FakeStatsPlugin : public StatsPlugin {
     // just ignore it here. This would also prevent us from having to lock the
     // GlobalInstrumentsRegistry everytime a metric is recorded. But this is not
     // a concern for now.
-    LOG(INFO) << "FakeStatsPlugin[" << this
-              << "]::AddCounter(index=" << handle.index << ", value=(uint64)"
-              << value << ", label_values={"
-              << absl::StrJoin(label_values, ", ")
-              << "}, optional_label_values={"
-              << absl::StrJoin(optional_values, ", ") << "}";
+    gpr_log(GPR_INFO,
+            "FakeStatsPlugin[%p]::AddCounter(index=%u, value=(uint64)%lu, "
+            "label_values={%s}, optional_label_values={%s}",
+            this, handle.index, value,
+            absl::StrJoin(label_values, ", ").c_str(),
+            absl::StrJoin(optional_values, ", ").c_str());
     MutexLock lock(&mu_);
     auto iter = uint64_counters_.find(handle.index);
     if (iter == uint64_counters_.end()) return;
     iter->second.Add(value, label_values, optional_values);
   }
   void AddCounter(
-      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, double value,
+      GlobalInstrumentsRegistry::GlobalDoubleCounterHandle handle, double value,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override {
-    LOG(INFO) << "FakeStatsPlugin[" << this
-              << "]::AddCounter(index=" << handle.index
-              << ", value(double)=" << value << ", label_values={"
-              << absl::StrJoin(label_values, ", ")
-              << "}, optional_label_values={"
-              << absl::StrJoin(optional_values, ", ") << "}";
+    gpr_log(GPR_INFO,
+            "FakeStatsPlugin[%p]::AddCounter(index=%u, value(double)=%f, "
+            "label_values={%s}, optional_label_values={%s}",
+            this, handle.index, value,
+            absl::StrJoin(label_values, ", ").c_str(),
+            absl::StrJoin(optional_values, ", ").c_str());
     MutexLock lock(&mu_);
     auto iter = double_counters_.find(handle.index);
     if (iter == double_counters_.end()) return;
     iter->second.Add(value, label_values, optional_values);
   }
   void RecordHistogram(
-      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, uint64_t value,
-      absl::Span<const absl::string_view> label_values,
+      GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle handle,
+      uint64_t value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override {
-    LOG(INFO) << "FakeStatsPlugin[" << this
-              << "]::RecordHistogram(index=" << handle.index
-              << ", value=(uint64)" << value << ", label_values={"
-              << absl::StrJoin(label_values, ", ")
-              << "}, optional_label_values={"
-              << absl::StrJoin(optional_values, ", ") << "}";
+    gpr_log(GPR_INFO,
+            "FakeStatsPlugin[%p]::RecordHistogram(index=%u, value=(uint64)%lu, "
+            "label_values={%s}, optional_label_values={%s}",
+            this, handle.index, value,
+            absl::StrJoin(label_values, ", ").c_str(),
+            absl::StrJoin(optional_values, ", ").c_str());
     MutexLock lock(&mu_);
     auto iter = uint64_histograms_.find(handle.index);
     if (iter == uint64_histograms_.end()) return;
     iter->second.Record(value, label_values, optional_values);
   }
   void RecordHistogram(
-      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, double value,
-      absl::Span<const absl::string_view> label_values,
+      GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
+      double value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override {
-    LOG(INFO) << "FakeStatsPlugin[" << this
-              << "]::RecordHistogram(index=" << handle.index
-              << ", value=(double)" << value << ", label_values={"
-              << absl::StrJoin(label_values, ", ")
-              << "}, optional_label_values={"
-              << absl::StrJoin(optional_values, ", ") << "}";
+    gpr_log(GPR_INFO,
+            "FakeStatsPlugin[%p]::RecordHistogram(index=%u, value=(double)%f, "
+            "label_values={%s}, optional_label_values={%s}",
+            this, handle.index, value,
+            absl::StrJoin(label_values, ", ").c_str(),
+            absl::StrJoin(optional_values, ", ").c_str());
     MutexLock lock(&mu_);
     auto iter = double_histograms_.find(handle.index);
     if (iter == double_histograms_.end()) return;
     iter->second.Record(value, label_values, optional_values);
   }
   void AddCallback(RegisteredMetricCallback* callback) override {
-    LOG(INFO) << "FakeStatsPlugin[" << this << "]::AddCallback(" << callback
-              << ")";
+    gpr_log(GPR_INFO, "FakeStatsPlugin[%p]::AddCallback(%p)", this, callback);
     callbacks_.insert(callback);
   }
   void RemoveCallback(RegisteredMetricCallback* callback) override {
-    LOG(INFO) << "FakeStatsPlugin[" << this << "]::RemoveCallback(" << callback
-              << ")";
+    gpr_log(GPR_INFO, "FakeStatsPlugin[%p]::RemoveCallback(%p)", this,
+            callback);
     callbacks_.erase(callback);
   }
 
@@ -368,15 +357,9 @@ class FakeStatsPlugin : public StatsPlugin {
       std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
     return nullptr;
   }
-  bool IsInstrumentEnabled(
-      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) const override {
-    const auto& descriptor =
-        GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
-    return use_disabled_by_default_metrics_ || descriptor.enable_by_default;
-  }
 
-  absl::optional<uint64_t> GetUInt64CounterValue(
-      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
+  absl::optional<uint64_t> GetCounterValue(
+      GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) {
     MutexLock lock(&mu_);
@@ -386,8 +369,8 @@ class FakeStatsPlugin : public StatsPlugin {
     }
     return iter->second.GetValue(label_values, optional_values);
   }
-  absl::optional<double> GetDoubleCounterValue(
-      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
+  absl::optional<double> GetCounterValue(
+      GlobalInstrumentsRegistry::GlobalDoubleCounterHandle handle,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) {
     MutexLock lock(&mu_);
@@ -397,8 +380,8 @@ class FakeStatsPlugin : public StatsPlugin {
     }
     return iter->second.GetValue(label_values, optional_values);
   }
-  absl::optional<std::vector<uint64_t>> GetUInt64HistogramValue(
-      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
+  absl::optional<std::vector<uint64_t>> GetHistogramValue(
+      GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle handle,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) {
     MutexLock lock(&mu_);
@@ -408,8 +391,8 @@ class FakeStatsPlugin : public StatsPlugin {
     }
     return iter->second.GetValues(label_values, optional_values);
   }
-  absl::optional<std::vector<double>> GetDoubleHistogramValue(
-      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
+  absl::optional<std::vector<double>> GetHistogramValue(
+      GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) {
     MutexLock lock(&mu_);
@@ -420,15 +403,15 @@ class FakeStatsPlugin : public StatsPlugin {
     return iter->second.GetValues(label_values, optional_values);
   }
   void TriggerCallbacks() {
-    LOG(INFO) << "FakeStatsPlugin[" << this << "]::TriggerCallbacks(): START";
+    gpr_log(GPR_INFO, "FakeStatsPlugin[%p]::TriggerCallbacks(): START", this);
     Reporter reporter(*this);
     for (auto* callback : callbacks_) {
       callback->Run(reporter);
     }
-    LOG(INFO) << "FakeStatsPlugin[" << this << "]::TriggerCallbacks(): END";
+    gpr_log(GPR_INFO, "FakeStatsPlugin[%p]::TriggerCallbacks(): END", this);
   }
-  absl::optional<int64_t> GetInt64CallbackGaugeValue(
-      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
+  absl::optional<int64_t> GetCallbackGaugeValue(
+      GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle handle,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) {
     MutexLock lock(&callback_mu_);
@@ -438,8 +421,8 @@ class FakeStatsPlugin : public StatsPlugin {
     }
     return iter->second.GetValue(label_values, optional_values);
   }
-  absl::optional<double> GetDoubleCallbackGaugeValue(
-      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
+  absl::optional<double> GetCallbackGaugeValue(
+      GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle handle,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) {
     MutexLock lock(&callback_mu_);
@@ -455,32 +438,34 @@ class FakeStatsPlugin : public StatsPlugin {
    public:
     explicit Reporter(FakeStatsPlugin& plugin) : plugin_(plugin) {}
 
-    void ReportInt64(
-        GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, int64_t value,
-        absl::Span<const absl::string_view> label_values,
+    void Report(
+        GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle handle,
+        int64_t value, absl::Span<const absl::string_view> label_values,
         absl::Span<const absl::string_view> optional_values) override {
-      LOG(INFO) << "FakeStatsPlugin[" << this
-                << "]::Reporter::Report(index=" << handle.index
-                << ", value=(int64_t)" << value << ", label_values={"
-                << absl::StrJoin(label_values, ", ")
-                << "}, optional_label_values={"
-                << absl::StrJoin(optional_values, ", ") << "}";
+      gpr_log(GPR_INFO,
+              "FakeStatsPlugin[%p]::Reporter::Report(index=%u, "
+              "value=(uint64)%ld, label_values={%s}, "
+              "optional_label_values={%s}",
+              this, handle.index, value,
+              absl::StrJoin(label_values, ", ").c_str(),
+              absl::StrJoin(optional_values, ", ").c_str());
       MutexLock lock(&plugin_.callback_mu_);
       auto iter = plugin_.int64_callback_gauges_.find(handle.index);
       if (iter == plugin_.int64_callback_gauges_.end()) return;
       iter->second.Set(value, label_values, optional_values);
     }
 
-    void ReportDouble(
-        GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, double value,
-        absl::Span<const absl::string_view> label_values,
+    void Report(
+        GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle handle,
+        double value, absl::Span<const absl::string_view> label_values,
         absl::Span<const absl::string_view> optional_values) override {
-      LOG(INFO) << "FakeStatsPlugin[" << this
-                << "]::Reporter::Report(index=" << handle.index
-                << ", value=(double)" << value << ", label_values={"
-                << absl::StrJoin(label_values, ", ")
-                << "}, optional_label_values={"
-                << absl::StrJoin(optional_values, ", ") << "}";
+      gpr_log(GPR_INFO,
+              "FakeStatsPlugin[%p]::Reporter::Report(index=%u, "
+              "value=(double)%f, label_values={%s}, "
+              "optional_label_values={%s}",
+              this, handle.index, value,
+              absl::StrJoin(label_values, ", ").c_str(),
+              absl::StrJoin(optional_values, ", ").c_str());
       MutexLock lock(&plugin_.callback_mu_);
       auto iter = plugin_.double_callback_gauges_.find(handle.index);
       if (iter == plugin_.double_callback_gauges_.end()) return;
@@ -615,7 +600,6 @@ class FakeStatsPlugin : public StatsPlugin {
   absl::AnyInvocable<bool(
       const experimental::StatsPluginChannelScope& /*scope*/) const>
       channel_filter_;
-  bool use_disabled_by_default_metrics_;
   // Instruments.
   Mutex mu_;
   absl::flat_hash_map<uint32_t, Counter<uint64_t>> uint64_counters_
@@ -670,17 +654,19 @@ class GlobalInstrumentsRegistryTestPeer {
  public:
   static void ResetGlobalInstrumentsRegistry();
 
-  static absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+  static absl::optional<GlobalInstrumentsRegistry::GlobalUInt64CounterHandle>
   FindUInt64CounterHandleByName(absl::string_view name);
-  static absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+  static absl::optional<GlobalInstrumentsRegistry::GlobalDoubleCounterHandle>
   FindDoubleCounterHandleByName(absl::string_view name);
-  static absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+  static absl::optional<GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle>
   FindUInt64HistogramHandleByName(absl::string_view name);
-  static absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+  static absl::optional<GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle>
   FindDoubleHistogramHandleByName(absl::string_view name);
-  static absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+  static absl::optional<
+      GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle>
   FindCallbackInt64GaugeHandleByName(absl::string_view name);
-  static absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+  static absl::optional<
+      GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle>
   FindCallbackDoubleGaugeHandleByName(absl::string_view name);
 
   static GlobalInstrumentsRegistry::GlobalInstrumentDescriptor*

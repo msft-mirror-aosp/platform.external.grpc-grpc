@@ -23,7 +23,6 @@
 #include <vector>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -31,6 +30,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/json.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/load_balancing/lb_policy.h"
@@ -43,7 +43,8 @@ namespace grpc_core {
 
 void LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
     std::unique_ptr<LoadBalancingPolicyFactory> factory) {
-  VLOG(2) << "registering LB policy factory for \"" << factory->name() << "\"";
+  gpr_log(GPR_DEBUG, "registering LB policy factory for \"%s\"",
+          std::string(factory->name()).c_str());
   CHECK(factories_.find(factory->name()) == factories_.end());
   factories_.emplace(factory->name(), std::move(factory));
 }

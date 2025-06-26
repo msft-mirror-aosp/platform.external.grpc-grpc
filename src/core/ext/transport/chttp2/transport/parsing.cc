@@ -29,7 +29,6 @@
 #include "absl/base/attributes.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -54,11 +53,14 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/backoff/random_early_detection.h"
+#include "src/core/lib/channel/call_tracer.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -73,9 +75,10 @@
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/telemetry/call_tracer.h"
 
 using grpc_core::HPackParser;
+
+grpc_core::TraceFlag grpc_trace_chttp2_new_stream(false, "chttp2_new_stream");
 
 static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t,
                                            size_t& requests_started);
@@ -331,7 +334,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
     case GRPC_DTS_FH_8:
       DCHECK_LT(cur, end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur));
-      if (GRPC_TRACE_FLAG_ENABLED(http)) {
+      if (grpc_http_trace.enabled()) {
         gpr_log(GPR_INFO, "INCOMING[%p]: %s len:%d id:0x%08x", t,
                 FrameTypeString(t->incoming_frame_type, t->incoming_frame_flags)
                     .c_str(),
@@ -452,7 +455,7 @@ static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t,
     case GRPC_CHTTP2_FRAME_GOAWAY:
       return init_goaway_parser(t);
     default:
-      if (GRPC_TRACE_FLAG_ENABLED(http)) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
         gpr_log(GPR_ERROR, "Unknown frame type %02x", t->incoming_frame_type);
       }
       return init_non_header_skip_frame_parser(t);
@@ -712,8 +715,8 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           gpr_log(GPR_ERROR, "grpc_chttp2_stream not accepted"));
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     }
-    if (GRPC_TRACE_FLAG_ENABLED(http) ||
-        GRPC_TRACE_FLAG_ENABLED(chttp2_new_stream)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+        GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_new_stream)) {
       gpr_log(GPR_INFO,
               "[t:%p fd:%d peer:%s] Accepting new stream; "
               "num_incoming_streams_before_settings_ack=%u",
@@ -766,7 +769,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       frame_type = HPackParser::LogInfo::kTrailers;
       break;
     case 2:
-      LOG(ERROR) << "too many header frames received";
+      gpr_log(GPR_ERROR, "too many header frames received");
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
   }
   if (frame_type == HPackParser::LogInfo::kTrailers && !t->header_eof) {
@@ -793,7 +796,7 @@ static grpc_error_handle init_window_update_frame_parser(
     grpc_chttp2_stream* s = t->incoming_stream =
         grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
     if (s == nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(http)) {
+      if (grpc_http_trace.enabled()) {
         gpr_log(GPR_ERROR, "Stream %d not found, ignoring WINDOW_UPDATE",
                 t->incoming_stream_id);
       }
@@ -885,17 +888,19 @@ static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
                                            const grpc_slice& slice,
                                            int is_last) {
   grpc_chttp2_stream* s = t->incoming_stream;
-  GRPC_TRACE_VLOG(http, 2) << "INCOMING[" << t << ";" << s << "]: Parse "
-                           << GRPC_SLICE_LENGTH(slice) << "b "
-                           << (is_last ? "last " : "") << "frame fragment with "
-                           << t->parser.name;
+  if (grpc_http_trace.enabled()) {
+    gpr_log(GPR_DEBUG,
+            "INCOMING[%p;%p]: Parse %" PRIdPTR "b %sframe fragment with %s", t,
+            s, GRPC_SLICE_LENGTH(slice), is_last ? "last " : "",
+            t->parser.name);
+  }
   grpc_error_handle err =
       t->parser.parser(t->parser.user_data, t, s, slice, is_last);
   intptr_t unused;
   if (GPR_LIKELY(err.ok())) {
     return err;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(http)) {
+  if (grpc_http_trace.enabled()) {
     gpr_log(GPR_ERROR, "INCOMING[%p;%p]: Parse failed with %s", t, s,
             err.ToString().c_str());
   }
@@ -937,8 +942,13 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
   grpc_core::CallTracerAnnotationInterface* call_tracer = nullptr;
   if (s != nullptr) {
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
-    call_tracer =
-        s->arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
+
+    if (s->context != nullptr) {
+      call_tracer = static_cast<grpc_core::CallTracerAnnotationInterface*>(
+          static_cast<grpc_call_context_element*>(
+              s->context)[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
+              .value);
+    }
   }
   grpc_error_handle error = parser->Parse(
       slice, is_last != 0, absl::BitGenRef(t->bitgen), call_tracer);

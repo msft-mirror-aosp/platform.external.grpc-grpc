@@ -32,7 +32,7 @@ namespace experimental {
 class IOCP final : public Poller {
  public:
   explicit IOCP(ThreadPool* thread_pool) noexcept;
-  ~IOCP() override;
+  ~IOCP();
   // Not copyable
   IOCP(const IOCP&) = delete;
   IOCP& operator=(const IOCP&) = delete;

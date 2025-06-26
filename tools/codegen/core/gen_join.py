@@ -69,12 +69,14 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
   Poll<Result> PollOnce() {
 % for i in range(0,n):
     if (!ready.is_set(${i})) {
-      GRPC_TRACE_VLOG(promise_primitives, 2) << "join[" << this << "]: begin poll joint ${i+1}/${n}";
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint ${i+1}/${n}", this);
+      }
       auto poll = promise${i}();
-      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+      if (grpc_trace_promise_primitives.enabled()) {
         auto* p = poll.value_if_ready();
-        VLOG(2) << "join[" << this << "]: joint ${i+1}/${n} "
-                << (p != nullptr ? (Traits::IsOk(*p)? "ready" : "early-error") : "pending");
+        gpr_log(GPR_DEBUG, "join[%p]: joint ${i+1}/${n} %s", this, 
+                p != nullptr? (Traits::IsOk(*p)? "ready" : "early-error") : "pending");
       }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
@@ -85,8 +87,8 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint ${i+1}/${n} already ready";
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint ${i+1}/${n} already ready", this);
     }
 % endfor
     if (ready.all()) {
@@ -107,16 +109,16 @@ front_matter = """
 #include <grpc/support/port_platform.h>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/gprpp/bitset.h"
+#include <grpc/support/log.h>
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include "src/core/lib/promise/trace.h"
 
 namespace grpc_core {
 namespace promise_detail {

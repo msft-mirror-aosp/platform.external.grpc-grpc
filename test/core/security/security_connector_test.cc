@@ -23,14 +23,15 @@
 
 #include <gtest/gtest.h>
 
-#include "absl/log/log.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"
@@ -38,8 +39,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
-#include "src/core/util/string.h"
-#include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
 
 #ifndef TSI_OPENSSL_ALPN_SUPPORT
@@ -84,16 +83,17 @@ static int check_property(const grpc_auth_context* ctx,
       grpc_auth_context_find_properties_by_name(ctx, expected_property_name);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
   if (prop == nullptr) {
-    LOG(ERROR) << "Expected value " << expected_property_value << " not found.";
+    gpr_log(GPR_ERROR, "Expected value %s not found.", expected_property_value);
     return 0;
   }
   if (strncmp(prop->value, expected_property_value, prop->value_length) != 0) {
-    LOG(ERROR) << "Expected value " << expected_property_value << " and got "
-               << prop->value << " for property " << expected_property_name;
+    gpr_log(GPR_ERROR, "Expected value %s and got %s for property %s.",
+            expected_property_value, prop->value, expected_property_name);
     return 0;
   }
   if (grpc_auth_property_iterator_next(&it) != nullptr) {
-    LOG(ERROR) << "Expected only one property for " << expected_property_name;
+    gpr_log(GPR_ERROR, "Expected only one property for %s.",
+            expected_property_name);
     return 0;
   }
   return 1;
@@ -107,23 +107,24 @@ static int check_properties(
   for (const auto& property_value : expected_property_values) {
     const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
     if (prop == nullptr) {
-      LOG(ERROR) << "Expected value " << property_value << " not found.";
+      gpr_log(GPR_ERROR, "Expected value %s not found.",
+              property_value.c_str());
       return 0;
     }
     if (strcmp(prop->name, expected_property_name) != 0) {
-      LOG(ERROR) << "Expected peer property name " << expected_property_name
-                 << " and got " << prop->name;
+      gpr_log(GPR_ERROR, "Expected peer property name %s and got %s.",
+              expected_property_name, prop->name);
       return 0;
     }
     if (strncmp(prop->value, property_value.c_str(), prop->value_length) != 0) {
-      LOG(ERROR) << "Expected peer property value " << property_value
-                 << " and got " << prop->value;
+      gpr_log(GPR_ERROR, "Expected peer property value %s and got %s.",
+              property_value.c_str(), prop->value);
       return 0;
     }
   }
   if (grpc_auth_property_iterator_next(&it) != nullptr) {
-    LOG(ERROR) << "Expected only " << expected_property_values.size()
-               << " property values.";
+    gpr_log(GPR_ERROR, "Expected only %zu property values.",
+            expected_property_values.size());
     return 0;
   }
   return 1;
@@ -139,20 +140,20 @@ static int check_spiffe_id(const grpc_auth_context* ctx,
     return 1;
   }
   if (prop != nullptr && !expect_spiffe_id) {
-    LOG(ERROR) << "SPIFFE ID not expected, but got " << prop->value;
+    gpr_log(GPR_ERROR, "SPIFFE ID not expected, but got %s.", prop->value);
     return 0;
   }
   if (prop == nullptr && expect_spiffe_id) {
-    LOG(ERROR) << "SPIFFE ID expected, but got nullptr.";
+    gpr_log(GPR_ERROR, "SPIFFE ID expected, but got nullptr.");
     return 0;
   }
   if (strncmp(prop->value, expected_spiffe_id, prop->value_length) != 0) {
-    LOG(ERROR) << "Expected SPIFFE ID " << expected_spiffe_id << " but got "
-               << prop->value;
+    gpr_log(GPR_ERROR, "Expected SPIFFE ID %s but got %s.", expected_spiffe_id,
+            prop->value);
     return 0;
   }
   if (grpc_auth_property_iterator_next(&it) != nullptr) {
-    LOG(ERROR) << "Expected only one property for SPIFFE ID.";
+    gpr_log(GPR_ERROR, "Expected only one property for SPIFFE ID.");
     return 0;
   }
   return 1;

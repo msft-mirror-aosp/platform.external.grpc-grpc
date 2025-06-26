@@ -99,7 +99,6 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
 
 RPC_METHOD_HANDLERS = {
-    _UNARY_UNARY_FILTERED: _MethodHandler(False, False),
     _UNARY_UNARY: _MethodHandler(False, False),
     _UNARY_STREAM: _MethodHandler(False, True),
     _STREAM_UNARY: _MethodHandler(True, False),

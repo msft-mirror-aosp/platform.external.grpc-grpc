@@ -18,14 +18,13 @@
 
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
 
-#include "absl/log/log.h"
-
 bool grpc_gcp_handshaker_resp_set_peer_rpc_versions(
     grpc_gcp_HandshakerResp* resp, upb_Arena* arena, uint32_t max_major,
     uint32_t max_minor, uint32_t min_major, uint32_t min_minor) {
   if (resp == nullptr) {
-    LOG(ERROR) << "Invalid nullptr argument to "
-                  "grpc_gcp_handshaker_resp_set_peer_rpc_versions().";
+    gpr_log(GPR_ERROR,
+            "Invalid nullptr argument to "
+            "grpc_gcp_handshaker_resp_set_peer_rpc_versions().");
     return false;
   }
   grpc_gcp_rpc_protocol_versions versions;
@@ -51,7 +50,7 @@ grpc_gcp_HandshakerReq* grpc_gcp_handshaker_req_decode(grpc_slice slice,
   grpc_gcp_HandshakerReq* resp = grpc_gcp_HandshakerReq_parse(
       reinterpret_cast<char*>(buf), buf_size, arena);
   if (!resp) {
-    LOG(ERROR) << "grpc_gcp_HandshakerReq decode error";
+    gpr_log(GPR_ERROR, "grpc_gcp_HandshakerReq decode error");
     return nullptr;
   }
   return resp;

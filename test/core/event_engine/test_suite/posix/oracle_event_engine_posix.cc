@@ -24,7 +24,6 @@
 #include <memory>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -33,6 +32,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -255,7 +255,7 @@ bool PosixOracleEndpoint::Write(
 }
 
 void PosixOracleEndpoint::ProcessReadOperations() {
-  LOG(INFO) << "Starting thread to process read ops ...";
+  gpr_log(GPR_INFO, "Starting thread to process read ops ...");
   while (true) {
     read_op_signal_->WaitForNotification();
     read_op_signal_ = std::make_unique<grpc_core::Notification>();
@@ -273,11 +273,11 @@ void PosixOracleEndpoint::ProcessReadOperations() {
                                               grpc_core::StrError(saved_errno)))
                            : absl::OkStatus());
   }
-  LOG(INFO) << "Shutting down read ops thread ...";
+  gpr_log(GPR_INFO, "Shutting down read ops thread ...");
 }
 
 void PosixOracleEndpoint::ProcessWriteOperations() {
-  LOG(INFO) << "Starting thread to process write ops ...";
+  gpr_log(GPR_INFO, "Starting thread to process write ops ...");
   while (true) {
     write_op_signal_->WaitForNotification();
     write_op_signal_ = std::make_unique<grpc_core::Notification>();
@@ -293,7 +293,7 @@ void PosixOracleEndpoint::ProcessWriteOperations() {
                                         grpc_core::StrError(saved_errno)))
                      : absl::OkStatus());
   }
-  LOG(INFO) << "Shutting down write ops thread ...";
+  gpr_log(GPR_INFO, "Shutting down write ops thread ...");
 }
 
 PosixOracleListener::PosixOracleListener(
@@ -341,7 +341,7 @@ PosixOracleListener::~PosixOracleListener() {
 }
 
 void PosixOracleListener::HandleIncomingConnections() {
-  LOG(INFO) << "Starting accept thread ...";
+  gpr_log(GPR_INFO, "Starting accept thread ...");
   CHECK(!listener_fds_.empty());
   int nfds = listener_fds_.size();
   // Add one extra file descriptor to poll the pipe fd.
@@ -371,16 +371,17 @@ void PosixOracleListener::HandleIncomingConnections() {
       // pfds[i].fd has a readable event.
       int client_sock_fd = accept(pfds[i].fd, nullptr, nullptr);
       if (client_sock_fd < 0) {
-        LOG(ERROR) << "Error accepting new connection: "
-                   << grpc_core::StrError(errno)
-                   << ". Ignoring connection attempt ...";
+        gpr_log(GPR_ERROR,
+                "Error accepting new connection: %s. Ignoring connection "
+                "attempt ...",
+                grpc_core::StrError(errno).c_str());
         continue;
       }
       on_accept_(PosixOracleEndpoint::Create(client_sock_fd),
                  memory_allocator_factory_->CreateMemoryAllocator("test"));
     }
   }
-  LOG(INFO) << "Shutting down accept thread ...";
+  gpr_log(GPR_INFO, "Shutting down accept thread ...");
   gpr_free(pfds);
 }
 

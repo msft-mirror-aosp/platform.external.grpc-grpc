@@ -28,11 +28,11 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
@@ -55,7 +55,7 @@ std::shared_ptr<grpc::Channel> CreateChannelForTest(int index) {
       grpc::InsecureChannelCredentials();
   if (absl::GetFlag(FLAGS_secure)) {
     // TODO (chennancy) Add in secure credentials
-    LOG(INFO) << "Supposed to be secure, is not yet";
+    gpr_log(GPR_INFO, "Supposed to be secure, is not yet");
   }
 
   // Channel args to prevent connection from closing after RPC is done
@@ -91,7 +91,7 @@ std::shared_ptr<CallParams> UnaryCall(std::shared_ptr<grpc::Channel> channel) {
                            &params->response,
                            [params](const grpc::Status& status) {
                              if (!status.ok()) {
-                               LOG(ERROR) << "UnaryCall RPC failed.";
+                               gpr_log(GPR_ERROR, "UnaryCall RPC failed.");
                              }
                              params->done.Notify();
                            });
@@ -111,10 +111,11 @@ std::shared_ptr<CallParams> GetBeforeSnapshot(
       [params, &before_server_memory](const grpc::Status& status) {
         if (status.ok()) {
           before_server_memory = params->snapshot_response.rss();
-          LOG(INFO) << "Server Before RPC: " << params->snapshot_response.rss();
-          LOG(INFO) << "GetBeforeSnapshot succeeded.";
+          gpr_log(GPR_INFO, "Server Before RPC: %ld",
+                  params->snapshot_response.rss());
+          gpr_log(GPR_INFO, "GetBeforeSnapshot succeeded.");
         } else {
-          LOG(ERROR) << "GetBeforeSnapshot failed.";
+          gpr_log(GPR_ERROR, "GetBeforeSnapshot failed.");
         }
         params->done.Notify();
       });
@@ -128,11 +129,11 @@ int main(int argc, char** argv) {
   fake_argv[0] = argv[0];
   grpc::testing::TestEnvironment env(&argc, argv);
   if (absl::GetFlag(FLAGS_target).empty()) {
-    LOG(ERROR) << "Client: No target port entered";
+    gpr_log(GPR_ERROR, "Client: No target port entered");
     return 1;
   }
-  LOG(INFO) << "Client Target: " << absl::GetFlag(FLAGS_target);
-  LOG(INFO) << "Client Size: " << absl::GetFlag(FLAGS_size);
+  gpr_log(GPR_INFO, "Client Target: %s", absl::GetFlag(FLAGS_target).c_str());
+  gpr_log(GPR_INFO, "Client Size: %d", absl::GetFlag(FLAGS_size));
 
   // Getting initial memory usage
   std::shared_ptr<grpc::Channel> get_memory_channel = CreateChannelForTest(0);
@@ -181,6 +182,6 @@ int main(int argc, char** argv) {
            static_cast<double>(peak_server_memory - before_server_memory) /
                size * 1024);
   }
-  LOG(INFO) << "Client Done";
+  gpr_log(GPR_INFO, "Client Done");
   return 0;
 }

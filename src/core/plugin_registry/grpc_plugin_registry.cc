@@ -67,8 +67,6 @@ extern void RegisterWeightedRoundRobinLbPolicy(
     CoreConfiguration::Builder* builder);
 extern void RegisterHttpProxyMapper(CoreConfiguration::Builder* builder);
 extern void RegisterConnectedChannel(CoreConfiguration::Builder* builder);
-extern void RegisterLoadBalancedCallDestination(
-    CoreConfiguration::Builder* builder);
 #ifndef GRPC_NO_RLS
 extern void RegisterRlsLbPolicy(CoreConfiguration::Builder* builder);
 #endif  // !GRPC_NO_RLS
@@ -81,11 +79,10 @@ namespace {
 void RegisterBuiltins(CoreConfiguration::Builder* builder) {
   RegisterServerCallTracerFilter(builder);
   builder->channel_init()
-      ->RegisterV2Filter<LameClientFilter>(GRPC_CLIENT_LAME_CHANNEL)
+      ->RegisterFilter<LameClientFilter>(GRPC_CLIENT_LAME_CHANNEL)
       .Terminal();
   builder->channel_init()
       ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)
-      .SkipV3()
       .BeforeAll();
 }
 
@@ -121,7 +118,6 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterSockaddrResolver(builder);
   RegisterFakeResolver(builder);
   RegisterHttpProxyMapper(builder);
-  RegisterLoadBalancedCallDestination(builder);
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
   RegisterBinderResolver(builder);
 #endif

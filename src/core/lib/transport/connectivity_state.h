@@ -35,6 +35,8 @@
 
 namespace grpc_core {
 
+extern TraceFlag grpc_connectivity_state_trace;
+
 // Enum to string conversion.
 const char* ConnectivityStateName(grpc_connectivity_state state);
 

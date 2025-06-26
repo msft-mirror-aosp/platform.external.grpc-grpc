@@ -17,7 +17,7 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 
@@ -173,10 +173,10 @@ void TransactionProcessor::SetDelay(absl::Duration delay) {
 
 void TransactionProcessor::Terminate() {
   if (!terminated_.load(std::memory_order_seq_cst)) {
-    LOG(INFO) << "Terminating the processor";
+    gpr_log(GPR_INFO, "Terminating the processor");
     terminated_.store(true, std::memory_order_seq_cst);
     tx_thread_.Join();
-    LOG(INFO) << "Processor terminated";
+    gpr_log(GPR_INFO, "Processor terminated");
   }
 }
 

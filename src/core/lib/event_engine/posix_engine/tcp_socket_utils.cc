@@ -27,10 +27,10 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
-#include "src/core/util/useful.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 #include <arpa/inet.h>  // IWYU pragma: keep
@@ -49,8 +49,9 @@
 #include <cstring>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -627,34 +628,32 @@ void PosixSocketWrapper::TrySetSocketTcpUserTimeout(
     // if it is available.
     if (g_socket_supports_tcp_user_timeout.load() == 0) {
       if (0 != getsockopt(fd_, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
-        // This log is intentionally not protected behind a flag, so that users
-        // know that TCP_USER_TIMEOUT is not being used.
-        GRPC_TRACE_LOG(tcp, INFO)
-            << "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT "
-               "won't be used thereafter";
+        gpr_log(GPR_INFO,
+                "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT won't "
+                "be used thereafter");
         g_socket_supports_tcp_user_timeout.store(-1);
       } else {
-        GRPC_TRACE_LOG(tcp, INFO)
-            << "TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will be "
-               "used thereafter";
+        gpr_log(GPR_INFO,
+                "TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will be "
+                "used thereafter");
         g_socket_supports_tcp_user_timeout.store(1);
       }
     }
     if (g_socket_supports_tcp_user_timeout.load() > 0) {
       if (0 != setsockopt(fd_, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
                           sizeof(timeout))) {
-        LOG(ERROR) << "setsockopt(TCP_USER_TIMEOUT) "
-                   << grpc_core::StrError(errno);
+        gpr_log(GPR_ERROR, "setsockopt(TCP_USER_TIMEOUT) %s",
+                grpc_core::StrError(errno).c_str());
         return;
       }
       if (0 != getsockopt(fd_, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
-        LOG(ERROR) << "getsockopt(TCP_USER_TIMEOUT) "
-                   << grpc_core::StrError(errno);
+        gpr_log(GPR_ERROR, "getsockopt(TCP_USER_TIMEOUT) %s",
+                grpc_core::StrError(errno).c_str());
         return;
       }
       if (newval != timeout) {
         // Do not fail on failing to set TCP_USER_TIMEOUT
-        LOG(ERROR) << "Failed to set TCP_USER_TIMEOUT";
+        gpr_log(GPR_ERROR, "Failed to set TCP_USER_TIMEOUT");
         return;
       }
     }
@@ -685,8 +684,7 @@ bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
     int fd = socket(AF_INET6, SOCK_STREAM, 0);
     bool loopback_available = false;
     if (fd < 0) {
-      GRPC_TRACE_LOG(tcp, INFO)
-          << "Disabling AF_INET6 sockets because socket() failed.";
+      gpr_log(GPR_INFO, "Disabling AF_INET6 sockets because socket() failed.");
     } else {
       sockaddr_in6 addr;
       memset(&addr, 0, sizeof(addr));
@@ -695,8 +693,8 @@ bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
       if (bind(fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == 0) {
         loopback_available = true;
       } else {
-        GRPC_TRACE_LOG(tcp, INFO)
-            << "Disabling AF_INET6 sockets because ::1 is not available.";
+        gpr_log(GPR_INFO,
+                "Disabling AF_INET6 sockets because ::1 is not available.");
       }
       close(fd);
     }

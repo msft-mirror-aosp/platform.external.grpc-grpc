@@ -38,8 +38,7 @@
 void gpr_default_log(gpr_log_func_args* args);
 
 namespace grpc_core {
-// This test is currently broken.
-// The whole test will be re-written as a part of gpr to absl log conversion.
+
 class Verifier {
  public:
   Verifier() {
@@ -54,12 +53,10 @@ class Verifier {
           static_cast<gpr_log_severity>(GPR_LOG_SEVERITY_ERROR + 1);
     }
     grpc_tracer_set_enabled("all", 0);
-    grpc_set_absl_verbosity_debug();
-    // This is broken. Replace with an absl log sink.
+    gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
     gpr_set_log_function(DispatchLog);
   }
   ~Verifier() {
-    // This is broken. Replace with an absl log sink.
     gpr_set_log_function(gpr_default_log);
     saved_trace_flags_.Restore();
     gpr_set_log_verbosity(saved_severity_);
@@ -116,8 +113,8 @@ std::atomic<gpr_log_func> Verifier::g_log_func_(gpr_default_log);
 void SimpleRequest(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
-  IncomingMetadata server_initial_metadata;
-  IncomingStatusOnClient server_status;
+  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  CoreEnd2endTest::IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -128,7 +125,7 @@ void SimpleRequest(CoreEnd2endTest& test) {
   test.Step();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   EXPECT_NE(s.GetPeer(), absl::nullopt);
-  IncomingCloseOnServer client_close;
+  CoreEnd2endTest::IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})
@@ -143,9 +140,6 @@ void SimpleRequest(CoreEnd2endTest& test) {
 }
 
 CORE_END2END_TEST(NoLoggingTest, NoLoggingTest) {
-// This test makes sure that we dont get spammy logs when making an rpc
-// especially when rpcs are successful.
-
 // TODO(hork): remove when the listener flake is identified
 #ifdef GPR_WINDOWS
   if (IsEventEngineListenerEnabled()) {

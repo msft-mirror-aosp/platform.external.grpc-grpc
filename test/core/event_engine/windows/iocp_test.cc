@@ -19,7 +19,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/time/time.h"
 #include "absl/types/variant.h"
@@ -50,7 +49,7 @@ using ::grpc_event_engine::experimental::WinSocket;
 //   `ASSERT_OK(...) << GetErrorMessage(error, context);`
 void LogErrorMessage(int messageid, absl::string_view context) {
   char* utf8_message = gpr_format_message(messageid);
-  LOG(ERROR) << "Error in " << context << ": " << utf8_message;
+  gpr_log(GPR_ERROR, "Error in %s: %s", context, utf8_message);
   gpr_free(utf8_message);
 }
 }  // namespace
@@ -78,7 +77,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
     DWORD bytes_rcvd;
     on_read = new AnyInvocableClosure([win_socket = wrapped_client_socket.get(),
                                        &read_called, &read_wsabuf]() {
-      VLOG(2) << "Notified on read";
+      gpr_log(GPR_DEBUG, "Notified on read");
       EXPECT_GE(win_socket->read_info()->result().bytes_transferred, 10u);
       EXPECT_STREQ(read_wsabuf.buf, "hello!");
       read_called.Notify();
@@ -97,7 +96,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
   }
   {
     on_write = new AnyInvocableClosure([&write_called] {
-      VLOG(2) << "Notified on write";
+      gpr_log(GPR_DEBUG, "Notified on write");
       write_called.Notify();
     });
     wrapped_server_socket->NotifyOnWrite(on_write);
@@ -154,7 +153,7 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
     wrapped_client_socket->NotifyOnRead(
         SelfDeletingClosure::Create([win_socket = wrapped_client_socket.get(),
                                      &read_called, &read_wsabuf]() {
-          VLOG(2) << "Notified on read";
+          gpr_log(GPR_DEBUG, "Notified on read");
           EXPECT_GE(win_socket->read_info()->result().bytes_transferred, 10u);
           EXPECT_STREQ(read_wsabuf.buf, "hello!");
           read_called.Notify();

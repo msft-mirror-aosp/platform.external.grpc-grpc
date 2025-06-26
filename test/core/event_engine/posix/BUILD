@@ -26,7 +26,6 @@ grpc_cc_library(
     testonly = True,
     srcs = ["posix_engine_test_utils.cc"],
     hdrs = ["posix_engine_test_utils.h"],
-    external_deps = ["absl/log:log"],
     tags = [
         "no_windows",
     ],
@@ -69,10 +68,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "timer_manager_test",
     srcs = ["timer_manager_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -87,10 +83,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "event_poller_posix_test",
     srcs = ["event_poller_posix_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "C++",
     tags = [
         "no_windows",
@@ -191,7 +184,6 @@ grpc_cc_test(
     srcs = ["posix_endpoint_test.cc"],
     external_deps = [
         "absl/log:check",
-        "absl/log:log",
         "gtest",
     ],
     language = "C++",
@@ -219,10 +211,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "posix_engine_listener_utils_test",
     srcs = ["posix_engine_listener_utils_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "C++",
     tags = [
         "no_windows",
@@ -243,7 +232,6 @@ grpc_cc_test(
     srcs = ["posix_event_engine_connect_test.cc"],
     external_deps = [
         "absl/log:check",
-        "absl/log:log",
         "gtest",
     ],
     language = "C++",

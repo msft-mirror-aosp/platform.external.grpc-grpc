@@ -24,7 +24,6 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
@@ -228,20 +227,19 @@ void PrintExperimentsList() {
   }
   if (experiment_status.empty()) {
     if (!defaulted_on_experiments.empty()) {
-      VLOG(2) << "gRPC experiments enabled: "
-              << absl::StrJoin(defaulted_on_experiments, ", ");
+      gpr_log(GPR_INFO, "gRPC experiments enabled: %s",
+              absl::StrJoin(defaulted_on_experiments, ", ").c_str());
     }
   } else {
     if (defaulted_on_experiments.empty()) {
-      VLOG(2) << "gRPC experiments: "
-              << absl::StrJoin(experiment_status, ", ",
-                               absl::PairFormatter(":"));
+      gpr_log(GPR_INFO, "gRPC experiments: %s",
+              absl::StrJoin(experiment_status, ", ", absl::PairFormatter(":"))
+                  .c_str());
     } else {
-      VLOG(2) << "gRPC experiments: "
-              << absl::StrJoin(experiment_status, ", ",
-                               absl::PairFormatter(":"))
-              << "; default-enabled: "
-              << absl::StrJoin(defaulted_on_experiments, ", ");
+      gpr_log(GPR_INFO, "gRPC experiments: %s; default-enabled: %s",
+              absl::StrJoin(experiment_status, ", ", absl::PairFormatter(":"))
+                  .c_str(),
+              absl::StrJoin(defaulted_on_experiments, ", ").c_str());
     }
   }
 }

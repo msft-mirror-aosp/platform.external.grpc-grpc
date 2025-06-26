@@ -14,12 +14,12 @@
 
 #include "absl/random/random.h"
 
-#include "test/core/transport/test_suite/transport_test.h"
+#include "test/core/transport/test_suite/test.h"
 
 namespace grpc_core {
 
 TRANSPORT_TEST(ManyUnaryRequests) {
-  SetServerCallDestination();
+  SetServerAcceptor();
   const int kNumRequests = absl::LogUniform<int>(rng(), 10, 100);
   std::list<std::string> call_names;
   auto make_call_name = [&call_names](int i,

@@ -24,12 +24,11 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
-#include "src/core/util/time_precise.h"
-#include "src/core/util/useful.h"
+#include "src/core/lib/gpr/time_precise.h"
+#include "src/core/lib/gpr/useful.h"
 
 #define GRPC_LOG_EVERY_N_SEC(n, severity, format, ...)          \
   do {                                                          \

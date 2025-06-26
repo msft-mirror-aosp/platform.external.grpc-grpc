@@ -20,15 +20,16 @@
 
 #include <string>
 
-#include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "gtest/gtest.h"
+
+#include <grpc/support/log.h>
 
 #include "test/core/test_util/test_config.h"
 
 TEST(StackTracerTest, Basic) {
   std::string stack_trace = grpc_core::testing::GetCurrentStackTrace();
-  LOG(INFO) << "stack_trace=" << stack_trace;
+  gpr_log(GPR_INFO, "stack_trace=%s", stack_trace.c_str());
 #if !defined(NDEBUG) && !defined(GPR_MUSL_LIBC_COMPAT)
   EXPECT_TRUE(absl::StrContains(stack_trace, "Basic"));
 #endif

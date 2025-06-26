@@ -15,7 +15,6 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
 #include "absl/strings/match.h"
 
 #include <grpc/support/log.h>
@@ -32,15 +31,15 @@
 namespace grpc_core {
 
 void RegisterDnsResolver(CoreConfiguration::Builder* builder) {
-#if GRPC_IOS_EVENT_ENGINE_CLIENT
-  VLOG(2) << "Using EventEngine dns resolver";
+#ifdef GRPC_IOS_EVENT_ENGINE_CLIENT
+  gpr_log(GPR_DEBUG, "Using EventEngine dns resolver");
   builder->resolver_registry()->RegisterResolverFactory(
       std::make_unique<EventEngineClientChannelDNSResolverFactory>());
   return;
 #endif
 #ifndef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
   if (IsEventEngineDnsEnabled()) {
-    VLOG(2) << "Using EventEngine dns resolver";
+    gpr_log(GPR_DEBUG, "Using EventEngine dns resolver");
     builder->resolver_registry()->RegisterResolverFactory(
         std::make_unique<EventEngineClientChannelDNSResolverFactory>());
     return;
@@ -49,14 +48,14 @@ void RegisterDnsResolver(CoreConfiguration::Builder* builder) {
   auto resolver = ConfigVars::Get().DnsResolver();
   // ---- Ares resolver ----
   if (ShouldUseAresDnsResolver(resolver)) {
-    VLOG(2) << "Using ares dns resolver";
+    gpr_log(GPR_DEBUG, "Using ares dns resolver");
     RegisterAresDnsResolver(builder);
     return;
   }
   // ---- Native resolver ----
   if (absl::EqualsIgnoreCase(resolver, "native") ||
       !builder->resolver_registry()->HasResolverFactory("dns")) {
-    VLOG(2) << "Using native dns resolver";
+    gpr_log(GPR_DEBUG, "Using native dns resolver");
     RegisterNativeDnsResolver(builder);
     return;
   }

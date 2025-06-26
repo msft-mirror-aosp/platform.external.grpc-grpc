@@ -47,7 +47,6 @@ grpc_cc_test(
     external_deps = [
         "absl/debugging:stacktrace",
         "absl/debugging:symbolize",
-        "absl/log:log",
         "gtest",
     ],
     language = "C++",
@@ -58,20 +57,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "dump_args_test",
-    srcs = ["dump_args_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//src/core:dump_args",
     ],
 )
 
@@ -194,10 +179,7 @@ grpc_cc_test(
     name = "mpscq_test",
     srcs = ["mpscq_test.cc"],
     exec_properties = LARGE_MACHINE,
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
     uses_event_engine = False,
@@ -385,10 +367,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "single_set_ptr_test",
     srcs = ["single_set_ptr_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "c++",
     uses_event_engine = False,
     uses_polling = False,
@@ -496,20 +475,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:uuid_v4",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "glob_test",
-    srcs = ["glob_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
     ],
 )

@@ -21,9 +21,8 @@
 #include <cmath>
 #include <string>
 
-#include "absl/log/log.h"
-
 #include <grpc/load_reporting.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/ext/server_load_reporting.h>
 #include <grpcpp/server_context.h>
@@ -42,7 +41,7 @@ void AddLoadReportingCost(grpc::ServerContext* ctx,
            cost_name.size());
     ctx->AddTrailingMetadata(GRPC_LB_COST_MD_KEY, buf);
   } else {
-    LOG(ERROR) << "Call metric value is not normal.";
+    gpr_log(GPR_ERROR, "Call metric value is not normal.");
   }
 }
 

@@ -39,7 +39,6 @@ grpc_cc_test(
     name = "forkable_test",
     srcs = ["forkable_test.cc"],
     external_deps = [
-        "absl/log:log",
         "absl/types:optional",
         "gtest",
     ],
@@ -222,7 +221,6 @@ grpc_cc_library(
     hdrs = ["event_engine_test_utils.h"],
     external_deps = [
         "absl/log:check",
-        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",

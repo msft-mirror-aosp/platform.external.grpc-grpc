@@ -23,10 +23,7 @@ grpc_cc_binary(
     srcs = [
         "close_fd_test.cc",
     ],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-    ],
+    external_deps = ["absl/log:check"],
     language = "C++",
     tags = ["no_windows"],
     deps = [

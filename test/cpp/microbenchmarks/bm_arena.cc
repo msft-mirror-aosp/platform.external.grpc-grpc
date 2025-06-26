@@ -26,36 +26,50 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
+using grpc_core::Arena;
+
 static void BM_Arena_NoOp(benchmark::State& state) {
-  auto factory = grpc_core::SimpleArenaAllocator();
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
   for (auto _ : state) {
-    factory->MakeArena();
+    Arena::Create(state.range(0), &memory_allocator)->Destroy();
   }
 }
 BENCHMARK(BM_Arena_NoOp)->Range(1, 1024 * 1024);
 
 static void BM_Arena_ManyAlloc(benchmark::State& state) {
-  auto allocator = grpc_core::SimpleArenaAllocator(state.range(0));
-  auto a = allocator->MakeArena();
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  Arena* a = Arena::Create(state.range(0), &memory_allocator);
   const size_t realloc_after =
       1024 * 1024 * 1024 / ((state.range(1) + 15) & 0xffffff0u);
   while (state.KeepRunning()) {
     a->Alloc(state.range(1));
     // periodically recreate arena to avoid OOM
     if (state.iterations() % realloc_after == 0) {
-      a = allocator->MakeArena();
+      a->Destroy();
+      a = Arena::Create(state.range(0), &memory_allocator);
     }
   }
+  a->Destroy();
 }
 BENCHMARK(BM_Arena_ManyAlloc)->Ranges({{1, 1024 * 1024}, {1, 32 * 1024}});
 
 static void BM_Arena_Batch(benchmark::State& state) {
-  auto allocator = grpc_core::SimpleArenaAllocator(state.range(0));
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
   for (auto _ : state) {
-    auto a = allocator->MakeArena();
+    Arena* a = Arena::Create(state.range(0), &memory_allocator);
     for (int i = 0; i < state.range(1); i++) {
       a->Alloc(state.range(2));
     }
+    a->Destroy();
   }
 }
 BENCHMARK(BM_Arena_Batch)->Ranges({{1, 64 * 1024}, {1, 64}, {1, 1024}});
@@ -68,20 +82,30 @@ struct TestThingToAllocate {
 };
 
 static void BM_Arena_MakePooled_Small(benchmark::State& state) {
-  auto a = grpc_core::SimpleArenaAllocator()->MakeArena();
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  Arena* a = Arena::Create(1024, &memory_allocator);
   for (auto _ : state) {
     a->MakePooled<TestThingToAllocate>();
   }
+  a->Destroy();
 }
 BENCHMARK(BM_Arena_MakePooled_Small);
 
 static void BM_Arena_MakePooled3_Small(benchmark::State& state) {
-  auto a = grpc_core::SimpleArenaAllocator()->MakeArena();
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  Arena* a = Arena::Create(1024, &memory_allocator);
   for (auto _ : state) {
     auto x = a->MakePooled<TestThingToAllocate>();
     auto y = a->MakePooled<TestThingToAllocate>();
     auto z = a->MakePooled<TestThingToAllocate>();
   }
+  a->Destroy();
 }
 BENCHMARK(BM_Arena_MakePooled3_Small);
 

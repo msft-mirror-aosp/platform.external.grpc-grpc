@@ -49,8 +49,8 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/matchers/matchers.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_route_config.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
@@ -75,9 +75,6 @@ using grpc::lookup::v1::RouteLookupClusterSpecifier;
 namespace grpc_core {
 namespace testing {
 namespace {
-
-TraceFlag xds_route_config_resource_type_test_trace(
-    true, "xds_route_config_resource_type_test");
 
 class XdsRouteConfigTest : public ::testing::Test {
  protected:

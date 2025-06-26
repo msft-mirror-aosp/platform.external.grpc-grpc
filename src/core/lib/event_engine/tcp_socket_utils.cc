@@ -54,16 +54,14 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_event_engine {
@@ -287,8 +285,8 @@ int ResolvedAddressGetPort(const EventEngine::ResolvedAddress& resolved_addr) {
       return 1;
 #endif
     default:
-      gpr_log(GPR_ERROR, "Unknown socket family %d in ResolvedAddressGetPort",
-              addr->sa_family);
+      LOG(ERROR) << "Unknown socket family " << addr->sa_family
+                 << " in ResolvedAddressGetPort";
       abort();
   }
 }
@@ -310,8 +308,8 @@ void ResolvedAddressSetPort(EventEngine::ResolvedAddress& resolved_addr,
           htons(static_cast<uint16_t>(port));
       return;
     default:
-      gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_set_port",
-              addr->sa_family);
+      LOG(ERROR) << "Unknown socket family " << addr->sa_family
+                 << " in grpc_sockaddr_set_port";
       abort();
   }
 }
@@ -447,8 +445,7 @@ absl::StatusOr<EventEngine::ResolvedAddress> URIToResolvedAddress(
   grpc_resolved_address addr;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
   if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "Failed to parse URI. Error: %s",
-            uri.status().ToString().c_str());
+    LOG(ERROR) << "Failed to parse URI. Error: " << uri.status();
   }
   GRPC_RETURN_IF_ERROR(uri.status());
   CHECK(grpc_parse_uri(*uri, &addr));

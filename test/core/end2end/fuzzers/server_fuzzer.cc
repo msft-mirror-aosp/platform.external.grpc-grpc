@@ -31,11 +31,10 @@
 #include "test/core/end2end/fuzzers/fuzzing_common.h"
 #include "test/core/end2end/fuzzers/network_input.h"
 #include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/test_config.h"
 
 bool squelch = true;
 bool leak_check = true;
-
-static void dont_log(gpr_log_func_args* /*args*/) {}
 
 namespace grpc_core {
 namespace testing {
@@ -63,7 +62,7 @@ class ServerFuzzer final : public BasicFuzzer {
     grpc_server_start(server_);
     for (const auto& input : msg.network_input()) {
       UpdateMinimumRunTime(ScheduleConnection(
-          input, engine(), FuzzingEnvironment{resource_quota()}, 1234));
+          input, engine().get(), FuzzingEnvironment{resource_quota()}, 1234));
     }
   }
 
@@ -97,7 +96,7 @@ void RunServerFuzzer(
     absl::FunctionRef<void(grpc_server*, int, const ChannelArgs&)>
         server_setup) {
   if (squelch && !GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    gpr_set_log_function(dont_log);
+    grpc_disable_all_absl_logs();
   }
   static const int once = []() {
     ForceEnableExperiment("event_engine_client", true);

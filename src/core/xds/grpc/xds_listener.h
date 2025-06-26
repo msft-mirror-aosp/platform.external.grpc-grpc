@@ -104,8 +104,6 @@ struct XdsListenerResource : public XdsResourceType::ResourceData {
   };
 
   struct FilterChainData {
-    FilterChainData() {}
-
     DownstreamTlsContext downstream_tls_context;
     // This is in principle the filter list.
     // We currently require exactly one filter, which is the HCM.

@@ -84,7 +84,6 @@ class FakeTransport final : public Transport {
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override {}
-  grpc_endpoint* GetEndpoint() override { return nullptr; }
   void Orphan() override {}
 };
 }  // namespace
@@ -95,11 +94,11 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
   grpc_init();
   // Add 2 test filters to XdsChannelStackModifier
   const grpc_channel_filter test_filter_1 = {
-      nullptr, nullptr, nullptr, nullptr, 0,       nullptr, nullptr,
-      nullptr, 0,       nullptr, nullptr, nullptr, nullptr, kTestFilter1};
+      nullptr, nullptr, 0,       nullptr, nullptr, nullptr,
+      0,       nullptr, nullptr, nullptr, nullptr, kTestFilter1};
   const grpc_channel_filter test_filter_2 = {
-      nullptr, nullptr, nullptr, nullptr, 0,       nullptr, nullptr,
-      nullptr, 0,       nullptr, nullptr, nullptr, nullptr, kTestFilter2};
+      nullptr, nullptr, 0,       nullptr, nullptr, nullptr,
+      0,       nullptr, nullptr, nullptr, nullptr, kTestFilter2};
   auto channel_stack_modifier = MakeRefCounted<XdsChannelStackModifier>(
       std::vector<const grpc_channel_filter*>{&test_filter_1, &test_filter_2});
   grpc_arg arg = channel_stack_modifier->MakeChannelArg();

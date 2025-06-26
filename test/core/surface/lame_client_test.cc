@@ -123,7 +123,12 @@ TEST(LameClientTest, MainTest) {
                                 grpc_core::CqVerifier::tag(1), nullptr);
   ASSERT_EQ(GRPC_CALL_OK, error);
 
-  cqv.Expect(grpc_core::CqVerifier::tag(1), false);
+  // Filter stack code considers this a failed to receive initial metadata
+  // result, where as promise based code interprets this as a trailers only
+  // failed request. Both are rational interpretations, so we accept the one
+  // that is implemented for each stack.
+  cqv.Expect(grpc_core::CqVerifier::tag(1),
+             grpc_core::IsPromiseBasedClientCallEnabled());
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));

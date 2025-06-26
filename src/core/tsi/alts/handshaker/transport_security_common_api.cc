@@ -18,7 +18,6 @@
 
 #include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
 
-#include "absl/log/log.h"
 #include "upb/mem/arena.hpp"
 
 #include <grpc/support/port_platform.h>
@@ -101,7 +100,7 @@ bool grpc_gcp_rpc_protocol_versions_decode(
           reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
           GRPC_SLICE_LENGTH(slice), arena.ptr());
   if (versions_msg == nullptr) {
-    LOG(ERROR) << "cannot deserialize RpcProtocolVersions message";
+    gpr_log(GPR_ERROR, "cannot deserialize RpcProtocolVersions message");
     return false;
   }
   grpc_gcp_rpc_protocol_versions_assign_from_upb(versions, versions_msg);

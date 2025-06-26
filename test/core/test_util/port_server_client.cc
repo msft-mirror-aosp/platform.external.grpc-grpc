@@ -28,7 +28,6 @@
 #include <utility>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 
@@ -36,6 +35,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -44,6 +44,8 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -52,8 +54,6 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/uri/uri_parser.h"
-#include "src/core/util/http_client/httpcli.h"
-#include "src/core/util/http_client/parser.h"
 
 typedef struct freereq {
   gpr_mu* mu = nullptr;
@@ -154,11 +154,12 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
 
   if (!error.ok()) {
     failed = 1;
-    VLOG(2) << "failed port pick from server: retrying ["
-            << grpc_core::StatusToString(error) << "]";
+    gpr_log(GPR_DEBUG, "failed port pick from server: retrying [%s]",
+            grpc_core::StatusToString(error).c_str());
   } else if (response->status != 200) {
     failed = 1;
-    VLOG(2) << "failed port pick from server: status=" << response->status;
+    gpr_log(GPR_DEBUG, "failed port pick from server: status=%d",
+            response->status);
   }
 
   if (failed) {

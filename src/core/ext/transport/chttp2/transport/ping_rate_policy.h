@@ -70,14 +70,13 @@ class Chttp2PingRatePolicy {
   void ReceivedDataFrame();
   std::string GetDebugString() const;
 
-  int TestOnlyMaxPingsWithoutData() const {
-    return max_pings_without_data_sent_;
-  }
+  int TestOnlyMaxPingsWithoutData() const { return max_pings_without_data_; }
 
  private:
-  const int max_pings_without_data_sent_;
+  const int max_pings_without_data_;
   const int max_inflight_pings_;
-  int pings_before_data_sending_required_ = 0;
+  // No pings allowed before receiving a header or data frame.
+  int pings_before_data_required_ = 0;
   Timestamp last_ping_sent_time_ = Timestamp::InfPast();
 };
 

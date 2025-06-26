@@ -114,10 +114,7 @@ auto ChaoticGoodConnector::DataEndpointWriteSettingsFrame(
   frame.headers = SettingsMetadata{SettingsMetadata::ConnectionType::kData,
                                    self->connection_id_, kDataAlignmentBytes}
                       .ToMetadataBatch();
-  bool saw_encoding_errors = false;
-  auto write_buffer =
-      frame.Serialize(&self->hpack_compressor_, saw_encoding_errors);
-  // ignore encoding errors: they will be logged separately already
+  auto write_buffer = frame.Serialize(&self->hpack_compressor_);
   return self->data_endpoint_.Write(std::move(write_buffer.control));
 }
 
@@ -218,10 +215,7 @@ auto ChaoticGoodConnector::ControlEndpointWriteSettingsFrame(
   frame.headers = SettingsMetadata{SettingsMetadata::ConnectionType::kControl,
                                    absl::nullopt, absl::nullopt}
                       .ToMetadataBatch();
-  bool saw_encoding_errors = false;
-  auto write_buffer =
-      frame.Serialize(&self->hpack_compressor_, saw_encoding_errors);
-  // ignore encoding errors: they will be logged separately already
+  auto write_buffer = frame.Serialize(&self->hpack_compressor_);
   return self->control_endpoint_.Write(std::move(write_buffer.control));
 }
 
@@ -295,6 +289,7 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
         // We were shut down after handshaking completed successfully, so
         // destroy the endpoint here.
         if (args->endpoint != nullptr) {
+          grpc_endpoint_shutdown(args->endpoint, error);
           grpc_endpoint_destroy(args->endpoint);
         }
       }
@@ -319,7 +314,7 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
         },
         EventEngineWakeupScheduler(self->event_engine_),
         [self](absl::Status status) {
-          if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
+          if (grpc_chaotic_good_trace.enabled()) {
             gpr_log(GPR_INFO, "ChaoticGoodConnector::OnHandshakeDone: %s",
                     status.ToString().c_str());
           }
@@ -338,7 +333,7 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
                          status);
           }
         },
-        self->arena_, self->event_engine_.get());
+        self->arena_.get(), self->event_engine_.get());
     MutexLock lock(&self->mu_);
     if (!self->is_shutdown_) {
       self->connect_activity_ = std::move(activity);
@@ -382,14 +377,13 @@ grpc_channel* grpc_chaotic_good_channel_create(const char* target,
       grpc_core::CoreConfiguration::Get()
           .channel_args_preconditioning()
           .PreconditionChannelArgs(args)
-          .SetObject(grpc_core::NoDestructSingleton<
-                     grpc_core::chaotic_good::ChaoticGoodChannelFactory>::Get())
-          .Set(GRPC_ARG_USE_V3_STACK, true),
+          .SetObject(
+              grpc_core::NoDestructSingleton<
+                  grpc_core::chaotic_good::ChaoticGoodChannelFactory>::Get()),
       GRPC_CLIENT_CHANNEL, nullptr);
   if (r.ok()) {
     return r->release()->c_ptr();
   }
-  LOG(ERROR) << "Failed to create chaotic good client channel: " << r.status();
   error = absl_status_to_grpc_error(r.status());
   intptr_t integer;
   grpc_status_code status = GRPC_STATUS_INTERNAL;
@@ -398,6 +392,6 @@ grpc_channel* grpc_chaotic_good_channel_create(const char* target,
     status = static_cast<grpc_status_code>(integer);
   }
   channel = grpc_lame_client_channel_create(
-      target, status, "Failed to create chaotic good client channel");
+      target, status, "Failed to create secure client channel");
   return channel;
 }

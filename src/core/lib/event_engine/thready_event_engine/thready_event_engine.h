@@ -77,9 +77,8 @@ class ThreadyEventEngine final : public EventEngine {
  private:
   class ThreadyDNSResolver final : public DNSResolver {
    public:
-    ThreadyDNSResolver(std::unique_ptr<DNSResolver> impl,
-                       std::shared_ptr<ThreadyEventEngine> engine)
-        : impl_(std::move(impl)), engine_(std::move(engine)) {}
+    explicit ThreadyDNSResolver(std::unique_ptr<DNSResolver> impl)
+        : impl_(std::move(impl)) {}
     void LookupHostname(LookupHostnameCallback on_resolve,
                         absl::string_view name,
                         absl::string_view default_port) override;
@@ -90,7 +89,7 @@ class ThreadyEventEngine final : public EventEngine {
 
    private:
     std::unique_ptr<DNSResolver> impl_;
-    std::shared_ptr<ThreadyEventEngine> engine_;
+    ThreadyEventEngine* engine_;
   };
 
   void Asynchronously(absl::AnyInvocable<void()> fn);

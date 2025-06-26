@@ -19,7 +19,6 @@
 #include "src/core/lib/surface/init.h"
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
 
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
@@ -67,10 +66,10 @@ static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 namespace grpc_core {
 void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()
-      ->RegisterV2Filter<ClientAuthFilter>(GRPC_CLIENT_SUBCHANNEL)
+      ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_SUBCHANNEL)
       .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
   builder->channel_init()
-      ->RegisterV2Filter<ClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
+      ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
       .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
   builder->channel_init()
       ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)
@@ -138,7 +137,7 @@ void grpc_shutdown_from_cleanup_thread(void* /*ignored*/) {
     return;
   }
   grpc_shutdown_internal_locked();
-  VLOG(2) << "grpc_shutdown from cleanup thread done";
+  gpr_log(GPR_DEBUG, "grpc_shutdown from cleanup thread done");
 }
 
 void grpc_shutdown(void) {
@@ -156,14 +155,14 @@ void grpc_shutdown(void) {
              0) &&
         grpc_core::ExecCtx::Get() == nullptr) {
       // just run clean-up when this is called on non-executor thread.
-      VLOG(2) << "grpc_shutdown starts clean-up now";
+      gpr_log(GPR_DEBUG, "grpc_shutdown starts clean-up now");
       g_shutting_down = true;
       grpc_shutdown_internal_locked();
-      VLOG(2) << "grpc_shutdown done";
+      gpr_log(GPR_DEBUG, "grpc_shutdown done");
     } else {
       // spawn a detached thread to do the actual clean up in case we are
       // currently in an executor thread.
-      VLOG(2) << "grpc_shutdown spawns clean-up thread";
+      gpr_log(GPR_DEBUG, "grpc_shutdown spawns clean-up thread");
       g_initializations++;
       g_shutting_down = true;
       grpc_core::Thread cleanup_thread(

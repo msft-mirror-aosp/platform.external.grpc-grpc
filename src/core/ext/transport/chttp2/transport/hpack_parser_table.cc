@@ -26,15 +26,16 @@
 #include <utility>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
+#include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/slice/slice.h"
 
@@ -98,7 +99,9 @@ void HPackTable::SetMaxBytes(uint32_t max_bytes) {
   if (max_bytes_ == max_bytes) {
     return;
   }
-  GRPC_TRACE_LOG(http, INFO) << "Update hpack parser max size to " << max_bytes;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+    gpr_log(GPR_INFO, "Update hpack parser max size to %d", max_bytes);
+  }
   while (mem_used_ > max_bytes) {
     EvictOne();
   }
@@ -108,7 +111,9 @@ void HPackTable::SetMaxBytes(uint32_t max_bytes) {
 bool HPackTable::SetCurrentTableSize(uint32_t bytes) {
   if (current_table_bytes_ == bytes) return true;
   if (bytes > max_bytes_) return false;
-  GRPC_TRACE_LOG(http, INFO) << "Update hpack parser table size to " << bytes;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+    gpr_log(GPR_INFO, "Update hpack parser table size to %d", bytes);
+  }
   while (mem_used_ > bytes) {
     EvictOne();
   }

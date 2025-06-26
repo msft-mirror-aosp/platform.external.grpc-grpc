@@ -38,8 +38,8 @@ void CancelAfterRoundTrip(CoreEnd2endTest& test,
                           std::unique_ptr<CancellationMode> mode,
                           Duration timeout) {
   auto c = test.NewClientCall("/service/method").Timeout(timeout).Create();
-  IncomingMetadata server_initial_metadata;
-  IncomingMessage server_message;
+  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  CoreEnd2endTest::IncomingMessage server_message;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage(RandomSlice(100))
@@ -48,7 +48,7 @@ void CancelAfterRoundTrip(CoreEnd2endTest& test,
   auto s = test.RequestCall(101);
   test.Expect(101, true);
   test.Step();
-  IncomingMessage client_message;
+  CoreEnd2endTest::IncomingMessage client_message;
   s.NewBatch(102)
       .RecvMessage(client_message)
       .SendInitialMetadata({})
@@ -56,11 +56,11 @@ void CancelAfterRoundTrip(CoreEnd2endTest& test,
   test.Expect(102, true);
   test.Expect(1, true);
   test.Step();
-  IncomingMessage server_message_2;
-  IncomingStatusOnClient server_status;
+  CoreEnd2endTest::IncomingMessage server_message_2;
+  CoreEnd2endTest::IncomingStatusOnClient server_status;
   c.NewBatch(2).RecvMessage(server_message_2).RecvStatusOnClient(server_status);
   mode->Apply(c);
-  IncomingCloseOnServer client_close;
+  CoreEnd2endTest::IncomingCloseOnServer client_close;
   s.NewBatch(103).RecvCloseOnServer(client_close).SendMessage(RandomSlice(100));
   test.Expect(2, true);
   test.Expect(103, true);

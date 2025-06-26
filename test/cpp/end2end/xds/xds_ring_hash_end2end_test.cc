@@ -20,7 +20,6 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -314,14 +313,14 @@ TEST_P(RingHashTest,
   // Allow the connection attempt to complete.
   hold->Resume();
   // Now the RPCs should complete successfully.
-  LOG(INFO) << "=== WAITING FOR FIRST RPC TO FINISH ===";
+  gpr_log(GPR_INFO, "=== WAITING FOR FIRST RPC TO FINISH ===");
   Status status = rpc.GetStatus();
-  LOG(INFO) << "=== FIRST RPC FINISHED ===";
+  gpr_log(GPR_INFO, "=== FIRST RPC FINISHED ===");
   EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                            << " message=" << status.error_message();
-  LOG(INFO) << "=== WAITING FOR SECOND RPC TO FINISH ===";
+  gpr_log(GPR_INFO, "=== WAITING FOR SECOND RPC TO FINISH ===");
   status = rpc2.GetStatus();
-  LOG(INFO) << "=== SECOND RPC FINISHED ===";
+  gpr_log(GPR_INFO, "=== SECOND RPC FINISHED ===");
   EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                            << " message=" << status.error_message();
 }
@@ -1034,24 +1033,24 @@ TEST_P(RingHashTest, TransientFailureSkipToAvailableReady) {
                                .set_metadata(std::move(metadata))
                                .set_timeout_ms(kConnectionTimeoutMilliseconds);
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
-  LOG(INFO) << "=== SENDING FIRST RPC ===";
+  gpr_log(GPR_INFO, "=== SENDING FIRST RPC ===");
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       MakeConnectionFailureRegex(
           "ring hash cannot find a connected endpoint; first failure: "),
       rpc_options);
-  LOG(INFO) << "=== DONE WITH FIRST RPC ===";
+  gpr_log(GPR_INFO, "=== DONE WITH FIRST RPC ===");
   EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel_->GetState(false));
   // Bring up backend 0.  The channel should become connected without
   // any picks, because in TF, we are always trying to connect to at
   // least one backend at all times.
-  LOG(INFO) << "=== STARTING BACKEND 0 ===";
+  gpr_log(GPR_INFO, "=== STARTING BACKEND 0 ===");
   StartBackend(0);
-  LOG(INFO) << "=== WAITING FOR CHANNEL TO BECOME READY ===";
+  gpr_log(GPR_INFO, "=== WAITING FOR CHANNEL TO BECOME READY ===");
   EXPECT_TRUE(channel_->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
   // RPCs should go to backend 0.
-  LOG(INFO) << "=== WAITING FOR BACKEND 0 ===";
+  gpr_log(GPR_INFO, "=== WAITING FOR BACKEND 0 ===");
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options);
   EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
@@ -1063,28 +1062,28 @@ TEST_P(RingHashTest, TransientFailureSkipToAvailableReady) {
   // Since the the entries in the ring are pretty distributed and we have
   // unused ports to fill the ring, it is almost guaranteed that the Picker
   // will go through some non-READY entries and skip them as per design.
-  LOG(INFO) << "=== SHUTTING DOWN BACKEND 0 ===";
+  gpr_log(GPR_INFO, "=== SHUTTING DOWN BACKEND 0 ===");
   ShutdownBackend(0);
-  LOG(INFO) << "=== WAITING FOR STATE CHANGE ===";
+  gpr_log(GPR_INFO, "=== WAITING FOR STATE CHANGE ===");
   EXPECT_TRUE(channel_->WaitForStateChange(
       GRPC_CHANNEL_READY,
       grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
   EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel_->GetState(false));
-  LOG(INFO) << "=== SENDING SECOND RPC ===";
+  gpr_log(GPR_INFO, "=== SENDING SECOND RPC ===");
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       MakeConnectionFailureRegex(
           "ring hash cannot find a connected endpoint; first failure: "),
       rpc_options);
-  LOG(INFO) << "=== STARTING BACKEND 1 ===";
+  gpr_log(GPR_INFO, "=== STARTING BACKEND 1 ===");
   StartBackend(1);
-  LOG(INFO) << "=== WAITING FOR CHANNEL TO BECOME READY ===";
+  gpr_log(GPR_INFO, "=== WAITING FOR CHANNEL TO BECOME READY ===");
   EXPECT_TRUE(channel_->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
-  LOG(INFO) << "=== WAITING FOR BACKEND 1 ===";
+  gpr_log(GPR_INFO, "=== WAITING FOR BACKEND 1 ===");
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options);
-  LOG(INFO) << "=== DONE ===";
+  gpr_log(GPR_INFO, "=== DONE ===");
 }
 
 // This tests a bug seen in the wild where ring_hash started with no

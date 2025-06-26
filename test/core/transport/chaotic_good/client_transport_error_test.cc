@@ -141,8 +141,9 @@ class ClientTransportTest : public ::testing::Test {
   }
 
   auto MakeCall(ClientMetadataHandle client_initial_metadata) {
+    auto* arena = call_arena_allocator_->MakeArena();
     return MakeCallPair(std::move(client_initial_metadata), event_engine_.get(),
-                        call_arena_allocator_->MakeArena());
+                        arena, call_arena_allocator_, nullptr);
   }
 
  private:
@@ -188,7 +189,7 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
   auto call = MakeCall(TestInitialMetadata());
-  transport->StartCall(call.handler.StartWithEmptyFilterStack());
+  transport->StartCall(call.handler.V2HackToStartCallWithoutACallFilterStack());
   call.initiator.SpawnGuarded("test-send",
                               [initiator = call.initiator]() mutable {
                                 return SendClientToServerMessages(initiator, 1);
@@ -232,7 +233,7 @@ TEST_F(ClientTransportTest, AddOneStreamWithReadFailed) {
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
   auto call = MakeCall(TestInitialMetadata());
-  transport->StartCall(call.handler.StartWithEmptyFilterStack());
+  transport->StartCall(call.handler.V2HackToStartCallWithoutACallFilterStack());
   call.initiator.SpawnGuarded("test-send",
                               [initiator = call.initiator]() mutable {
                                 return SendClientToServerMessages(initiator, 1);
@@ -284,9 +285,11 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
   auto call1 = MakeCall(TestInitialMetadata());
-  transport->StartCall(call1.handler.StartWithEmptyFilterStack());
+  transport->StartCall(
+      call1.handler.V2HackToStartCallWithoutACallFilterStack());
   auto call2 = MakeCall(TestInitialMetadata());
-  transport->StartCall(call2.handler.StartWithEmptyFilterStack());
+  transport->StartCall(
+      call2.handler.V2HackToStartCallWithoutACallFilterStack());
   call1.initiator.SpawnGuarded(
       "test-send-1", [initiator = call1.initiator]() mutable {
         return SendClientToServerMessages(initiator, 1);
@@ -352,9 +355,11 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
   auto call1 = MakeCall(TestInitialMetadata());
-  transport->StartCall(call1.handler.StartWithEmptyFilterStack());
+  transport->StartCall(
+      call1.handler.V2HackToStartCallWithoutACallFilterStack());
   auto call2 = MakeCall(TestInitialMetadata());
-  transport->StartCall(call2.handler.StartWithEmptyFilterStack());
+  transport->StartCall(
+      call2.handler.V2HackToStartCallWithoutACallFilterStack());
   call1.initiator.SpawnGuarded(
       "test-send", [initiator = call1.initiator]() mutable {
         return SendClientToServerMessages(initiator, 1);

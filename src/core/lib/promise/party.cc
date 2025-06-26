@@ -26,11 +26,14 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/trace.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
 #include "src/core/lib/gprpp/thd.h"       // IWYU pragma: keep
 #include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
 #endif
+
+grpc_core::DebugOnlyTraceFlag grpc_trace_party_state(false, "party_state");
 
 namespace grpc_core {
 
@@ -270,14 +273,14 @@ bool Party::RunOneParticipant(int i) {
   // somewhere.
   auto* participant = participants_[i].load(std::memory_order_acquire);
   if (participant == nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_INFO, "%s[party] wakeup %d already complete",
               DebugTag().c_str(), i);
     }
     return false;
   }
   absl::string_view name;
-  if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+  if (grpc_trace_promise_primitives.enabled()) {
     name = participant->name();
     gpr_log(GPR_INFO, "%s[%s] begin job %d", DebugTag().c_str(),
             std::string(name).c_str(), i);
@@ -288,13 +291,13 @@ bool Party::RunOneParticipant(int i) {
   currently_polling_ = kNotPolling;
   if (done) {
     if (!name.empty()) {
-      GRPC_TRACE_LOG(promise_primitives, INFO)
-          << DebugTag() << "[" << name << "] end poll and finish job " << i;
+      gpr_log(GPR_INFO, "%s[%s] end poll and finish job %d", DebugTag().c_str(),
+              std::string(name).c_str(), i);
     }
     participants_[i].store(nullptr, std::memory_order_relaxed);
   } else if (!name.empty()) {
-    GRPC_TRACE_LOG(promise_primitives, INFO)
-        << DebugTag() << "[" << name << "] end poll";
+    gpr_log(GPR_INFO, "%s[%s] end poll", DebugTag().c_str(),
+            std::string(name).c_str());
   }
   return done;
 }
@@ -303,12 +306,10 @@ void Party::AddParticipants(Participant** participants, size_t count) {
   bool run_party = sync_.AddParticipantsAndRef(count, [this, participants,
                                                        count](size_t* slots) {
     for (size_t i = 0; i < count; i++) {
-      if (GRPC_TRACE_FLAG_ENABLED(party_state)) {
+      if (grpc_trace_party_state.enabled()) {
         gpr_log(GPR_INFO,
-                "Party %p                 AddParticipant: %s @ %" PRIdPTR
-                " [participant=%p]",
-                &sync_, std::string(participants[i]->name()).c_str(), slots[i],
-                participants[i]);
+                "Party %p                 AddParticipant: %s @ %" PRIdPTR,
+                &sync_, std::string(participants[i]->name()).c_str(), slots[i]);
       }
       participants_[slots[i]].store(participants[i], std::memory_order_release);
     }

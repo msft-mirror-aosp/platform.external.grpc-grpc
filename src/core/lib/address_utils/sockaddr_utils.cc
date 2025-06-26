@@ -32,10 +32,11 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -371,8 +372,8 @@ int grpc_sockaddr_get_port(const grpc_resolved_address* resolved_addr) {
       return 1;
 #endif
     default:
-      LOG(ERROR) << "Unknown socket family " << addr->sa_family
-                 << " in grpc_sockaddr_get_port";
+      gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_get_port",
+              addr->sa_family);
       return 0;
   }
 }
@@ -393,8 +394,8 @@ int grpc_sockaddr_set_port(grpc_resolved_address* resolved_addr, int port) {
           grpc_htons(static_cast<uint16_t>(port));
       return 1;
     default:
-      LOG(ERROR) << "Unknown socket family " << addr->sa_family
-                 << " in grpc_sockaddr_set_port";
+      gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_set_port",
+              addr->sa_family);
       return 0;
   }
 }

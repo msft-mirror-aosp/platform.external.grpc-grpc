@@ -22,8 +22,8 @@
 #include <utility>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 
+#include <grpc/support/log.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/channel_arguments.h>
@@ -69,8 +69,10 @@ void ExternalConnectionAcceptorImpl::HandleNewConnection(
   grpc_core::MutexLock lock(&mu_);
   if (shutdown_ || !started_) {
     // TODO(yangg) clean up.
-    LOG(ERROR) << "NOT handling external connection with fd " << p->fd
-               << ", started " << started_ << ", shutdown " << shutdown_;
+    gpr_log(
+        GPR_ERROR,
+        "NOT handling external connection with fd %d, started %d, shutdown %d",
+        p->fd, started_, shutdown_);
     return;
   }
   if (handler_) {

@@ -19,7 +19,6 @@
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -65,8 +64,9 @@ class SslSessionLRUCache::Node {
 
 SslSessionLRUCache::SslSessionLRUCache(size_t capacity) : capacity_(capacity) {
   if (capacity == 0) {
-    LOG(ERROR) << "SslSessionLRUCache capacity is zero. SSL sessions cannot be "
-                  "resumed.";
+    gpr_log(
+        GPR_ERROR,
+        "SslSessionLRUCache capacity is zero. SSL sessions cannot be resumed.");
   }
 }
 
@@ -100,7 +100,7 @@ SslSessionLRUCache::Node* SslSessionLRUCache::FindLocked(
 
 void SslSessionLRUCache::Put(const char* key, SslSessionPtr session) {
   if (session == nullptr) {
-    LOG(ERROR) << "Attempted to put null SSL session in session cache.";
+    gpr_log(GPR_ERROR, "Attempted to put null SSL session in session cache.");
     return;
   }
   grpc_core::MutexLock lock(&lock_);

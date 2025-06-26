@@ -45,6 +45,8 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
 
+extern grpc_core::TraceFlag grpc_tcp_trace;
+
 struct CFStreamConnect {
   gpr_mu mu;
   gpr_refcount refcount;
@@ -77,7 +79,7 @@ static void CFStreamConnectCleanup(CFStreamConnect* connect) {
 
 static void OnAlarm(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
+  if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnAlarm, error:%s", connect,
             grpc_core::StatusToString(error).c_str());
   }
@@ -98,7 +100,7 @@ static void OnAlarm(void* arg, grpc_error_handle error) {
 
 static void OnOpen(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
+  if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnOpen, error:%s", connect,
             grpc_core::StatusToString(error).c_str());
   }
@@ -172,7 +174,7 @@ static int64_t CFStreamClientConnect(
   gpr_ref_init(&connect->refcount, 1);
   gpr_mu_init(&connect->mu);
 
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
+  if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %p, %s: asynchronously connecting",
             connect, connect->addr_name.c_str());
   }

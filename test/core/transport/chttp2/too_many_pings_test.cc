@@ -25,7 +25,6 @@
 #include <vector>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -47,6 +46,7 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -58,7 +58,6 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/resolver/resolver.h"
-#include "src/core/util/useful.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
@@ -201,10 +200,10 @@ TEST(TooManyPings, TestLotsOfServerCancelledRpcsDoesntGiveTooManyPings) {
   std::map<grpc_status_code, int> statuses_and_counts;
   const int kNumTotalRpcs = 100;
   // perform an RPC
-  LOG(INFO) << "Performing " << kNumTotalRpcs
-            << " total RPCs and expecting them all to receive status "
-               "PERMISSION_DENIED ("
-            << GRPC_STATUS_PERMISSION_DENIED << ")";
+  gpr_log(GPR_INFO,
+          "Performing %d total RPCs and expecting them all to receive status "
+          "PERMISSION_DENIED (%d)",
+          kNumTotalRpcs, GRPC_STATUS_PERMISSION_DENIED);
   for (int i = 0; i < kNumTotalRpcs; i++) {
     grpc_status_code status = PerformCall(channel, server, cq);
     statuses_and_counts[status] += 1;
@@ -215,13 +214,14 @@ TEST(TooManyPings, TestLotsOfServerCancelledRpcsDoesntGiveTooManyPings) {
     if (itr->first != GRPC_STATUS_PERMISSION_DENIED) {
       num_not_cancelled += itr->second;
     }
-    LOG(INFO) << itr->second << " / " << kNumTotalRpcs
-              << " RPCs received status code: " << itr->first;
+    gpr_log(GPR_INFO, "%d / %d RPCs received status code: %d", itr->second,
+            kNumTotalRpcs, itr->first);
   }
   if (num_not_cancelled > 0) {
-    LOG(ERROR) << "Expected all RPCs to receive status PERMISSION_DENIED ("
-               << GRPC_STATUS_PERMISSION_DENIED << ") but " << num_not_cancelled
-               << " received other status codes";
+    gpr_log(GPR_ERROR,
+            "Expected all RPCs to receive status PERMISSION_DENIED (%d) but %d "
+            "received other status codes",
+            GRPC_STATUS_PERMISSION_DENIED, num_not_cancelled);
     FAIL();
   }
   // shutdown and destroy the client and server
@@ -405,17 +405,20 @@ TEST_F(KeepaliveThrottlingTest, KeepaliveThrottlingMultipleChannels) {
   // We need 3 GOAWAY frames to throttle the keepalive time from 1 second to 8
   // seconds (> 5sec).
   for (int i = 0; i < 3; i++) {
-    LOG(INFO) << "Expected keepalive time : " << expected_keepalive_time_sec;
+    gpr_log(GPR_INFO, "Expected keepalive time : %d",
+            expected_keepalive_time_sec);
     EXPECT_EQ(PerformWaitingCall(channel, server, cq), GRPC_STATUS_UNAVAILABLE);
     expected_keepalive_time_sec *= 2;
   }
-  LOG(INFO) << "Client keepalive time " << expected_keepalive_time_sec
-            << " should now be in sync with the server settings";
+  gpr_log(
+      GPR_INFO,
+      "Client keepalive time %d should now be in sync with the server settings",
+      expected_keepalive_time_sec);
   EXPECT_EQ(PerformWaitingCall(channel, server, cq),
             GRPC_STATUS_DEADLINE_EXCEEDED);
   // Since the subchannel is shared, the second channel should also have
   // keepalive settings in sync with the server.
-  LOG(INFO) << "Now testing second channel sharing the same subchannel";
+  gpr_log(GPR_INFO, "Now testing second channel sharing the same subchannel");
   EXPECT_EQ(PerformWaitingCall(channel_dup, server, cq),
             GRPC_STATUS_DEADLINE_EXCEEDED);
   // shutdown and destroy the client and server
@@ -437,7 +440,8 @@ grpc_core::Resolver::Result BuildResolverResult(
   for (const auto& address_str : addresses) {
     absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
     if (!uri.ok()) {
-      LOG(ERROR) << "Failed to parse uri. Error: " << uri.status();
+      gpr_log(GPR_ERROR, "Failed to parse uri. Error: %s",
+              uri.status().ToString().c_str());
       CHECK_OK(uri);
     }
     grpc_resolved_address address;
@@ -483,7 +487,8 @@ TEST_F(KeepaliveThrottlingTest, NewSubchannelsUseUpdatedKeepaliveTime) {
   // (even those from a different subchannel).
   int expected_keepalive_time_sec = 1;
   for (int i = 0; i < 3; i++) {
-    LOG(INFO) << "Expected keepalive time : " << expected_keepalive_time_sec;
+    gpr_log(GPR_INFO, "Expected keepalive time : %d",
+            expected_keepalive_time_sec);
     response_generator->SetResponseSynchronously(
         BuildResolverResult({absl::StrCat(
             "ipv4:", i % 2 == 0 ? server_address1 : server_address2)}));
@@ -495,8 +500,10 @@ TEST_F(KeepaliveThrottlingTest, NewSubchannelsUseUpdatedKeepaliveTime) {
               GRPC_STATUS_UNAVAILABLE);
     expected_keepalive_time_sec *= 2;
   }
-  LOG(INFO) << "Client keepalive time " << expected_keepalive_time_sec
-            << " should now be in sync with the server settings";
+  gpr_log(
+      GPR_INFO,
+      "Client keepalive time %d should now be in sync with the server settings",
+      expected_keepalive_time_sec);
   response_generator->SetResponseSynchronously(
       BuildResolverResult({absl::StrCat("ipv4:", server_address2)}));
   grpc_core::ExecCtx::Get()->Flush();
@@ -550,7 +557,8 @@ TEST_F(KeepaliveThrottlingTest,
   // (even those from a different subchannel).
   int expected_keepalive_time_sec = 1;
   for (int i = 0; i < 3; i++) {
-    LOG(ERROR) << "Expected keepalive time : " << expected_keepalive_time_sec;
+    gpr_log(GPR_ERROR, "Expected keepalive time : %d",
+            expected_keepalive_time_sec);
     grpc_server* server = ServerStart(
         i % 2 == 0 ? server_address1.c_str() : server_address2.c_str(), cq);
     VerifyChannelReady(channel, cq);
@@ -559,8 +567,10 @@ TEST_F(KeepaliveThrottlingTest,
     VerifyChannelDisconnected(channel, cq);
     expected_keepalive_time_sec *= 2;
   }
-  LOG(INFO) << "Client keepalive time " << expected_keepalive_time_sec
-            << " should now be in sync with the server settings";
+  gpr_log(
+      GPR_INFO,
+      "Client keepalive time %d should now be in sync with the server settings",
+      expected_keepalive_time_sec);
   grpc_server* server = ServerStart(server_address1.c_str(), cq);
   VerifyChannelReady(channel, cq);
   EXPECT_EQ(PerformWaitingCall(channel, server, cq),

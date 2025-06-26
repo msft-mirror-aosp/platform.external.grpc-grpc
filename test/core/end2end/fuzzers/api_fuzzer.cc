@@ -69,7 +69,6 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/fuzzing_channel_args.h"
-#include "test/core/test_util/test_config.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
@@ -78,6 +77,8 @@
 
 bool squelch = true;
 bool leak_check = true;
+
+static void dont_log(gpr_log_func_args* /*args*/) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // dns resolution
@@ -399,7 +400,7 @@ namespace testing {
 
 ApiFuzzer::ApiFuzzer(const fuzzing_event_engine::Actions& actions)
     : BasicFuzzer(actions) {
-  ResetDNSResolver(std::make_unique<FuzzerDNSResolver>(engine().get()));
+  ResetDNSResolver(std::make_unique<FuzzerDNSResolver>(engine()));
   grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
 
@@ -505,7 +506,7 @@ using grpc_core::testing::ApiFuzzer;
 
 DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    grpc_disable_all_absl_logs();
+    gpr_set_log_function(dont_log);
   }
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();

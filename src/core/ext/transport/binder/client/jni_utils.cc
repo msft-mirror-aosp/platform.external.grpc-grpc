@@ -15,7 +15,6 @@
 #include "src/core/ext/transport/binder/client/jni_utils.h"
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"  // IWYU pragma: keep
 
 #include <grpc/support/port_platform.h>
 
@@ -84,7 +83,7 @@ void TryEstablishConnection(JNIEnv* env, jobject application,
 
   jmethodID mid = env->GetStaticMethodID(cl, method.c_str(), type.c_str());
   if (mid == nullptr) {
-    LOG(ERROR) << "No method id " << method;
+    gpr_log(GPR_ERROR, "No method id %s", method.c_str());
   }
 
   env->CallStaticVoidMethod(cl, mid, application,
@@ -108,7 +107,7 @@ void TryEstablishConnectionWithUri(JNIEnv* env, jobject application,
 
   jmethodID mid = env->GetStaticMethodID(cl, method.c_str(), type.c_str());
   if (mid == nullptr) {
-    LOG(ERROR) << "No method id " << method;
+    gpr_log(GPR_ERROR, "No method id %s", method.c_str());
   }
 
   env->CallStaticVoidMethod(cl, mid, application,
@@ -127,7 +126,7 @@ bool IsSignatureMatch(JNIEnv* env, jobject context, int uid1, int uid2) {
 
   jmethodID mid = env->GetStaticMethodID(cl, method.c_str(), type.c_str());
   if (mid == nullptr) {
-    LOG(ERROR) << "No method id " << method;
+    gpr_log(GPR_ERROR, "No method id %s", method.c_str());
   }
 
   jboolean result = env->CallStaticBooleanMethod(cl, mid, context, uid1, uid2);

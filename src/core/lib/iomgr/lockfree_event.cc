@@ -27,6 +27,8 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+extern grpc_core::DebugOnlyTraceFlag grpc_polling_trace;
+
 // 'state' holds the to call when the fd is readable or writable respectively.
 // It can contain one of the following values:
 //   kClosureReady     : The fd has an I/O event of interest but there is no
@@ -95,7 +97,7 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
     // sure that the shutdown error has been initialized properly before us
     // referencing it.
     gpr_atm curr = gpr_atm_acq_load(&state_);
-    if (GRPC_TRACE_FLAG_ENABLED(polling)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
       gpr_log(GPR_DEBUG,
               "LockfreeEvent::NotifyOn: %p curr=%" PRIxPTR " closure=%p", this,
               curr, closure);
@@ -164,7 +166,7 @@ bool LockfreeEvent::SetShutdown(grpc_error_handle shutdown_error) {
 
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
-    if (GRPC_TRACE_FLAG_ENABLED(polling)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
       gpr_log(GPR_DEBUG,
               "LockfreeEvent::SetShutdown: %p curr=%" PRIxPTR " err=%s",
               &state_, curr, StatusToString(shutdown_error).c_str());
@@ -214,7 +216,7 @@ void LockfreeEvent::SetReady() {
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
 
-    if (GRPC_TRACE_FLAG_ENABLED(polling)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
       gpr_log(GPR_DEBUG, "LockfreeEvent::SetReady: %p curr=%" PRIxPTR, &state_,
               curr);
     }

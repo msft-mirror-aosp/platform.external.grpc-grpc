@@ -42,8 +42,8 @@ constexpr int kMaxWSABUFCount = 16;
 void DumpSliceBuffer(SliceBuffer* buffer, absl::string_view context_string) {
   for (size_t i = 0; i < buffer->Count(); i++) {
     auto str = buffer->MutableSliceAt(i).as_string_view();
-    GRPC_TRACE_LOG(event_engine_endpoint, INFO)
-        << context_string << ": " << str;
+    gpr_log(GPR_INFO, "%s: %.*s", context_string.data(), str.length(),
+            str.data());
   }
 }
 
@@ -102,7 +102,8 @@ void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
   int wsa_error = status == 0 ? 0 : WSAGetLastError();
   if (wsa_error != WSAEWOULDBLOCK) {
     // Data or some error was returned immediately.
-    socket->read_info()->SetResult(wsa_error, bytes_read, "WSARecv");
+    socket->read_info()->SetResult(
+        {/*wsa_error=*/wsa_error, /*bytes_read=*/bytes_read});
     thread_pool->Run(&handle_read_event);
     return;
   }
@@ -119,8 +120,9 @@ void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
   if (wsa_error != 0 && wsa_error != WSA_IO_PENDING) {
     // The async read attempt returned an error immediately.
     socket->UnregisterReadCallback();
-    socket->read_info()->SetResult(
-        wsa_error, 0, absl::StrFormat("WindowsEndpont::%p Read failed", this));
+    socket->read_info()->SetErrorStatus(GRPC_WSA_ERROR(
+        wsa_error,
+        absl::StrFormat("WindowsEndpont::%p Read failed", this).c_str()));
     thread_pool->Run(&handle_read_event);
   }
 }
@@ -156,12 +158,11 @@ bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
         });
     return false;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(event_engine_endpoint_data)) {
+  if (grpc_event_engine_endpoint_data_trace.enabled()) {
     for (size_t i = 0; i < data->Count(); i++) {
       auto str = data->RefSlice(i).as_string_view();
-      GRPC_TRACE_LOG(event_engine_endpoint, INFO)
-          << "WindowsEndpoint::" << this
-          << " WRITE (peer=" << peer_address_string_ << "): " << str;
+      gpr_log(GPR_INFO, "WindowsEndpoint::%p WRITE (peer=%s): %.*s", this,
+              peer_address_string_.c_str(), str.length(), str.data());
     }
   }
   CHECK(data->Count() <= UINT_MAX);
@@ -219,7 +220,8 @@ bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSA_IO_PENDING) {
       io_state_->socket->UnregisterWriteCallback();
-      io_state_->socket->write_info()->SetResult(wsa_error, 0, "WSASend");
+      io_state_->socket->write_info()->SetErrorStatus(
+          GRPC_WSA_ERROR(wsa_error, "WSASend"));
       io_state_->thread_pool->Run(&io_state_->handle_write_event);
     }
   }
@@ -294,7 +296,7 @@ void WindowsEndpoint::HandleReadClosure::Run() {
   }
   if (result.bytes_transferred == 0) {
     // Either the endpoint is shut down or we've seen the end of the stream
-    if (GRPC_TRACE_FLAG_ENABLED(event_engine_endpoint_data)) {
+    if (grpc_event_engine_endpoint_data_trace.enabled()) {
       DumpSliceBuffer(buffer_, absl::StrFormat("WindowsEndpoint::%p READ",
                                                io_state->endpoint));
     }

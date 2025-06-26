@@ -23,8 +23,8 @@
 
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 
+#include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -104,8 +104,10 @@ ConstructPerWorkerCredentialTypesMap() {
     }
     size_t comma = next_entry.find(',');
     if (comma == std::string::npos) {
-      LOG(ERROR) << "Expectd --per_worker_credential_types to be a list of the "
-                    "form: 'addr1,cred_type1;addr2,cred_type2;...' into.";
+      gpr_log(GPR_ERROR,
+              "Expectd --per_worker_credential_types to be a list "
+              "of the form: 'addr1,cred_type1;addr2,cred_type2;...' "
+              "into.");
       abort();
     }
     std::string addr = next_entry.substr(0, comma);
@@ -183,9 +185,9 @@ static double BinarySearch(
     double mid = low + (high - low) / 2;
     double current_cpu_load =
         GetCpuLoad(scenario, mid, per_worker_credential_types, success);
-    VLOG(2) << absl::StrFormat("Binary Search: current_offered_load %.0f", mid);
+    gpr_log(GPR_DEBUG, "Binary Search: current_offered_load %.0f", mid);
     if (!*success) {
-      LOG(ERROR) << "Client/Server Failure";
+      gpr_log(GPR_ERROR, "Client/Server Failure");
       break;
     }
     if (targeted_cpu_load <= current_cpu_load) {
@@ -207,7 +209,7 @@ static double SearchOfferedLoad(
   double current_cpu_load = GetCpuLoad(scenario, current_offered_load,
                                        per_worker_credential_types, success);
   if (current_cpu_load > targeted_cpu_load) {
-    LOG(ERROR) << "Initial offered load too high";
+    gpr_log(GPR_ERROR, "Initial offered load too high");
     return -1;
   }
 
@@ -215,8 +217,8 @@ static double SearchOfferedLoad(
     current_offered_load *= 2;
     current_cpu_load = GetCpuLoad(scenario, current_offered_load,
                                   per_worker_credential_types, success);
-    VLOG(2) << absl::StrFormat("Binary Search: current_offered_load %.0f",
-                               current_offered_load);
+    gpr_log(GPR_DEBUG, "Binary Search: current_offered_load  %.0f",
+            current_offered_load);
   }
 
   double targeted_offered_load =
@@ -278,11 +280,11 @@ static bool QpsDriver() {
             SearchOfferedLoad(absl::GetFlag(FLAGS_initial_search_value),
                               absl::GetFlag(FLAGS_targeted_cpu_load), scenario,
                               per_worker_credential_types, &success);
-        LOG(INFO) << "targeted_offered_load " << targeted_offered_load;
+        gpr_log(GPR_INFO, "targeted_offered_load %f", targeted_offered_load);
         GetCpuLoad(scenario, targeted_offered_load, per_worker_credential_types,
                    &success);
       } else {
-        LOG(ERROR) << "Unimplemented search param";
+        gpr_log(GPR_ERROR, "Unimplemented search param");
       }
     }
   }

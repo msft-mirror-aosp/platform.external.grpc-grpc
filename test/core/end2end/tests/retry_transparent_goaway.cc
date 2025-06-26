@@ -115,6 +115,8 @@ class FailFirstCallFilter {
 
 grpc_channel_filter FailFirstCallFilter::kFilterVtable = {
     CallData::StartTransportStreamOpBatch,
+    nullptr,
+    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,
@@ -146,9 +148,9 @@ CORE_END2END_TEST(RetryTest, TransparentGoaway) {
       .SendMessage("foo")
       .SendCloseFromClient();
   // Start a batch containing recv ops.
-  IncomingStatusOnClient server_status;
-  IncomingMetadata server_initial_metadata;
-  IncomingMessage server_message;
+  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  CoreEnd2endTest::IncomingMessage server_message;
   c.NewBatch(2)
       .RecvInitialMetadata(server_initial_metadata)
       .RecvMessage(server_message)
@@ -161,12 +163,12 @@ CORE_END2END_TEST(RetryTest, TransparentGoaway) {
   Expect(101, true);
   Step();
   // Server receives the request.
-  IncomingMessage client_message;
+  CoreEnd2endTest::IncomingMessage client_message;
   s.NewBatch(102).RecvMessage(client_message);
   Expect(102, true);
   Step();
   // Server sends a response with status OK.
-  IncomingCloseOnServer client_close;
+  CoreEnd2endTest::IncomingCloseOnServer client_close;
   s.NewBatch(103)
       .RecvCloseOnServer(client_close)
       .SendInitialMetadata({})

@@ -169,7 +169,7 @@ class Fuzzer {
 
   MemoryAllocator memory_allocator_ = MemoryAllocator(
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-  RefCountedPtr<Arena> arena_ = SimpleArenaAllocator(128)->MakeArena();
+  ScopedArenaPtr arena_ = MakeScopedArena(128, &memory_allocator_);
   std::map<int, Comparison> vectors_;
 };
 }  // namespace grpc_core

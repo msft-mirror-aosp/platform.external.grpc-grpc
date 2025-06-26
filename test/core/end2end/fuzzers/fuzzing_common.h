@@ -111,9 +111,8 @@ class BasicFuzzer {
 
   RefCountedPtr<ResourceQuota> resource_quota() { return resource_quota_; }
 
-  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
-  engine() {
-    return engine_;
+  grpc_event_engine::experimental::FuzzingEventEngine* engine() {
+    return engine_.get();
   }
 
   grpc_completion_queue* cq() { return cq_; }

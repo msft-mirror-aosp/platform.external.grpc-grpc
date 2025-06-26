@@ -26,10 +26,7 @@ grpc_cc_library(
     name = "endpoint_tests",
     srcs = ["endpoint_tests.cc"],
     hdrs = ["endpoint_tests.h"],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-    ],
+    external_deps = ["absl/log:check"],
     language = "C++",
     visibility = [
         "//test:__subpackages__",
@@ -65,7 +62,6 @@ grpc_cc_test(
     srcs = ["endpoint_pair_test.cc"],
     external_deps = [
         "absl/log:check",
-        "absl/log:log",
         "gtest",
     ],
     language = "C++",
@@ -86,7 +82,6 @@ grpc_cc_test(
     name = "error_test",
     srcs = ["error_test.cc"],
     external_deps = [
-        "absl/log:log",
         "gtest",
     ],
     language = "C++",
@@ -118,10 +113,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "fd_posix_test",
     srcs = ["fd_posix_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -154,7 +146,6 @@ grpc_cc_test(
     external_deps = [
         "absl/flags:flag",
         "absl/flags:parse",
-        "absl/log:log",
         "absl/strings",
         "gtest",
     ],
@@ -177,7 +168,6 @@ grpc_cc_test(
     external_deps = [
         "absl/flags:flag",
         "absl/flags:parse",
-        "absl/log:log",
         "absl/strings",
         "gtest",
     ],
@@ -196,7 +186,6 @@ grpc_cc_test(
     srcs = ["resolve_address_test.cc"],
     external_deps = [
         "absl/log:check",
-        "absl/log:log",
         "absl/strings",
         "gtest",
     ],
@@ -216,7 +205,6 @@ grpc_cc_test(
     srcs = ["resolve_address_test.cc"],
     external_deps = [
         "absl/log:check",
-        "absl/log:log",
         "absl/strings",
         "gtest",
     ],
@@ -251,10 +239,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "tcp_client_posix_test",
     srcs = ["tcp_client_posix_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "C++",
     tags = [
         "endpoint_test",
@@ -275,7 +260,6 @@ grpc_cc_test(
     srcs = ["tcp_posix_test.cc"],
     external_deps = [
         "absl/log:check",
-        "absl/log:log",
         "gtest",
     ],
     language = "C++",
@@ -330,10 +314,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "tcp_server_posix_test",
     srcs = ["tcp_server_posix_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "C++",
     tags = [
         "event_engine_listener_test",
@@ -350,10 +331,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "timer_heap_test",
     srcs = ["timer_heap_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -370,7 +348,6 @@ grpc_cc_test(
     srcs = ["timer_list_test.cc"],
     external_deps = [
         "absl/log:check",
-        "absl/log:log",
     ],
     language = "C++",
     uses_event_engine = False,

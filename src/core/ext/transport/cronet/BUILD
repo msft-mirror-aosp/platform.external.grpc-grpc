@@ -41,7 +41,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:check",
-        "absl/log:log",
         "cronet_c_for_grpc",
     ],
     language = "c++",

@@ -44,8 +44,8 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/util/json/json.h"
-#include "src/core/util/json/json_writer.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_listener.h"
@@ -77,6 +77,9 @@ using envoy::extensions::transport_sockets::tls::v3::DownstreamTlsContext;
 namespace grpc_core {
 namespace testing {
 namespace {
+
+TraceFlag xds_listener_resource_type_test_trace(
+    true, "xds_listener_resource_type_test");
 
 class XdsListenerTest : public ::testing::Test {
  protected:

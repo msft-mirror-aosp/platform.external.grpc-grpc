@@ -27,7 +27,6 @@ grpc_cc_library(
     srcs = ["fake_binder.cc"],
     hdrs = ["fake_binder.h"],
     external_deps = [
-        "absl/log:log",
         "absl/memory",
         "absl/random",
         "absl/strings",

@@ -22,7 +22,6 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/types/variant.h"
 
 #include <grpc/support/log.h>
@@ -79,7 +78,7 @@ absl::Status WriteTrailingMetadata(const Transaction& tx,
   } else {
     // client suffix currently is always empty according to the wireformat
     if (!tx.GetSuffixMetadata().empty()) {
-      LOG(ERROR) << "Got non-empty suffix metadata from client.";
+      gpr_log(GPR_ERROR, "Got non-empty suffix metadata from client.");
     }
   }
   return absl::OkStatus();
@@ -219,7 +218,8 @@ void WireWriterImpl::RunScheduledTxInternal(RunScheduledTxArgs* args) {
                                 return absl::OkStatus();
                               });
     if (!result.ok()) {
-      LOG(ERROR) << "Failed to make binder transaction " << result;
+      gpr_log(GPR_ERROR, "Failed to make binder transaction %s",
+              result.ToString().c_str());
     }
     delete args;
     return;
@@ -242,7 +242,8 @@ void WireWriterImpl::RunScheduledTxInternal(RunScheduledTxArgs* args) {
   if (CanBeSentInOneTransaction(*stream_tx->tx.get())) {  // NOLINT
     absl::Status result = RpcCallFastPath(std::move(stream_tx->tx));
     if (!result.ok()) {
-      LOG(ERROR) << "Failed to handle non-chunked RPC call " << result;
+      gpr_log(GPR_ERROR, "Failed to handle non-chunked RPC call %s",
+              result.ToString().c_str());
     }
     delete args;
     return;
@@ -255,7 +256,8 @@ void WireWriterImpl::RunScheduledTxInternal(RunScheduledTxArgs* args) {
             return RunStreamTx(stream_tx, parcel, &is_last_chunk);
           });
   if (!result.ok()) {
-    LOG(ERROR) << "Failed to make binder transaction " << result;
+    gpr_log(GPR_ERROR, "Failed to make binder transaction %s",
+            result.ToString().c_str());
   }
   if (!is_last_chunk) {
     {
@@ -288,7 +290,7 @@ absl::Status WireWriterImpl::SendAck(int64_t num_bytes) {
   // Ensure combiner will be run if this is not called from top-level gRPC API
   // entrypoint.
   grpc_core::ExecCtx exec_ctx;
-  LOG(INFO) << "Ack " << num_bytes << " bytes received";
+  gpr_log(GPR_INFO, "Ack %" PRId64 " bytes received", num_bytes);
   if (is_transacting_) {
     // This can happen because NDK might call our registered callback function
     // in the same thread while we are telling it to send a transaction
@@ -296,8 +298,10 @@ absl::Status WireWriterImpl::SendAck(int64_t num_bytes) {
     // the same thread or the other thread. We are currently in the call stack
     // of other transaction, Liveness of ACK is still guaranteed even if this is
     // a race with another thread.
-    LOG(INFO) << "Scheduling ACK transaction instead of directly execute it to "
-                 "avoid deadlock.";
+    gpr_log(
+        GPR_INFO,
+        "Scheduling ACK transaction instead of directly execute it to avoid "
+        "deadlock.");
     auto args = new RunScheduledTxArgs();
     args->writer = this;
     args->tx = RunScheduledTxArgs::AckTx();
@@ -314,7 +318,8 @@ absl::Status WireWriterImpl::SendAck(int64_t num_bytes) {
                               return absl::OkStatus();
                             });
   if (!result.ok()) {
-    LOG(ERROR) << "Failed to make binder transaction " << result;
+    gpr_log(GPR_ERROR, "Failed to make binder transaction %s",
+            result.ToString().c_str());
   }
   return result;
 }
@@ -323,7 +328,7 @@ void WireWriterImpl::OnAckReceived(int64_t num_bytes) {
   // Ensure combiner will be run if this is not called from top-level gRPC API
   // entrypoint.
   grpc_core::ExecCtx exec_ctx;
-  LOG(INFO) << "OnAckReceived " << num_bytes;
+  gpr_log(GPR_INFO, "OnAckReceived %" PRId64, num_bytes);
   // Do not try to obtain `write_mu_` in this function. NDKBinder might invoke
   // the callback to notify us about new incoming binder transaction when we are
   // sending transaction. i.e. `write_mu_` might have already been acquired by

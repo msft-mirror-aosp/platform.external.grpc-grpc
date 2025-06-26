@@ -37,7 +37,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -127,12 +126,12 @@ class BinderResolverFactory final : public ResolverFactory {
     grpc_resolved_address addr;
     {
       if (!uri.authority().empty()) {
-        LOG(ERROR) << "authority is not supported in binder scheme";
+        gpr_log(GPR_ERROR, "authority is not supported in binder scheme");
         return false;
       }
       grpc_error_handle error = BinderAddrPopulate(uri.path(), &addr);
       if (!error.ok()) {
-        LOG(ERROR) << StatusToString(error);
+        gpr_log(GPR_ERROR, "%s", StatusToString(error).c_str());
         return false;
       }
     }

@@ -23,7 +23,8 @@
 #include <sys/types.h>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/stat.h"
@@ -37,8 +38,8 @@ absl::Status GetFileModificationTime(const char* filename, time_t* timestamp) {
   struct _stat buf;
   if (_stat(filename, &buf) != 0) {
     std::string error_msg = StrError(errno);
-    LOG(ERROR) << "_stat failed for filename " << filename << " with error "
-               << error_msg;
+    gpr_log(GPR_ERROR, "_stat failed for filename %s with error %s.", filename,
+            error_msg.c_str());
     return absl::Status(absl::StatusCode::kInternal, error_msg);
   }
   // Last file/directory modification time.

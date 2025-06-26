@@ -19,10 +19,10 @@
 #include <memory>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "gtest/gtest.h"
 
 #include <grpc/status.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -36,8 +36,8 @@ namespace {
 // writing, and expects to get the status after the messages.
 void ServerStreaming(CoreEnd2endTest& test, int num_messages) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
-  IncomingMetadata server_initial_metadata;
-  IncomingStatusOnClient server_status;
+  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  CoreEnd2endTest::IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .RecvInitialMetadata(server_initial_metadata)
@@ -61,7 +61,7 @@ void ServerStreaming(CoreEnd2endTest& test, int num_messages) {
     test.Step();
   }
   // Server sends status
-  IncomingCloseOnServer client_close;
+  CoreEnd2endTest::IncomingCloseOnServer client_close;
   s.NewBatch(104)
       .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})
       .RecvCloseOnServer(client_close);
@@ -70,12 +70,12 @@ void ServerStreaming(CoreEnd2endTest& test, int num_messages) {
   test.Expect(104, true);
   test.Step();
 
-  VLOG(2) << "SEEN_STATUS:" << seen_status;
+  gpr_log(GPR_DEBUG, "SEEN_STATUS:%d", seen_status);
 
   // Client keeps reading messages till it gets the status
   int num_messages_received = 0;
   while (true) {
-    IncomingMessage server_message;
+    CoreEnd2endTest::IncomingMessage server_message;
     c.NewBatch(102).RecvMessage(server_message);
     test.Expect(1, CqVerifier::Maybe{&seen_status});
     test.Expect(102, true);

@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/util/json/json.h"
+#include "src/core/lib/json/json.h"
 
 #include <string.h>
 
@@ -22,7 +22,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -30,8 +29,10 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include "src/core/util/json/json_reader.h"
-#include "src/core/util/json/json_writer.h"
+#include <grpc/support/log.h>
+
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
@@ -78,7 +79,7 @@ void ValidateValue(const Json& actual, const Json& expected) {
 
 void RunSuccessTest(const char* input, const Json& expected,
                     const char* expected_output) {
-  LOG(INFO) << "parsing string \"" << input << "\" - should succeed";
+  gpr_log(GPR_INFO, "parsing string \"%s\" - should succeed", input);
   auto json = JsonParse(input);
   ASSERT_TRUE(json.ok()) << json.status();
   ValidateValue(*json, expected);
@@ -199,7 +200,7 @@ TEST(Json, Keywords) {
 }
 
 void RunParseFailureTest(const char* input) {
-  LOG(INFO) << "parsing string \"" << input << "\" - should fail";
+  gpr_log(GPR_INFO, "parsing string \"%s\" - should fail", input);
   auto json = JsonParse(input);
   EXPECT_FALSE(json.ok()) << "input: \"" << input << "\"";
 }

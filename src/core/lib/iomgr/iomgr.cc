@@ -22,14 +22,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/log/log.h"
-
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/buffer_list.h"
@@ -39,8 +40,6 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
-#include "src/core/util/string.h"
-#include "src/core/util/useful.h"
 
 static gpr_mu g_mu;
 static gpr_cv g_rcv;
@@ -83,7 +82,7 @@ size_t grpc_iomgr_count_objects_for_testing(void) {
 static void dump_objects(const char* kind) {
   grpc_iomgr_object* obj;
   for (obj = g_root_object.next; obj != &g_root_object; obj = obj->next) {
-    VLOG(2) << kind << " OBJECT: " << obj->name << " " << obj;
+    gpr_log(GPR_DEBUG, "%s OBJECT: %s %p", kind, obj->name, obj);
   }
 }
 
@@ -103,8 +102,9 @@ void grpc_iomgr_shutdown() {
               gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), last_warning_time),
               gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
         if (g_root_object.next != &g_root_object) {
-          VLOG(2) << "Waiting for " << count_objects()
-                  << " iomgr objects to be destroyed";
+          gpr_log(GPR_DEBUG,
+                  "Waiting for %" PRIuPTR " iomgr objects to be destroyed",
+                  count_objects());
         }
         last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
       }
@@ -118,9 +118,11 @@ void grpc_iomgr_shutdown() {
       }
       if (g_root_object.next != &g_root_object) {
         if (grpc_iomgr_abort_on_leaks()) {
-          VLOG(2) << "Failed to free " << count_objects()
-                  << " iomgr objects before shutdown deadline: "
-                  << "memory leaks are likely";
+          gpr_log(GPR_DEBUG,
+                  "Failed to free %" PRIuPTR
+                  " iomgr objects before shutdown deadline: "
+                  "memory leaks are likely",
+                  count_objects());
           dump_objects("LEAKED");
           abort();
         }
@@ -131,9 +133,11 @@ void grpc_iomgr_shutdown() {
           if (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), shutdown_deadline) >
               0) {
             if (g_root_object.next != &g_root_object) {
-              VLOG(2) << "Failed to free " << count_objects()
-                      << " iomgr objects before shutdown deadline: "
-                      << "memory leaks are likely";
+              gpr_log(GPR_DEBUG,
+                      "Failed to free %" PRIuPTR
+                      " iomgr objects before shutdown deadline: "
+                      "memory leaks are likely",
+                      count_objects());
               dump_objects("LEAKED");
             }
             break;

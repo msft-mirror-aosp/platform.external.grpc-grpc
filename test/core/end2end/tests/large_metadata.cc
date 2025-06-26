@@ -58,10 +58,11 @@ class LargeMetadataTest {
   }
 
  private:
-  IncomingStatusOnClient PerformOneRequest(const size_t metadata_size) {
+  CoreEnd2endTest::IncomingStatusOnClient PerformOneRequest(
+      const size_t metadata_size) {
     auto c = test_.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-    IncomingMetadata server_initial_metadata;
-    IncomingStatusOnClient server_status;
+    CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+    CoreEnd2endTest::IncomingStatusOnClient server_status;
     c.NewBatch(1)
         .SendInitialMetadata({})
         .SendCloseFromClient()
@@ -71,7 +72,7 @@ class LargeMetadataTest {
     test_.Expect(101, true);
     test_.Step();
     // Server: send metadata of size `metadata_size`.
-    IncomingCloseOnServer client_close;
+    CoreEnd2endTest::IncomingCloseOnServer client_close;
     s.NewBatch(102)
         .SendInitialMetadata({{"key", std::string(metadata_size, 'a')}})
         .RecvCloseOnServer(client_close)

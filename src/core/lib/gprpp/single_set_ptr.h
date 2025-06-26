@@ -63,19 +63,17 @@ class SingleSetPtr {
   void Reset() { Delete(p_.exchange(nullptr, std::memory_order_acq_rel)); }
 
   bool is_set() const {
-    T* p = Get();
+    T* p = p_.load(std::memory_order_acquire);
     return p != nullptr;
   }
 
-  T* Get() const { return p_.load(std::memory_order_acquire); }
-
   T* operator->() const {
-    T* p = Get();
+    T* p = p_.load(std::memory_order_acquire);
     DCHECK_NE(p, nullptr);
     return p;
   }
 
-  T& operator*() const { return *Get(); }
+  T& operator*() const { return *operator->(); }
 
  private:
   static void Delete(T* p) {

@@ -23,10 +23,9 @@
 #include <mutex>
 #include <thread>
 
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpcpp/generic/async_generic_service.h>
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/security/server_credentials.h>
@@ -92,9 +91,11 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     int num_threads = config.async_server_threads();
     if (num_threads <= 0) {  // dynamic sizing
       num_threads = std::min(64, cores());
-      LOG(INFO) << "Sizing async server to " << num_threads
-                << " threads. Defaults to number of cores in machine or 64 "
-                   "threads if machine has more than 64 cores to avoid OOMs.";
+      gpr_log(GPR_INFO,
+              "Sizing async server to %d threads. Defaults to number of cores "
+              "in machine or 64 threads if machine has more than 64 cores to "
+              "avoid OOMs.",
+              num_threads);
     }
 
     int tpc = std::max(1, config.threads_per_cq());  // 1 if unspecified
@@ -110,9 +111,9 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
 
     server_ = builder->BuildAndStart();
     if (server_ == nullptr) {
-      LOG(ERROR) << "Server: Fail to BuildAndStart(port=" << port_num << ")";
+      gpr_log(GPR_ERROR, "Server: Fail to BuildAndStart(port=%d)", port_num);
     } else {
-      LOG(INFO) << "Server: BuildAndStart(port=" << port_num << ")";
+      gpr_log(GPR_INFO, "Server: BuildAndStart(port=%d)", port_num);
     }
 
     auto process_rpc_bound =

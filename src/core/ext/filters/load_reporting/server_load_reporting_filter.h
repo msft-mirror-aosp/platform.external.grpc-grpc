@@ -54,7 +54,6 @@ class ServerLoadReportingFilter
     void OnServerTrailingMetadata(ServerMetadata& md,
                                   ServerLoadReportingFilter* filter);
     static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     void OnFinalize(const grpc_call_final_info* final_info,
                     ServerLoadReportingFilter* filter);

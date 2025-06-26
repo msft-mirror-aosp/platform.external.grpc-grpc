@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -70,7 +69,7 @@ static tsi_result alts_grpc_integrity_only_extra_copy_protect(
   grpc_status_code status = alts_iovec_record_protocol_integrity_only_protect(
       rp->iovec_rp, rp->iovec_buf, 1, header_iovec, tag_iovec, &error_details);
   if (status != GRPC_STATUS_OK) {
-    LOG(ERROR) << "Failed to protect, " << error_details;
+    gpr_log(GPR_ERROR, "Failed to protect, %s", error_details);
     gpr_free(error_details);
     return TSI_INTERNAL_ERROR;
   }
@@ -110,7 +109,7 @@ static tsi_result alts_grpc_integrity_only_protect(
       rp->iovec_rp, rp->iovec_buf, unprotected_slices->count, header_iovec,
       tag_iovec, &error_details);
   if (status != GRPC_STATUS_OK) {
-    LOG(ERROR) << "Failed to protect, " << error_details;
+    gpr_log(GPR_ERROR, "Failed to protect, %s", error_details);
     gpr_free(error_details);
     return TSI_INTERNAL_ERROR;
   }
@@ -133,7 +132,7 @@ static tsi_result alts_grpc_integrity_only_unprotect(
     return TSI_INVALID_ARGUMENT;
   }
   if (protected_slices->length < rp->header_length + rp->tag_length) {
-    LOG(ERROR) << "Protected slices do not have sufficient data.";
+    gpr_log(GPR_ERROR, "Protected slices do not have sufficient data.");
     return TSI_INVALID_ARGUMENT;
   }
   // In this method, rp points to alts_grpc_record_protocol struct
@@ -172,7 +171,7 @@ static tsi_result alts_grpc_integrity_only_unprotect(
       integrity_only_record_protocol->data_sb.count, header_iovec, tag_iovec,
       &error_details);
   if (status != GRPC_STATUS_OK) {
-    LOG(ERROR) << "Failed to unprotect, " << error_details;
+    gpr_log(GPR_ERROR, "Failed to unprotect, %s", error_details);
     gpr_free(error_details);
     return TSI_INTERNAL_ERROR;
   }

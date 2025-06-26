@@ -23,7 +23,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -115,7 +114,8 @@ TYPED_TEST(PartySyncTest, AddAndRemoveParticipant) {
                 participants[slot].exchange(nullptr, std::memory_order_acquire);
             if (participant == done.get()) run_me = true;
             if (participant == nullptr) {
-              LOG(ERROR) << "Participant was null (spurious wakeup observed)";
+              gpr_log(GPR_ERROR,
+                      "Participant was null (spurious wakeup observed)");
               return false;
             }
             participant->store(true, std::memory_order_release);
@@ -165,7 +165,8 @@ TYPED_TEST(PartySyncTest, AddAndRemoveTwoParticipants) {
                 participants[slot].exchange(nullptr, std::memory_order_acquire);
             if (participant == done.get()) run_me++;
             if (participant == nullptr) {
-              LOG(ERROR) << "Participant was null (spurious wakeup observed)";
+              gpr_log(GPR_ERROR,
+                      "Participant was null (spurious wakeup observed)");
               return false;
             }
             participant->fetch_sub(1, std::memory_order_release);

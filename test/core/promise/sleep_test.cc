@@ -20,11 +20,11 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/notification.h"
@@ -156,7 +156,7 @@ TEST(Sleep, StressTest) {
   std::vector<std::shared_ptr<Notification>> notifications;
   std::vector<ActivityPtr> activities;
   auto engine = GetDefaultEventEngine();
-  LOG(INFO) << "Starting " << kNumActivities << " sleeps for 1sec";
+  gpr_log(GPR_INFO, "Starting %d sleeps for 1sec", kNumActivities);
   for (int i = 0; i < kNumActivities; i++) {
     auto notification = std::make_shared<Notification>();
     auto activity = MakeActivity(
@@ -167,8 +167,9 @@ TEST(Sleep, StressTest) {
     notifications.push_back(std::move(notification));
     activities.push_back(std::move(activity));
   }
-  LOG(INFO) << "Waiting for the first " << (kNumActivities / 2)
-            << " sleeps, whilst cancelling the other half";
+  gpr_log(GPR_INFO,
+          "Waiting for the first %d sleeps, whilst cancelling the other half",
+          kNumActivities / 2);
   for (size_t i = 0; i < kNumActivities / 2; i++) {
     notifications[i]->WaitForNotification();
     activities[i].reset();

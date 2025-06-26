@@ -86,6 +86,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
       HPackParser hpack_parser, HPackCompressor hpack_encoder);
+  ~ChaoticGoodServerTransport() override;
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return nullptr; }
@@ -94,10 +95,10 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override;
-  void Orphan() override;
+  grpc_endpoint* GetEndpoint() override { return nullptr; }
+  void Orphan() override { delete this; }
 
-  void SetCallDestination(
-      RefCountedPtr<UnstartedCallDestination> call_destination) override;
+  void SetAcceptor(Acceptor* acceptor) override;
   void AbortWithError();
 
  private:
@@ -136,10 +137,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   auto PushFragmentIntoCall(CallInitiator call_initiator,
                             ClientFragmentFrame frame, uint32_t stream_id);
 
-  RefCountedPtr<UnstartedCallDestination> call_destination_;
-  const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
-  const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-      event_engine_;
+  Acceptor* acceptor_ = nullptr;
   InterActivityLatch<void> got_acceptor_;
   MpscReceiver<ServerFrame> outgoing_frames_;
   // Assigned aligned bytes from setting frame.
@@ -148,6 +146,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   // Map of stream incoming server frames, key is stream_id.
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
   uint32_t last_seen_new_stream_id_ = 0;
+  grpc_event_engine::experimental::MemoryAllocator allocator_;
   ActivityPtr writer_ ABSL_GUARDED_BY(mu_);
   ActivityPtr reader_ ABSL_GUARDED_BY(mu_);
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){

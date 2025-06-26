@@ -26,13 +26,13 @@
 
 #include "absl/functional/bind_front.h"
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
@@ -246,18 +246,21 @@ TlsChannelSecurityConnector::CreateTlsChannelSecurityConnector(
     const char* target_name, const char* overridden_target_name,
     tsi_ssl_session_cache* ssl_session_cache) {
   if (channel_creds == nullptr) {
-    LOG(ERROR) << "channel_creds is nullptr in "
-                  "TlsChannelSecurityConnectorCreate()";
+    gpr_log(GPR_ERROR,
+            "channel_creds is nullptr in "
+            "TlsChannelSecurityConnectorCreate()");
     return nullptr;
   }
   if (options == nullptr) {
-    LOG(ERROR) << "options is nullptr in "
-                  "TlsChannelSecurityConnectorCreate()";
+    gpr_log(GPR_ERROR,
+            "options is nullptr in "
+            "TlsChannelSecurityConnectorCreate()");
     return nullptr;
   }
   if (target_name == nullptr) {
-    LOG(ERROR) << "target_name is nullptr in "
-                  "TlsChannelSecurityConnectorCreate()";
+    gpr_log(GPR_ERROR,
+            "target_name is nullptr in "
+            "TlsChannelSecurityConnectorCreate()");
     return nullptr;
   }
   return MakeRefCounted<TlsChannelSecurityConnector>(
@@ -351,8 +354,8 @@ void TlsChannelSecurityConnector::add_handshakers(
         /*network_bio_buf_size=*/0,
         /*ssl_bio_buf_size=*/0, &tsi_hs);
     if (result != TSI_OK) {
-      LOG(ERROR) << "Handshaker creation failed with error "
-                 << tsi_result_to_string(result);
+      gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
+              tsi_result_to_string(result));
     }
   }
   // If tsi_hs is null, this will add a failing handshaker.
@@ -397,8 +400,9 @@ void TlsChannelSecurityConnector::cancel_check_peer(
       if (it != pending_verifier_requests_.end()) {
         pending_verifier_request = it->second->request();
       } else {
-        VLOG(2) << "TlsChannelSecurityConnector::cancel_check_peer: no "
-                   "corresponding pending request found";
+        gpr_log(GPR_INFO,
+                "TlsChannelSecurityConnector::cancel_check_peer: no "
+                "corresponding pending request found");
       }
     }
     if (pending_verifier_request != nullptr) {
@@ -448,7 +452,7 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
   if (root_ready && identity_ready) {
     if (security_connector_->UpdateHandshakerFactoryLocked() !=
         GRPC_SECURITY_OK) {
-      LOG(ERROR) << "Update handshaker factory failed.";
+      gpr_log(GPR_ERROR, "Update handshaker factory failed.");
     }
   }
 }
@@ -458,12 +462,14 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::OnError(
     grpc_error_handle root_cert_error, grpc_error_handle identity_cert_error) {
   if (!root_cert_error.ok()) {
-    LOG(ERROR) << "TlsChannelCertificateWatcher getting root_cert_error: "
-               << StatusToString(root_cert_error);
+    gpr_log(GPR_ERROR,
+            "TlsChannelCertificateWatcher getting root_cert_error: %s",
+            StatusToString(root_cert_error).c_str());
   }
   if (!identity_cert_error.ok()) {
-    LOG(ERROR) << "TlsChannelCertificateWatcher getting identity_cert_error: "
-               << StatusToString(identity_cert_error);
+    gpr_log(GPR_ERROR,
+            "TlsChannelCertificateWatcher getting identity_cert_error: %s",
+            StatusToString(identity_cert_error).c_str());
   }
 }
 
@@ -559,13 +565,15 @@ TlsServerSecurityConnector::CreateTlsServerSecurityConnector(
     RefCountedPtr<grpc_server_credentials> server_creds,
     RefCountedPtr<grpc_tls_credentials_options> options) {
   if (server_creds == nullptr) {
-    LOG(ERROR) << "server_creds is nullptr in "
-                  "TlsServerSecurityConnectorCreate()";
+    gpr_log(GPR_ERROR,
+            "server_creds is nullptr in "
+            "TlsServerSecurityConnectorCreate()");
     return nullptr;
   }
   if (options == nullptr) {
-    LOG(ERROR) << "options is nullptr in "
-                  "TlsServerSecurityConnectorCreate()";
+    gpr_log(GPR_ERROR,
+            "options is nullptr in "
+            "TlsServerSecurityConnectorCreate()");
     return nullptr;
   }
   return MakeRefCounted<TlsServerSecurityConnector>(std::move(server_creds),
@@ -625,8 +633,8 @@ void TlsServerSecurityConnector::add_handshakers(
         server_handshaker_factory_, /*network_bio_buf_size=*/0,
         /*ssl_bio_buf_size=*/0, &tsi_hs);
     if (result != TSI_OK) {
-      LOG(ERROR) << "Handshaker creation failed with error "
-                 << tsi_result_to_string(result);
+      gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
+              tsi_result_to_string(result));
     }
   }
   // If tsi_hs is null, this will add a failing handshaker.
@@ -671,8 +679,9 @@ void TlsServerSecurityConnector::cancel_check_peer(
       if (it != pending_verifier_requests_.end()) {
         pending_verifier_request = it->second->request();
       } else {
-        LOG(INFO) << "TlsServerSecurityConnector::cancel_check_peer: no "
-                     "corresponding pending request found";
+        gpr_log(GPR_INFO,
+                "TlsServerSecurityConnector::cancel_check_peer: no "
+                "corresponding pending request found");
       }
     }
     if (pending_verifier_request != nullptr) {
@@ -712,7 +721,7 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::
       (!root_being_watched && identity_being_watched && identity_has_value)) {
     if (security_connector_->UpdateHandshakerFactoryLocked() !=
         GRPC_SECURITY_OK) {
-      LOG(ERROR) << "Update handshaker factory failed.";
+      gpr_log(GPR_ERROR, "Update handshaker factory failed.");
     }
   }
 }
@@ -722,12 +731,14 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::OnError(
     grpc_error_handle root_cert_error, grpc_error_handle identity_cert_error) {
   if (!root_cert_error.ok()) {
-    LOG(ERROR) << "TlsServerCertificateWatcher getting root_cert_error: "
-               << StatusToString(root_cert_error);
+    gpr_log(GPR_ERROR,
+            "TlsServerCertificateWatcher getting root_cert_error: %s",
+            StatusToString(root_cert_error).c_str());
   }
   if (!identity_cert_error.ok()) {
-    LOG(ERROR) << "TlsServerCertificateWatcher getting identity_cert_error: "
-               << StatusToString(identity_cert_error);
+    gpr_log(GPR_ERROR,
+            "TlsServerCertificateWatcher getting identity_cert_error: %s",
+            StatusToString(identity_cert_error).c_str());
   }
 }
 

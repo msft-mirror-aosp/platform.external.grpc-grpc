@@ -40,9 +40,9 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
-#include "src/core/util/json/json.h"
-#include "src/core/util/json/json_writer.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_cluster.h"
 #include "src/core/xds/grpc/xds_common_types.h"
@@ -77,6 +77,9 @@ using xds::type::v3::TypedStruct;
 namespace grpc_core {
 namespace testing {
 namespace {
+
+TraceFlag xds_cluster_resource_type_test_trace(
+    true, "xds_cluster_resource_type_test");
 
 class XdsClusterTest : public ::testing::Test {
  protected:

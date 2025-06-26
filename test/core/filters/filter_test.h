@@ -101,12 +101,19 @@ class FilterTestBase : public ::testing::Test {
     struct Impl {
       Impl(std::unique_ptr<ChannelFilter> filter, FilterTestBase* test)
           : filter(std::move(filter)), test(test) {}
-      RefCountedPtr<ArenaFactory> arena_factory = SimpleArenaAllocator();
+      size_t initial_arena_size = 1024;
+      MemoryAllocator memory_allocator =
+          ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+              "test");
       std::unique_ptr<ChannelFilter> filter;
       FilterTestBase* const test;
     };
 
    public:
+    void set_initial_arena_size(size_t size) {
+      impl_->initial_arena_size = size;
+    }
+
     Call MakeCall();
 
    protected:

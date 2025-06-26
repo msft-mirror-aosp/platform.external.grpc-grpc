@@ -21,7 +21,6 @@
 #include <map>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 
@@ -66,7 +65,7 @@ ndk_util::binder_status_t f_onTransact(ndk_util::AIBinder* binder,
                                        const ndk_util::AParcel* in,
                                        ndk_util::AParcel* /*out*/) {
   gpr_log(GPR_INFO, __func__);
-  LOG(INFO) << "tx code = " << code;
+  gpr_log(GPR_INFO, "tx code = %u", code);
 
   auto* user_data =
       static_cast<BinderUserData*>(ndk_util::AIBinder_getUserData(binder));
@@ -80,7 +79,7 @@ ndk_util::binder_status_t f_onTransact(ndk_util::AIBinder* binder,
   if (status.ok()) {
     return ndk_util::STATUS_OK;
   } else {
-    LOG(ERROR) << "Callback failed: " << status.ToString();
+    gpr_log(GPR_ERROR, "Callback failed: %s", status.ToString().c_str());
     return ndk_util::STATUS_UNKNOWN_ERROR;
   }
 }

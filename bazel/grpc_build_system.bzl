@@ -45,7 +45,6 @@ def if_not_windows(a):
     return select({
         "//:windows": [],
         "//:windows_msvc": [],
-        "//:windows_clang": [],
         "//conditions:default": a,
     })
 
@@ -53,7 +52,6 @@ def if_windows(a):
     return select({
         "//:windows": a,
         "//:windows_msvc": a,
-        "//:windows_clang": a,
         "//conditions:default": [],
     })
 
@@ -69,7 +67,7 @@ def _get_external_deps(external_deps):
         elif dep == "cares":
             ret += select({
                 "//:grpc_no_ares": [],
-                "//conditions:default": ["//third_party:cares"],
+                "//conditions:default": ["//external:cares"],
             })
         elif dep == "cronet_c_for_grpc":
             ret.append("//third_party/objective_c/Cronet:cronet_c_for_grpc")
@@ -84,7 +82,7 @@ def _get_external_deps(external_deps):
         elif dep == "libprotobuf_mutator":
             ret.append("@com_google_libprotobuf_mutator//:libprotobuf_mutator")
         else:
-            ret.append("//third_party:" + dep)
+            ret.append("//external:" + dep)
     return ret
 
 def _update_visibility(visibility):
@@ -237,7 +235,6 @@ def grpc_proto_library(
         name,
         srcs = [],
         deps = [],
-        visibility = None,
         well_known_protos = False,
         has_services = True,
         use_external = False,
@@ -246,7 +243,6 @@ def grpc_proto_library(
         name = name,
         srcs = srcs,
         deps = deps,
-        visibility = visibility,
         well_known_protos = well_known_protos,
         proto_only = not has_services,
         use_external = use_external,
@@ -739,13 +735,6 @@ def grpc_package(name, visibility = "private", features = []):
             features = features,
         )
 
-def grpc_filegroup(name, srcs, **kwargs):
-    native.filegroup(
-        name = name,
-        srcs = srcs,
-        **kwargs
-    )
-
 def grpc_objc_library(
         name,
         srcs = [],
@@ -803,23 +792,4 @@ def python_config_settings():
     native.config_setting(
         name = "python3",
         flag_values = {"@bazel_tools//tools/python:python_version": "PY3"},
-    )
-
-# buildifier: disable=unnamed-macro
-def grpc_clang_cl_settings():
-    native.platform(
-        name = "x64_windows-clang-cl",
-        constraint_values = [
-            "@platforms//cpu:x86_64",
-            "@platforms//os:windows",
-            "@bazel_tools//tools/cpp:clang-cl",
-        ],
-    )
-    native.config_setting(
-        name = "windows_clang",
-        constraint_values = [
-            "@platforms//cpu:x86_64",
-            "@platforms//os:windows",
-            "@bazel_tools//tools/cpp:clang-cl",
-        ],
     )

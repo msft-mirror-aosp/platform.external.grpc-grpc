@@ -20,7 +20,6 @@
 
 #include "google/cloud/opentelemetry/resource_detector.h"
 #include "gtest/gtest.h"
-#include "opentelemetry/sdk/metrics/meter_provider.h"
 
 #include <grpcpp/ext/csm_observability.h>
 #include <grpcpp/ext/otel_plugin.h>
@@ -33,13 +32,8 @@ namespace testing {
 namespace {
 
 TEST(CsmObservabilityBuilderTest, Basic) {
-  EXPECT_EQ(
-      CsmObservabilityBuilder()
-          .SetMeterProvider(
-              std::make_shared<opentelemetry::sdk::metrics::MeterProvider>())
-          .BuildAndRegister()
-          .status(),
-      absl::OkStatus());
+  EXPECT_EQ(CsmObservabilityBuilder().BuildAndRegister().status(),
+            absl::OkStatus());
 }
 
 TEST(GsmDependencyTest, GoogleCloudOpenTelemetryDependency) {
@@ -74,13 +68,7 @@ TEST(CsmChannelTargetSelectorTest, XdsTargetsWithTDAuthority) {
 }
 
 TEST(CsmChannelTargetSelectorTest, CsmObservabilityOutOfScope) {
-  {
-    auto obs =
-        CsmObservabilityBuilder()
-            .SetMeterProvider(
-                std::make_shared<opentelemetry::sdk::metrics::MeterProvider>())
-            .BuildAndRegister();
-  }
+  { auto obs = CsmObservabilityBuilder().BuildAndRegister(); }
   // When CsmObservability goes out of scope, the target selector should return
   // false as well.
   EXPECT_FALSE(internal::CsmChannelTargetSelector("foo.bar.google.com"));
@@ -95,13 +83,7 @@ TEST(CsmServerSelectorTest, ChannelArgs) {
 }
 
 TEST(CsmServerSelectorTest, CsmObservabilityOutOfScope) {
-  {
-    auto obs =
-        CsmObservabilityBuilder()
-            .SetMeterProvider(
-                std::make_shared<opentelemetry::sdk::metrics::MeterProvider>())
-            .BuildAndRegister();
-  }
+  { auto obs = CsmObservabilityBuilder().BuildAndRegister(); }
   // When CsmObservability goes out of scope, the server selector should return
   // false as well.
   EXPECT_FALSE(internal::CsmServerSelector(grpc_core::ChannelArgs()));

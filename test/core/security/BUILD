@@ -60,7 +60,6 @@ grpc_cc_library(
     name = "oauth2_utils",
     srcs = ["oauth2_utils.cc"],
     hdrs = ["oauth2_utils.h"],
-    external_deps = ["absl/log:log"],
     language = "C++",
     visibility = ["//test/cpp:__subpackages__"],
     deps = ["//:grpc"],
@@ -69,10 +68,7 @@ grpc_cc_library(
 grpc_cc_test(
     name = "auth_context_test",
     srcs = ["auth_context_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -103,7 +99,6 @@ grpc_cc_test(
     srcs = ["credentials_test.cc"],
     external_deps = [
         "absl/log:check",
-        "absl/log:log",
         "gtest",
     ],
     language = "C++",
@@ -149,10 +144,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "json_token_test",
     srcs = ["json_token_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["credential_token_tests"],
     uses_event_engine = False,
@@ -185,10 +177,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "secure_endpoint_test",
     srcs = ["secure_endpoint_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     flaky = True,
     language = "C++",
     deps = [
@@ -204,10 +193,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "security_connector_test",
     srcs = ["security_connector_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -269,10 +255,7 @@ grpc_cc_binary(
 grpc_cc_binary(
     name = "fetch_oauth2",
     srcs = ["fetch_oauth2.cc"],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-    ],
+    external_deps = ["absl/log:check"],
     language = "C++",
     deps = [
         ":oauth2_utils",
@@ -339,10 +322,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "alts_security_connector_test",
     srcs = ["alts_security_connector_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -460,10 +440,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "grpc_tls_certificate_verifier_test",
     srcs = ["grpc_tls_certificate_verifier_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",

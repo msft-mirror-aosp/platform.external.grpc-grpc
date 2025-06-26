@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/status.h>
@@ -37,9 +36,13 @@
 #endif
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/util/useful.h"
+
+grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount(false,
+                                                        "error_refcount");
+grpc_core::DebugOnlyTraceFlag grpc_trace_closure(false, "closure");
 
 absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,
                                 const grpc_core::DebugLocation& location,
@@ -55,10 +58,15 @@ absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,
 
 absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
                            const char* call_name) {
-  return StatusCreate(
-      absl::StatusCode::kUnknown,
-      absl::StrCat(call_name, ": ", grpc_core::StrError(err), " (", err, ")"),
-      location, {});
+  auto err_string = grpc_core::StrError(err);
+  absl::Status s =
+      StatusCreate(absl::StatusCode::kUnknown, err_string, location, {});
+  grpc_core::StatusSetInt(&s, grpc_core::StatusIntProperty::kErrorNo, err);
+  grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError,
+                          err_string);
+  grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kSyscall,
+                          call_name);
+  return s;
 }
 
 #ifdef GPR_WINDOWS
@@ -96,15 +104,15 @@ std::string WSAErrorToShortDescription(int err) {
 absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
                             absl::string_view call_name) {
   char* utf8_message = gpr_format_message(err);
-  absl::Status status = StatusCreate(
-      absl::StatusCode::kUnavailable,
-      absl::StrCat(call_name, ": ", WSAErrorToShortDescription(err), " (",
-                   utf8_message, " -- ", err, ")"),
-      location, {});
-  StatusSetInt(&status, grpc_core::StatusIntProperty::kRpcStatus,
+  absl::Status s = StatusCreate(absl::StatusCode::kUnavailable,
+                                WSAErrorToShortDescription(err), location, {});
+  StatusSetInt(&s, grpc_core::StatusIntProperty::kWsaError, err);
+  StatusSetInt(&s, grpc_core::StatusIntProperty::kRpcStatus,
                GRPC_STATUS_UNAVAILABLE);
+  StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError, utf8_message);
+  StatusSetStr(&s, grpc_core::StatusStrProperty::kSyscall, call_name);
   gpr_free(utf8_message);
-  return status;
+  return s;
 }
 #endif
 

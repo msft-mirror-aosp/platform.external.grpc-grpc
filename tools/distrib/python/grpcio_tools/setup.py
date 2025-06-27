@@ -37,7 +37,9 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath("."))
 
 import _parallel_compile_patch
+import _spawn_patch
 import protoc_lib_deps
+import python_version
 
 import grpc_version
 
@@ -48,6 +50,7 @@ else:
     _EXT_INIT_SYMBOL = "PyInit__protoc_compiler"
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
+_spawn_patch.monkeypatch_spawn()
 
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
@@ -327,7 +330,7 @@ setuptools.setup(
     classifiers=CLASSIFIERS,
     ext_modules=extension_modules(),
     packages=setuptools.find_packages("."),
-    python_requires=">=3.8",
+    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
     install_requires=[
         "protobuf>=5.26.1,<6.0dev",
         "grpcio>={version}".format(version=grpc_version.VERSION),

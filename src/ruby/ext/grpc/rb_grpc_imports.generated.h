@@ -735,9 +735,6 @@ extern gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 typedef unsigned(*gpr_cpu_current_cpu_type)(void);
 extern gpr_cpu_current_cpu_type gpr_cpu_current_cpu_import;
 #define gpr_cpu_current_cpu gpr_cpu_current_cpu_import
-typedef const char*(*gpr_log_severity_string_type)(gpr_log_severity severity);
-extern gpr_log_severity_string_type gpr_log_severity_string_import;
-#define gpr_log_severity_string gpr_log_severity_string_import
 typedef void(*gpr_log_type)(const char* file, int line, gpr_log_severity severity, const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
 extern gpr_log_type gpr_log_import;
 #define gpr_log gpr_log_import
@@ -756,9 +753,6 @@ extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
 typedef void(*gpr_set_log_function_type)(gpr_log_func deprecated_setting);
 extern gpr_set_log_function_type gpr_set_log_function_import;
 #define gpr_set_log_function gpr_set_log_function_import
-typedef void(*gpr_assertion_failed_type)(const char* filename, int line, const char* message);
-extern gpr_assertion_failed_type gpr_assertion_failed_import;
-#define gpr_assertion_failed gpr_assertion_failed_import
 typedef char*(*gpr_format_message_type)(int messageid);
 extern gpr_format_message_type gpr_format_message_import;
 #define gpr_format_message gpr_format_message_import

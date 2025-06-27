@@ -568,7 +568,13 @@ class CLanguage(object):
             _check_compiler(compiler, ["default", "cmake"])
 
         if compiler == "default" or compiler == "cmake":
-            return ("debian11", [])
+            # This is to address Apple clang defaults C++98.
+            cmake_args = (
+                ["-DCMAKE_CXX_STANDARD=14"]
+                if platform_string() == "mac"
+                else []
+            )
+            return ("debian11", cmake_args)
         elif compiler == "gcc8":
             return ("gcc_8", [])
         elif compiler == "gcc10.2":
@@ -838,6 +844,13 @@ class PythonLanguage(object):
             bits=bits,
             config_vars=config_vars,
         )
+        python313_config = _python_config_generator(
+            name="py313",
+            major="3",
+            minor="13",
+            bits=bits,
+            config_vars=config_vars,
+        )
         pypy27_config = _pypy_config_generator(
             name="pypy", major="2", config_vars=config_vars
         )
@@ -874,6 +887,8 @@ class PythonLanguage(object):
             return (python311_config,)
         elif args.compiler == "python3.12":
             return (python312_config,)
+        elif args.compiler == "python3.13":
+            return (python313_config,)
         elif args.compiler == "pypy":
             return (pypy27_config,)
         elif args.compiler == "pypy3":
@@ -887,6 +902,7 @@ class PythonLanguage(object):
                 python310_config,
                 python311_config,
                 python312_config,
+                python313_config,
             )
         else:
             raise Exception("Compiler %s not supported." % args.compiler)
@@ -1777,7 +1793,7 @@ argp.add_argument(
 argp.add_argument(
     "--cmake_configure_extra_args",
     default=[],
-    nargs="+",
+    action="append",
     help="Extra arguments that will be passed to the cmake configure command. Only works for C/C++.",
 )
 args = argp.parse_args()

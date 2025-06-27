@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.65.5
+PROJECT_NUMBER         = 1.66.2
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -779,6 +779,7 @@ doc/fail_fast.md \
 doc/fork_support.md \
 doc/g_stands_for.md \
 doc/grpc_release_schedule.md \
+doc/grpc_xds_bootstrap_format.md \
 doc/grpc_xds_features.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
@@ -965,7 +966,9 @@ include/grpcpp/ext/call_metric_recorder.h \
 include/grpcpp/ext/health_check_service_server_builder_option.h \
 include/grpcpp/ext/server_metric_recorder.h \
 include/grpcpp/generic/async_generic_service.h \
+include/grpcpp/generic/callback_generic_service.h \
 include/grpcpp/generic/generic_stub.h \
+include/grpcpp/generic/generic_stub_callback.h \
 include/grpcpp/grpcpp.h \
 include/grpcpp/health_check_service_interface.h \
 include/grpcpp/impl/call.h \
@@ -1026,6 +1029,7 @@ include/grpcpp/impl/codegen/time.h \
 include/grpcpp/impl/completion_queue_tag.h \
 include/grpcpp/impl/create_auth_context.h \
 include/grpcpp/impl/delegating_channel.h \
+include/grpcpp/impl/generic_stub_internal.h \
 include/grpcpp/impl/grpc_library.h \
 include/grpcpp/impl/intercepted_channel.h \
 include/grpcpp/impl/interceptor_common.h \
@@ -1104,13 +1108,16 @@ src/core/client_channel/client_channel_internal.h \
 src/core/client_channel/client_channel_plugin.cc \
 src/core/client_channel/client_channel_service_config.cc \
 src/core/client_channel/client_channel_service_config.h \
-src/core/client_channel/config_selector.cc \
 src/core/client_channel/config_selector.h \
 src/core/client_channel/connector.h \
+src/core/client_channel/direct_channel.cc \
+src/core/client_channel/direct_channel.h \
 src/core/client_channel/dynamic_filters.cc \
 src/core/client_channel/dynamic_filters.h \
 src/core/client_channel/global_subchannel_pool.cc \
 src/core/client_channel/global_subchannel_pool.h \
+src/core/client_channel/lb_metadata.cc \
+src/core/client_channel/lb_metadata.h \
 src/core/client_channel/load_balanced_call_destination.cc \
 src/core/client_channel/load_balanced_call_destination.h \
 src/core/client_channel/local_subchannel_pool.cc \
@@ -2223,7 +2230,6 @@ src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc \
 src/core/lib/event_engine/thready_event_engine/thready_event_engine.h \
 src/core/lib/event_engine/time_util.cc \
 src/core/lib/event_engine/time_util.h \
-src/core/lib/event_engine/trace.h \
 src/core/lib/event_engine/utils.cc \
 src/core/lib/event_engine/utils.h \
 src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc \
@@ -2641,7 +2647,6 @@ src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_refcount.h \
 src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
-src/core/lib/surface/api_trace.h \
 src/core/lib/surface/byte_buffer.cc \
 src/core/lib/surface/byte_buffer_reader.cc \
 src/core/lib/surface/call.cc \
@@ -2694,6 +2699,8 @@ src/core/lib/transport/call_final_info.cc \
 src/core/lib/transport/call_final_info.h \
 src/core/lib/transport/call_spine.cc \
 src/core/lib/transport/call_spine.h \
+src/core/lib/transport/call_state.cc \
+src/core/lib/transport/call_state.h \
 src/core/lib/transport/connectivity_state.cc \
 src/core/lib/transport/connectivity_state.h \
 src/core/lib/transport/custom_metadata.h \
@@ -2929,6 +2936,8 @@ src/core/util/json/json_util.cc \
 src/core/util/json/json_util.h \
 src/core/util/json/json_writer.cc \
 src/core/util/json/json_writer.h \
+src/core/util/latent_see.cc \
+src/core/util/latent_see.h \
 src/core/util/linux/cpu.cc \
 src/core/util/linux/log.cc \
 src/core/util/log.cc \
@@ -2948,6 +2957,7 @@ src/core/util/time.cc \
 src/core/util/time_precise.cc \
 src/core/util/time_precise.h \
 src/core/util/tmpfile.h \
+src/core/util/upb_utils.h \
 src/core/util/useful.h \
 src/core/util/windows/cpu.cc \
 src/core/util/windows/log.cc \
@@ -2960,7 +2970,6 @@ src/core/xds/grpc/certificate_provider_store.cc \
 src/core/xds/grpc/certificate_provider_store.h \
 src/core/xds/grpc/file_watcher_certificate_provider_factory.cc \
 src/core/xds/grpc/file_watcher_certificate_provider_factory.h \
-src/core/xds/grpc/upb_utils.h \
 src/core/xds/grpc/xds_audit_logger_registry.cc \
 src/core/xds/grpc/xds_audit_logger_registry.h \
 src/core/xds/grpc/xds_bootstrap_grpc.cc \
@@ -2971,19 +2980,26 @@ src/core/xds/grpc/xds_client_grpc.cc \
 src/core/xds/grpc/xds_client_grpc.h \
 src/core/xds/grpc/xds_cluster.cc \
 src/core/xds/grpc/xds_cluster.h \
+src/core/xds/grpc/xds_cluster_parser.cc \
+src/core/xds/grpc/xds_cluster_parser.h \
 src/core/xds/grpc/xds_cluster_specifier_plugin.cc \
 src/core/xds/grpc/xds_cluster_specifier_plugin.h \
 src/core/xds/grpc/xds_common_types.cc \
 src/core/xds/grpc/xds_common_types.h \
+src/core/xds/grpc/xds_common_types_parser.cc \
+src/core/xds/grpc/xds_common_types_parser.h \
 src/core/xds/grpc/xds_enabled_server.h \
 src/core/xds/grpc/xds_endpoint.cc \
 src/core/xds/grpc/xds_endpoint.h \
+src/core/xds/grpc/xds_endpoint_parser.cc \
+src/core/xds/grpc/xds_endpoint_parser.h \
 src/core/xds/grpc/xds_health_status.cc \
 src/core/xds/grpc/xds_health_status.h \
 src/core/xds/grpc/xds_http_fault_filter.cc \
 src/core/xds/grpc/xds_http_fault_filter.h \
-src/core/xds/grpc/xds_http_filters.cc \
-src/core/xds/grpc/xds_http_filters.h \
+src/core/xds/grpc/xds_http_filter.h \
+src/core/xds/grpc/xds_http_filter_registry.cc \
+src/core/xds/grpc/xds_http_filter_registry.h \
 src/core/xds/grpc/xds_http_rbac_filter.cc \
 src/core/xds/grpc/xds_http_rbac_filter.h \
 src/core/xds/grpc/xds_http_stateful_session_filter.cc \
@@ -2992,10 +3008,16 @@ src/core/xds/grpc/xds_lb_policy_registry.cc \
 src/core/xds/grpc/xds_lb_policy_registry.h \
 src/core/xds/grpc/xds_listener.cc \
 src/core/xds/grpc/xds_listener.h \
+src/core/xds/grpc/xds_listener_parser.cc \
+src/core/xds/grpc/xds_listener_parser.h \
 src/core/xds/grpc/xds_route_config.cc \
 src/core/xds/grpc/xds_route_config.h \
+src/core/xds/grpc/xds_route_config_parser.cc \
+src/core/xds/grpc/xds_route_config_parser.h \
 src/core/xds/grpc/xds_routing.cc \
 src/core/xds/grpc/xds_routing.h \
+src/core/xds/grpc/xds_server_grpc.cc \
+src/core/xds/grpc/xds_server_grpc.h \
 src/core/xds/grpc/xds_transport_grpc.cc \
 src/core/xds/grpc/xds_transport_grpc.h \
 src/core/xds/xds_client/xds_api.cc \

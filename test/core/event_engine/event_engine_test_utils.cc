@@ -89,12 +89,18 @@ void WaitForSingleOwnerWithTimeout(std::shared_ptr<EventEngine> engine,
   auto start = std::chrono::system_clock::now();
   while (engine.use_count() > 1) {
     ++n;
-    if (n % 100 == 0) AsanAssertNoLeaks();
-    if (std::chrono::system_clock::now() - start > timeout) {
+    if (n % 100 == 0) {
+      LOG(INFO) << "Checking for leaks...";
+      AsanAssertNoLeaks();
+    }
+    auto remaining = timeout - (std::chrono::system_clock::now() - start);
+    if (remaining < std::chrono::seconds{0}) {
       grpc_core::Crash("Timed out waiting for a single EventEngine owner");
     }
-    GRPC_LOG_EVERY_N_SEC(2, GPR_INFO, "engine.use_count() = %ld",
-                         engine.use_count());
+    LOG_EVERY_N_SEC(INFO, 2)
+        << "engine.use_count() = " << engine.use_count()
+        << " timeout_remaining = "
+        << absl::FormatDuration(absl::Nanoseconds(remaining.count()));
     absl::SleepFor(absl::Milliseconds(100));
   }
 }

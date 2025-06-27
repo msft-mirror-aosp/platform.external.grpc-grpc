@@ -19,6 +19,7 @@
 #include "test/cpp/ext/otel/otel_test_library.h"
 
 #include <atomic>
+#include <memory>
 
 #include "absl/functional/any_invocable.h"
 #include "gmock/gmock.h"
@@ -49,6 +50,8 @@ namespace testing {
 class AddLabelsFilter : public grpc_core::ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
+
+  static absl::string_view TypeName() { return "add_service_labels_filter"; }
 
   explicit AddLabelsFilter(
       std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
@@ -85,8 +88,7 @@ class AddLabelsFilter : public grpc_core::ChannelFilter {
 
 const grpc_channel_filter AddLabelsFilter::kFilter =
     grpc_core::MakePromiseBasedFilter<AddLabelsFilter,
-                                      grpc_core::FilterEndpoint::kClient>(
-        "add_service_labels_filter");
+                                      grpc_core::FilterEndpoint::kClient>();
 
 OpenTelemetryPluginEnd2EndTest::MetricsCollectorThread::MetricsCollectorThread(
     OpenTelemetryPluginEnd2EndTest* test, grpc_core::Duration interval,
@@ -288,7 +290,7 @@ OpenTelemetryPluginEnd2EndTest::ConfigureOTBuilder(
   if (options.use_meter_provider) {
     auto meter_provider =
         std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
-    reader.reset(new grpc::testing::MockMetricReader);
+    reader = std::make_shared<grpc::testing::MockMetricReader>();
     meter_provider->AddMetricReader(reader);
     ot_builder->SetMeterProvider(std::move(meter_provider));
   }

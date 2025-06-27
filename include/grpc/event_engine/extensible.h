@@ -24,7 +24,6 @@ namespace experimental {
 
 class Extensible {
  public:
-  virtual ~Extensible() = default;
   /// A method which allows users to query whether an implementation supports a
   /// specified extension. The name of the extension is provided as an input.
   ///
@@ -61,6 +60,9 @@ class Extensible {
   /// if (endpoint != nullptr) endpoint->Process();
   ///
   virtual void* QueryExtension(absl::string_view /*id*/) { return nullptr; }
+
+ protected:
+  ~Extensible() = default;
 };
 
 }  // namespace experimental

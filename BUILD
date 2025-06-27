@@ -227,11 +227,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gnarly"  # @unused
+g_stands_for = "gladiator"  # @unused
 
-core_version = "42.0.0"  # @unused
+core_version = "43.0.0"  # @unused
 
-version = "1.65.5"  # @unused
+version = "1.66.2"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -415,7 +415,9 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/create_channel_posix.h",
     "include/grpcpp/ext/health_check_service_server_builder_option.h",
     "include/grpcpp/generic/async_generic_service.h",
+    "include/grpcpp/generic/callback_generic_service.h",
     "include/grpcpp/generic/generic_stub.h",
+    "include/grpcpp/generic/generic_stub_callback.h",
     "include/grpcpp/grpcpp.h",
     "include/grpcpp/health_check_service_interface.h",
     "include/grpcpp/impl/call_hook.h",
@@ -577,7 +579,6 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
-        "api_trace",
         "channel_arg_names",
         "channel_stack_builder",
         "config",
@@ -657,7 +658,6 @@ grpc_cc_library(
         "@grpc:public",
     ],
     deps = [
-        "api_trace",
         "channel_arg_names",
         "channel_stack_builder",
         "config",
@@ -1149,7 +1149,6 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     deps = [
-        "api_trace",
         "channel",
         "channel_create",
         "config",
@@ -1260,6 +1259,7 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "channel_arg_names",
+        "generic_stub_internal",
         "gpr",
         "grpc++_base_unsecure",
         "grpc++_codegen_proto",
@@ -1326,7 +1326,6 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
-        "api_trace",
         "gpr",
         "grpc_base",
         "grpc_public_hdrs",
@@ -1471,21 +1470,6 @@ grpc_cc_library(
         "//src/core:memory_quota",
         "//src/core:resource_quota",
         "//src/core:thread_quota",
-    ],
-)
-
-grpc_cc_library(
-    name = "api_trace",
-    hdrs = [
-        "//src/core:lib/surface/api_trace.h",
-    ],
-    external_deps = [
-        "absl/log:log",
-    ],
-    language = "c++",
-    deps = [
-        "gpr",
-        "grpc_trace",
     ],
 )
 
@@ -1682,7 +1666,6 @@ grpc_cc_library(
         "//src/core:event_engine_query_extensions",
         "//src/core:event_engine_shim",
         "//src/core:event_engine_tcp_socket_utils",
-        "//src/core:event_engine_trace",
         "//src/core:event_log",
         "//src/core:examine_stack",
         "//src/core:experiments",
@@ -1761,7 +1744,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
-        "api_trace",
         "channel_arg_names",
         "channelz",
         "cpp_impl_of",
@@ -1807,7 +1789,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
-        "api_trace",
         "channel",
         "channelz",
         "config",
@@ -1820,6 +1801,7 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:call_arena_allocator",
         "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
@@ -1868,6 +1850,7 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:channel_stack_type",
+        "//src/core:direct_channel",
         "//src/core:experiments",
         "//src/core:iomgr_fwd",
         "//src/core:ref_counted",
@@ -1901,7 +1884,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
-        "api_trace",
         "call_combiner",
         "call_tracer",
         "channel",
@@ -2031,7 +2013,6 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
-        "api_trace",
         "call_combiner",
         "call_tracer",
         "channel",
@@ -2087,6 +2068,7 @@ grpc_cc_library(
         "//src/core:if",
         "//src/core:iomgr_fwd",
         "//src/core:latch",
+        "//src/core:latent_see",
         "//src/core:loop",
         "//src/core:map",
         "//src/core:match",
@@ -2113,6 +2095,7 @@ grpc_cc_library(
         "//src/core:time",
         "//src/core:transport_fwd",
         "//src/core:try_seq",
+        "//src/core:unique_type_name",
         "//src/core:useful",
     ],
 )
@@ -2281,6 +2264,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
+        "absl/functional:any_invocable",
         "absl/log:check",
         "absl/log:log",
         "absl/status",
@@ -2292,7 +2276,6 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS,
     visibility = ["@grpc:public"],
     deps = [
-        "api_trace",
         "channel_arg_names",
         "channelz",
         "config",
@@ -2305,6 +2288,7 @@ grpc_cc_library(
         "grpc_trace",
         "handshaker",
         "iomgr",
+        "orphanable",
         "promise",
         "ref_counted_ptr",
         "resource_quota_api",
@@ -2470,6 +2454,7 @@ grpc_cc_library(
         "channel_stack_builder",
         "config",
         "exec_ctx",
+        "generic_stub_internal",
         "gpr",
         "grpc",
         "grpc++_codegen_proto",
@@ -2558,6 +2543,7 @@ grpc_cc_library(
         "channel_stack_builder",
         "config",
         "exec_ctx",
+        "generic_stub_internal",
         "gpr",
         "grpc_base",
         "grpc_core_credentials_header",
@@ -2906,6 +2892,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:context",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:logging_filter",
         "//src/core:metadata_batch",
         "//src/core:slice",
@@ -2956,6 +2943,41 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "generic_stub_internal",
+    hdrs = [
+        "include/grpcpp/impl/generic_stub_internal.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc++_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "generic_stub_callback",
+    hdrs = [
+        "include/grpcpp/generic/generic_stub_callback.h",
+    ],
+    language = "c++",
+    visibility = ["@grpc:public"],
+    deps = [
+        "generic_stub_internal",
+    ],
+)
+
+grpc_cc_library(
+    name = "callback_generic_service",
+    hdrs = [
+        "include/grpcpp/generic/callback_generic_service.h",
+    ],
+    language = "c++",
+    visibility = ["@grpc:public"],
+    deps = [
+        "grpc++_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
     name = "work_serializer",
     srcs = [
         "//src/core:lib/gprpp/work_serializer.cc",
@@ -2966,8 +2988,8 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
+        "absl/log",
         "absl/log:check",
-        "absl/log:log",
     ],
     language = "c++",
     visibility = ["@grpc:client_channel"],
@@ -2980,6 +3002,7 @@ grpc_cc_library(
         "orphanable",
         "stats",
         "//src/core:experiments",
+        "//src/core:latent_see",
         "//src/core:stats_data",
     ],
 )
@@ -3087,6 +3110,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "debug_location",
+    external_deps = ["absl/strings"],
     language = "c++",
     public_hdrs = ["//src/core:lib/gprpp/debug_location.h"],
     visibility = ["@grpc:debug_location"],
@@ -3150,9 +3174,11 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
+        "absl/functional:any_invocable",
         "absl/log:check",
         "absl/log:log",
         "absl/status",
+        "absl/status:statusor",
         "absl/strings:str_format",
     ],
     language = "c++",
@@ -3169,6 +3195,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_trace",
         "iomgr",
+        "orphanable",
         "ref_counted_ptr",
         "//src/core:channel_args",
         "//src/core:closure",
@@ -3750,6 +3777,7 @@ grpc_cc_library(
         "//src/core:call_spine",
         "//src/core:cancel_callback",
         "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
@@ -3776,6 +3804,7 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:json",
         "//src/core:latch",
+        "//src/core:lb_metadata",
         "//src/core:lb_policy",
         "//src/core:lb_policy_registry",
         "//src/core:loop",
@@ -4037,7 +4066,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [
-        "api_trace",
         "exec_ctx",
         "gpr",
         "grpc_base",
@@ -4634,6 +4662,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "call_tracer",
         "chttp2_bin_encoder",
         "chttp2_legacy_frame",
         "chttp2_varint",

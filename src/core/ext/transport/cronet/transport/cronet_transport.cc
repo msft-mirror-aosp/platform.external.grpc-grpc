@@ -67,9 +67,10 @@
 #define GRPC_HEADER_SIZE_IN_BYTES 5
 #define GRPC_FLUSH_READ_SIZE 4096
 
-#define CRONET_LOG(...)                                        \
-  do {                                                         \
-    if (GRPC_TRACE_FLAG_ENABLED(cronet)) gpr_log(__VA_ARGS__); \
+grpc_core::TraceFlag grpc_cronet_trace(false, "cronet");
+#define CRONET_LOG(...)                                    \
+  do {                                                     \
+    if (grpc_cronet_trace.enabled()) gpr_log(__VA_ARGS__); \
   } while (0)
 
 enum e_op_result {
@@ -130,6 +131,7 @@ struct grpc_cronet_transport final : public grpc_core::FilterStackTransport {
   void SetPollsetSet(grpc_stream* /*stream*/,
                      grpc_pollset_set* /*pollset_set*/) override {}
   void PerformOp(grpc_transport_op* op) override;
+  grpc_endpoint* GetEndpoint() override { return nullptr; }
   size_t SizeOfStream() const override;
   void InitStream(grpc_stream* gs, grpc_stream_refcount* refcount,
                   const void* server_data, grpc_core::Arena* arena) override;

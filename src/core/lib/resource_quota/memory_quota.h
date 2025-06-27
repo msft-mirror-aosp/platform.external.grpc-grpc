@@ -39,6 +39,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -46,7 +47,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/periodic_update.h"
-#include "src/core/util/useful.h"
+#include "src/core/lib/resource_quota/trace.h"
 
 namespace grpc_core {
 
@@ -425,7 +426,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   void ReturnFree() {
     size_t ret = free_bytes_.exchange(0, std::memory_order_acq_rel);
     if (ret == 0) return;
-    if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
       gpr_log(GPR_INFO, "Allocator %p returning %zu bytes to quota", this, ret);
     }
     taken_bytes_.fetch_sub(ret, std::memory_order_relaxed);

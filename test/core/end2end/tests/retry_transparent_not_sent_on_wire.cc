@@ -114,6 +114,8 @@ class FailFirstTenCallsFilter {
 
 grpc_channel_filter FailFirstTenCallsFilter::kFilterVtable = {
     CallData::StartTransportStreamOpBatch,
+    nullptr,
+    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,

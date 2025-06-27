@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/util/http_client/httpcli.h"
+#include "src/core/lib/http/httpcli.h"
 
 #include <string.h>
 #include <sys/socket.h>
@@ -30,7 +30,6 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/time/clock.h"
@@ -40,9 +39,11 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gpr/subprocess.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/time_util.h"
@@ -50,7 +51,6 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/util/subprocess.h"
 #include "test/core/http/httpcli_test_util.h"
 #include "test/core/test_util/fake_udp_and_tcp_server.h"
 #include "test/core/test_util/port.h"
@@ -163,8 +163,8 @@ void OnFinish(void* arg, grpc_error_handle error) {
       "<html><head><title>Hello world!</title></head>"
       "<body><p>This is a test</p></body></html>";
   grpc_http_response response = request_state->response;
-  LOG(INFO) << "response status=" << response.status
-            << " error=" << grpc_core::StatusToString(error);
+  gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
+          grpc_core::StatusToString(error).c_str());
   CHECK(error.ok());
   CHECK_EQ(response.status, 200);
   CHECK(response.body_length == strlen(expect));
@@ -182,8 +182,8 @@ void OnFinishExpectFailure(void* arg, grpc_error_handle error) {
     grpc_pollset_set_destroy(request_state->pollset_set_to_destroy_eagerly);
   }
   grpc_http_response response = request_state->response;
-  LOG(INFO) << "response status=" << response.status
-            << " error=" << grpc_core::StatusToString(error);
+  gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
+          grpc_core::StatusToString(error).c_str());
   CHECK(!error.ok());
   request_state->test->RunAndKick(
       [request_state]() { request_state->done = true; });
@@ -194,7 +194,7 @@ TEST_F(HttpRequestTest, Get) {
   grpc_http_request req;
   grpc_core::ExecCtx exec_ctx;
   std::string host = absl::StrFormat("localhost:%d", g_server_port);
-  LOG(INFO) << "requesting from " << host;
+  gpr_log(GPR_INFO, "requesting from %s", host.c_str());
   memset(&req, 0, sizeof(req));
   auto uri = grpc_core::URI::Create("http", host, "/get", {} /* query params */,
                                     "" /* fragment */);
@@ -218,7 +218,7 @@ TEST_F(HttpRequestTest, Post) {
   grpc_http_request req;
   grpc_core::ExecCtx exec_ctx;
   std::string host = absl::StrFormat("localhost:%d", g_server_port);
-  LOG(INFO) << "posting to " << host;
+  gpr_log(GPR_INFO, "posting to %s", host.c_str());
   memset(&req, 0, sizeof(req));
   req.body = const_cast<char*>("hello");
   req.body_length = 5;
@@ -242,8 +242,9 @@ TEST_F(HttpRequestTest, Post) {
 int g_fake_non_responsive_dns_server_port;
 
 void InjectNonResponsiveDNSServer(ares_channel* channel) {
-  VLOG(2) << "Injecting broken nameserver list. Bad server address:|[::1]:"
-          << g_fake_non_responsive_dns_server_port << "|.";
+  gpr_log(GPR_DEBUG,
+          "Injecting broken nameserver list. Bad server address:|[::1]:%d|.",
+          g_fake_non_responsive_dns_server_port);
   // Configure a non-responsive DNS server at the front of c-ares's nameserver
   // list.
   struct ares_addr_port_node dns_server_addrs[1];
@@ -491,9 +492,10 @@ TEST_F(HttpRequestTest, CallerPollentsAreNotReferencedAfterCallbackIsRan) {
 }
 
 void CancelRequest(grpc_core::HttpRequest* req) {
-  LOG(INFO) << "test only HttpRequest::OnHandshakeDone intercept orphaning "
-               "request: "
-            << req;
+  gpr_log(
+      GPR_INFO,
+      "test only HttpRequest::OnHandshakeDone intercept orphaning request: %p",
+      req);
   req->Orphan();
 }
 
@@ -509,7 +511,7 @@ TEST_F(HttpRequestTest,
   grpc_http_request req;
   grpc_core::ExecCtx exec_ctx;
   std::string host = absl::StrFormat("localhost:%d", g_server_port);
-  LOG(INFO) << "requesting from " << host;
+  gpr_log(GPR_INFO, "requesting from %s", host.c_str());
   memset(&req, 0, sizeof(req));
   auto uri = grpc_core::URI::Create("http", host, "/get", {} /* query params */,
                                     "" /* fragment */);

@@ -20,7 +20,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "absl/log/log.h"
 #include "absl/synchronization/notification.h"
 
 #include <grpc/credentials.h>
@@ -104,7 +103,8 @@ void DoRpc(const std::string& server_addr,
   grpc::Status result = stub->Echo(&context, request, &response);
   EXPECT_TRUE(result.ok());
   if (!result.ok()) {
-    LOG(ERROR) << result.error_message() << ", " << result.error_details();
+    gpr_log(GPR_ERROR, "%s, %s", result.error_message().c_str(),
+            result.error_details().c_str());
   }
   EXPECT_EQ(response.message(), kMessage);
   std::shared_ptr<const AuthContext> auth_context = context.auth_context();

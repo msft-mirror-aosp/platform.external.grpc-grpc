@@ -26,7 +26,6 @@
 #include <utility>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
@@ -48,12 +47,12 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/uri/uri_parser.h"
-#include "src/core/util/string.h"
 
 namespace grpc_core {
 namespace {
@@ -151,7 +150,7 @@ absl::optional<std::string> GetHttpProxyServer(
     // User cred found
     *user_cred = authority_strs[0];
     proxy_name = authority_strs[1];
-    VLOG(2) << "userinfo found in proxy URI";
+    gpr_log(GPR_DEBUG, "userinfo found in proxy URI");
   } else {
     // Bad authority
     proxy_name = absl::nullopt;
@@ -220,11 +219,13 @@ absl::optional<std::string> HttpProxyMapper::MapName(
     return absl::nullopt;
   }
   if (uri->scheme() == "unix") {
-    VLOG(2) << "not using proxy for Unix domain socket '" << server_uri << "'";
+    gpr_log(GPR_INFO, "not using proxy for Unix domain socket '%s'",
+            std::string(server_uri).c_str());
     return absl::nullopt;
   }
   if (uri->scheme() == "vsock") {
-    VLOG(2) << "not using proxy for VSock '" << server_uri << "'";
+    gpr_log(GPR_INFO, "not using proxy for VSock '%s'",
+            std::string(server_uri).c_str());
     return absl::nullopt;
   }
   // Prefer using 'no_grpc_proxy'. Fallback on 'no_proxy' if it is not set.
@@ -237,17 +238,18 @@ absl::optional<std::string> HttpProxyMapper::MapName(
     std::string server_port;
     if (!SplitHostPort(absl::StripPrefix(uri->path(), "/"), &server_host,
                        &server_port)) {
-      VLOG(2) << "unable to split host and port, not checking no_proxy list "
-                 "for host '"
-              << server_uri << "'";
+      gpr_log(GPR_INFO,
+              "unable to split host and port, not checking no_proxy list for "
+              "host '%s'",
+              std::string(server_uri).c_str());
     } else {
       auto address = StringToSockaddr(server_host, 0);
       if (AddressIncluded(address.ok()
                               ? absl::optional<grpc_resolved_address>(*address)
                               : absl::nullopt,
                           server_host, *no_proxy_str)) {
-        VLOG(2) << "not using proxy for host in no_proxy list '" << server_uri
-                << "'";
+        gpr_log(GPR_INFO, "not using proxy for host in no_proxy list '%s'",
+                std::string(server_uri).c_str());
         return absl::nullopt;
       }
     }

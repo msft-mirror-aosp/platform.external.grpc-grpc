@@ -18,8 +18,6 @@
 
 #include <gmock/gmock.h>
 
-#include "absl/log/log.h"
-
 #include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.pb.h"
 #include "test/core/test_util/test_config.h"
@@ -33,7 +31,8 @@ namespace testing {
 ::grpc::Status RlsServiceImpl::RouteLookup(grpc::ServerContext* context,
                                            const RouteLookupRequest* request,
                                            RouteLookupResponse* response) {
-  LOG(INFO) << "RLS: Received request: " << request->DebugString();
+  gpr_log(GPR_INFO, "RLS: Received request: %s",
+          request->DebugString().c_str());
   if (context_proc_ != nullptr) {
     context_proc_(context);
   }
@@ -45,7 +44,7 @@ namespace testing {
     grpc::internal::MutexLock lock(&mu_);
     auto it = responses_.find(*request);
     if (it == responses_.end()) {
-      LOG(INFO) << "RLS: no matching request, returning INTERNAL";
+      gpr_log(GPR_INFO, "RLS: no matching request, returning INTERNAL");
       unmatched_requests_.push_back(*request);
       return Status(StatusCode::INTERNAL, "no response entry");
     }
@@ -58,8 +57,8 @@ namespace testing {
   }
   IncreaseResponseCount();
   *response = res.response;
-  LOG(INFO) << "RLS: returning configured response: "
-            << response->DebugString();
+  gpr_log(GPR_INFO, "RLS: returning configured response: %s",
+          response->DebugString().c_str());
   return Status::OK;
 }
 

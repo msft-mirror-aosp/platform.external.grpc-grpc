@@ -19,7 +19,6 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -38,6 +37,7 @@
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -49,7 +49,8 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/util/string.h"
+
+extern grpc_core::TraceFlag grpc_tcp_trace;
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -119,15 +120,15 @@ class EventEngineEndpointWrapper {
     grpc_slice_buffer_move_into(read_buffer->c_slice_buffer(),
                                 pending_read_buffer_);
     read_buffer->~SliceBuffer();
-    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       size_t i;
       gpr_log(GPR_INFO, "TCP: %p READ error=%s", eeep_->wrapper,
               status.ToString().c_str());
-      if (ABSL_VLOG_IS_ON(2)) {
+      if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
         for (i = 0; i < pending_read_buffer_->count; i++) {
           char* dump = grpc_dump_slice(pending_read_buffer_->slices[i],
                                        GPR_DUMP_HEX | GPR_DUMP_ASCII);
-          VLOG(2) << "READ DATA: " << dump;
+          gpr_log(GPR_DEBUG, "READ DATA: %s", dump);
           gpr_free(dump);
         }
       }
@@ -150,15 +151,15 @@ class EventEngineEndpointWrapper {
   bool Write(grpc_closure* write_cb, grpc_slice_buffer* slices,
              const EventEngine::Endpoint::WriteArgs* args) {
     Ref();
-    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       size_t i;
       gpr_log(GPR_INFO, "TCP: %p WRITE (peer=%s)", this,
               std::string(PeerAddress()).c_str());
-      if (ABSL_VLOG_IS_ON(2)) {
+      if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
         for (i = 0; i < slices->count; i++) {
           char* dump =
               grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-          VLOG(2) << "WRITE DATA: " << dump;
+          gpr_log(GPR_DEBUG, "WRITE DATA: %s", dump);
           gpr_free(dump);
         }
       }
@@ -177,7 +178,7 @@ class EventEngineEndpointWrapper {
   void FinishPendingWrite(absl::Status status) {
     auto* write_buffer = reinterpret_cast<SliceBuffer*>(&eeep_->write_buffer);
     write_buffer->~SliceBuffer();
-    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "TCP: %p WRITE (peer=%s) error=%s", this,
               std::string(PeerAddress()).c_str(), status.ToString().c_str());
     }
@@ -344,17 +345,29 @@ void EndpointAddToPollsetSet(grpc_endpoint* /* ep */,
                              grpc_pollset_set* /* pollset */) {}
 void EndpointDeleteFromPollsetSet(grpc_endpoint* /* ep */,
                                   grpc_pollset_set* /* pollset */) {}
-
-/// Attempts to free the underlying data structures.
-/// After destruction, no new endpoint operations may be started.
-/// It is the caller's responsibility to ensure that calls to EndpointDestroy
+/// After shutdown, all endpoint operations except destroy are no-op,
+/// and will return some kind of sane default (empty strings, nullptrs, etc).
+/// It is the caller's responsibility to ensure that calls to EndpointShutdown
 /// are synchronized.
+void EndpointShutdown(grpc_endpoint* ep, grpc_error_handle why) {
+  auto* eeep =
+      reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
+          ep);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s", eeep->wrapper,
+            why.ToString().c_str());
+  }
+  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint %p Shutdown:%s", eeep->wrapper,
+                          why.ToString().c_str());
+  eeep->wrapper->TriggerShutdown(nullptr);
+}
+
+// Attempts to free the underlying data structures.
 void EndpointDestroy(grpc_endpoint* ep) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
   GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint %p Destroy", eeep->wrapper);
-  eeep->wrapper->TriggerShutdown(nullptr);
   eeep->wrapper->Unref();
 }
 
@@ -392,6 +405,7 @@ grpc_endpoint_vtable grpc_event_engine_endpoint_vtable = {
     EndpointAddToPollset,
     EndpointAddToPollsetSet,
     EndpointDeleteFromPollsetSet,
+    EndpointShutdown,
     EndpointDestroy,
     EndpointGetPeerAddress,
     EndpointGetLocalAddress,

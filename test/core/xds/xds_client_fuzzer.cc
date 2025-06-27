@@ -20,7 +20,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -29,6 +28,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -53,7 +53,8 @@ class Fuzzer {
   explicit Fuzzer(absl::string_view bootstrap_json) {
     auto bootstrap = GrpcXdsBootstrap::Create(bootstrap_json);
     if (!bootstrap.ok()) {
-      LOG(ERROR) << "error creating bootstrap: " << bootstrap.status();
+      gpr_log(GPR_ERROR, "error creating bootstrap: %s",
+              bootstrap.status().ToString().c_str());
       // Leave xds_client_ unset, so Act() will be a no-op.
       return;
     }
@@ -121,18 +122,20 @@ class Fuzzer {
                 [](const testing::XdsClientTestPeer::ResourceCountLabels&
                        labels,
                    uint64_t count) {
-                  LOG(INFO) << "xds_authority=\"" << labels.xds_authority
-                            << "\", resource_type=\"" << labels.resource_type
-                            << "\", cache_state=\"" << labels.cache_state
-                            << "\" count=" << count;
+                  gpr_log(GPR_INFO,
+                          "xds_authority=\"%s\", resource_type=\"%s\", "
+                          "cache_state=\"%s\" count=%" PRIu64,
+                          std::string(labels.xds_authority).c_str(),
+                          std::string(labels.resource_type).c_str(),
+                          std::string(labels.cache_state).c_str(), count);
                 });
         break;
       case xds_client_fuzzer::Action::kReportServerConnections:
         testing::XdsClientTestPeer(xds_client_.get())
             .TestReportServerConnections(
                 [](absl::string_view xds_server, bool connected) {
-                  LOG(INFO) << "xds_server=\"" << xds_server
-                            << "\" connected=" << connected;
+                  gpr_log(GPR_INFO, "xds_server=\"%s\" connected=%d",
+                          std::string(xds_server).c_str(), connected);
                 });
         break;
       case xds_client_fuzzer::Action::kTriggerConnectionFailure:
@@ -171,24 +174,26 @@ class Fuzzer {
         std::shared_ptr<const typename ResourceType::ResourceType> resource,
         RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
         override {
-      LOG(INFO) << "==> OnResourceChanged(" << ResourceType::Get()->type_url()
-                << " " << resource_name_ << "): " << resource->ToString();
+      gpr_log(GPR_INFO, "==> OnResourceChanged(%s %s): %s",
+              std::string(ResourceType::Get()->type_url()).c_str(),
+              resource_name_.c_str(), resource->ToString().c_str());
     }
 
     void OnError(
         absl::Status status,
         RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
         override {
-      LOG(INFO) << "==> OnError(" << ResourceType::Get()->type_url() << " "
-                << resource_name_ << "): " << status;
+      gpr_log(GPR_INFO, "==> OnError(%s %s): %s",
+              std::string(ResourceType::Get()->type_url()).c_str(),
+              resource_name_.c_str(), status.ToString().c_str());
     }
 
     void OnResourceDoesNotExist(
         RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
         override {
-      LOG(INFO) << "==> OnResourceDoesNotExist("
-                << ResourceType::Get()->type_url() << " " << resource_name_
-                << ")";
+      gpr_log(GPR_INFO, "==> OnResourceDoesNotExist(%s %s)",
+              std::string(ResourceType::Get()->type_url()).c_str(),
+              resource_name_.c_str());
     }
 
    private:
@@ -203,9 +208,9 @@ class Fuzzer {
   template <typename WatcherType>
   void StartWatch(std::map<std::string, std::set<WatcherType*>>* watchers,
                   std::string resource_name) {
-    LOG(INFO) << "### StartWatch("
-              << WatcherType::ResourceType::Get()->type_url() << " "
-              << resource_name << ")";
+    gpr_log(GPR_INFO, "### StartWatch(%s %s)",
+            std::string(WatcherType::ResourceType::Get()->type_url()).c_str(),
+            resource_name.c_str());
     auto watcher = MakeRefCounted<WatcherType>(resource_name);
     (*watchers)[resource_name].insert(watcher.get());
     WatcherType::ResourceType::Get()->StartWatch(
@@ -215,9 +220,9 @@ class Fuzzer {
   template <typename WatcherType>
   void StopWatch(std::map<std::string, std::set<WatcherType*>>* watchers,
                  std::string resource_name) {
-    LOG(INFO) << "### StopWatch("
-              << WatcherType::ResourceType::Get()->type_url() << " "
-              << resource_name << ")";
+    gpr_log(GPR_INFO, "### StopWatch(%s %s)",
+            std::string(WatcherType::ResourceType::Get()->type_url()).c_str(),
+            resource_name.c_str());
     auto& watchers_set = (*watchers)[resource_name];
     auto it = watchers_set.begin();
     if (it == watchers_set.end()) return;
@@ -247,8 +252,8 @@ class Fuzzer {
 
   void TriggerConnectionFailure(const std::string& authority,
                                 absl::Status status) {
-    LOG(INFO) << "### TriggerConnectionFailure(" << authority
-              << "): " << status;
+    gpr_log(GPR_INFO, "### TriggerConnectionFailure(%s): %s", authority.c_str(),
+            status.ToString().c_str());
     const auto* xds_server = GetServer(authority);
     if (xds_server == nullptr) return;
     transport_factory_->TriggerConnectionFailure(*xds_server,
@@ -285,14 +290,14 @@ class Fuzzer {
 
   void ReadMessageFromClient(const xds_client_fuzzer::StreamId& stream_id,
                              bool ok) {
-    LOG(INFO) << "### ReadMessageFromClient(" << StreamIdString(stream_id)
-              << "): " << (ok ? "true" : "false");
+    gpr_log(GPR_INFO, "### ReadMessageFromClient(%s): %s",
+            StreamIdString(stream_id).c_str(), ok ? "true" : "false");
     auto stream = GetStream(stream_id);
     if (stream == nullptr) return;
-    LOG(INFO) << "    stream=" << stream.get();
+    gpr_log(GPR_INFO, "    stream=%p", stream.get());
     auto message = stream->WaitForMessageFromClient(absl::ZeroDuration());
     if (message.has_value()) {
-      LOG(INFO) << "    completing send_message";
+      gpr_log(GPR_INFO, "    completing send_message");
       stream->CompleteSendMessageFromClient(ok);
     }
   }
@@ -300,20 +305,21 @@ class Fuzzer {
   void SendMessageToClient(
       const xds_client_fuzzer::StreamId& stream_id,
       const envoy::service::discovery::v3::DiscoveryResponse& response) {
-    LOG(INFO) << "### SendMessageToClient(" << StreamIdString(stream_id) << ")";
+    gpr_log(GPR_INFO, "### SendMessageToClient(%s)",
+            StreamIdString(stream_id).c_str());
     auto stream = GetStream(stream_id);
     if (stream == nullptr) return;
-    LOG(INFO) << "    stream=" << stream.get();
+    gpr_log(GPR_INFO, "    stream=%p", stream.get());
     stream->SendMessageToClient(response.SerializeAsString());
   }
 
   void SendStatusToClient(const xds_client_fuzzer::StreamId& stream_id,
                           absl::Status status) {
-    LOG(INFO) << "### SendStatusToClient(" << StreamIdString(stream_id)
-              << "): " << status;
+    gpr_log(GPR_INFO, "### SendStatusToClient(%s): %s",
+            StreamIdString(stream_id).c_str(), status.ToString().c_str());
     auto stream = GetStream(stream_id);
     if (stream == nullptr) return;
-    LOG(INFO) << "    stream=" << stream.get();
+    gpr_log(GPR_INFO, "    stream=%p", stream.get());
     stream->MaybeSendStatusToClient(std::move(status));
   }
 

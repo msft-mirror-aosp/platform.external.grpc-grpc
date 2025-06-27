@@ -18,7 +18,6 @@
 
 #include <string.h>
 
-#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
@@ -48,7 +47,7 @@ ServiceUrlAndMethod MakeServiceUrlAndMethod(
   auto last_slash = service.find_last_of('/');
   absl::string_view method_name;
   if (last_slash == absl::string_view::npos) {
-    LOG(ERROR) << "No '/' found in fully qualified method name";
+    gpr_log(GPR_ERROR, "No '/' found in fully qualified method name");
     service = "";
     method_name = "";
   } else if (last_slash == 0) {

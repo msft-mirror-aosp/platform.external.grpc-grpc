@@ -31,6 +31,7 @@
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
+#include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/debug/trace.h"
@@ -117,7 +118,7 @@ void HPackCompressor::SetMaxUsableSize(uint32_t max_table_size) {
 void HPackCompressor::SetMaxTableSize(uint32_t max_table_size) {
   if (table_.SetMaxSize(std::min(max_usable_size_, max_table_size))) {
     advertise_table_size_change_ = true;
-    if (GRPC_TRACE_FLAG_ENABLED(http)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
       gpr_log(GPR_INFO, "set max table size from encoder to %d",
               max_table_size);
     }
@@ -377,8 +378,7 @@ void Compressor<HttpSchemeMetadata, HttpSchemeCompressor>::EncodeWith(
       encoder->EmitIndexed(7);  // :scheme: https
       break;
     case HttpSchemeMetadata::ValueType::kInvalid:
-      LOG(ERROR) << "Not encoding bad http scheme";
-      encoder->NoteEncodingError();
+      Crash("invalid http scheme encoding");
       break;
   }
 }
@@ -435,8 +435,7 @@ void Compressor<HttpMethodMetadata, HttpMethodCompressor>::EncodeWith(
           Slice::FromStaticString(":method"), Slice::FromStaticString("PUT"));
       break;
     case HttpMethodMetadata::ValueType::kInvalid:
-      LOG(ERROR) << "Not encoding bad http method";
-      encoder->NoteEncodingError();
+      Crash("invalid http method encoding");
       break;
   }
 }

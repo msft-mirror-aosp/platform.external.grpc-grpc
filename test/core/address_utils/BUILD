@@ -41,7 +41,6 @@ grpc_cc_test(
     name = "parse_address_test",
     srcs = ["parse_address_test.cc"],
     external_deps = [
-        "absl/log:log",
         "absl/strings",
         "gtest",
     ],
@@ -70,10 +69,7 @@ grpc_fuzzer(
 grpc_cc_test(
     name = "parse_address_with_named_scope_id_test",
     srcs = ["parse_address_with_named_scope_id_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
     uses_event_engine = False,

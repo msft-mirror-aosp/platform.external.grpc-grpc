@@ -26,7 +26,6 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
@@ -120,11 +119,6 @@ class Waker {
 
   std::string ActivityDebugTag() {
     return wakeable_and_arg_.ActivityDebugTag();
-  }
-
-  std::string DebugString() {
-    return absl::StrFormat("Waker{%p, %d}", wakeable_and_arg_.wakeable,
-                           wakeable_and_arg_.wakeup_mask);
   }
 
   // This is for tests to assert that a waker is occupied or not.
@@ -289,19 +283,6 @@ class ContextHolder<std::unique_ptr<Context, Deleter>> {
   std::unique_ptr<Context, Deleter> value_;
 };
 
-template <typename Context>
-class ContextHolder<RefCountedPtr<Context>> {
- public:
-  using ContextType = Context;
-
-  explicit ContextHolder(RefCountedPtr<Context> value)
-      : value_(std::move(value)) {}
-  Context* GetContext() { return value_.get(); }
-
- private:
-  RefCountedPtr<Context> value_;
-};
-
 template <>
 class Context<Activity> {
  public:
@@ -309,23 +290,19 @@ class Context<Activity> {
 };
 
 template <typename HeldContext>
-using ContextTypeFromHeld = typename ContextHolder<
-    typename std::remove_reference<HeldContext>::type>::ContextType;
+using ContextTypeFromHeld = typename ContextHolder<HeldContext>::ContextType;
 
 template <typename... Contexts>
-class ActivityContexts
-    : public ContextHolder<typename std::remove_reference<Contexts>::type>... {
+class ActivityContexts : public ContextHolder<Contexts>... {
  public:
   explicit ActivityContexts(Contexts&&... contexts)
-      : ContextHolder<typename std::remove_reference<Contexts>::type>(
-            std::forward<Contexts>(contexts))... {}
+      : ContextHolder<Contexts>(std::forward<Contexts>(contexts))... {}
 
   class ScopedContext : public Context<ContextTypeFromHeld<Contexts>>... {
    public:
     explicit ScopedContext(ActivityContexts* contexts)
         : Context<ContextTypeFromHeld<Contexts>>(
-              static_cast<ContextHolder<
-                  typename std::remove_reference<Contexts>::type>*>(contexts)
+              static_cast<ContextHolder<Contexts>*>(contexts)
                   ->GetContext())... {
       // Silence `unused-but-set-parameter` in case of Contexts = {}
       (void)contexts;

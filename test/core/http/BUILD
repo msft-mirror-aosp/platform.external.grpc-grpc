@@ -66,10 +66,7 @@ grpc_cc_library(
     testonly = True,
     srcs = ["httpcli_test_util.cc"],
     hdrs = ["httpcli_test_util.h"],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-    ],
+    external_deps = ["absl/log:check"],
     deps = [
         "//:gpr",
         "//:subprocess",
@@ -90,7 +87,6 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/log:check",
-        "absl/log:log",
         "gtest",
     ],
     language = "C++",
@@ -120,7 +116,6 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/log:check",
-        "absl/log:log",
         "gtest",
     ],
     language = "C++",

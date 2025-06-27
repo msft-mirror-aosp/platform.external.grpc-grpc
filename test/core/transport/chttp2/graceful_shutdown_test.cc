@@ -49,6 +49,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -61,7 +62,6 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/server/server.h"
-#include "src/core/util/useful.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/test_config.h"
 
@@ -100,8 +100,7 @@ class GracefulShutdownTest : public ::testing::Test {
     CHECK(core_server->SetupTransport(transport, nullptr,
                                       core_server->channel_args(),
                                       nullptr) == absl::OkStatus());
-    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
-                                        nullptr);
+    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     // Start polling on the client
     Notification client_poller_thread_started_notification;
     client_poll_thread_ = std::make_unique<std::thread>(
@@ -132,8 +131,6 @@ class GracefulShutdownTest : public ::testing::Test {
     // Start reading on the client
     grpc_slice_buffer_init(&read_buffer_);
     GRPC_CLOSURE_INIT(&on_read_done_, OnReadDone, this, nullptr);
-    GRPC_CLOSURE_INIT(&on_read_done_scheduler_, OnReadDoneScheduler, this,
-                      nullptr);
     grpc_endpoint_read(fds_.client, &read_buffer_, &on_read_done_, false,
                        /*min_progress_size=*/1);
   }
@@ -142,15 +139,13 @@ class GracefulShutdownTest : public ::testing::Test {
   void ShutdownAndDestroy() {
     shutdown_ = true;
     ExecCtx exec_ctx;
-    {
-      MutexLock lock(&ep_destroy_mu_);
-      grpc_endpoint_destroy(fds_.client);
-      fds_.client = nullptr;
-    }
+    grpc_endpoint_shutdown(fds_.client, GRPC_ERROR_CREATE("Client shutdown"));
     ExecCtx::Get()->Flush();
     client_poll_thread_->join();
     CHECK(read_end_notification_.WaitForNotificationWithTimeout(
         absl::Seconds(5)));
+    grpc_endpoint_destroy(fds_.client);
+    ExecCtx::Get()->Flush();
     // Shutdown and destroy server
     grpc_server_shutdown_and_notify(server_, cq_, Tag(1000));
     cqv_->Expect(Tag(1000), true);
@@ -171,24 +166,13 @@ class GracefulShutdownTest : public ::testing::Test {
         }
         self->read_cv_.SignalAll();
       }
-      MutexLock lock(&self->ep_destroy_mu_);
-      if (self->fds_.client != nullptr) {
-        grpc_slice_buffer_reset_and_unref(&self->read_buffer_);
-        grpc_endpoint_read(self->fds_.client, &self->read_buffer_,
-                           &self->on_read_done_scheduler_, false,
-                           /*min_progress_size=*/1);
-        return;
-      }
+      grpc_slice_buffer_reset_and_unref(&self->read_buffer_);
+      grpc_endpoint_read(self->fds_.client, &self->read_buffer_,
+                         &self->on_read_done_, false, /*min_progress_size=*/1);
+    } else {
+      grpc_slice_buffer_destroy(&self->read_buffer_);
+      self->read_end_notification_.Notify();
     }
-    grpc_slice_buffer_destroy(&self->read_buffer_);
-    self->read_end_notification_.Notify();
-  }
-
-  // Do async hop for OnReadDone() in case grpc_endpoint_read() invokes
-  // us synchronously while we're holding the lock.
-  static void OnReadDoneScheduler(void* arg, grpc_error_handle error) {
-    GracefulShutdownTest* self = static_cast<GracefulShutdownTest*>(arg);
-    ExecCtx::Run(DEBUG_LOCATION, &self->on_read_done_, std::move(error));
   }
 
   // Waits for \a bytes to show up in read_bytes_
@@ -290,9 +274,6 @@ class GracefulShutdownTest : public ::testing::Test {
     on_write_done_notification_->Notify();
   }
 
-  // Held when destroying fds_.client so we know not to start another read.
-  Mutex ep_destroy_mu_;
-
   grpc_endpoint_pair fds_;
   grpc_server* server_ = nullptr;
   grpc_completion_queue* cq_ = nullptr;
@@ -300,7 +281,6 @@ class GracefulShutdownTest : public ::testing::Test {
   std::unique_ptr<std::thread> client_poll_thread_;
   std::atomic<bool> shutdown_{false};
   grpc_closure on_read_done_;
-  grpc_closure on_read_done_scheduler_;
   Mutex mu_;
   CondVar read_cv_;
   Notification read_end_notification_;

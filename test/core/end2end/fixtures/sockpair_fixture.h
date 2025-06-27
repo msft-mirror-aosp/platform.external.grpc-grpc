@@ -56,9 +56,11 @@ class SockpairFixture : public CoreTestFixture {
   ~SockpairFixture() override {
     ExecCtx exec_ctx;
     if (ep_.client != nullptr) {
+      grpc_endpoint_shutdown(ep_.client, absl::InternalError("done"));
       grpc_endpoint_destroy(ep_.client);
     }
     if (ep_.server != nullptr) {
+      grpc_endpoint_shutdown(ep_.server, absl::InternalError("done"));
       grpc_endpoint_destroy(ep_.server);
     }
   }
@@ -88,8 +90,7 @@ class SockpairFixture : public CoreTestFixture {
     grpc_error_handle error = core_server->SetupTransport(
         transport, nullptr, core_server->channel_args(), nullptr);
     if (error.ok()) {
-      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
-                                          nullptr);
+      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     } else {
       transport->Orphan();
     }
@@ -114,8 +115,7 @@ class SockpairFixture : public CoreTestFixture {
     grpc_channel* client;
     if (channel.ok()) {
       client = channel->release()->c_ptr();
-      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
-                                          nullptr);
+      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     } else {
       client = grpc_lame_client_channel_create(
           nullptr, static_cast<grpc_status_code>(channel.status().code()),

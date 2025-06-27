@@ -35,6 +35,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
@@ -996,7 +997,9 @@ bool InteropClient::DoOrcaPerRpc() {
   CHECK(report.has_value());
   CHECK(report->has_value());
   auto comparison_result = OrcaLoadReportsDiff(report->value(), *orca_report);
-  LOG_IF(FATAL, comparison_result.has_value()) << comparison_result->c_str();
+  if (comparison_result.has_value()) {
+    gpr_assertion_failed(__FILE__, __LINE__, comparison_result->c_str());
+  }
   CHECK(!load_report_tracker_.GetNextLoadReport().has_value());
   VLOG(2) << "orca per rpc successfully finished";
   return true;

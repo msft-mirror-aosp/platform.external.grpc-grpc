@@ -55,6 +55,9 @@ namespace testing {
 class XdsClientTestPeer;
 }
 
+extern TraceFlag grpc_xds_client_trace;
+extern TraceFlag grpc_xds_client_refcount_trace;
+
 class XdsClient : public DualRefCounted<XdsClient> {
  public:
   // The authority reported for old-style (non-xdstp) resource names.

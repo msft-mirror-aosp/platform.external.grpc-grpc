@@ -86,9 +86,9 @@ void TestRetryCancelWithMultipleSendBatches(
   // Start a batch containing send_trailing_metadata.
   c.NewBatch(3).SendCloseFromClient();
   // Start a batch containing recv ops.
-  IncomingMessage server_message;
-  IncomingMetadata server_incoming_metadata;
-  IncomingStatusOnClient server_status;
+  CoreEnd2endTest::IncomingMessage server_message;
+  CoreEnd2endTest::IncomingMetadata server_incoming_metadata;
+  CoreEnd2endTest::IncomingStatusOnClient server_status;
   c.NewBatch(4)
       .RecvInitialMetadata(server_incoming_metadata)
       .RecvMessage(server_message)
@@ -162,6 +162,8 @@ class FailSendOpsFilter {
 
 grpc_channel_filter FailSendOpsFilter::kFilterVtable = {
     CallData::StartTransportStreamOpBatch,
+    nullptr,
+    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,

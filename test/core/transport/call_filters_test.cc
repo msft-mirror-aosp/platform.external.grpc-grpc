@@ -407,7 +407,9 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningAbslStatus) {
   // Check promise init
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   d.filter_constructor[0].call_init(call_data, &f1);
-  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto memory_allocator =
+      MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   auto md = Arena::MakePooled<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
@@ -465,7 +467,9 @@ TEST(StackDataTest,
   // Check promise init
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   d.filter_constructor[0].call_init(call_data, &f1);
-  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto memory_allocator =
+      MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   auto md = Arena::MakePooled<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
@@ -522,7 +526,9 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningServerMetadata) {
   // Check promise init
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   d.filter_constructor[0].call_init(call_data, &f1);
-  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto memory_allocator =
+      MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   auto md = Arena::MakePooled<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
@@ -582,7 +588,9 @@ TEST(StackDataTest,
   // Check promise init
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   d.filter_constructor[0].call_init(call_data, &f1);
-  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto memory_allocator =
+      MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   auto md = Arena::MakePooled<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
@@ -640,7 +648,9 @@ TEST(StackDataTest, PromiseClientInitialMetadataReturningAbslStatus) {
   // Check promise init
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   d.filter_constructor[0].call_init(call_data, &f1);
-  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto memory_allocator =
+      MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   auto md = Arena::MakePooled<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
@@ -721,7 +731,9 @@ TEST(StackDataTest,
   // Check promise init
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   d.filter_constructor[0].call_init(call_data, &f1);
-  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto memory_allocator =
+      MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   auto md = Arena::MakePooled<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
@@ -789,7 +801,9 @@ TEST(StackDataTest, InstantServerInitialMetadataReturningVoid) {
   EXPECT_EQ(d.server_initial_metadata.ops[0].poll, nullptr);
   EXPECT_EQ(d.server_initial_metadata.ops[0].early_destroy, nullptr);
   // Check promise init
-  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto memory_allocator =
+      MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   auto md = Arena::MakePooled<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
@@ -824,7 +838,9 @@ TEST(StackDataTest, InstantClientToServerMessagesReturningVoid) {
   EXPECT_EQ(d.client_to_server_messages.ops[0].poll, nullptr);
   EXPECT_EQ(d.client_to_server_messages.ops[0].early_destroy, nullptr);
   // Check promise init
-  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto memory_allocator =
+      MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   auto message = Arena::MakePooled<Message>(SliceBuffer(), 0);
   char call_data;
   auto r = d.client_to_server_messages.ops[0].promise_init(
@@ -857,7 +873,9 @@ TEST(StackDataTest, InstantServerToClientMessagesReturningVoid) {
   EXPECT_EQ(d.server_to_client_messages.ops[0].poll, nullptr);
   EXPECT_EQ(d.server_to_client_messages.ops[0].early_destroy, nullptr);
   // Check promise init
-  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto memory_allocator =
+      MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   auto message = Arena::MakePooled<Message>(SliceBuffer(), 0);
   char call_data;
   auto r = d.server_to_client_messages.ops[0].promise_init(
@@ -890,7 +908,9 @@ TEST(StackDataTest, InstantServerTrailingMetadataReturningVoid) {
   EXPECT_EQ(d.server_trailing_metadata.ops[0].poll, nullptr);
   EXPECT_EQ(d.server_trailing_metadata.ops[0].early_destroy, nullptr);
   // Check promise init
-  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto memory_allocator =
+      MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   auto md = Arena::MakePooled<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
@@ -928,7 +948,9 @@ TEST(StackDataTest,
   EXPECT_EQ(d.server_trailing_metadata.ops[0].poll, nullptr);
   EXPECT_EQ(d.server_trailing_metadata.ops[0].early_destroy, nullptr);
   // Check promise init
-  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto memory_allocator =
+      MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   auto md = Arena::MakePooled<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
@@ -1016,7 +1038,9 @@ TEST(OperationExecutorTest, InstantTwo) {
   d.filter_constructor[0].call_init(call_data1, &f1);
   d.filter_constructor[1].call_init(call_data2, &f2);
   OperationExecutor<ClientMetadataHandle> transformer;
-  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto memory_allocator =
+      MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   promise_detail::Context<Arena> ctx(arena.get());
   // First call succeeds
   auto md = Arena::MakePooled<ServerMetadata>();
@@ -1079,7 +1103,9 @@ TEST(OperationExecutorTest, PromiseTwo) {
   d.filter_constructor[0].call_init(call_data1, &f1);
   d.filter_constructor[1].call_init(call_data2, &f2);
   OperationExecutor<ClientMetadataHandle> transformer;
-  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto memory_allocator =
+      MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   promise_detail::Context<Arena> ctx(arena.get());
   // First call succeeds after two sets of two step delays.
   auto md = Arena::MakePooled<ServerMetadata>();
@@ -1149,7 +1175,9 @@ TEST(InfallibleOperationExecutor, InstantTwo) {
   ASSERT_EQ(d.server_trailing_metadata.ops.size(), 2u);
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   InfallibleOperationExecutor<ServerMetadataHandle> transformer;
-  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto memory_allocator =
+      MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   promise_detail::Context<Arena> ctx(arena.get());
   auto md = Arena::MakePooled<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
@@ -1303,7 +1331,6 @@ TEST(CallFiltersTest, CanBuildStack) {
       void OnClientInitialMetadata(ClientMetadata&) {}
       void OnServerInitialMetadata(ServerMetadata&) {}
       void OnClientToServerMessage(Message&) {}
-      void OnClientToServerHalfClose() {}
       void OnServerToClientMessage(Message&) {}
       void OnServerTrailingMetadata(ServerMetadata&) {}
       void OnFinalize(const grpc_call_final_info*) {}
@@ -1328,10 +1355,6 @@ TEST(CallFiltersTest, UnaryCall) {
       void OnClientToServerMessage(Message&, Filter* f) {
         f->steps.push_back(absl::StrCat(f->label, ":OnClientToServerMessage"));
       }
-      void OnClientToServerHalfClose(Filter* f) {
-        f->steps.push_back(
-            absl::StrCat(f->label, ":OnClientToServerHalfClose"));
-      }
       void OnServerToClientMessage(Message&, Filter* f) {
         f->steps.push_back(absl::StrCat(f->label, ":OnServerToClientMessage"));
       }
@@ -1353,7 +1376,9 @@ TEST(CallFiltersTest, UnaryCall) {
   CallFilters::StackBuilder builder;
   builder.Add(&f1);
   builder.Add(&f2);
-  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto memory_allocator =
+      MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   CallFilters filters(Arena::MakePooled<ClientMetadata>());
   filters.SetStack(builder.Build());
   promise_detail::Context<Arena> ctx(arena.get());

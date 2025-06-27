@@ -26,29 +26,21 @@ from typing import DefaultDict, Dict, List, Mapping, Sequence, Set, Tuple
 import grpc
 from grpc_channelz.v1 import channelz
 from grpc_channelz.v1 import channelz_pb2
-from grpc_csm_observability import CsmOpenTelemetryPlugin
 from grpc_health.v1 import health as grpc_health
 from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
 from grpc_reflection.v1alpha import reflection
-from opentelemetry.exporter.prometheus import PrometheusMetricReader
-from opentelemetry.sdk.metrics import MeterProvider
-from prometheus_client import start_http_server
 
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2
 from src.proto.grpc.testing import test_pb2_grpc
-from src.python.grpcio_tests.tests.fork import native_debug
-
-native_debug.install_failure_signal_handler()
 
 # NOTE: This interop server is not fully compatible with all xDS interop tests.
 #  It currently only implements enough functionality to pass the xDS security
 #  tests.
 
 _LISTEN_HOST = "0.0.0.0"
-_PROMETHEUS_PORT = 9464
 
 _THREAD_POOL_SIZE = 256
 
@@ -74,12 +66,7 @@ class TestService(test_pb2_grpc.TestServiceServicer):
         self, request: messages_pb2.SimpleRequest, context: grpc.ServicerContext
     ) -> messages_pb2.SimpleResponse:
         context.send_initial_metadata((("hostname", self._hostname),))
-        if request.response_size > 0:
-            response = messages_pb2.SimpleResponse(
-                payload=messages_pb2.Payload(body=b"0" * request.response_size)
-            )
-        else:
-            response = messages_pb2.SimpleResponse()
+        response = messages_pb2.SimpleResponse()
         response.server_id = self._server_id
         response.hostname = self._hostname
         return response
@@ -127,16 +114,8 @@ def _configure_test_server(
 
 
 def _run(
-    port: int,
-    maintenance_port: int,
-    secure_mode: bool,
-    server_id: str,
-    enable_csm_observability: bool,
+    port: int, maintenance_port: int, secure_mode: bool, server_id: str
 ) -> None:
-    csm_plugin = None
-    if enable_csm_observability:
-        csm_plugin = _prepare_csm_observability_plugin()
-        csm_plugin.register_global()
     if port == maintenance_port:
         server = grpc.server(
             futures.ThreadPoolExecutor(max_workers=_THREAD_POOL_SIZE)
@@ -163,8 +142,6 @@ def _run(
         logger.info("Test server listening on port %d", port)
         test_server.wait_for_termination()
         maintenance_server.wait_for_termination()
-    if csm_plugin:
-        csm_plugin.deregister_global()
 
 
 def bool_arg(arg: str) -> bool:
@@ -174,17 +151,6 @@ def bool_arg(arg: str) -> bool:
         return False
     else:
         raise argparse.ArgumentTypeError(f"Could not parse '{arg}' as a bool.")
-
-
-def _prepare_csm_observability_plugin() -> CsmOpenTelemetryPlugin:
-    # Start Prometheus client
-    start_http_server(port=_PROMETHEUS_PORT, addr="0.0.0.0")
-    reader = PrometheusMetricReader()
-    meter_provider = MeterProvider(metric_readers=[reader])
-    csm_plugin = CsmOpenTelemetryPlugin(
-        meter_provider=meter_provider,
-    )
-    return csm_plugin
 
 
 if __name__ == "__main__":
@@ -218,12 +184,6 @@ if __name__ == "__main__":
         default=False,
         action="store_true",
     )
-    parser.add_argument(
-        "--enable_csm_observability",
-        help="Whether to enable CSM Observability",
-        default="False",
-        type=bool_arg,
-    )
     args = parser.parse_args()
     if args.verbose:
         logger.setLevel(logging.DEBUG)
@@ -234,10 +194,4 @@ if __name__ == "__main__":
             "--port and --maintenance_port must not be the same when"
             " --secure_mode is set."
         )
-    _run(
-        args.port,
-        args.maintenance_port,
-        args.secure_mode,
-        args.server_id,
-        args.enable_csm_observability,
-    )
+    _run(args.port, args.maintenance_port, args.secure_mode, args.server_id)

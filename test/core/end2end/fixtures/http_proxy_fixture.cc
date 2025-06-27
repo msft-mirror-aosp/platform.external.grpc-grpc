@@ -27,7 +27,6 @@
 #include <vector>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
@@ -38,6 +37,7 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -51,6 +51,7 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -64,7 +65,6 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "src/core/util/http_client/parser.h"
 #include "test/core/test_util/port.h"
 
 struct grpc_end2end_http_proxy {
@@ -161,9 +161,7 @@ static void proxy_connection_ref(proxy_connection* conn,
 static void proxy_connection_unref(proxy_connection* conn,
                                    const char* /*reason*/) {
   if (gpr_unref(&conn->refcount)) {
-    if (conn->client_endpoint != nullptr) {
-      grpc_endpoint_destroy(conn->client_endpoint);
-    }
+    grpc_endpoint_destroy(conn->client_endpoint);
     if (conn->server_endpoint != nullptr) {
       grpc_endpoint_destroy(conn->server_endpoint);
     }
@@ -228,16 +226,13 @@ static void proxy_connection_failed(proxy_connection* conn,
     }
   }
   // If we decided to shut down either one and have not yet done so, do so.
-  if (shutdown_client && !conn->client_shutdown &&
-      conn->client_endpoint != nullptr) {
-    grpc_endpoint_destroy(conn->client_endpoint);
-    conn->client_endpoint = nullptr;
+  if (shutdown_client && !conn->client_shutdown) {
+    grpc_endpoint_shutdown(conn->client_endpoint, error);
     conn->client_shutdown = true;
   }
   if (shutdown_server && !conn->server_shutdown &&
-      conn->server_endpoint != nullptr) {
-    grpc_endpoint_destroy(conn->server_endpoint);
-    conn->server_endpoint = nullptr;
+      (conn->server_endpoint != nullptr)) {
+    grpc_endpoint_shutdown(conn->server_endpoint, error);
     conn->server_shutdown = true;
   }
   // Unref the connection.
@@ -255,8 +250,8 @@ static void on_client_write_done_locked(void* arg, grpc_error_handle error) {
     return;
   }
   if (conn->server_read_failed) {
-    grpc_endpoint_destroy(conn->client_endpoint);
-    conn->client_endpoint = nullptr;
+    grpc_endpoint_shutdown(conn->client_endpoint,
+                           absl::UnknownError("Client shutdown"));
     // No more writes.  Unref the connection.
     proxy_connection_unref(conn, "client_write");
     return;
@@ -265,8 +260,7 @@ static void on_client_write_done_locked(void* arg, grpc_error_handle error) {
   grpc_slice_buffer_reset_and_unref(&conn->client_write_buffer);
   // If more data was read from the server since we started this write,
   // write that data now.
-  if (conn->client_deferred_write_buffer.length > 0 &&
-      conn->client_endpoint != nullptr) {
+  if (conn->client_deferred_write_buffer.length > 0) {
     grpc_slice_buffer_move_into(&conn->client_deferred_write_buffer,
                                 &conn->client_write_buffer);
     conn->client_is_writing = true;
@@ -298,9 +292,10 @@ static void on_server_write_done_locked(void* arg, grpc_error_handle error) {
                             "HTTP proxy server write", error);
     return;
   }
+
   if (conn->client_read_failed) {
-    grpc_endpoint_destroy(conn->server_endpoint);
-    conn->server_endpoint = nullptr;
+    grpc_endpoint_shutdown(conn->server_endpoint,
+                           absl::UnknownError("Server shutdown"));
     // No more writes.  Unref the connection.
     proxy_connection_unref(conn, "server_write");
     return;
@@ -309,8 +304,7 @@ static void on_server_write_done_locked(void* arg, grpc_error_handle error) {
   grpc_slice_buffer_reset_and_unref(&conn->server_write_buffer);
   // If more data was read from the client since we started this write,
   // write that data now.
-  if (conn->server_deferred_write_buffer.length > 0 &&
-      conn->server_endpoint != nullptr) {
+  if (conn->server_deferred_write_buffer.length > 0) {
     grpc_slice_buffer_move_into(&conn->server_deferred_write_buffer,
                                 &conn->server_write_buffer);
     conn->server_is_writing = true;
@@ -351,7 +345,7 @@ static void on_client_read_done_locked(void* arg, grpc_error_handle error) {
   if (conn->server_is_writing) {
     grpc_slice_buffer_move_into(&conn->client_read_buffer,
                                 &conn->server_deferred_write_buffer);
-  } else if (conn->server_endpoint != nullptr) {
+  } else {
     grpc_slice_buffer_move_into(&conn->client_read_buffer,
                                 &conn->server_write_buffer);
     proxy_connection_ref(conn, "client_read");
@@ -361,10 +355,6 @@ static void on_client_read_done_locked(void* arg, grpc_error_handle error) {
     grpc_endpoint_write(conn->server_endpoint, &conn->server_write_buffer,
                         &conn->on_server_write_done, nullptr,
                         /*max_frame_size=*/INT_MAX);
-  }
-  if (conn->client_endpoint == nullptr) {
-    proxy_connection_unref(conn, "client_read");
-    return;
   }
   // Read more data.
   GRPC_CLOSURE_INIT(&conn->on_client_read_done, on_client_read_done, conn,
@@ -400,7 +390,7 @@ static void on_server_read_done_locked(void* arg, grpc_error_handle error) {
   if (conn->client_is_writing) {
     grpc_slice_buffer_move_into(&conn->server_read_buffer,
                                 &conn->client_deferred_write_buffer);
-  } else if (conn->client_endpoint != nullptr) {
+  } else {
     grpc_slice_buffer_move_into(&conn->server_read_buffer,
                                 &conn->client_write_buffer);
     proxy_connection_ref(conn, "server_read");
@@ -410,10 +400,6 @@ static void on_server_read_done_locked(void* arg, grpc_error_handle error) {
     grpc_endpoint_write(conn->client_endpoint, &conn->client_write_buffer,
                         &conn->on_client_write_done, nullptr,
                         /*max_frame_size=*/INT_MAX);
-  }
-  if (conn->server_endpoint == nullptr) {
-    proxy_connection_unref(conn, "server_read");
-    return;
   }
   // Read more data.
   GRPC_CLOSURE_INIT(&conn->on_server_read_done, on_server_read_done, conn,
@@ -524,8 +510,8 @@ static bool proxy_auth_header_matches(absl::string_view proxy_auth_header_val,
 // which will cause the client connection to be dropped.
 static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
-  VLOG(2) << "on_read_request_done: " << conn << " "
-          << grpc_core::StatusToString(error);
+  gpr_log(GPR_DEBUG, "on_read_request_done: %p %s", conn,
+          grpc_core::StatusToString(error).c_str());
   if (!error.ok()) {
     proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy read request",
                             error);
@@ -618,12 +604,14 @@ static void on_accept(void* arg, grpc_endpoint* endpoint,
                       grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
   if (proxy_destroyed.load()) {
+    grpc_endpoint_shutdown(endpoint, absl::UnknownError("proxy shutdown"));
     grpc_endpoint_destroy(endpoint);
     return;
   }
   grpc_end2end_http_proxy* proxy = static_cast<grpc_end2end_http_proxy*>(arg);
   proxy_ref(proxy);
   if (proxy->is_shutdown.load()) {
+    grpc_endpoint_shutdown(endpoint, absl::UnknownError("proxy shutdown"));
     grpc_endpoint_destroy(endpoint);
     proxy_unref(proxy);
     return;
@@ -682,7 +670,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   // Construct proxy address.
   const int proxy_port = grpc_pick_unused_port_or_die();
   proxy->proxy_name = grpc_core::JoinHostPort("localhost", proxy_port);
-  VLOG(2) << "Proxy address: " << proxy->proxy_name;
+  gpr_log(GPR_INFO, "Proxy address: %s", proxy->proxy_name.c_str());
   // Create TCP server.
   auto channel_args = grpc_core::CoreConfiguration::Get()
                           .channel_args_preconditioning()

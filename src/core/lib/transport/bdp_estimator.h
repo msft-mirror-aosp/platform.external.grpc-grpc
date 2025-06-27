@@ -33,6 +33,8 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/time.h"
 
+extern grpc_core::TraceFlag grpc_bdp_estimator_trace;
+
 namespace grpc_core {
 
 class BdpEstimator {
@@ -49,7 +51,7 @@ class BdpEstimator {
   // grpc_bdp_estimator_add_incoming_bytes once a ping has been scheduled by a
   // transport (but not necessarily started)
   void SchedulePing() {
-    if (GRPC_TRACE_FLAG_ENABLED(bdp_estimator)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
       gpr_log(GPR_INFO, "bdp[%s]:sched acc=%" PRId64 " est=%" PRId64,
               std::string(name_).c_str(), accumulator_, estimate_);
     }
@@ -62,7 +64,7 @@ class BdpEstimator {
   // once
   // the ping is on the wire
   void StartPing() {
-    if (GRPC_TRACE_FLAG_ENABLED(bdp_estimator)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
       gpr_log(GPR_INFO, "bdp[%s]:start acc=%" PRId64 " est=%" PRId64,
               std::string(name_).c_str(), accumulator_, estimate_);
     }

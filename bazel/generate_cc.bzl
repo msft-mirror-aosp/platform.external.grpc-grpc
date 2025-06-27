@@ -187,7 +187,7 @@ _generate_cc = rule(
             mandatory = False,
         ),
         "_protoc": attr.label(
-            default = Label("@com_google_protobuf//:protoc"),
+            default = Label("//external:protocol_compiler"),
             executable = True,
             cfg = "exec",
         ),

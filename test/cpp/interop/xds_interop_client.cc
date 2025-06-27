@@ -33,7 +33,6 @@
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/strings/str_split.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
@@ -355,11 +354,15 @@ class XdsUpdateClientConfigureServiceImpl
       }
       if (request_payload_size > 0 &&
           config.type == ClientConfigureRequest::EMPTY_CALL) {
-        LOG(ERROR) << "request_payload_size should not be set for EMPTY_CALL";
+        gpr_log(GPR_ERROR,
+                "request_payload_size should not be set "
+                "for EMPTY_CALL");
       }
       if (response_payload_size > 0 &&
           config.type == ClientConfigureRequest::EMPTY_CALL) {
-        LOG(ERROR) << "response_payload_size should not be set for EMPTY_CALL";
+        gpr_log(GPR_ERROR,
+                "response_payload_size should not be set "
+                "for EMPTY_CALL");
       }
       config.request_payload_size = request_payload_size;
       std::string payload(config.request_payload_size, '0');
@@ -426,7 +429,7 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
 }
 
 grpc::CsmObservability EnableCsmObservability() {
-  VLOG(2) << "Registering Prometheus exporter";
+  gpr_log(GPR_DEBUG, "Registering Prometheus exporter");
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
   // default was "localhost:9464" which causes connection issue across GKE
   // pods
@@ -460,7 +463,7 @@ void RunServer(const int port, StatsWatchers* stats_watchers,
   builder.AddListeningPort(server_address.str(),
                            grpc::InsecureServerCredentials());
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  VLOG(2) << "Server listening on " << server_address.str();
+  gpr_log(GPR_DEBUG, "Server listening on %s", server_address.str().c_str());
 
   server->Wait();
 }
@@ -510,11 +513,15 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
     }
     if (request_payload_size > 0 &&
         config.type == ClientConfigureRequest::EMPTY_CALL) {
-      LOG(ERROR) << "request_payload_size should not be set for EMPTY_CALL";
+      gpr_log(GPR_ERROR,
+              "request_payload_size should not be set "
+              "for EMPTY_CALL");
     }
     if (response_payload_size > 0 &&
         config.type == ClientConfigureRequest::EMPTY_CALL) {
-      LOG(ERROR) << "response_payload_size should not be set for EMPTY_CALL";
+      gpr_log(GPR_ERROR,
+              "response_payload_size should not be set "
+              "for EMPTY_CALL");
     }
     config.request_payload_size = request_payload_size;
     std::string payload(config.request_payload_size, '0');

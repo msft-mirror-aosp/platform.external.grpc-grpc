@@ -34,6 +34,7 @@
 
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -145,8 +146,9 @@ class SubchannelStreamClient final
     RefCountedPtr<SubchannelStreamClient> subchannel_stream_client_;
     grpc_polling_entity pollent_;
 
-    RefCountedPtr<Arena> arena_;
+    ScopedArenaPtr arena_;
     CallCombiner call_combiner_;
+    grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
     // The streaming call to the backend. Always non-null.
     // Refs are tracked manually; when the last ref is released, the
@@ -199,7 +201,7 @@ class SubchannelStreamClient final
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   grpc_pollset_set* interested_parties_;  // Do not own.
   const char* tracer_;
-  RefCountedPtr<CallArenaAllocator> call_allocator_;
+  MemoryAllocator call_allocator_;
 
   Mutex mu_;
   std::unique_ptr<CallEventHandler> event_handler_ ABSL_GUARDED_BY(mu_);

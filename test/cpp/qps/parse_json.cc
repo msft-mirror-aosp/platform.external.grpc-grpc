@@ -21,8 +21,9 @@
 #include <string>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 
@@ -39,8 +40,8 @@ void ParseJson(const std::string& json, const std::string& type,
       type_resolver.get(), "type.googleapis.com/" + type, json, &binary);
   if (!status.ok()) {
     std::string errmsg(status.message());
-    LOG(ERROR) << "Failed to convert json to binary: errcode=" << status.code()
-               << " msg=" << errmsg;
+    gpr_log(GPR_ERROR, "Failed to convert json to binary: errcode=%d msg=%s",
+            static_cast<int>(status.code()), errmsg.c_str());
     grpc_core::Crash(absl::StrFormat("JSON: %s", json.c_str()));
   }
   CHECK(msg->ParseFromString(binary));

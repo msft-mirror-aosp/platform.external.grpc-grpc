@@ -24,6 +24,6 @@ objc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//third_party:gtest",
+        "//external:gtest",
     ],
 )

@@ -26,7 +26,6 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/status/statusor.h"
 
@@ -137,9 +136,9 @@ void WireReaderImpl::SendSetupTransport(Binder* binder) {
 std::unique_ptr<Binder> WireReaderImpl::RecvSetupTransport() {
   // TODO(b/191941760): avoid blocking, handle wire_writer_noti lifetime
   // better
-  VLOG(2) << "start waiting for noti";
+  gpr_log(GPR_DEBUG, "start waiting for noti");
   connection_noti_.WaitForNotification();
-  VLOG(2) << "end waiting for noti";
+  gpr_log(GPR_DEBUG, "end waiting for noti");
   return std::move(other_end_binder_);
 }
 
@@ -154,8 +153,8 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
                     BinderTransportTxCode::SETUP_TRANSPORT) &&
         code <= static_cast<transaction_code_t>(
                     BinderTransportTxCode::PING_RESPONSE))) {
-    LOG(INFO)
-        << "Received unknown control message. Shutdown transport gracefully.";
+    gpr_log(GPR_INFO,
+            "Received unknown control message. Shutdown transport gracefully.");
     // TODO(waynetu): Shutdown transport gracefully.
     return absl::OkStatus();
   }
@@ -211,8 +210,8 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
       break;
     }
     case BinderTransportTxCode::SHUTDOWN_TRANSPORT: {
-      LOG(ERROR)
-          << "Received SHUTDOWN_TRANSPORT request but not implemented yet.";
+      gpr_log(GPR_ERROR,
+              "Received SHUTDOWN_TRANSPORT request but not implemented yet.");
       return absl::UnimplementedError("SHUTDOWN_TRANSPORT");
     }
     case BinderTransportTxCode::ACKNOWLEDGE_BYTES: {
@@ -287,16 +286,16 @@ absl::Status WireReaderImpl::ProcessStreamingTransaction(
             tx_process_result.ToString().c_str());
     // Something went wrong when receiving transaction. Cancel failed requests.
     if (cancellation_flags & kFlagPrefix) {
-      LOG(INFO) << "cancelling initial metadata";
+      gpr_log(GPR_INFO, "cancelling initial metadata");
       transport_stream_receiver_->NotifyRecvInitialMetadata(code,
                                                             tx_process_result);
     }
     if (cancellation_flags & kFlagMessageData) {
-      LOG(INFO) << "cancelling message data";
+      gpr_log(GPR_INFO, "cancelling message data");
       transport_stream_receiver_->NotifyRecvMessage(code, tx_process_result);
     }
     if (cancellation_flags & kFlagSuffix) {
-      LOG(INFO) << "cancelling trailing metadata";
+      gpr_log(GPR_INFO, "cancelling trailing metadata");
       transport_stream_receiver_->NotifyRecvTrailingMetadata(
           code, tx_process_result, 0);
     }
@@ -339,7 +338,7 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
   // intended behavior.
   // TODO(waynetu): What should be returned here?
   if (flags == 0) {
-    LOG(INFO) << "[WARNING] Receive empty transaction. Ignored.";
+    gpr_log(GPR_INFO, "[WARNING] Receive empty transaction. Ignored.");
     return absl::OkStatus();
   }
 

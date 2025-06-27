@@ -36,6 +36,8 @@ static thread_local bool g_timer_thread;
 namespace grpc_event_engine {
 namespace experimental {
 
+grpc_core::DebugOnlyTraceFlag grpc_event_engine_timer_trace(false, "timer");
+
 void TimerManager::RunSomeTimers(
     std::vector<experimental::EventEngine::Closure*> timers) {
   for (auto* timer : timers) {
@@ -99,7 +101,7 @@ grpc_core::Timestamp TimerManager::Host::Now() {
 
 void TimerManager::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
                              experimental::EventEngine::Closure* closure) {
-  if (GRPC_TRACE_FLAG_ENABLED(timer)) {
+  if (grpc_event_engine_timer_trace.enabled()) {
     grpc_core::MutexLock lock(&mu_);
     if (shutdown_) {
       gpr_log(GPR_ERROR,
@@ -119,7 +121,7 @@ void TimerManager::Shutdown() {
   {
     grpc_core::MutexLock lock(&mu_);
     if (shutdown_) return;
-    if (GRPC_TRACE_FLAG_ENABLED(timer)) {
+    if (grpc_event_engine_timer_trace.enabled()) {
       gpr_log(GPR_DEBUG, "TimerManager::%p shutting down", this);
     }
     shutdown_ = true;
@@ -127,7 +129,7 @@ void TimerManager::Shutdown() {
     cv_wait_.Signal();
   }
   main_loop_exit_signal_->WaitForNotification();
-  if (GRPC_TRACE_FLAG_ENABLED(timer)) {
+  if (grpc_event_engine_timer_trace.enabled()) {
     gpr_log(GPR_DEBUG, "TimerManager::%p shutdown complete", this);
   }
 }
@@ -145,7 +147,7 @@ void TimerManager::Kick() {
 void TimerManager::RestartPostFork() {
   grpc_core::MutexLock lock(&mu_);
   CHECK(GPR_LIKELY(shutdown_));
-  if (GRPC_TRACE_FLAG_ENABLED(timer)) {
+  if (grpc_event_engine_timer_trace.enabled()) {
     gpr_log(GPR_DEBUG, "TimerManager::%p restarting after shutdown", this);
   }
   shutdown_ = false;

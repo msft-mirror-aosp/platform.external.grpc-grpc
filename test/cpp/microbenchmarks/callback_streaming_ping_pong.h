@@ -24,7 +24,6 @@
 #include <benchmark/benchmark.h>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/callback_test_service.h"
@@ -55,7 +54,7 @@ class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
 
   void OnReadDone(bool ok) override {
     if (!ok) {
-      LOG(ERROR) << "Client read failed";
+      gpr_log(GPR_ERROR, "Client read failed");
       return;
     }
     MaybeWrite();
@@ -63,7 +62,7 @@ class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
 
   void OnWriteDone(bool ok) override {
     if (!ok) {
-      LOG(ERROR) << "Client write failed";
+      gpr_log(GPR_ERROR, "Client write failed");
       return;
     }
     writes_complete_++;

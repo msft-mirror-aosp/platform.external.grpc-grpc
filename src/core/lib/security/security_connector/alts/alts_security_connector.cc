@@ -24,7 +24,6 @@
 #include <utility>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -34,6 +33,7 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
@@ -187,7 +187,8 @@ namespace internal {
 RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
     const tsi_peer* peer) {
   if (peer == nullptr) {
-    LOG(ERROR) << "Invalid arguments to grpc_alts_auth_context_from_tsi_peer()";
+    gpr_log(GPR_ERROR,
+            "Invalid arguments to grpc_alts_auth_context_from_tsi_peer()");
     return nullptr;
   }
   // Validate certificate type.
@@ -196,21 +197,21 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
   if (cert_type_prop == nullptr ||
       strncmp(cert_type_prop->value.data, TSI_ALTS_CERTIFICATE_TYPE,
               cert_type_prop->value.length) != 0) {
-    LOG(ERROR) << "Invalid or missing certificate type property.";
+    gpr_log(GPR_ERROR, "Invalid or missing certificate type property.");
     return nullptr;
   }
   // Check if security level exists.
   const tsi_peer_property* security_level_prop =
       tsi_peer_get_property_by_name(peer, TSI_SECURITY_LEVEL_PEER_PROPERTY);
   if (security_level_prop == nullptr) {
-    LOG(ERROR) << "Missing security level property.";
+    gpr_log(GPR_ERROR, "Missing security level property.");
     return nullptr;
   }
   // Validate RPC protocol versions.
   const tsi_peer_property* rpc_versions_prop =
       tsi_peer_get_property_by_name(peer, TSI_ALTS_RPC_VERSIONS);
   if (rpc_versions_prop == nullptr) {
-    LOG(ERROR) << "Missing rpc protocol versions property.";
+    gpr_log(GPR_ERROR, "Missing rpc protocol versions property.");
     return nullptr;
   }
   grpc_gcp_rpc_protocol_versions local_versions, peer_versions;
@@ -221,21 +222,21 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
       grpc_gcp_rpc_protocol_versions_decode(slice, &peer_versions);
   CSliceUnref(slice);
   if (!decode_result) {
-    LOG(ERROR) << "Invalid peer rpc protocol versions.";
+    gpr_log(GPR_ERROR, "Invalid peer rpc protocol versions.");
     return nullptr;
   }
   // TODO(unknown): Pass highest common rpc protocol version to grpc caller.
   bool check_result = grpc_gcp_rpc_protocol_versions_check(
       &local_versions, &peer_versions, nullptr);
   if (!check_result) {
-    LOG(ERROR) << "Mismatch of local and peer rpc protocol versions.";
+    gpr_log(GPR_ERROR, "Mismatch of local and peer rpc protocol versions.");
     return nullptr;
   }
   // Validate ALTS Context.
   const tsi_peer_property* alts_context_prop =
       tsi_peer_get_property_by_name(peer, TSI_ALTS_CONTEXT);
   if (alts_context_prop == nullptr) {
-    LOG(ERROR) << "Missing alts context property.";
+    gpr_log(GPR_ERROR, "Missing alts context property.");
     return nullptr;
   }
   // Create auth context.
@@ -268,7 +269,7 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
     }
   }
   if (!grpc_auth_context_peer_is_authenticated(ctx.get())) {
-    LOG(ERROR) << "Invalid unauthenticated peer.";
+    gpr_log(GPR_ERROR, "Invalid unauthenticated peer.");
     ctx.reset(DEBUG_LOCATION, "test");
     return nullptr;
   }
@@ -284,8 +285,9 @@ grpc_alts_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
     const char* target_name) {
   if (channel_creds == nullptr || target_name == nullptr) {
-    LOG(ERROR)
-        << "Invalid arguments to grpc_alts_channel_security_connector_create()";
+    gpr_log(
+        GPR_ERROR,
+        "Invalid arguments to grpc_alts_channel_security_connector_create()");
     return nullptr;
   }
   return grpc_core::MakeRefCounted<grpc_alts_channel_security_connector>(
@@ -296,8 +298,9 @@ grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_alts_server_security_connector_create(
     grpc_core::RefCountedPtr<grpc_server_credentials> server_creds) {
   if (server_creds == nullptr) {
-    LOG(ERROR)
-        << "Invalid arguments to grpc_alts_server_security_connector_create()";
+    gpr_log(
+        GPR_ERROR,
+        "Invalid arguments to grpc_alts_server_security_connector_create()");
     return nullptr;
   }
   return grpc_core::MakeRefCounted<grpc_alts_server_security_connector>(

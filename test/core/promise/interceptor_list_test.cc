@@ -31,7 +31,9 @@ namespace {
 
 class InterceptorListTest : public ::testing::Test {
  protected:
-  RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
+  MemoryAllocator memory_allocator_ = MemoryAllocator(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
+  ScopedArenaPtr arena_ = MakeScopedArena(1024, &memory_allocator_);
   TestContext<Arena> arena_ctx_{arena_.get()};
 };
 

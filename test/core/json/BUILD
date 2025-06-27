@@ -37,7 +37,6 @@ grpc_cc_test(
     name = "json_test",
     srcs = ["json_test.cc"],
     external_deps = [
-        "absl/log:log",
         "gtest",
     ],
     language = "C++",

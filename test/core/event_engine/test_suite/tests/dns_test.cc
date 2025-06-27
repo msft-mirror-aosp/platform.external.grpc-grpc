@@ -22,7 +22,6 @@
 #include <tuple>
 #include <vector>
 
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -111,7 +110,7 @@ MATCHER(StatusCodeEq, "") {
 class EventEngineDNSTest : public EventEngineTest {
  protected:
   static void SetUpTestSuite() {
-#if !GRPC_IOS_EVENT_ENGINE_CLIENT
+#ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
     std::string test_records_path = kDNSTestRecordGroupsYamlPath;
     std::string dns_server_path = kDNSServerRelPath;
     std::string dns_resolver_path = kDNSResolverRelPath;
@@ -129,8 +128,9 @@ class EventEngineDNSTest : public EventEngineTest {
 // an indication whether the test is running on RBE or not. Find a better way of
 // doing this.
 #ifndef GRPC_PORT_ISOLATED_RUNTIME
-      LOG(ERROR) << "You are invoking the test locally with Bazel, you may "
-                    "need to invoke Bazel with --enable_runfiles=yes.";
+      gpr_log(GPR_ERROR,
+              "You are invoking the test locally with Bazel, you may need to "
+              "invoke Bazel with --enable_runfiles=yes.");
 #endif  // GRPC_PORT_ISOLATED_RUNTIME
       test_records_path = grpc::testing::NormalizeFilePath(test_records_path);
       dns_server_path =
@@ -182,7 +182,7 @@ class EventEngineDNSTest : public EventEngineTest {
   }
 
   static void TearDownTestSuite() {
-#if !GRPC_IOS_EVENT_ENGINE_CLIENT
+#ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
     dns_server_.server_process->Interrupt();
     dns_server_.server_process->Join();
     delete dns_server_.server_process;
@@ -233,7 +233,7 @@ class EventEngineDNSTest : public EventEngineTest {
 EventEngineDNSTest::DNSServer EventEngineDNSTest::dns_server_;
 
 // TODO(hork): implement XFAIL for resolvers that don't support TXT or SRV
-#if !GRPC_IOS_EVENT_ENGINE_CLIENT
+#ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
 
 TEST_F(EventEngineDNSTest, QueryNXHostname) {
   SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
@@ -434,7 +434,7 @@ TEST_F(EventEngineDNSTest, LocalHost) {
   auto dns_resolver = CreateDNSResolverWithoutSpecifyingServer();
   dns_resolver->LookupHostname(
       [this](auto result) {
-#if GRPC_IOS_EVENT_ENGINE_CLIENT
+#ifdef GRPC_IOS_EVENT_ENGINE_CLIENT
         EXPECT_SUCCESS();
 #else
         EXPECT_TRUE(result.ok());

@@ -83,7 +83,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
   class StateWatcher;
 
   GrpcXdsTransportFactory* factory_;  // Not owned.
-  RefCountedPtr<Channel> channel_;
+  OrphanablePtr<Channel> channel_;
   StateWatcher* watcher_;
 };
 

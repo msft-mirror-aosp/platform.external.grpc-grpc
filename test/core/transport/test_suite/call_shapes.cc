@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/transport/test_suite/transport_test.h"
+#include "test/core/transport/test_suite/test.h"
 
 namespace grpc_core {
 
 TRANSPORT_TEST(MetadataOnlyRequest) {
-  SetServerCallDestination();
+  SetServerAcceptor();
   auto md = Arena::MakePooled<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromExternalString("/foo/bar"));
   auto initiator = CreateCall(std::move(md));
@@ -72,7 +72,7 @@ TRANSPORT_TEST(MetadataOnlyRequestServerAbortsAfterInitialMetadata) {
                   "wrong status code: we don't care for any cases we're "
                   "rolling out soon, so leaving this disabled.";
 
-  SetServerCallDestination();
+  SetServerAcceptor();
   auto md = Arena::MakePooled<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromExternalString("/foo/bar"));
   auto initiator = CreateCall(std::move(md));
@@ -125,7 +125,7 @@ TRANSPORT_TEST(MetadataOnlyRequestServerAbortsImmediately) {
                   "wrong status code: we don't care for any cases we're "
                   "rolling out soon, so leaving this disabled.";
 
-  SetServerCallDestination();
+  SetServerAcceptor();
   auto md = Arena::MakePooled<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromExternalString("/foo/bar"));
   auto initiator = CreateCall(std::move(md));
@@ -165,7 +165,7 @@ TRANSPORT_TEST(MetadataOnlyRequestServerAbortsImmediately) {
 }
 
 TRANSPORT_TEST(CanCreateCallThenAbandonIt) {
-  SetServerCallDestination();
+  SetServerAcceptor();
   auto md = Arena::MakePooled<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromExternalString("/foo/bar"));
   auto initiator = CreateCall(std::move(md));
@@ -178,7 +178,7 @@ TRANSPORT_TEST(CanCreateCallThenAbandonIt) {
 }
 
 TRANSPORT_TEST(UnaryRequest) {
-  SetServerCallDestination();
+  SetServerAcceptor();
   auto md = Arena::MakePooled<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromExternalString("/foo/bar"));
   auto initiator = CreateCall(std::move(md));
@@ -257,7 +257,7 @@ TRANSPORT_TEST(UnaryRequest) {
 }
 
 TRANSPORT_TEST(UnaryRequestOmitCheckEndOfStream) {
-  SetServerCallDestination();
+  SetServerAcceptor();
   auto md = Arena::MakePooled<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromExternalString("/foo/bar"));
   auto initiator = CreateCall(std::move(md));
@@ -326,7 +326,7 @@ TRANSPORT_TEST(UnaryRequestOmitCheckEndOfStream) {
 }
 
 TRANSPORT_TEST(UnaryRequestWaitForServerInitialMetadataBeforeSendingPayload) {
-  SetServerCallDestination();
+  SetServerAcceptor();
   auto md = Arena::MakePooled<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromExternalString("/foo/bar"));
   auto initiator = CreateCall(std::move(md));
@@ -404,7 +404,7 @@ TRANSPORT_TEST(UnaryRequestWaitForServerInitialMetadataBeforeSendingPayload) {
 }
 
 TRANSPORT_TEST(ClientStreamingRequest) {
-  SetServerCallDestination();
+  SetServerAcceptor();
   auto md = Arena::MakePooled<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromExternalString("/foo/bar"));
   auto initiator = CreateCall(std::move(md));
@@ -518,7 +518,7 @@ TRANSPORT_TEST(ClientStreamingRequest) {
 }
 
 TRANSPORT_TEST(ServerStreamingRequest) {
-  SetServerCallDestination();
+  SetServerAcceptor();
   auto md = Arena::MakePooled<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromExternalString("/foo/bar"));
   auto initiator = CreateCall(std::move(md));

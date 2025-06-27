@@ -26,8 +26,7 @@
 
 #include <gtest/gtest.h>
 
-#include "absl/log/log.h"
-
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/grpcpp.h>
 
@@ -164,7 +163,7 @@ TEST_P(ThreadManagerTest, TestPollAndWork) {
   for (auto& tm : thread_manager_) {
     // Verify that The number of times DoWork() was called is equal to the
     // number of times WORK_FOUND was returned
-    VLOG(2) << "DoWork() called " << tm->num_do_work() << " times";
+    gpr_log(GPR_DEBUG, "DoWork() called %d times", tm->num_do_work());
     EXPECT_GE(tm->num_poll_for_work(), GetParam().max_poll_calls);
     EXPECT_EQ(tm->num_do_work(), tm->num_work_found());
   }

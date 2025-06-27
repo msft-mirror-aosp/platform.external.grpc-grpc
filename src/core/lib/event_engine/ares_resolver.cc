@@ -53,7 +53,6 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/hash/hash.h"
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
@@ -80,6 +79,8 @@
 
 namespace grpc_event_engine {
 namespace experimental {
+
+grpc_core::TraceFlag grpc_trace_ares_resolver(false, "cares_resolver");
 
 namespace {
 
@@ -199,7 +200,7 @@ AresResolver::CreateAresResolver(
   ares_channel channel;
   int status = ares_init_options(&channel, &opts, ARES_OPT_FLAGS);
   if (status != ARES_SUCCESS) {
-    LOG(ERROR) << "ares_init_options failed, status: " << status;
+    gpr_log(GPR_ERROR, "ares_init_options failed, status: %d", status);
     return AresStatusToAbslStatus(
         status,
         absl::StrCat("Failed to init c-ares channel: ", ares_strerror(status)));
@@ -220,7 +221,8 @@ AresResolver::AresResolver(
     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
     std::shared_ptr<EventEngine> event_engine, ares_channel channel)
     : RefCountedDNSResolverInterface(
-          GRPC_TRACE_FLAG_ENABLED(cares_resolver) ? "AresResolver" : nullptr),
+          GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver) ? "AresResolver"
+                                                            : nullptr),
       channel_(channel),
       polled_fd_factory_(std::move(polled_fd_factory)),
       event_engine_(std::move(event_engine)) {
@@ -765,9 +767,9 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
   }
   GRPC_ARES_RESOLVER_TRACE_LOG("resolver:%p Got %zu TXT records", ares_resolver,
                                result.size());
-  if (GRPC_TRACE_FLAG_ENABLED(cares_resolver)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver)) {
     for (const auto& record : result) {
-      LOG(INFO) << record;
+      gpr_log(GPR_INFO, "%s", record.c_str());
     }
   }
   // Clean up.

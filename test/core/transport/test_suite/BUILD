@@ -16,17 +16,29 @@ load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
     "grpc_package",
+    "grpc_proto_library",
 )
 load("grpc_transport_test.bzl", "grpc_transport_test")
 
 grpc_package(name = "test/core/transport/test_suite")
 
 grpc_cc_library(
+    name = "fixture",
+    testonly = 1,
+    srcs = ["fixture.cc"],
+    hdrs = ["fixture.h"],
+    deps = [
+        "//:grpc",
+        "//test/core/event_engine/fuzzing_event_engine",
+    ],
+)
+
+grpc_cc_library(
     name = "inproc_fixture",
     testonly = 1,
     srcs = ["inproc_fixture.cc"],
     deps = [
-        "test",
+        "fixture",
         "//src/core:grpc_transport_inproc",
     ],
     alwayslink = 1,
@@ -41,7 +53,7 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
-        "test",
+        "fixture",
         "//src/core:chaotic_good_client_transport",
         "//src/core:chaotic_good_server_transport",
         "//src/core:event_engine_memory_allocator_factory",
@@ -55,16 +67,37 @@ grpc_cc_library(
 grpc_cc_library(
     name = "test",
     testonly = 1,
-    srcs = ["transport_test.cc"],
-    hdrs = ["transport_test.h"],
+    srcs = ["test.cc"],
+    hdrs = ["test.h"],
     external_deps = [
-        "absl/log:log",
+        "absl/functional:any_invocable",
         "absl/random",
         "absl/random:bit_gen_ref",
+        "absl/strings",
         "gtest",
     ],
     deps = [
-        "//test/core/call/yodel:yodel_test",
+        "fixture",
+        "//:iomgr_timer",
+        "//:promise",
+        "//src/core:cancel_callback",
+        "//src/core:resource_quota",
+        "//src/core:time",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+    ],
+)
+
+grpc_cc_library(
+    name = "test_main",
+    testonly = 1,
+    srcs = ["test_main.cc"],
+    external_deps = ["absl/random"],
+    deps = [
+        "fixture",
+        "test",
+        "//:grpc_trace",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -100,6 +133,16 @@ grpc_cc_library(
     external_deps = ["absl/random"],
     deps = ["test"],
     alwayslink = 1,
+)
+
+grpc_proto_library(
+    name = "fuzzer_proto",
+    srcs = ["fuzzer.proto"],
+    has_services = False,
+    deps = [
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+        "//test/core/test_util:fuzz_config_vars_proto",
+    ],
 )
 
 grpc_transport_test(

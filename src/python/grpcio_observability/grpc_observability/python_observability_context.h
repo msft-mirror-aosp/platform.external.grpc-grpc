@@ -106,7 +106,6 @@ struct Measurement {
   MeasurementType type;
   MeasurementValue value;
   bool registered_method;
-  bool include_exchange_labels;
 };
 
 struct Annotation {
@@ -272,15 +271,17 @@ void GenerateClientContext(absl::string_view method, absl::string_view trace_id,
 void GenerateServerContext(absl::string_view header, absl::string_view method,
                            PythonCensusContext* context);
 
-inline std::string GetMethod(const char* method) {
+inline absl::string_view GetMethod(const char* method) {
   if (std::string(method).empty()) {
     return "";
   }
   // Check for leading '/' and trim it if present.
-  return std::string(absl::StripPrefix(method, "/"));
+  return absl::StripPrefix(absl::string_view(method), "/");
 }
 
-inline std::string GetTarget(const char* target) { return std::string(target); }
+inline absl::string_view GetTarget(const char* target) {
+  return absl::string_view(target);
+}
 
 // Fills a pre-allocated buffer with the value for the grpc-trace-bin header.
 // The buffer must be at least kGrpcTraceBinHeaderLen bytes long.

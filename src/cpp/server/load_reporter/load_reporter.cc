@@ -28,9 +28,9 @@
 #include <tuple>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "opencensus/tags/tag_key.h"
 
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/cpp/server/load_reporter/constants.h"
@@ -201,19 +201,20 @@ CensusViewProviderDefaultImpl::CensusViewProviderDefaultImpl() {
 }
 
 CensusViewProvider::ViewDataMap CensusViewProviderDefaultImpl::FetchViewData() {
-  VLOG(2) << "[CVP " << this << "] Starts fetching Census view data.";
+  gpr_log(GPR_DEBUG, "[CVP %p] Starts fetching Census view data.", this);
   ViewDataMap view_data_map;
   for (auto& p : view_map_) {
     const std::string& view_name = p.first;
     ::opencensus::stats::View& view = p.second;
     if (view.IsValid()) {
       view_data_map.emplace(view_name, view.GetData());
-      VLOG(2) << "[CVP " << this << "] Fetched view data (view: " << view_name
-              << ").";
+      gpr_log(GPR_DEBUG, "[CVP %p] Fetched view data (view: %s).", this,
+              view_name.c_str());
     } else {
-      VLOG(2) << "[CVP " << this
-              << "] Can't fetch view data because view is invalid (view: "
-              << view_name << ").";
+      gpr_log(
+          GPR_DEBUG,
+          "[CVP %p] Can't fetch view data because view is invalid (view: %s).",
+          this, view_name.c_str());
     }
   }
   return view_data_map;
@@ -222,8 +223,8 @@ CensusViewProvider::ViewDataMap CensusViewProviderDefaultImpl::FetchViewData() {
 std::string LoadReporter::GenerateLbId() {
   while (true) {
     if (next_lb_id_ > UINT32_MAX) {
-      LOG(ERROR) << "[LR " << this
-                 << "] The LB ID exceeds the max valid value!";
+      gpr_log(GPR_ERROR, "[LR %p] The LB ID exceeds the max valid value!",
+              this);
       return "";
     }
     int64_t lb_id = next_lb_id_++;
@@ -386,16 +387,17 @@ void LoadReporter::ReportStreamCreated(const std::string& hostname,
                                        const std::string& load_key) {
   grpc_core::MutexLock lock(&store_mu_);
   load_data_store_.ReportStreamCreated(hostname, lb_id, load_key);
-  LOG(INFO) << "[LR " << this << "] Report stream created (host: " << hostname
-            << ", LB ID: " << lb_id << ", load key: " << load_key << ").";
+  gpr_log(GPR_INFO,
+          "[LR %p] Report stream created (host: %s, LB ID: %s, load key: %s).",
+          this, hostname.c_str(), lb_id.c_str(), load_key.c_str());
 }
 
 void LoadReporter::ReportStreamClosed(const std::string& hostname,
                                       const std::string& lb_id) {
   grpc_core::MutexLock lock(&store_mu_);
   load_data_store_.ReportStreamClosed(hostname, lb_id);
-  LOG(INFO) << "[LR " << this << "] Report stream closed (host: " << hostname
-            << ", LB ID: " << lb_id << ").";
+  gpr_log(GPR_INFO, "[LR %p] Report stream closed (host: %s, LB ID: %s).", this,
+          hostname.c_str(), lb_id.c_str());
 }
 
 void LoadReporter::ProcessViewDataCallStart(
@@ -435,8 +437,9 @@ void LoadReporter::ProcessViewDataCallEnd(
       // implementation.
       // TODO(juanlishen): Check whether this situation happens in OSS C++.
       if (client_ip_and_token.empty()) {
-        VLOG(2) << "Skipping processing Opencensus record with empty "
-                   "client_ip_and_token tag.";
+        gpr_log(GPR_DEBUG,
+                "Skipping processing Opencensus record with empty "
+                "client_ip_and_token tag.");
         continue;
       }
       LoadRecordKey key(client_ip_and_token, user_id);
@@ -497,9 +500,10 @@ void LoadReporter::ProcessViewDataOtherCallMetrics(
 }
 
 void LoadReporter::FetchAndSample() {
-  VLOG(2) << "[LR " << this
-          << "] Starts fetching Census view data and sampling LB feedback "
-             "record.";
+  gpr_log(GPR_DEBUG,
+          "[LR %p] Starts fetching Census view data and sampling LB feedback "
+          "record.",
+          this);
   CensusViewProvider::ViewDataMap view_data_map =
       census_view_provider_->FetchViewData();
   ProcessViewDataCallStart(view_data_map);

@@ -19,11 +19,11 @@
 #include <memory>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/memory_allocator.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
@@ -55,7 +55,8 @@ FrameLimits FuzzerFrameLimits() { return FrameLimits{1024 * 1024 * 1024, 63}; }
 template <typename T>
 void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   HPackCompressor hpack_compressor;
-  auto serialized = input.Serialize(&hpack_compressor);
+  bool saw_encoding_errors = false;
+  auto serialized = input.Serialize(&hpack_compressor, saw_encoding_errors);
   CHECK(serialized.control.Length() >=
         24);  // Initial output buffer size is 64 byte.
   uint8_t header_bytes[24];
@@ -63,12 +64,11 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   auto header = FrameHeader::Parse(header_bytes);
   if (!header.ok()) {
     if (!squelch) {
-      gpr_log(GPR_ERROR, "Failed to parse header: %s",
-              header.status().ToString().c_str());
+      LOG(ERROR) << "Failed to parse header: " << header.status().ToString();
     }
     Crash("Failed to parse header");
   }
-  CHECK(header->type == expected_frame_type);
+  CHECK_EQ(header->type, expected_frame_type);
   T output;
   HPackParser hpack_parser;
   DeterministicBitGen bitgen;
@@ -76,7 +76,7 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
                                   absl::BitGenRef(bitgen), GetContext<Arena>(),
                                   std::move(serialized), FuzzerFrameLimits());
   CHECK_OK(deser);
-  CHECK(output == input);
+  if (!saw_encoding_errors) CHECK_EQ(input, output);
 }
 
 template <typename T>
@@ -89,7 +89,7 @@ void FinishParseAndChecks(const FrameHeader& header, BufferPair buffers) {
                                   absl::BitGenRef(bitgen), GetContext<Arena>(),
                                   std::move(buffers), FuzzerFrameLimits());
   if (!deser.ok()) return;
-  gpr_log(GPR_INFO, "Read frame: %s", parsed.ToString().c_str());
+  LOG(INFO) << "Read frame: " << parsed.ToString();
   AssertRoundTrips(parsed, header.type);
 }
 
@@ -101,12 +101,10 @@ void Run(const frame_fuzzer::Test& test) {
   auto r = FrameHeader::Parse(control_data);
   if (!r.ok()) return;
   if (test.data().size() != r->message_length) return;
-  gpr_log(GPR_INFO, "Read frame header: %s", r->ToString().c_str());
+  LOG(INFO) << "Read frame header: " << r->ToString();
   control_data += 24;
   control_size -= 24;
-  MemoryAllocator memory_allocator = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-  auto arena = MakeScopedArena(1024, &memory_allocator);
+  auto arena = SimpleArenaAllocator()->MakeArena();
   TestContext<Arena> ctx(arena.get());
   BufferPair buffers{
       SliceBuffer(Slice::FromCopiedBuffer(control_data, control_size)),

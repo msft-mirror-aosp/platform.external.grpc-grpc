@@ -18,7 +18,6 @@
 
 EXPERIMENT_ENABLES = {
     "call_status_override_on_cancellation": "call_status_override_on_cancellation",
-    "call_v3": "call_v3",
     "canary_client_privacy": "canary_client_privacy",
     "client_privacy": "client_privacy",
     "event_engine_client": "event_engine_client",
@@ -28,15 +27,12 @@ EXPERIMENT_ENABLES = {
     "http2_stats_fix": "http2_stats_fix",
     "keepalive_fix": "keepalive_fix",
     "keepalive_server_fix": "keepalive_server_fix",
+    "max_pings_wo_data_throttle": "max_pings_wo_data_throttle",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
     "peer_state_based_framing": "peer_state_based_framing",
-    "pending_queue_cap": "pending_queue_cap",
     "pick_first_new": "pick_first_new",
-    "promise_based_client_call": "event_engine_client,event_engine_listener,promise_based_client_call",
-    "promise_based_server_call": "promise_based_server_call",
-    "chaotic_good": "chaotic_good,event_engine_client,event_engine_listener,promise_based_client_call,promise_based_server_call",
-    "promise_based_inproc_transport": "event_engine_client,event_engine_listener,promise_based_client_call,promise_based_inproc_transport,promise_based_server_call",
+    "promise_based_inproc_transport": "promise_based_inproc_transport",
     "rstpit": "rstpit",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "server_privacy": "server_privacy",
@@ -45,7 +41,7 @@ EXPERIMENT_ENABLES = {
     "trace_record_callops": "trace_record_callops",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "work_serializer_clears_time_cache": "work_serializer_clears_time_cache",
-    "work_serializer_dispatch": "event_engine_client,work_serializer_dispatch",
+    "work_serializer_dispatch": "work_serializer_dispatch",
 }
 
 EXPERIMENT_POLLERS = [
@@ -59,16 +55,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "core_end2end_test": [
-                "event_engine_client",
-                "promise_based_server_call",
-            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "event_engine_client_test": [
-                "event_engine_client",
             ],
             "flow_control_test": [
                 "multiping",
@@ -77,26 +66,33 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
-            "logging_test": [
-                "promise_based_server_call",
-            ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
             ],
         },
         "on": {
+            "cancel_ares_query_test": [
+                "event_engine_dns",
+            ],
             "core_end2end_test": [
+                "event_engine_client",
                 "event_engine_listener",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_new",
+            ],
+            "event_engine_client_test": [
+                "event_engine_client",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
             ],
             "lb_unit_test": [
                 "pick_first_new",
+            ],
+            "resolver_component_tests_runner_invoker": [
+                "event_engine_dns",
             ],
             "xds_end2end_test": [
                 "pick_first_new",
@@ -107,9 +103,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "core_end2end_test": [
-                "promise_based_server_call",
-            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -120,9 +113,6 @@ EXPERIMENTS = {
                 "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "logging_test": [
-                "promise_based_server_call",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
@@ -147,8 +137,10 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "event_engine_client",
-                "promise_based_client_call",
-                "promise_based_server_call",
+                "work_serializer_dispatch",
+            ],
+            "cpp_end2end_test": [
+                "work_serializer_dispatch",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -164,15 +156,15 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
-            "lame_client_test": [
-                "promise_based_client_call",
-            ],
-            "logging_test": [
-                "promise_based_server_call",
+            "lb_unit_test": [
+                "work_serializer_dispatch",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
+            ],
+            "xds_end2end_test": [
+                "work_serializer_dispatch",
             ],
         },
         "on": {
@@ -181,10 +173,6 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "event_engine_listener",
-                "work_serializer_dispatch",
-            ],
-            "cpp_end2end_test": [
-                "work_serializer_dispatch",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_new",
@@ -194,14 +182,12 @@ EXPERIMENTS = {
             ],
             "lb_unit_test": [
                 "pick_first_new",
-                "work_serializer_dispatch",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
             ],
             "xds_end2end_test": [
                 "pick_first_new",
-                "work_serializer_dispatch",
             ],
         },
     },

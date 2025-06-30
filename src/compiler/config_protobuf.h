@@ -50,7 +50,12 @@
 #endif
 
 #ifndef GRPC_CUSTOM_CSHARP_GETCLASSNAME
+#include <google/protobuf/stubs/common.h>
+#if GOOGLE_PROTOBUF_VERSION >= 4000000
+#include <google/protobuf/compiler/csharp/names.h>
+#else
 #include <google/protobuf/compiler/csharp/csharp_names.h>
+#endif
 #define GRPC_CUSTOM_CSHARP_GETCLASSNAME \
   ::google::protobuf::compiler::csharp::GetClassName
 #define GRPC_CUSTOM_CSHARP_GETFILENAMESPACE \

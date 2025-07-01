@@ -44,23 +44,6 @@ void gpr_unreachable_code(const char* reason, const char* file, int line) {
                    grpc_core::SourceLocation(file, line));
 }
 
-void gpr_assertion_failed(const char* filename, int line, const char* message) {
-  grpc_core::Crash(absl::StrCat("ASSERTION FAILED: ", message),
-                   grpc_core::SourceLocation(filename, line));
-}
-
-const char* gpr_log_severity_string(gpr_log_severity severity) {
-  switch (severity) {
-    case GPR_LOG_SEVERITY_DEBUG:
-      return "D";
-    case GPR_LOG_SEVERITY_INFO:
-      return "I";
-    case GPR_LOG_SEVERITY_ERROR:
-      return "E";
-  }
-  GPR_UNREACHABLE_CODE(return "UNKNOWN");
-}
-
 int gpr_should_log(gpr_log_severity severity) {
   switch (severity) {
     case GPR_LOG_SEVERITY_ERROR:
@@ -130,7 +113,6 @@ void gpr_log_verbosity_init(void) {
   // This setting will change things for other libraries/code that is unrelated
   // to grpc.
   absl::string_view verbosity = grpc_core::ConfigVars::Get().Verbosity();
-  DVLOG(2) << "Log verbosity: " << verbosity;
   if (absl::EqualsIgnoreCase(verbosity, "INFO")) {
     LOG_FIRST_N(WARNING, 1)
         << "Log level INFO is not suitable for production. Prefer WARNING or "

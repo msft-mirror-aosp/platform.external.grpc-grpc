@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -45,7 +46,6 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
@@ -86,7 +86,7 @@
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
-#include "src/core/xds/grpc/xds_http_filters.h"
+#include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/grpc/xds_listener.h"
 #include "src/core/xds/grpc/xds_route_config.h"
 #include "src/core/xds/grpc/xds_routing.h"
@@ -111,16 +111,15 @@ class XdsResolver final : public Resolver {
         data_plane_authority_(std::move(data_plane_authority)),
         channel_id_(absl::Uniform<uint64_t>(absl::BitGen())) {
     if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-      gpr_log(
-          GPR_INFO,
-          "[xds_resolver %p] created for URI %s; data plane authority is %s",
-          this, uri_.ToString().c_str(), data_plane_authority_.c_str());
+      LOG(INFO) << "[xds_resolver " << this << "] created for URI "
+                << uri_.ToString() << "; data plane authority is "
+                << data_plane_authority_;
     }
   }
 
   ~XdsResolver() override {
     if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-      gpr_log(GPR_INFO, "[xds_resolver %p] destroyed", this);
+      LOG(INFO) << "[xds_resolver " << this << "] destroyed";
     }
   }
 
@@ -128,8 +127,13 @@ class XdsResolver final : public Resolver {
 
   void ShutdownLocked() override;
 
+  void RequestReresolutionLocked() override {
+    if (dependency_mgr_ != nullptr) dependency_mgr_->RequestReresolution();
+  }
+
   void ResetBackoffLocked() override {
     if (xds_client_ != nullptr) xds_client_->ResetBackoff();
+    if (dependency_mgr_ != nullptr) dependency_mgr_->ResetBackoff();
   }
 
  private:
@@ -270,7 +274,10 @@ class XdsResolver final : public Resolver {
                       RefCountedPtr<RouteConfigData> route_config_data);
     ~XdsConfigSelector() override;
 
-    const char* name() const override { return "XdsConfigSelector"; }
+    UniqueTypeName name() const override {
+      static UniqueTypeName::Factory kFactory("XdsConfigSelector");
+      return kFactory.Create();
+    }
 
     bool Equals(const ConfigSelector* other) const override {
       const auto* other_xds = static_cast<const XdsConfigSelector*>(other);
@@ -281,14 +288,14 @@ class XdsResolver final : public Resolver {
 
     absl::Status GetCallConfig(GetCallConfigArgs args) override;
 
-    std::vector<const grpc_channel_filter*> GetFilters() override {
-      return filters_;
-    }
+    void AddFilters(InterceptionChainBuilder& builder) override;
+
+    std::vector<const grpc_channel_filter*> GetFilters() override;
 
    private:
     RefCountedPtr<XdsResolver> resolver_;
     RefCountedPtr<RouteConfigData> route_config_data_;
-    std::vector<const grpc_channel_filter*> filters_;
+    std::vector<const XdsHttpFilterImpl*> filters_;
   };
 
   class XdsRouteStateAttributeImpl final : public XdsRouteStateAttribute {
@@ -305,6 +312,10 @@ class XdsResolver final : public Resolver {
 
     bool HasClusterForRoute(absl::string_view cluster_name) const override;
 
+    const XdsRouteConfigResource::Route& route() const override {
+      return route_->route;
+    }
+
    private:
     RefCountedPtr<RouteConfigData> route_config_data_;
     RouteConfigData::RouteEntry* route_;
@@ -314,6 +325,8 @@ class XdsResolver final : public Resolver {
       : public ImplementChannelFilter<ClusterSelectionFilter> {
    public:
     const static grpc_channel_filter kFilter;
+
+    static absl::string_view TypeName() { return "cluster_selection_filter"; }
 
     static absl::StatusOr<std::unique_ptr<ClusterSelectionFilter>> Create(
         const ChannelArgs& /* unused */,
@@ -533,8 +546,8 @@ absl::Status XdsResolver::RouteConfigData::AddRouteEntry(
     XdsResolver* resolver, const XdsRouteConfigResource::Route& route,
     const Duration& default_max_stream_duration) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO, "[xds_resolver %p] XdsConfigSelector %p: route: %s",
-            resolver, this, route.ToString().c_str());
+    LOG(INFO) << "[xds_resolver " << resolver << "] XdsConfigSelector " << this
+              << ": route: " << route.ToString();
   }
   routes_.emplace_back(route);
   auto* route_entry = &routes_.back();
@@ -625,8 +638,8 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     : resolver_(std::move(resolver)),
       route_config_data_(std::move(route_config_data)) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO, "[xds_resolver %p] creating XdsConfigSelector %p",
-            resolver_.get(), this);
+    LOG(INFO) << "[xds_resolver " << resolver_.get()
+              << "] creating XdsConfigSelector " << this;
   }
   // Populate filter list.
   const auto& http_filter_registry =
@@ -641,18 +654,15 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
         http_filter_registry.GetFilterForType(
             http_filter.config.config_proto_type_name);
     CHECK_NE(filter_impl, nullptr);
-    // Add C-core filter to list.
-    if (filter_impl->channel_filter() != nullptr) {
-      filters_.push_back(filter_impl->channel_filter());
-    }
+    // Add filter to list.
+    filters_.push_back(filter_impl);
   }
-  filters_.push_back(&ClusterSelectionFilter::kFilter);
 }
 
 XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO, "[xds_resolver %p] destroying XdsConfigSelector %p",
-            resolver_.get(), this);
+    LOG(INFO) << "[xds_resolver " << resolver_.get()
+              << "] destroying XdsConfigSelector " << this;
   }
   route_config_data_.reset();
   if (!IsWorkSerializerDispatchEnabled()) {
@@ -799,6 +809,26 @@ absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
   return absl::OkStatus();
 }
 
+void XdsResolver::XdsConfigSelector::AddFilters(
+    InterceptionChainBuilder& builder) {
+  for (const XdsHttpFilterImpl* filter : filters_) {
+    filter->AddFilter(builder);
+  }
+  builder.Add<ClusterSelectionFilter>();
+}
+
+std::vector<const grpc_channel_filter*>
+XdsResolver::XdsConfigSelector::GetFilters() {
+  std::vector<const grpc_channel_filter*> filters;
+  for (const XdsHttpFilterImpl* filter : filters_) {
+    if (filter->channel_filter() != nullptr) {
+      filters.push_back(filter->channel_filter());
+    }
+  }
+  filters.push_back(&ClusterSelectionFilter::kFilter);
+  return filters;
+}
+
 //
 // XdsResolver::XdsRouteStateAttributeImpl
 //
@@ -846,8 +876,7 @@ XdsResolver::XdsRouteStateAttributeImpl::LockAndGetCluster(
 
 const grpc_channel_filter XdsResolver::ClusterSelectionFilter::kFilter =
     MakePromiseBasedFilter<ClusterSelectionFilter, FilterEndpoint::kClient,
-                           kFilterExaminesServerInitialMetadata>(
-        "cluster_selection_filter");
+                           kFilterExaminesServerInitialMetadata>();
 
 void XdsResolver::ClusterSelectionFilter::Call::OnClientInitialMetadata(
     ClientMetadata&) {
@@ -876,10 +905,9 @@ void XdsResolver::StartLocked() {
   auto xds_client =
       GrpcXdsClient::GetOrCreate(uri_.ToString(), args_, "xds resolver");
   if (!xds_client.ok()) {
-    gpr_log(GPR_ERROR,
-            "Failed to create xds client -- channel will remain in "
-            "TRANSIENT_FAILURE: %s",
-            xds_client.status().ToString().c_str());
+    LOG(ERROR) << "Failed to create xds client -- channel will remain in "
+                  "TRANSIENT_FAILURE: "
+               << xds_client.status();
     absl::Status status = absl::UnavailableError(absl::StrCat(
         "Failed to create XdsClient: ", xds_client.status().message()));
     Result result;
@@ -935,8 +963,8 @@ void XdsResolver::StartLocked() {
         absl::StrReplaceAll(name_template, {{"%s", resource_name_fragment}});
   }
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO, "[xds_resolver %p] Started with lds_resource_name %s.",
-            this, lds_resource_name_.c_str());
+    LOG(INFO) << "[xds_resolver " << this << "] Started with lds_resource_name "
+              << lds_resource_name_;
   }
   // Start watch for xDS config.
   dependency_mgr_ = MakeOrphanable<XdsDependencyManager>(
@@ -947,7 +975,7 @@ void XdsResolver::StartLocked() {
 
 void XdsResolver::ShutdownLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO, "[xds_resolver %p] shutting down", this);
+    LOG(INFO) << "[xds_resolver " << this << "] shutting down";
   }
   if (xds_client_ != nullptr) {
     dependency_mgr_.reset();
@@ -960,7 +988,7 @@ void XdsResolver::ShutdownLocked() {
 void XdsResolver::OnUpdate(
     RefCountedPtr<const XdsDependencyManager::XdsConfig> config) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO, "[xds_resolver %p] received updated xDS config", this);
+    LOG(INFO) << "[xds_resolver " << this << "] received updated xDS config";
   }
   if (xds_client_ == nullptr) return;
   current_config_ = std::move(config);
@@ -968,8 +996,9 @@ void XdsResolver::OnUpdate(
 }
 
 void XdsResolver::OnError(absl::string_view context, absl::Status status) {
-  gpr_log(GPR_ERROR, "[xds_resolver %p] received error from XdsClient: %s: %s",
-          this, std::string(context).c_str(), status.ToString().c_str());
+  LOG(ERROR) << "[xds_resolver " << this
+             << "] received error from XdsClient: " << context << ": "
+             << status;
   if (xds_client_ == nullptr) return;
   status =
       absl::UnavailableError(absl::StrCat(context, ": ", status.ToString()));
@@ -982,10 +1011,9 @@ void XdsResolver::OnError(absl::string_view context, absl::Status status) {
 }
 
 void XdsResolver::OnResourceDoesNotExist(std::string context) {
-  gpr_log(GPR_ERROR,
-          "[xds_resolver %p] LDS/RDS resource does not exist -- clearing "
-          "update and returning empty service config",
-          this);
+  LOG(ERROR) << "[xds_resolver " << this
+             << "] LDS/RDS resource does not exist -- clearing "
+                "update and returning empty service config";
   if (xds_client_ == nullptr) return;
   current_config_.reset();
   Result result;
@@ -1059,10 +1087,10 @@ void XdsResolver::GenerateResult() {
   result.addresses.emplace();
   result.service_config = CreateServiceConfig();
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s", this,
-            result.service_config.ok()
-                ? std::string((*result.service_config)->json_string()).c_str()
-                : result.service_config.status().ToString().c_str());
+    LOG(INFO) << "[xds_resolver " << this << "] generated service config: "
+              << (result.service_config.ok()
+                      ? ((*result.service_config)->json_string())
+                      : result.service_config.status().ToString());
   }
   result.args =
       args_.SetObject(xds_client_.Ref(DEBUG_LOCATION, "xds resolver result"))
@@ -1096,8 +1124,7 @@ class XdsResolverFactory final : public ResolverFactory {
 
   bool IsValidUri(const URI& uri) const override {
     if (uri.path().empty() || uri.path().back() == '/') {
-      gpr_log(GPR_ERROR,
-              "URI path does not contain valid data plane authority");
+      LOG(ERROR) << "URI path does not contain valid data plane authority";
       return false;
     }
     return true;

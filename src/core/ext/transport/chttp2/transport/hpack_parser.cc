@@ -28,6 +28,7 @@
 
 #include "absl/base/attributes.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -37,7 +38,6 @@
 #include "absl/types/variant.h"
 
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/decode_huff.h"
@@ -710,14 +710,15 @@ class HPackParser::Parser {
         type = "???";
         break;
     }
-    gpr_log(
-        GPR_INFO, "HTTP:%d:%s:%s: %s%s", log_info_.stream_id, type,
-        log_info_.is_client ? "CLI" : "SVR", memento.md.DebugString().c_str(),
-        memento.parse_status == nullptr
-            ? ""
-            : absl::StrCat(" (parse error: ",
-                           memento.parse_status->Materialize().ToString(), ")")
-                  .c_str());
+    LOG(INFO) << "HTTP:" << log_info_.stream_id << ":" << type << ":"
+              << (log_info_.is_client ? "CLI" : "SVR") << ": "
+              << memento.md.DebugString()
+              << (memento.parse_status == nullptr
+                      ? ""
+                      : absl::StrCat(
+                            " (parse error: ",
+                            memento.parse_status->Materialize().ToString(),
+                            ")"));
   }
 
   void EmitHeader(const HPackTable::Memento& md) {
@@ -1004,9 +1005,8 @@ class HPackParser::Parser {
           if (!state_.field_error.ok()) return;
           input_->SetErrorAndContinueParsing(
               HpackParseResult::MetadataParseError(key_string));
-          gpr_log(GPR_ERROR, "Error parsing '%s' metadata: %s",
-                  std::string(key_string).c_str(),
-                  std::string(message).c_str());
+          LOG(ERROR) << "Error parsing '" << key_string
+                     << "' metadata: " << message;
         });
     HPackTable::Memento memento{
         std::move(md), state_.field_error.PersistentStreamErrorOrNullptr()};

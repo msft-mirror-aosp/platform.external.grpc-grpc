@@ -1769,14 +1769,11 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   auto registered_metric_callback_1 = stats_plugins.RegisterCallback(
       [&](grpc_core::CallbackMetricReporter& reporter) {
         ++report_count_1;
-        reporter.Report(integer_gauge_handle, int_value_1, kLabelValuesSet1,
+        reporter.Report(integer_gauge_handle, int_value_1++, kLabelValuesSet1,
                         kOptionalLabelValuesSet1);
-        reporter.Report(integer_gauge_handle, int_value_1++, kLabelValuesSet2,
-                        kOptionalLabelValuesSet2);
-        reporter.Report(double_gauge_handle, double_value_1, kLabelValuesSet1,
+        reporter.Report(double_gauge_handle, double_value_1++, kLabelValuesSet1,
                         kOptionalLabelValuesSet1);
-        reporter.Report(double_gauge_handle, double_value_1++, kLabelValuesSet2,
-                        kOptionalLabelValuesSet2);
+        ;
       },
       grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
       integer_gauge_handle, double_gauge_handle);
@@ -1786,12 +1783,8 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   auto registered_metric_callback_2 = stats_plugins.RegisterCallback(
       [&](grpc_core::CallbackMetricReporter& reporter) {
         ++report_count_2;
-        reporter.Report(integer_gauge_handle, int_value_2, kLabelValuesSet1,
-                        kOptionalLabelValuesSet1);
         reporter.Report(integer_gauge_handle, int_value_2++, kLabelValuesSet2,
                         kOptionalLabelValuesSet2);
-        reporter.Report(double_gauge_handle, double_value_2, kLabelValuesSet1,
-                        kOptionalLabelValuesSet1);
         reporter.Report(double_gauge_handle, double_value_2++, kLabelValuesSet2,
                         kOptionalLabelValuesSet2);
       },
@@ -1904,14 +1897,10 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   auto registered_metric_callback_1 = stats_plugins.RegisterCallback(
       [&](grpc_core::CallbackMetricReporter& reporter) {
         ++report_count_1;
-        reporter.Report(integer_gauge_handle, int_value_1, kLabelValuesSet1,
+        reporter.Report(integer_gauge_handle, int_value_1++, kLabelValuesSet1,
                         kOptionalLabelValuesSet1);
-        reporter.Report(integer_gauge_handle, int_value_1++, kLabelValuesSet2,
-                        kOptionalLabelValuesSet2);
-        reporter.Report(double_gauge_handle, double_value_1, kLabelValuesSet1,
+        reporter.Report(double_gauge_handle, double_value_1++, kLabelValuesSet1,
                         kOptionalLabelValuesSet1);
-        reporter.Report(double_gauge_handle, double_value_1++, kLabelValuesSet2,
-                        kOptionalLabelValuesSet2);
       },
       grpc_core::Duration::Milliseconds(50) * grpc_test_slowdown_factor(),
       integer_gauge_handle, double_gauge_handle);
@@ -1921,12 +1910,8 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   auto registered_metric_callback_2 = stats_plugins.RegisterCallback(
       [&](grpc_core::CallbackMetricReporter& reporter) {
         ++report_count_2;
-        reporter.Report(integer_gauge_handle, int_value_2, kLabelValuesSet1,
-                        kOptionalLabelValuesSet1);
         reporter.Report(integer_gauge_handle, int_value_2++, kLabelValuesSet2,
                         kOptionalLabelValuesSet2);
-        reporter.Report(double_gauge_handle, double_value_2, kLabelValuesSet1,
-                        kOptionalLabelValuesSet1);
         reporter.Report(double_gauge_handle, double_value_2++, kLabelValuesSet2,
                         kOptionalLabelValuesSet2);
       },

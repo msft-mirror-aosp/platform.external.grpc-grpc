@@ -195,9 +195,8 @@ static void maybe_post_reclaimer(secure_endpoint* ep) {
         grpc_core::ReclamationPass::kBenign,
         [ep](absl::optional<grpc_core::ReclamationSweep> sweep) {
           if (sweep.has_value()) {
-            if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
-              LOG(INFO) << "secure endpoint: benign reclamation to free memory";
-            }
+            GRPC_TRACE_LOG(resource_quota, INFO)
+                << "secure endpoint: benign reclamation to free memory";
             grpc_slice temp_read_slice;
             grpc_slice temp_write_slice;
 
@@ -396,6 +395,7 @@ static void on_write(void* user_data, grpc_error_handle error) {
 
 static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
                            grpc_closure* cb, void* arg, int max_frame_size) {
+  GRPC_LATENT_SEE_INNER_SCOPE("secure_endpoint write");
   unsigned i;
   tsi_result result = TSI_OK;
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);

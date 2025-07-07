@@ -40,8 +40,6 @@
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
-void gpr_default_log(gpr_log_func_args* args);
-
 namespace grpc_core {
 
 class VerifyLogNoiseLogSink : public absl::LogSink {

@@ -16,10 +16,10 @@
 //
 //
 
-#include <utility>
-
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
+
+#include <utility>
 
 // FIXME: "posix" files shouldn't be depending on _GNU_SOURCE
 #ifndef _GNU_SOURCE
@@ -32,6 +32,12 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <grpc/byte_buffer.h>
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -47,14 +53,6 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/event_engine/endpoint_config.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/memory_allocator_factory.h"
@@ -62,7 +60,6 @@
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/shim.h"
-#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/event_engine_shims/closure.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -76,6 +73,7 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/iomgr/vsock.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/strerror.h"
 
 static std::atomic<int64_t> num_dropped_connections{0};
 static constexpr grpc_core::Duration kRetryAcceptWaitTime{
@@ -177,10 +175,9 @@ static grpc_error_handle CreateEventEngineListener(
                            << addr_uri.status().ToString();
                 return;
               }
-              if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-                LOG(INFO) << "SERVER_CONNECT: incoming external connection: "
-                          << addr_uri->c_str();
-              }
+              GRPC_TRACE_LOG(tcp, INFO) << "SERVER_CONNECT: incoming external "
+                                           "connection: "
+                                        << addr_uri->c_str();
             }
             read_notifier_pollset =
                 (*(s->pollsets))[static_cast<size_t>(
@@ -460,9 +457,8 @@ static void on_read(void* arg, grpc_error_handle err) {
       LOG(ERROR) << "Invalid address: " << addr_uri.status();
       goto error;
     }
-    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-      LOG(INFO) << "SERVER_CONNECT: incoming connection: " << *addr_uri;
-    }
+    GRPC_TRACE_LOG(tcp, INFO)
+        << "SERVER_CONNECT: incoming connection: " << *addr_uri;
 
     std::string name = absl::StrCat("tcp-server-connection:", addr_uri.value());
     grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
@@ -916,10 +912,8 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
       LOG(ERROR) << "Invalid address: " << addr_uri.status();
       return;
     }
-    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-      LOG(INFO) << "SERVER_CONNECT: incoming external connection: "
-                << *addr_uri;
-    }
+    GRPC_TRACE_LOG(tcp, INFO)
+        << "SERVER_CONNECT: incoming external connection: " << *addr_uri;
     std::string name = absl::StrCat("tcp-server-connection:", addr_uri.value());
     grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
     read_notifier_pollset =

@@ -12,11 +12,11 @@ third_party {
     value: "https://github.com/grpc/grpc"
   }
   # grpc_version_defaults in Android.bp must be updated when importing a new version.
-  version: "1.66.2"
-  last_upgrade_date { year: 2025 month: 6 day: 25 }
+  version: "1.68.2"
+  last_upgrade_date { year: 2025 month: 7 day: 9 }
   license_note: "would be NOTICE save for MPL 2.0 in: etc/roots.pem and src/android/test/interop/app/src/main/assets/roots.pem"
   license_type: RECIPROCAL
   security {
-    tag: "NVD-CPE2.3:cpe:2.3:a:grpc:grpc:1.66.2"
+    tag: "NVD-CPE2.3:cpe:2.3:a:grpc:grpc:1.68.2"
   }
 }

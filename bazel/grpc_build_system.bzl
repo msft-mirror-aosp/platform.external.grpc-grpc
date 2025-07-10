@@ -122,6 +122,7 @@ def _update_visibility(visibility):
         "iomgr_internal_errqueue": PRIVATE,
         "iomgr_buffer_list": PRIVATE,
         "json_reader_legacy": PRIVATE,
+        "latent_see": PRIVATE,
         "otel_plugin": PRIVATE,
         "public": PUBLIC,
         "ref_counted_ptr": PRIVATE,
@@ -170,7 +171,7 @@ def grpc_cc_library(
       srcs: The source files.
       public_hdrs: The public headers.
       hdrs: The headers.
-      external_deps: External depdendencies to be resolved.
+      external_deps: External dependencies to be resolved.
       defines: Build defines to use.
       deps: cc_library deps.
       select_deps: deps included conditionally.
@@ -288,7 +289,7 @@ def ios_cc_test(
             size = kwargs.get("size"),
             data = kwargs.get("data"),
             tags = ios_tags,
-            minimum_os_version = "9.0",
+            minimum_os_version = "11.0",
             runner = test_runner,
             deps = ios_test_deps,
         )
@@ -529,7 +530,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         timeout: The test timeout.
         tags: The tags for the test.
         exec_compatible_with: A list of constraint values that must be
-            satisifed for the platform.
+            satisfied for the platform.
         exec_properties: A dictionary of strings that will be added to the
             exec_properties of a platform selected for this target.
         shard_count: The number of shards for this test.
@@ -626,6 +627,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         linkopts = if_not_windows(["-pthread"]) + linkopts,
         tags = tags,
         features = features,
+        visibility = visibility,
     )
 
 # buildifier: disable=unnamed-macro
@@ -659,7 +661,7 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
         timeout: The test timeout.
         tags: The tags for the test.
         exec_compatible_with: A list of constraint values that must be
-            satisifed for the platform.
+            satisfied for the platform.
         exec_properties: A dictionary of strings that will be added to the
             exec_properties of a platform selected for this target.
         shard_count: The number of shards for this test.
@@ -724,7 +726,7 @@ def grpc_package(name, visibility = "private", features = []):
         features: The features to enable.
     """
     if visibility == "tests":
-        visibility = ["//test:__subpackages__"]
+        visibility = ["//test:__subpackages__", "//src/proto/grpc/testing:__subpackages__"]
     elif visibility == "public":
         visibility = ["//visibility:public"]
     elif visibility == "private":

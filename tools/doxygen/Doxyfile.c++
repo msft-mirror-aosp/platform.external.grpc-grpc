@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.66.2
+PROJECT_NUMBER         = 1.68.2
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -960,7 +960,6 @@ include/grpcpp/channel.h \
 include/grpcpp/client_context.h \
 include/grpcpp/completion_queue.h \
 include/grpcpp/create_channel.h \
-include/grpcpp/create_channel_binder.h \
 include/grpcpp/create_channel_posix.h \
 include/grpcpp/ext/call_metric_recorder.h \
 include/grpcpp/ext/health_check_service_server_builder_option.h \
@@ -1052,8 +1051,6 @@ include/grpcpp/security/audit_logging.h \
 include/grpcpp/security/auth_context.h \
 include/grpcpp/security/auth_metadata_processor.h \
 include/grpcpp/security/authorization_policy_provider.h \
-include/grpcpp/security/binder_credentials.h \
-include/grpcpp/security/binder_security_policy.h \
 include/grpcpp/security/credentials.h \
 include/grpcpp/security/server_credentials.h \
 include/grpcpp/security/tls_certificate_provider.h \
@@ -1073,6 +1070,7 @@ include/grpcpp/support/channel_arguments.h \
 include/grpcpp/support/client_callback.h \
 include/grpcpp/support/client_interceptor.h \
 include/grpcpp/support/config.h \
+include/grpcpp/support/global_callback_hook.h \
 include/grpcpp/support/interceptor.h \
 include/grpcpp/support/message_allocator.h \
 include/grpcpp/support/method_handler.h \
@@ -1736,7 +1734,7 @@ EXT_LINKS_IN_WINDOW    = NO
 
 FORMULA_FONTSIZE       = 10
 
-# Use the FORMULA_TRANPARENT tag to determine whether or not the images
+# Use the FORMULA_TRANSPARENT tag to determine whether or not the images
 # generated for formulas are transparent PNGs. Transparent PNGs are not
 # supported properly for IE 6.0, but are supported on all modern browsers.
 #
@@ -2311,7 +2309,7 @@ INCLUDE_FILE_PATTERNS  =
 # recursively expanded use the := operator instead of the = operator.
 # This tag requires that the tag ENABLE_PREPROCESSING is set to YES.
 
-PREDEFINED             = GRPC_FINAL= GRPC_OVERIDE=
+PREDEFINED             = GRPC_FINAL= GRPC_OVERRIDE=
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The

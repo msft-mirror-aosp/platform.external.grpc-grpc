@@ -15,6 +15,8 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
 
+HISTORY = 1
+
 def grpc_benchmark_args():
     """Command line arguments for running a microbenchmark as a test"""
     return ["--benchmark_min_time=0.001s"]
@@ -41,11 +43,12 @@ def grpc_cc_benchmark(name, external_deps = [], tags = [], uses_polling = False,
         uses_event_engine: per grpc_cc_test, but defaulted False
         **kwargs: per grpc_cc_test
     """
+    kwargs.pop("monitoring", None)
     grpc_cc_test(
         name = name,
         args = grpc_benchmark_args(),
         external_deps = ["benchmark"] + external_deps,
-        tags = tags + ["no_mac", "no_windows"],
+        tags = tags + ["no_mac", "no_windows", "bazel_only"],
         uses_polling = uses_polling,
         uses_event_engine = uses_event_engine,
         # cc_binary defaults to 1, and we are interested in performance

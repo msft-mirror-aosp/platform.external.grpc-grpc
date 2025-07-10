@@ -14,6 +14,9 @@
 
 #include "src/core/lib/resource_quota/memory_quota.h"
 
+#include <grpc/event_engine/internal/memory_allocator_impl.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include <algorithm>
@@ -29,19 +32,14 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/event_engine/internal/memory_allocator_impl.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/util/mpscq.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
@@ -355,9 +353,8 @@ void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
     if (free_bytes_.compare_exchange_weak(free, new_free,
                                           std::memory_order_acq_rel,
                                           std::memory_order_acquire)) {
-      if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
-        LOG(INFO) << "[" << this << "] Early return " << ret << " bytes";
-      }
+      GRPC_TRACE_LOG(resource_quota, INFO)
+          << "[" << this << "] Early return " << ret << " bytes";
       CHECK(taken_bytes_.fetch_sub(ret, std::memory_order_relaxed) >= ret);
       memory_quota_->Return(ret);
       return;
@@ -548,9 +545,7 @@ void BasicMemoryQuota::Return(size_t amount) {
 }
 
 void BasicMemoryQuota::AddNewAllocator(GrpcMemoryAllocatorImpl* allocator) {
-  if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
-    LOG(INFO) << "Adding allocator " << allocator;
-  }
+  GRPC_TRACE_LOG(resource_quota, INFO) << "Adding allocator " << allocator;
 
   AllocatorBucket::Shard& shard = small_allocators_.SelectShard(allocator);
 
@@ -561,9 +556,7 @@ void BasicMemoryQuota::AddNewAllocator(GrpcMemoryAllocatorImpl* allocator) {
 }
 
 void BasicMemoryQuota::RemoveAllocator(GrpcMemoryAllocatorImpl* allocator) {
-  if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
-    LOG(INFO) << "Removing allocator " << allocator;
-  }
+  GRPC_TRACE_LOG(resource_quota, INFO) << "Removing allocator " << allocator;
 
   AllocatorBucket::Shard& small_shard =
       small_allocators_.SelectShard(allocator);
@@ -608,9 +601,8 @@ void BasicMemoryQuota::MaybeMoveAllocator(GrpcMemoryAllocatorImpl* allocator,
 
 void BasicMemoryQuota::MaybeMoveAllocatorBigToSmall(
     GrpcMemoryAllocatorImpl* allocator) {
-  if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
-    LOG(INFO) << "Moving allocator " << allocator << " to small";
-  }
+  GRPC_TRACE_LOG(resource_quota, INFO)
+      << "Moving allocator " << allocator << " to small";
 
   AllocatorBucket::Shard& old_shard = big_allocators_.SelectShard(allocator);
 
@@ -629,9 +621,8 @@ void BasicMemoryQuota::MaybeMoveAllocatorBigToSmall(
 
 void BasicMemoryQuota::MaybeMoveAllocatorSmallToBig(
     GrpcMemoryAllocatorImpl* allocator) {
-  if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
-    LOG(INFO) << "Moving allocator " << allocator << " to big";
-  }
+  GRPC_TRACE_LOG(resource_quota, INFO)
+      << "Moving allocator " << allocator << " to big";
 
   AllocatorBucket::Shard& old_shard = small_allocators_.SelectShard(allocator);
 
@@ -766,10 +757,9 @@ double PressureTracker::AddSampleAndGetControlValue(double sample) {
     } else {
       report = controller_.Update(current_estimate - kSetPoint);
     }
-    if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
-      LOG(INFO) << "RQ: pressure:" << current_estimate << " report:" << report
-                << " controller:" << controller_.DebugString();
-    }
+    GRPC_TRACE_LOG(resource_quota, INFO)
+        << "RQ: pressure:" << current_estimate << " report:" << report
+        << " controller:" << controller_.DebugString();
     report_.store(report, std::memory_order_relaxed);
   });
   return report_.load(std::memory_order_relaxed);

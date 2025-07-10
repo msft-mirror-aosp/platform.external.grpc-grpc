@@ -15,12 +15,9 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SPINE_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SPINE_H
 
-#include "absl/log/check.h"
-
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/dual_ref_counted.h"
+#include "absl/log/check.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
@@ -34,6 +31,7 @@
 #include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/util/dual_ref_counted.h"
 
 namespace grpc_core {
 
@@ -51,23 +49,30 @@ class CallSpine final : public Party {
         std::move(client_initial_metadata), std::move(arena)));
   }
 
-  ~CallSpine() override {}
+  ~CallSpine() override { CallOnDone(true); }
 
   CallFilters& call_filters() { return call_filters_; }
 
-  // Add a callback to be called when server trailing metadata is received.
-  void OnDone(absl::AnyInvocable<void()> fn) {
+  // Add a callback to be called when server trailing metadata is received and
+  // return true.
+  // If CallOnDone has already been invoked, does nothing and returns false.
+  GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)> fn) {
+    if (call_filters().WasServerTrailingMetadataPulled()) {
+      return false;
+    }
     if (on_done_ == nullptr) {
       on_done_ = std::move(fn);
-      return;
+      return true;
     }
-    on_done_ = [first = std::move(fn), next = std::move(on_done_)]() mutable {
-      first();
-      next();
+    on_done_ = [first = std::move(fn),
+                next = std::move(on_done_)](bool cancelled) mutable {
+      first(cancelled);
+      next(cancelled);
     };
+    return true;
   }
-  void CallOnDone() {
-    if (on_done_ != nullptr) std::exchange(on_done_, nullptr)();
+  void CallOnDone(bool cancelled) {
+    if (on_done_ != nullptr) std::exchange(on_done_, nullptr)(cancelled);
   }
 
   auto PullServerInitialMetadata() {
@@ -75,7 +80,12 @@ class CallSpine final : public Party {
   }
 
   auto PullServerTrailingMetadata() {
-    return call_filters().PullServerTrailingMetadata();
+    return Map(
+        call_filters().PullServerTrailingMetadata(),
+        [this](ServerMetadataHandle result) {
+          CallOnDone(result->get(GrpcCallWasCancelled()).value_or(false));
+          return result;
+        });
   }
 
   auto PushClientToServerMessage(MessageHandle message) {
@@ -190,11 +200,13 @@ class CallSpine final : public Party {
 
   // Call filters/pipes part of the spine
   CallFilters call_filters_;
-  absl::AnyInvocable<void()> on_done_{nullptr};
+  absl::AnyInvocable<void(bool)> on_done_{nullptr};
 };
 
 class CallInitiator {
  public:
+  using NextMessage = ServerToClientNextMessage;
+
   CallInitiator() = default;
   explicit CallInitiator(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
@@ -227,7 +239,9 @@ class CallInitiator {
     spine_->PushServerTrailingMetadata(std::move(status));
   }
 
-  void OnDone(absl::AnyInvocable<void()> fn) { spine_->OnDone(std::move(fn)); }
+  GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)> fn) {
+    return spine_->OnDone(std::move(fn));
+  }
 
   template <typename PromiseFactory>
   void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
@@ -250,6 +264,10 @@ class CallInitiator {
     return spine_->SpawnWaitable(name, std::move(promise_factory));
   }
 
+  bool WasCancelledPushed() const {
+    return spine_->call_filters().WasCancelledPushed();
+  }
+
   Arena* arena() { return spine_->arena(); }
   Party* party() { return spine_.get(); }
 
@@ -259,6 +277,8 @@ class CallInitiator {
 
 class CallHandler {
  public:
+  using NextMessage = ClientToServerNextMessage;
+
   explicit CallHandler(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
 
@@ -274,7 +294,9 @@ class CallHandler {
     spine_->PushServerTrailingMetadata(std::move(status));
   }
 
-  void OnDone(absl::AnyInvocable<void()> fn) { spine_->OnDone(std::move(fn)); }
+  GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)> fn) {
+    return spine_->OnDone(std::move(fn));
+  }
 
   template <typename Promise>
   auto CancelIfFails(Promise promise) {
@@ -288,6 +310,10 @@ class CallHandler {
   auto PullMessage() { return spine_->PullClientToServerMessage(); }
 
   auto WasCancelled() { return spine_->WasCancelled(); }
+
+  bool WasCancelledPushed() const {
+    return spine_->call_filters().WasCancelledPushed();
+  }
 
   template <typename PromiseFactory>
   void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory,
@@ -327,7 +353,9 @@ class UnstartedCallHandler {
     spine_->PushServerTrailingMetadata(std::move(status));
   }
 
-  void OnDone(absl::AnyInvocable<void()> fn) { spine_->OnDone(std::move(fn)); }
+  GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)> fn) {
+    return spine_->OnDone(std::move(fn));
+  }
 
   template <typename Promise>
   auto CancelIfFails(Promise promise) {

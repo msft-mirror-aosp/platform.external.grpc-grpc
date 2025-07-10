@@ -18,6 +18,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include <algorithm>
@@ -32,9 +33,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -233,10 +231,9 @@ void TransportFlowControl::UpdateSetting(
     FlowControlAction& (FlowControlAction::*set)(FlowControlAction::Urgency,
                                                  uint32_t)) {
   if (new_desired_value != *desired_value) {
-    if (GRPC_TRACE_FLAG_ENABLED(flowctl)) {
-      LOG(INFO) << "[flowctl] UPDATE SETTING " << name << " from "
-                << *desired_value << " to " << new_desired_value;
-    }
+    GRPC_TRACE_LOG(flowctl, INFO)
+        << "[flowctl] UPDATE SETTING " << name << " from " << *desired_value
+        << " to " << new_desired_value;
     // Reaching zero can only happen for initial window size, and if it occurs
     // we really want to wake up writes and ensure all the queued stream
     // window updates are flushed, since stream flow control operates

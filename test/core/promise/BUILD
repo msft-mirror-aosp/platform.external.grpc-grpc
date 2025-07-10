@@ -14,7 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 licenses(["notice"])
 
@@ -540,6 +540,7 @@ grpc_proto_fuzzer(
         "//src/core:poll",
         "//src/core:race",
         "//src/core:seq",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -689,6 +690,7 @@ grpc_cc_test(
 grpc_cc_benchmark(
     name = "bm_party",
     srcs = ["bm_party.cc"],
+    monitoring = HISTORY,
     deps = [
         "//:grpc",
         "//src/core:1999",

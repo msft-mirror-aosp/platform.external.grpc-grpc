@@ -275,7 +275,7 @@ class RubyArtifact:
                 self.gem_platform,
             ],
             use_workspace=True,
-            timeout_seconds=90 * 60,
+            timeout_seconds=120 * 60,
             environ=environ,
         )
 
@@ -299,7 +299,7 @@ class PHPArtifact:
         if self.platform == "linux":
             return create_docker_jobspec(
                 self.name,
-                "tools/dockerfile/test/php73_zts_debian11_{}".format(self.arch),
+                "tools/dockerfile/test/php8_zts_debian12_{}".format(self.arch),
                 "tools/run_tests/artifacts/build_artifact_php.sh",
             )
         else:

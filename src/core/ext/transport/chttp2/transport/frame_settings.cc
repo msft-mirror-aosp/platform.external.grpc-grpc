@@ -18,6 +18,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame_settings.h"
 
+#include <grpc/slice_buffer.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <string>
@@ -26,19 +28,15 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/slice_buffer.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/useful.h"
 
 static uint8_t* fill_header(uint8_t* out, uint32_t length, uint8_t flags) {
@@ -187,12 +185,11 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
               "invalid value %u passed for %s", parser->value,
               grpc_core::Http2Settings::WireIdToName(parser->id).c_str()));
         }
-        if (GRPC_TRACE_FLAG_ENABLED(http)) {
-          LOG(INFO) << "CHTTP2:" << (t->is_client ? "CLI" : "SVR") << ":"
-                    << t->peer_string.as_string_view() << ": got setting "
-                    << grpc_core::Http2Settings::WireIdToName(parser->id)
-                    << " = " << parser->value;
-        }
+        GRPC_TRACE_LOG(http, INFO)
+            << "CHTTP2:" << (t->is_client ? "CLI" : "SVR") << ":"
+            << t->peer_string.as_string_view() << ": got setting "
+            << grpc_core::Http2Settings::WireIdToName(parser->id) << " = "
+            << parser->value;
       } break;
     }
   }

@@ -721,7 +721,7 @@ cc_defaults {
     ],
     static_libs: [
         "libregex_re2",
-    ] + GRPC_ABSL_LIBS_EXPORTED + GRPC_ABSL_LIBS_INTERNAL,
+    ],
     shared_libs: [
         "libbinder_ndk",
         "libz",
@@ -763,6 +763,8 @@ cc_library_host_static {
     shared_libs: [
         "libprotobuf-cpp-full",
     ],
+    static_libs: GRPC_ABSL_LIBS_EXPORTED + GRPC_ABSL_LIBS_INTERNAL,
+    export_static_lib_headers: GRPC_ABSL_LIBS_EXPORTED,
 }
 
 cc_binary_host {
@@ -833,8 +835,8 @@ genrule {
     ],
 }
 
-cc_defaults {
-    name: "grpc_reflection_defaults",
+cc_library_host_static {
+    name: "libgrpc++_reflection",
     defaults: ["grpc_defaults"],
     srcs: [
         "src/cpp/ext/proto_server_reflection.cc",
@@ -851,21 +853,11 @@ cc_defaults {
     ],
     static_libs: [
         "libgrpc++_common",
-    ],
+    ] + GRPC_ABSL_LIBS_EXPORTED + GRPC_ABSL_LIBS_INTERNAL,
     shared_libs: [
         "libprotobuf-cpp-full",
     ],
     visibility: ["//visibility:public"],
-}
-
-cc_library_host_static {
-    name: "libgrpc++_reflection",
-    defaults: ["grpc_reflection_defaults"],
-}
-
-cc_library_static {
-    name: "libgrpc++_reflection_target",
-    defaults: ["grpc_reflection_defaults"],
 }
 
 cc_library_host_static {
@@ -919,7 +911,7 @@ cc_library_static {
         "libgrpc_third_party_upb",
         "libgrpc_third_party_utf8_range",
         "libgrpc_upb_protos",
-    ],
+    ] + GRPC_ABSL_LIBS_EXPORTED + GRPC_ABSL_LIBS_INTERNAL,
     shared_libs: ["liblog"],
     apex_available: [
         "//apex_available:anyapex",
@@ -940,7 +932,7 @@ cc_library_shared {
         "libgrpc_third_party_upb",
         "libgrpc_third_party_utf8_range",
         "libgrpc_upb_protos",
-    ],
+    ] + GRPC_ABSL_LIBS_EXPORTED + GRPC_ABSL_LIBS_INTERNAL,
     whole_static_libs: [
         "libgrpc++_common",
     ],
@@ -966,7 +958,7 @@ cc_library_shared {
         "libgrpc_third_party_upb",
         "libgrpc_third_party_utf8_range",
         "libgrpc_upb_protos",
-    ],
+    ] + GRPC_ABSL_LIBS_EXPORTED + GRPC_ABSL_LIBS_INTERNAL,
     whole_static_libs: [
         "libgrpc++_common",
     ],
@@ -1022,7 +1014,7 @@ cc_library_static {
     ],
     static_libs: [
         "libgrpc++_common",
-    ],
+    ] + GRPC_ABSL_LIBS_EXPORTED + GRPC_ABSL_LIBS_INTERNAL,
 }
 
 cc_defaults {
@@ -1030,7 +1022,9 @@ cc_defaults {
     defaults: ["grpc_defaults"],
     test_suites: ["general-tests"],
     header_libs: ["libgrpc++_internal_headers"],
-    static_libs: ["libgpr_test_util"],
+    static_libs: [
+        "libgpr_test_util",
+    ] + GRPC_ABSL_LIBS_EXPORTED + GRPC_ABSL_LIBS_INTERNAL,
     shared_libs: [
         "libgrpc++_unsecure",
         "liblog",

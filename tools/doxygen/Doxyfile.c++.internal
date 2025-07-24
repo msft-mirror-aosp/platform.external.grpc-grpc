@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.68.2
+PROJECT_NUMBER         = 1.69.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1028,6 +1028,7 @@ include/grpcpp/impl/codegen/time.h \
 include/grpcpp/impl/completion_queue_tag.h \
 include/grpcpp/impl/create_auth_context.h \
 include/grpcpp/impl/delegating_channel.h \
+include/grpcpp/impl/generic_serialize.h \
 include/grpcpp/impl/generic_stub_internal.h \
 include/grpcpp/impl/grpc_library.h \
 include/grpcpp/impl/intercepted_channel.h \
@@ -1135,6 +1136,13 @@ src/core/client_channel/subchannel_pool_interface.cc \
 src/core/client_channel/subchannel_pool_interface.h \
 src/core/client_channel/subchannel_stream_client.cc \
 src/core/client_channel/subchannel_stream_client.h \
+src/core/config/config_vars.cc \
+src/core/config/config_vars.h \
+src/core/config/config_vars_non_generated.cc \
+src/core/config/core_configuration.cc \
+src/core/config/core_configuration.h \
+src/core/config/load_config.cc \
+src/core/config/load_config.h \
 src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
 src/core/ext/filters/backend_metrics/backend_metric_filter.h \
 src/core/ext/filters/backend_metrics/backend_metric_provider.h \
@@ -1199,6 +1207,8 @@ src/core/ext/transport/chttp2/transport/frame_ping.cc \
 src/core/ext/transport/chttp2/transport/frame_ping.h \
 src/core/ext/transport/chttp2/transport/frame_rst_stream.cc \
 src/core/ext/transport/chttp2/transport/frame_rst_stream.h \
+src/core/ext/transport/chttp2/transport/frame_security.cc \
+src/core/ext/transport/chttp2/transport/frame_security.h \
 src/core/ext/transport/chttp2/transport/frame_settings.cc \
 src/core/ext/transport/chttp2/transport/frame_settings.h \
 src/core/ext/transport/chttp2/transport/frame_window_update.cc \
@@ -2098,13 +2108,6 @@ src/core/lib/compression/compression_internal.cc \
 src/core/lib/compression/compression_internal.h \
 src/core/lib/compression/message_compress.cc \
 src/core/lib/compression/message_compress.h \
-src/core/lib/config/config_vars.cc \
-src/core/lib/config/config_vars.h \
-src/core/lib/config/config_vars_non_generated.cc \
-src/core/lib/config/core_configuration.cc \
-src/core/lib/config/core_configuration.h \
-src/core/lib/config/load_config.cc \
-src/core/lib/config/load_config.h \
 src/core/lib/debug/trace.cc \
 src/core/lib/debug/trace.h \
 src/core/lib/debug/trace_flags.cc \
@@ -2560,6 +2563,8 @@ src/core/lib/surface/completion_queue.cc \
 src/core/lib/surface/completion_queue.h \
 src/core/lib/surface/completion_queue_factory.cc \
 src/core/lib/surface/completion_queue_factory.h \
+src/core/lib/surface/connection_context.cc \
+src/core/lib/surface/connection_context.h \
 src/core/lib/surface/event_string.cc \
 src/core/lib/surface/event_string.h \
 src/core/lib/surface/filter_stack_call.cc \
@@ -2617,6 +2622,7 @@ src/core/lib/transport/timeout_encoding.cc \
 src/core/lib/transport/timeout_encoding.h \
 src/core/lib/transport/transport.cc \
 src/core/lib/transport/transport.h \
+src/core/lib/transport/transport_framing_endpoint_extension.h \
 src/core/lib/transport/transport_fwd.h \
 src/core/lib/transport/transport_op_string.cc \
 src/core/load_balancing/address_filtering.cc \

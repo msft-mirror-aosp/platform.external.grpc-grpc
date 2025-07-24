@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.68.2'
+  version = '1.69.0'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -52,7 +52,8 @@ Pod::Spec.new do |s|
   s.header_dir = name
 
   s.pod_target_xcconfig = {
-    'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)/include"',
+    'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)/include"'\
+        ' "$(PODS_TARGET_SRCROOT)/third_party/address_sorting/include"',
     'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)"'\
         ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upb-gen"'\
         ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-gen"'\
@@ -161,6 +162,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/completion_queue_tag.h',
                       'include/grpcpp/impl/create_auth_context.h',
                       'include/grpcpp/impl/delegating_channel.h',
+                      'include/grpcpp/impl/generic_serialize.h',
                       'include/grpcpp/impl/generic_stub_internal.h',
                       'include/grpcpp/impl/grpc_library.h',
                       'include/grpcpp/impl/intercepted_channel.h',
@@ -293,6 +295,9 @@ Pod::Spec.new do |s|
                       'src/core/client_channel/subchannel_interface_internal.h',
                       'src/core/client_channel/subchannel_pool_interface.h',
                       'src/core/client_channel/subchannel_stream_client.h',
+                      'src/core/config/config_vars.h',
+                      'src/core/config/core_configuration.h',
+                      'src/core/config/load_config.h',
                       'src/core/ext/filters/backend_metrics/backend_metric_filter.h',
                       'src/core/ext/filters/backend_metrics/backend_metric_provider.h',
                       'src/core/ext/filters/channel_idle/idle_filter_state.h',
@@ -325,6 +330,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/frame_goaway.h',
                       'src/core/ext/transport/chttp2/transport/frame_ping.h',
                       'src/core/ext/transport/chttp2/transport/frame_rst_stream.h',
+                      'src/core/ext/transport/chttp2/transport/frame_security.h',
                       'src/core/ext/transport/chttp2/transport/frame_settings.h',
                       'src/core/ext/transport/chttp2/transport/frame_window_update.h',
                       'src/core/ext/transport/chttp2/transport/hpack_constants.h',
@@ -860,9 +866,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/status_util.h',
                       'src/core/lib/compression/compression_internal.h',
                       'src/core/lib/compression/message_compress.h',
-                      'src/core/lib/config/config_vars.h',
-                      'src/core/lib/config/core_configuration.h',
-                      'src/core/lib/config/load_config.h',
                       'src/core/lib/debug/trace.h',
                       'src/core/lib/debug/trace_flags.h',
                       'src/core/lib/debug/trace_impl.h',
@@ -1105,6 +1108,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/client_call.h',
                       'src/core/lib/surface/completion_queue.h',
                       'src/core/lib/surface/completion_queue_factory.h',
+                      'src/core/lib/surface/connection_context.h',
                       'src/core/lib/surface/event_string.h',
                       'src/core/lib/surface/filter_stack_call.h',
                       'src/core/lib/surface/init.h',
@@ -1135,6 +1139,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/status_conversion.h',
                       'src/core/lib/transport/timeout_encoding.h',
                       'src/core/lib/transport/transport.h',
+                      'src/core/lib/transport/transport_framing_endpoint_extension.h',
                       'src/core/lib/transport/transport_fwd.h',
                       'src/core/load_balancing/address_filtering.h',
                       'src/core/load_balancing/backend_metric_data.h',
@@ -1408,6 +1413,8 @@ Pod::Spec.new do |s|
                       'src/cpp/util/status.cc',
                       'src/cpp/util/string_ref.cc',
                       'src/cpp/util/time_cc.cc',
+                      'third_party/address_sorting/address_sorting_internal.h',
+                      'third_party/address_sorting/include/address_sorting/address_sorting.h',
                       'third_party/re2/re2/bitmap256.h',
                       'third_party/re2/re2/filtered_re2.h',
                       'third_party/re2/re2/pod_array.h',
@@ -1502,6 +1509,7 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/reflection/def.hpp',
                       'third_party/upb/upb/reflection/def_pool.h',
                       'third_party/upb/upb/reflection/def_type.h',
+                      'third_party/upb/upb/reflection/descriptor_bootstrap.h',
                       'third_party/upb/upb/reflection/enum_def.h',
                       'third_party/upb/upb/reflection/enum_reserved_range.h',
                       'third_party/upb/upb/reflection/enum_value_def.h',
@@ -1582,6 +1590,9 @@ Pod::Spec.new do |s|
                               'src/core/client_channel/subchannel_interface_internal.h',
                               'src/core/client_channel/subchannel_pool_interface.h',
                               'src/core/client_channel/subchannel_stream_client.h',
+                              'src/core/config/config_vars.h',
+                              'src/core/config/core_configuration.h',
+                              'src/core/config/load_config.h',
                               'src/core/ext/filters/backend_metrics/backend_metric_filter.h',
                               'src/core/ext/filters/backend_metrics/backend_metric_provider.h',
                               'src/core/ext/filters/channel_idle/idle_filter_state.h',
@@ -1614,6 +1625,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/frame_goaway.h',
                               'src/core/ext/transport/chttp2/transport/frame_ping.h',
                               'src/core/ext/transport/chttp2/transport/frame_rst_stream.h',
+                              'src/core/ext/transport/chttp2/transport/frame_security.h',
                               'src/core/ext/transport/chttp2/transport/frame_settings.h',
                               'src/core/ext/transport/chttp2/transport/frame_window_update.h',
                               'src/core/ext/transport/chttp2/transport/hpack_constants.h',
@@ -2149,9 +2161,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/status_util.h',
                               'src/core/lib/compression/compression_internal.h',
                               'src/core/lib/compression/message_compress.h',
-                              'src/core/lib/config/config_vars.h',
-                              'src/core/lib/config/core_configuration.h',
-                              'src/core/lib/config/load_config.h',
                               'src/core/lib/debug/trace.h',
                               'src/core/lib/debug/trace_flags.h',
                               'src/core/lib/debug/trace_impl.h',
@@ -2394,6 +2403,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/client_call.h',
                               'src/core/lib/surface/completion_queue.h',
                               'src/core/lib/surface/completion_queue_factory.h',
+                              'src/core/lib/surface/connection_context.h',
                               'src/core/lib/surface/event_string.h',
                               'src/core/lib/surface/filter_stack_call.h',
                               'src/core/lib/surface/init.h',
@@ -2424,6 +2434,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/status_conversion.h',
                               'src/core/lib/transport/timeout_encoding.h',
                               'src/core/lib/transport/transport.h',
+                              'src/core/lib/transport/transport_framing_endpoint_extension.h',
                               'src/core/lib/transport/transport_fwd.h',
                               'src/core/load_balancing/address_filtering.h',
                               'src/core/load_balancing/backend_metric_data.h',
@@ -2647,6 +2658,8 @@ Pod::Spec.new do |s|
                               'src/cpp/server/secure_server_credentials.h',
                               'src/cpp/server/thread_pool_interface.h',
                               'src/cpp/thread_manager/thread_manager.h',
+                              'third_party/address_sorting/address_sorting_internal.h',
+                              'third_party/address_sorting/include/address_sorting/address_sorting.h',
                               'third_party/re2/re2/bitmap256.h',
                               'third_party/re2/re2/filtered_re2.h',
                               'third_party/re2/re2/pod_array.h',
@@ -2741,6 +2754,7 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/reflection/def.hpp',
                               'third_party/upb/upb/reflection/def_pool.h',
                               'third_party/upb/upb/reflection/def_type.h',
+                              'third_party/upb/upb/reflection/descriptor_bootstrap.h',
                               'third_party/upb/upb/reflection/enum_def.h',
                               'third_party/upb/upb/reflection/enum_reserved_range.h',
                               'third_party/upb/upb/reflection/enum_value_def.h',

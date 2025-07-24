@@ -63,6 +63,10 @@ if test "$PHP_GRPC" != "no"; then
     src/core/client_channel/subchannel.cc \
     src/core/client_channel/subchannel_pool_interface.cc \
     src/core/client_channel/subchannel_stream_client.cc \
+    src/core/config/config_vars.cc \
+    src/core/config/config_vars_non_generated.cc \
+    src/core/config/core_configuration.cc \
+    src/core/config/load_config.cc \
     src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
@@ -95,6 +99,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/frame_goaway.cc \
     src/core/ext/transport/chttp2/transport/frame_ping.cc \
     src/core/ext/transport/chttp2/transport/frame_rst_stream.cc \
+    src/core/ext/transport/chttp2/transport/frame_security.cc \
     src/core/ext/transport/chttp2/transport/frame_settings.cc \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
@@ -459,10 +464,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_internal.cc \
     src/core/lib/compression/message_compress.cc \
-    src/core/lib/config/config_vars.cc \
-    src/core/lib/config/config_vars_non_generated.cc \
-    src/core/lib/config/core_configuration.cc \
-    src/core/lib/config/load_config.cc \
     src/core/lib/debug/trace.cc \
     src/core/lib/debug/trace_flags.cc \
     src/core/lib/event_engine/ares_resolver.cc \
@@ -676,6 +677,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/client_call.cc \
     src/core/lib/surface/completion_queue.cc \
     src/core/lib/surface/completion_queue_factory.cc \
+    src/core/lib/surface/connection_context.cc \
     src/core/lib/surface/event_string.cc \
     src/core/lib/surface/filter_stack_call.cc \
     src/core/lib/surface/init.cc \
@@ -1410,10 +1412,11 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.68.2\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.69.0\""')
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/client_channel)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/backend_metrics)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/channel_idle)
@@ -1546,7 +1549,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/address_utils)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/compression)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/debug)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/cf_engine)

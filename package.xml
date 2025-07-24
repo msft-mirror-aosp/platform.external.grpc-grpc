@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.68.2</release>
-  <api>1.68.2</api>
+  <release>1.69.0</release>
+  <api>1.69.0</api>
  </version>
  <stability>
   <release>stable</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.68.2 update
+- gRPC Core 1.69.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -153,6 +153,13 @@
     <file baseinstalldir="/" name="src/core/client_channel/subchannel_pool_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/subchannel_stream_client.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/subchannel_stream_client.h" role="src" />
+    <file baseinstalldir="/" name="src/core/config/config_vars.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/config/config_vars.h" role="src" />
+    <file baseinstalldir="/" name="src/core/config/config_vars_non_generated.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/config/core_configuration.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/config/core_configuration.h" role="src" />
+    <file baseinstalldir="/" name="src/core/config/load_config.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/config/load_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/backend_metrics/backend_metric_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/backend_metrics/backend_metric_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/backend_metrics/backend_metric_provider.h" role="src" />
@@ -217,6 +224,8 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_ping.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_rst_stream.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_rst_stream.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_security.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_settings.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_settings.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_window_update.cc" role="src" />
@@ -1116,13 +1125,6 @@
     <file baseinstalldir="/" name="src/core/lib/compression/compression_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/config/config_vars.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/config/config_vars.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/config/config_vars_non_generated.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/config/core_configuration.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/config/core_configuration.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/config/load_config.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/config/load_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace_flags.cc" role="src" />
@@ -1578,6 +1580,8 @@
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/connection_context.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/connection_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/event_string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/event_string.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/filter_stack_call.cc" role="src" />
@@ -1635,6 +1639,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/transport_framing_endpoint_extension.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_fwd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_op_string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/address_filtering.cc" role="src" />
@@ -3173,6 +3178,7 @@
     <file baseinstalldir="/" name="third_party/upb/upb/reflection/def_type.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection/def_type.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection/desc_state.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/reflection/descriptor_bootstrap.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection/enum_def.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection/enum_def.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection/enum_reserved_range.c" role="src" />

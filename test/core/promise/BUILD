@@ -153,6 +153,24 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "match_promise_test",
+    srcs = ["match_promise_test.cc"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "poll_matcher",
+        "//:promise",
+        "//src/core:match_promise",
+    ],
+)
+
+grpc_cc_test(
     name = "race_test",
     srcs = ["race_test.cc"],
     external_deps = ["gtest"],
@@ -295,7 +313,10 @@ grpc_cc_test(
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:try_seq"],
+    deps = [
+        "poll_matcher",
+        "//src/core:try_seq",
+    ],
 )
 
 grpc_cc_test(

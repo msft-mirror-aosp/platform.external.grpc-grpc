@@ -17,6 +17,7 @@
 #include "src/core/lib/experiments/experiments.h"
 
 #include <grpc/support/port_platform.h>
+#include <stdint.h>
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 
@@ -28,13 +29,28 @@ const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
+const char* const description_chaotic_good_legacy_protocol =
+    "If set, use the first version of the chaotic-good protocol when that "
+    "protocol is enabled.";
+const char* const additional_constraints_chaotic_good_legacy_protocol = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
+const char* const description_disable_buffer_hint_on_high_memory_pressure =
+    "Disable buffer hint flag parsing in the transport under high memory "
+    "pressure.";
+const char* const
+    additional_constraints_disable_buffer_hint_on_high_memory_pressure = "{}";
 const char* const description_event_engine_application_callbacks =
     "Run application callbacks in EventEngine threads, instead of on the "
     "thread-local ApplicationCallbackExecCtx";
 const char* const additional_constraints_event_engine_application_callbacks =
     "{}";
+const char* const description_event_engine_callback_cq =
+    "Use EventEngine instead of the CallbackAlternativeCQ.";
+const char* const additional_constraints_event_engine_callback_cq = "{}";
+const uint8_t required_experiments_event_engine_callback_cq[] = {
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdEventEngineApplicationCallbacks)};
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -70,6 +86,18 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
+const char* const description_promise_based_http2_client_transport =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs and "
+    "also help with interop testing.";
+const char* const additional_constraints_promise_based_http2_client_transport =
+    "{}";
+const char* const description_promise_based_http2_server_transport =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs and "
+    "also help with interop testing.";
+const char* const additional_constraints_promise_based_http2_server_transport =
+    "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
@@ -117,12 +145,22 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
+    {"chaotic_good_legacy_protocol", description_chaotic_good_legacy_protocol,
+     additional_constraints_chaotic_good_legacy_protocol, nullptr, 0, false,
+     true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
+    {"disable_buffer_hint_on_high_memory_pressure",
+     description_disable_buffer_hint_on_high_memory_pressure,
+     additional_constraints_disable_buffer_hint_on_high_memory_pressure,
+     nullptr, 0, false, true},
     {"event_engine_application_callbacks",
      description_event_engine_application_callbacks,
      additional_constraints_event_engine_application_callbacks, nullptr, 0,
      true, true},
+    {"event_engine_callback_cq", description_event_engine_callback_cq,
+     additional_constraints_event_engine_callback_cq,
+     required_experiments_event_engine_callback_cq, 1, true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, false, true},
     {"event_engine_dns", description_event_engine_dns,
@@ -146,6 +184,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
+    {"promise_based_http2_client_transport",
+     description_promise_based_http2_client_transport,
+     additional_constraints_promise_based_http2_client_transport, nullptr, 0,
+     false, true},
+    {"promise_based_http2_server_transport",
+     description_promise_based_http2_server_transport,
+     additional_constraints_promise_based_http2_server_transport, nullptr, 0,
+     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
@@ -171,7 +217,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
+     additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
 };
 
 }  // namespace grpc_core
@@ -184,13 +230,28 @@ const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
+const char* const description_chaotic_good_legacy_protocol =
+    "If set, use the first version of the chaotic-good protocol when that "
+    "protocol is enabled.";
+const char* const additional_constraints_chaotic_good_legacy_protocol = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
+const char* const description_disable_buffer_hint_on_high_memory_pressure =
+    "Disable buffer hint flag parsing in the transport under high memory "
+    "pressure.";
+const char* const
+    additional_constraints_disable_buffer_hint_on_high_memory_pressure = "{}";
 const char* const description_event_engine_application_callbacks =
     "Run application callbacks in EventEngine threads, instead of on the "
     "thread-local ApplicationCallbackExecCtx";
 const char* const additional_constraints_event_engine_application_callbacks =
     "{}";
+const char* const description_event_engine_callback_cq =
+    "Use EventEngine instead of the CallbackAlternativeCQ.";
+const char* const additional_constraints_event_engine_callback_cq = "{}";
+const uint8_t required_experiments_event_engine_callback_cq[] = {
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdEventEngineApplicationCallbacks)};
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -226,6 +287,18 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
+const char* const description_promise_based_http2_client_transport =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs and "
+    "also help with interop testing.";
+const char* const additional_constraints_promise_based_http2_client_transport =
+    "{}";
+const char* const description_promise_based_http2_server_transport =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs and "
+    "also help with interop testing.";
+const char* const additional_constraints_promise_based_http2_server_transport =
+    "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
@@ -273,12 +346,22 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
+    {"chaotic_good_legacy_protocol", description_chaotic_good_legacy_protocol,
+     additional_constraints_chaotic_good_legacy_protocol, nullptr, 0, false,
+     true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
+    {"disable_buffer_hint_on_high_memory_pressure",
+     description_disable_buffer_hint_on_high_memory_pressure,
+     additional_constraints_disable_buffer_hint_on_high_memory_pressure,
+     nullptr, 0, false, true},
     {"event_engine_application_callbacks",
      description_event_engine_application_callbacks,
      additional_constraints_event_engine_application_callbacks, nullptr, 0,
      true, true},
+    {"event_engine_callback_cq", description_event_engine_callback_cq,
+     additional_constraints_event_engine_callback_cq,
+     required_experiments_event_engine_callback_cq, 1, true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, true},
     {"event_engine_dns", description_event_engine_dns,
@@ -302,6 +385,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
+    {"promise_based_http2_client_transport",
+     description_promise_based_http2_client_transport,
+     additional_constraints_promise_based_http2_client_transport, nullptr, 0,
+     false, true},
+    {"promise_based_http2_server_transport",
+     description_promise_based_http2_server_transport,
+     additional_constraints_promise_based_http2_server_transport, nullptr, 0,
+     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
@@ -327,7 +418,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
+     additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
 };
 
 }  // namespace grpc_core
@@ -340,13 +431,28 @@ const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
+const char* const description_chaotic_good_legacy_protocol =
+    "If set, use the first version of the chaotic-good protocol when that "
+    "protocol is enabled.";
+const char* const additional_constraints_chaotic_good_legacy_protocol = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
+const char* const description_disable_buffer_hint_on_high_memory_pressure =
+    "Disable buffer hint flag parsing in the transport under high memory "
+    "pressure.";
+const char* const
+    additional_constraints_disable_buffer_hint_on_high_memory_pressure = "{}";
 const char* const description_event_engine_application_callbacks =
     "Run application callbacks in EventEngine threads, instead of on the "
     "thread-local ApplicationCallbackExecCtx";
 const char* const additional_constraints_event_engine_application_callbacks =
     "{}";
+const char* const description_event_engine_callback_cq =
+    "Use EventEngine instead of the CallbackAlternativeCQ.";
+const char* const additional_constraints_event_engine_callback_cq = "{}";
+const uint8_t required_experiments_event_engine_callback_cq[] = {
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdEventEngineApplicationCallbacks)};
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -382,6 +488,18 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
+const char* const description_promise_based_http2_client_transport =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs and "
+    "also help with interop testing.";
+const char* const additional_constraints_promise_based_http2_client_transport =
+    "{}";
+const char* const description_promise_based_http2_server_transport =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs and "
+    "also help with interop testing.";
+const char* const additional_constraints_promise_based_http2_server_transport =
+    "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
@@ -429,12 +547,22 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
+    {"chaotic_good_legacy_protocol", description_chaotic_good_legacy_protocol,
+     additional_constraints_chaotic_good_legacy_protocol, nullptr, 0, false,
+     true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
+    {"disable_buffer_hint_on_high_memory_pressure",
+     description_disable_buffer_hint_on_high_memory_pressure,
+     additional_constraints_disable_buffer_hint_on_high_memory_pressure,
+     nullptr, 0, false, true},
     {"event_engine_application_callbacks",
      description_event_engine_application_callbacks,
      additional_constraints_event_engine_application_callbacks, nullptr, 0,
      true, true},
+    {"event_engine_callback_cq", description_event_engine_callback_cq,
+     additional_constraints_event_engine_callback_cq,
+     required_experiments_event_engine_callback_cq, 1, true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, true},
     {"event_engine_dns", description_event_engine_dns,
@@ -458,6 +586,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
+    {"promise_based_http2_client_transport",
+     description_promise_based_http2_client_transport,
+     additional_constraints_promise_based_http2_client_transport, nullptr, 0,
+     false, true},
+    {"promise_based_http2_server_transport",
+     description_promise_based_http2_server_transport,
+     additional_constraints_promise_based_http2_server_transport, nullptr, 0,
+     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,

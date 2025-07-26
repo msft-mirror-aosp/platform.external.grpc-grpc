@@ -239,7 +239,7 @@ class PressureController {
  private:
   // How many update periods have we reached the same decision in a row?
   // Too many and we should start expanding the search space since we're not
-  // being agressive enough.
+  // being aggressive enough.
   uint8_t ticks_same_ = 0;
   // Maximum number of ticks with the same value until we start expanding the
   // control space.
@@ -587,6 +587,10 @@ inline MemoryQuotaRefPtr MakeMemoryQuota(std::string name) {
 }
 
 std::vector<std::shared_ptr<BasicMemoryQuota>> AllMemoryQuotas();
+
+void SetContainerMemoryPressure(double pressure);
+
+double ContainerMemoryPressure();
 
 }  // namespace grpc_core
 

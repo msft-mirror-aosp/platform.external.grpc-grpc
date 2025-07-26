@@ -46,8 +46,8 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "gtest/gtest.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call_test_only.h"
@@ -67,7 +67,7 @@
 // GRPC_PRIVACY_AND_INTEGRITY.
 #define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS (1 << 2)
 // Feature mask supports call credentials with a minimum security level of
-// GRPC_SECURTITY_NONE.
+// GRPC_SECURITY_NONE.
 #define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE (1 << 3)
 #define FEATURE_MASK_SUPPORTS_REQUEST_PROXYING (1 << 4)
 #define FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL (1 << 5)

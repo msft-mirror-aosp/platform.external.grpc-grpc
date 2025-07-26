@@ -367,8 +367,8 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 44.1.1
-CPP_VERSION = 1.68.2
+CORE_VERSION = 44.2.0
+CPP_VERSION = 1.69.0
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -688,6 +688,10 @@ LIBGRPC_SRC = \
     src/core/client_channel/subchannel.cc \
     src/core/client_channel/subchannel_pool_interface.cc \
     src/core/client_channel/subchannel_stream_client.cc \
+    src/core/config/config_vars.cc \
+    src/core/config/config_vars_non_generated.cc \
+    src/core/config/core_configuration.cc \
+    src/core/config/load_config.cc \
     src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
@@ -720,6 +724,7 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/frame_goaway.cc \
     src/core/ext/transport/chttp2/transport/frame_ping.cc \
     src/core/ext/transport/chttp2/transport/frame_rst_stream.cc \
+    src/core/ext/transport/chttp2/transport/frame_security.cc \
     src/core/ext/transport/chttp2/transport/frame_settings.cc \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
@@ -1084,10 +1089,6 @@ LIBGRPC_SRC = \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_internal.cc \
     src/core/lib/compression/message_compress.cc \
-    src/core/lib/config/config_vars.cc \
-    src/core/lib/config/config_vars_non_generated.cc \
-    src/core/lib/config/core_configuration.cc \
-    src/core/lib/config/load_config.cc \
     src/core/lib/debug/trace.cc \
     src/core/lib/debug/trace_flags.cc \
     src/core/lib/event_engine/ares_resolver.cc \
@@ -1301,6 +1302,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/client_call.cc \
     src/core/lib/surface/completion_queue.cc \
     src/core/lib/surface/completion_queue_factory.cc \
+    src/core/lib/surface/connection_context.cc \
     src/core/lib/surface/event_string.cc \
     src/core/lib/surface/filter_stack_call.cc \
     src/core/lib/surface/init.cc \

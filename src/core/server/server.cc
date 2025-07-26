@@ -46,9 +46,9 @@
 #include "absl/types/optional.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -976,6 +976,7 @@ grpc_error_handle Server::SetupTransport(
     Transport* transport, grpc_pollset* accepting_pollset,
     const ChannelArgs& args,
     const RefCountedPtr<channelz::SocketNode>& socket_node) {
+  GRPC_LATENT_SEE_INNER_SCOPE("Server::SetupTransport");
   // Create channel.
   global_stats().IncrementServerChannelsCreated();
   // Set up channelz node.

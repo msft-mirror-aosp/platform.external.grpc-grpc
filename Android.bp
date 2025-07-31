@@ -723,7 +723,6 @@ cc_defaults {
     ],
     static_libs: [
         "libaddress_sorting",
-        "libregex_re2",
     ],
     shared_libs: [
         "libbinder_ndk",
@@ -764,7 +763,7 @@ cc_library_host_static {
         "include",
     ],
     shared_libs: [
-        "libprotobuf-cpp-full",
+        "libprotoc",
     ],
     static_libs: GRPC_ABSL_LIBS_EXPORTED + GRPC_ABSL_LIBS_INTERNAL,
     export_static_lib_headers: GRPC_ABSL_LIBS_EXPORTED,
@@ -914,6 +913,7 @@ cc_library_static {
         "libgrpc_third_party_upb",
         "libgrpc_third_party_utf8_range",
         "libgrpc_upb_protos",
+        "libregex_re2",
     ] + GRPC_ABSL_LIBS_EXPORTED + GRPC_ABSL_LIBS_INTERNAL,
     shared_libs: ["liblog"],
     apex_available: [
@@ -935,6 +935,7 @@ cc_library_shared {
         "libgrpc_third_party_upb",
         "libgrpc_third_party_utf8_range",
         "libgrpc_upb_protos",
+        "libregex_re2",
     ] + GRPC_ABSL_LIBS_EXPORTED + GRPC_ABSL_LIBS_INTERNAL,
     whole_static_libs: [
         "libgrpc++_common",
@@ -961,6 +962,7 @@ cc_library_shared {
         "libgrpc_third_party_upb",
         "libgrpc_third_party_utf8_range",
         "libgrpc_upb_protos",
+        "libregex_re2",
     ] + GRPC_ABSL_LIBS_EXPORTED + GRPC_ABSL_LIBS_INTERNAL,
     whole_static_libs: [
         "libgrpc++_common",

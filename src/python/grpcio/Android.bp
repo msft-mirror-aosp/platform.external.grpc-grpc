@@ -2,6 +2,13 @@ package {
     default_applicable_licenses: ["external_grpc-grpc_license"],
 }
 
+genrule {
+    name: "py-grpcio-roots-pem",
+    srcs: [":grpc_roots_pem"],
+    out: ["_credentials/roots.pem"],
+    cmd: "mkdir -p $(genDir)/_credentials && cp -f $(location :grpc_roots_pem) $(genDir)/_credentials/roots.pem",
+}
+
 python_library_host {
     name: "py-grpcio",
     srcs: [
@@ -17,6 +24,7 @@ python_library_host {
     shared_libs: [
         "cygrpc",
     ],
+    data: [":py-grpcio-roots-pem"],
     pkg_path: "grpc/_cython",
     visibility: ["//visibility:private"],
 }

@@ -649,6 +649,12 @@ GRPC_UNSECURE_SRCS = [
 ]
 // file_lists_end
 
+filegroup {
+    name: "grpc_roots_pem",
+    srcs: ["etc/roots.pem"],
+    visibility: ["//external/grpc-grpc:__subpackages__"],
+}
+
 // Defaults for the bundled dependencies in third_party
 cc_defaults {
     name: "grpc_deps_defaults",

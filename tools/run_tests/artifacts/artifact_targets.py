@@ -174,7 +174,6 @@ class PythonArtifact:
             environ["PIP"] = "/opt/python/{}/bin/pip".format(self.py_version)
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
             if self.arch == "aarch64":
-                environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
                 # As we won't strip the binary with auditwheel (see below), strip
                 # it at link time.
                 environ["LDFLAGS"] = "-s"
@@ -275,7 +274,7 @@ class RubyArtifact:
                 self.gem_platform,
             ],
             use_workspace=True,
-            timeout_seconds=120 * 60,
+            timeout_seconds=180 * 60,
             environ=environ,
         )
 
@@ -354,7 +353,7 @@ class ProtocArtifact:
                 )
             else:
                 environ["CXXFLAGS"] += (
-                    " -std=c++14 -stdlib=libc++ %s" % _MACOS_COMPAT_FLAG
+                    " -std=c++17 -stdlib=libc++ %s" % _MACOS_COMPAT_FLAG
                 )
                 return create_jobspec(
                     self.name,
@@ -471,10 +470,10 @@ def targets():
             PythonArtifact("windows", "x64", "Python312"),
             PythonArtifact("windows", "x64", "Python313", presubmit=True),
             RubyArtifact("linux", "x86-mingw32", presubmit=True),
-            RubyArtifact("linux", "x64-mingw32", presubmit=True),
+            RubyArtifact("linux", "x64-mingw32"),
             RubyArtifact("linux", "x64-mingw-ucrt", presubmit=True),
             RubyArtifact("linux", "x86_64-linux", presubmit=True),
-            RubyArtifact("linux", "x86-linux", presubmit=True),
+            RubyArtifact("linux", "x86-linux"),
             RubyArtifact("linux", "aarch64-linux", presubmit=True),
             RubyArtifact("linux", "x86_64-darwin", presubmit=True),
             RubyArtifact("linux", "arm64-darwin", presubmit=True),

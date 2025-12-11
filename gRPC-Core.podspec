@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.69.0'
+  version = '1.70.2'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -89,7 +89,7 @@ Pod::Spec.new do |s|
     'ALWAYS_SEARCH_USER_PATHS' => 'NO',
     'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1"',
     'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
-    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
   }
 
   s.default_subspecs = 'Interface', 'Implementation'
@@ -200,7 +200,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Privacy", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.37'
+    ss.dependency 'BoringSSL-GRPC', '0.0.38'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -239,7 +239,9 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/utility/utility', abseil_version
     ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
 
-    ss.source_files = 'src/core/channelz/channel_trace.cc',
+    ss.source_files = 'src/core/call/request_buffer.cc',
+                      'src/core/call/request_buffer.h',
+                      'src/core/channelz/channel_trace.cc',
                       'src/core/channelz/channel_trace.h',
                       'src/core/channelz/channelz.cc',
                       'src/core/channelz/channelz.h',
@@ -249,6 +251,7 @@ Pod::Spec.new do |s|
                       'src/core/client_channel/backup_poller.h',
                       'src/core/client_channel/client_channel.cc',
                       'src/core/client_channel/client_channel.h',
+                      'src/core/client_channel/client_channel_args.h',
                       'src/core/client_channel/client_channel_factory.cc',
                       'src/core/client_channel/client_channel_factory.h',
                       'src/core/client_channel/client_channel_filter.cc',
@@ -275,6 +278,8 @@ Pod::Spec.new do |s|
                       'src/core/client_channel/retry_filter.h',
                       'src/core/client_channel/retry_filter_legacy_call_data.cc',
                       'src/core/client_channel/retry_filter_legacy_call_data.h',
+                      'src/core/client_channel/retry_interceptor.cc',
+                      'src/core/client_channel/retry_interceptor.h',
                       'src/core/client_channel/retry_service_config.cc',
                       'src/core/client_channel/retry_service_config.h',
                       'src/core/client_channel/retry_throttle.cc',
@@ -500,6 +505,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.h',
+                      'src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb.h',
+                      'src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.c',
+                      'src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.h',
@@ -569,9 +577,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb.h',
                       'src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb_minitable.h',
-                      'src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb.h',
-                      'src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb_minitable.c',
-                      'src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb.h',
                       'src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb_minitable.h',
@@ -779,9 +784,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/google/rpc/status.upb.h',
                       'src/core/ext/upb-gen/google/rpc/status.upb_minitable.c',
                       'src/core/ext/upb-gen/google/rpc/status.upb_minitable.h',
-                      'src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb.h',
-                      'src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb_minitable.c',
-                      'src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb_minitable.h',
                       'src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h',
                       'src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c',
                       'src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h',
@@ -967,6 +969,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/resolver.upbdefs.c',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/resolver.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_cmsg_headers.upbdefs.c',
+                      'src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_cmsg_headers.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_option.upbdefs.c',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_option.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/substitution_format_string.upbdefs.c',
@@ -1013,8 +1017,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/envoy/config/trace/v3/http_tracer.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/trace/v3/lightstep.upbdefs.c',
                       'src/core/ext/upbdefs-gen/envoy/config/trace/v3/lightstep.upbdefs.h',
-                      'src/core/ext/upbdefs-gen/envoy/config/trace/v3/opencensus.upbdefs.c',
-                      'src/core/ext/upbdefs-gen/envoy/config/trace/v3/opencensus.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/trace/v3/opentelemetry.upbdefs.c',
                       'src/core/ext/upbdefs-gen/envoy/config/trace/v3/opentelemetry.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/trace/v3/service.upbdefs.c',
@@ -1143,8 +1145,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h',
                       'src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c',
                       'src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h',
-                      'src/core/ext/upbdefs-gen/opencensus/proto/trace/v1/trace_config.upbdefs.c',
-                      'src/core/ext/upbdefs-gen/opencensus/proto/trace/v1/trace_config.upbdefs.h',
                       'src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c',
                       'src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.h',
                       'src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c',
@@ -1209,6 +1209,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h',
                       'src/core/filter/blackboard.cc',
                       'src/core/filter/blackboard.h',
+                      'src/core/filter/filter_args.h',
                       'src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc',
                       'src/core/handshaker/endpoint_info/endpoint_info_handshaker.h',
                       'src/core/handshaker/handshaker.cc',
@@ -1957,7 +1958,6 @@ Pod::Spec.new do |s|
                       'src/core/tsi/transport_security_interface.h',
                       'src/core/util/alloc.cc',
                       'src/core/util/alloc.h',
-                      'src/core/util/atm.cc',
                       'src/core/util/atomic_utils.h',
                       'src/core/util/avl.h',
                       'src/core/util/backoff.cc',
@@ -2421,11 +2421,13 @@ Pod::Spec.new do |s|
                       'third_party/zlib/zlib.h',
                       'third_party/zlib/zutil.c',
                       'third_party/zlib/zutil.h'
-    ss.private_header_files = 'src/core/channelz/channel_trace.h',
+    ss.private_header_files = 'src/core/call/request_buffer.h',
+                              'src/core/channelz/channel_trace.h',
                               'src/core/channelz/channelz.h',
                               'src/core/channelz/channelz_registry.h',
                               'src/core/client_channel/backup_poller.h',
                               'src/core/client_channel/client_channel.h',
+                              'src/core/client_channel/client_channel_args.h',
                               'src/core/client_channel/client_channel_factory.h',
                               'src/core/client_channel/client_channel_filter.h',
                               'src/core/client_channel/client_channel_internal.h',
@@ -2440,6 +2442,7 @@ Pod::Spec.new do |s|
                               'src/core/client_channel/local_subchannel_pool.h',
                               'src/core/client_channel/retry_filter.h',
                               'src/core/client_channel/retry_filter_legacy_call_data.h',
+                              'src/core/client_channel/retry_interceptor.h',
                               'src/core/client_channel/retry_service_config.h',
                               'src/core/client_channel/retry_throttle.h',
                               'src/core/client_channel/subchannel.h',
@@ -2570,6 +2573,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.h',
+                              'src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb.h',
+                              'src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/substitution_format_string.upb.h',
@@ -2616,8 +2621,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/envoy/config/trace/v3/http_tracer.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb.h',
                               'src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb_minitable.h',
-                              'src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb.h',
-                              'src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb.h',
                               'src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/trace/v3/service.upb.h',
@@ -2756,8 +2759,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h',
                               'src/core/ext/upb-gen/google/rpc/status.upb.h',
                               'src/core/ext/upb-gen/google/rpc/status.upb_minitable.h',
-                              'src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb.h',
-                              'src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h',
                               'src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h',
@@ -2870,6 +2871,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/resolver.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_cmsg_headers.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_option.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/substitution_format_string.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/udp_socket_config.upbdefs.h',
@@ -2893,7 +2895,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/envoy/config/trace/v3/dynamic_ot.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/trace/v3/http_tracer.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/trace/v3/lightstep.upbdefs.h',
-                              'src/core/ext/upbdefs-gen/envoy/config/trace/v3/opencensus.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/trace/v3/opentelemetry.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/trace/v3/service.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/trace/v3/skywalking.upbdefs.h',
@@ -2958,7 +2959,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h',
                               'src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h',
                               'src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h',
-                              'src/core/ext/upbdefs-gen/opencensus/proto/trace/v1/trace_config.upbdefs.h',
                               'src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.h',
                               'src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.h',
                               'src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.h',
@@ -2991,6 +2991,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.h',
                               'src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h',
                               'src/core/filter/blackboard.h',
+                              'src/core/filter/filter_args.h',
                               'src/core/handshaker/endpoint_info/endpoint_info_handshaker.h',
                               'src/core/handshaker/handshaker.h',
                               'src/core/handshaker/handshaker_factory.h',

@@ -29,12 +29,12 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/random/random.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/time.h"
@@ -72,9 +72,7 @@ class FakeCallTracer final : public CallTracerInterface {
   void RecordReceivedDecompressedMessage(
       const Message& recv_decompressed_message) override {}
   void RecordCancel(grpc_error_handle cancel_error) override {}
-  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
-    return nullptr;
-  }
+  std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override { return nullptr; }
   void RecordAnnotation(absl::string_view annotation) override {}
   void RecordAnnotation(const Annotation& annotation) override {}
   std::string TraceId() override { return ""; }

@@ -123,9 +123,10 @@ def _bazel_query_xml_tree(query: str) -> ET.Element:
 
 def _rule_dict_from_xml_node(rule_xml_node):
     """Converts XML node representing a rule (obtained from "bazel query --output xml") to a dictionary that contains all the metadata we will need."""
+    rule_name = rule_xml_node.attrib.get("name")
     result = {
         "class": rule_xml_node.attrib.get("class"),
-        "name": rule_xml_node.attrib.get("name"),
+        "name": rule_name,
         "srcs": [],
         "hdrs": [],
         "textual_hdrs": [],
@@ -171,6 +172,13 @@ def _rule_dict_from_xml_node(rule_xml_node):
                     # make it seem that the actual name is a dependency of the alias or bind rule
                     # (aliases don't have dependencies themselves)
                     result["deps"].append(actual_name)
+                elif rule_name == "//third_party:libssl":
+                    # //third_party:libssl is a conditional alias so let's handle it manually.
+                    result["deps"].append("@boringssl//:ssl")
+                elif rule_name == "//third_party:libcrypto":
+                    # //third_party:libcrypto is a conditional alias so let's handle it manually.
+                    result["deps"].append("@boringssl//:crypto")
+
     return result
 
 
@@ -360,6 +368,13 @@ def _external_dep_name_from_bazel_dependency(bazel_dep: str) -> Optional[str]:
         return "opentelemetry-cpp::api"
     elif bazel_dep == "@io_opentelemetry_cpp//sdk/src/metrics:metrics":
         return "opentelemetry-cpp::metrics"
+    elif bazel_dep == "@io_opentelemetry_cpp//sdk/src/trace:trace":
+        return "opentelemetry-cpp::trace"
+    elif (
+        bazel_dep
+        == "@io_opentelemetry_cpp//exporters/memory:in_memory_span_exporter"
+    ):
+        return "opentelemetry-cpp::in_memory_span_exporter"
     else:
         # Two options here:
         # * either this is not external dependency at all (which is fine, we will treat it as internal library)
@@ -1011,7 +1026,6 @@ def _generate_build_extra_metadata_for_tests(
                     " to %s" % (test_name, long_name)
                 )
                 test_metadata[test_name]["_RENAME"] = long_name
-    print(test_metadata["test/cpp/ext/otel:otel_plugin_test"])
     return test_metadata
 
 
@@ -1322,6 +1336,27 @@ _BUILD_EXTRA_METADATA = {
         "_TYPE": "target",
         "plugin_option": "gRPC_BUILD_GRPCPP_OTEL_PLUGIN",
         "_RENAME": "otel_plugin_test",
+    },
+    "test/cpp/ext/otel:grpc_text_map_carrier_test": {
+        "language": "c++",
+        "build": "plugin_test",
+        "_TYPE": "target",
+        "plugin_option": "gRPC_BUILD_GRPCPP_OTEL_PLUGIN",
+        "_RENAME": "grpc_text_map_carrier_test",
+    },
+    "test/cpp/ext/otel:grpc_trace_bin_text_map_propagator_test": {
+        "language": "c++",
+        "build": "plugin_test",
+        "_TYPE": "target",
+        "plugin_option": "gRPC_BUILD_GRPCPP_OTEL_PLUGIN",
+        "_RENAME": "grpc_trace_bin_text_map_propagator_test",
+    },
+    "test/cpp/ext/otel:otel_tracing_test": {
+        "language": "c++",
+        "build": "plugin_test",
+        "_TYPE": "target",
+        "plugin_option": "gRPC_BUILD_GRPCPP_OTEL_PLUGIN",
+        "_RENAME": "otel_tracing_test",
     },
     # TODO(jtattermusch): create_jwt and verify_jwt breaks distribtests because it depends on grpc_test_utils and thus requires tests to be built
     # For now it's ok to disable them as these binaries aren't very useful anyway.

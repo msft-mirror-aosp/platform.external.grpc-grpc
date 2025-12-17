@@ -52,6 +52,10 @@ grpc_cc_library(
         "@com_google_protobuf//upb:base",
         "@com_google_protobuf//upb:mem",
     ],
+    tags = [
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
+    ],
     visibility = ["//:__subpackages__"],
     deps = [
         "//:call_tracer",

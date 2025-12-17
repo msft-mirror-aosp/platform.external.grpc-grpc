@@ -48,6 +48,9 @@
 #include "absl/strings/strip.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/credentials/transport/insecure/insecure_credentials.h"
+#include "src/core/credentials/transport/security_connector.h"
+#include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
@@ -75,9 +78,6 @@
 #include "src/core/lib/resource_quota/connection_quota.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
-#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
@@ -103,6 +103,7 @@ using grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::EventEngineSupportsFdExtension;
 using grpc_event_engine::experimental::QueryExtension;
+using http2::Http2ErrorCode;
 
 const char kUnixUriPrefix[] = "unix:";
 const char kUnixAbstractUriPrefix[] = "unix-abstract:";
@@ -631,7 +632,8 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
     // Set an HTTP2 error of NO_ERROR to do graceful GOAWAYs.
     op->goaway_error = grpc_error_set_int(
         GRPC_ERROR_CREATE("Server is stopping to serve requests."),
-        StatusIntProperty::kHttp2Error, GRPC_HTTP2_NO_ERROR);
+        StatusIntProperty::kHttp2Error,
+        static_cast<intptr_t>(Http2ErrorCode::kNoError));
     transport->PerformOp(op);
   }
 }
@@ -1214,7 +1216,8 @@ void NewChttp2ServerListener::ActiveConnection::SendGoAwayImplLocked() {
             // Set an HTTP2 error of NO_ERROR to do graceful GOAWAYs.
             op->goaway_error = grpc_error_set_int(
                 GRPC_ERROR_CREATE("Server is stopping to serve requests."),
-                StatusIntProperty::kHttp2Error, GRPC_HTTP2_NO_ERROR);
+                StatusIntProperty::kHttp2Error,
+                static_cast<intptr_t>(Http2ErrorCode::kNoError));
             transport->PerformOp(op);
           }
         });

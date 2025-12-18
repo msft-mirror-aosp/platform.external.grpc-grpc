@@ -25,11 +25,11 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.70.2")
-set(gRPC_CORE_VERSION     "45.0.0")
-set(gRPC_CORE_SOVERSION   "45")
-set(gRPC_CPP_VERSION      "1.70.2")
-set(gRPC_CPP_SOVERSION    "1.70")
+set(PACKAGE_VERSION       "1.71.2")
+set(gRPC_CORE_VERSION     "46.0.0")
+set(gRPC_CORE_SOVERSION   "46")
+set(gRPC_CPP_VERSION      "1.71.2")
+set(gRPC_CPP_SOVERSION    "1.71")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -403,18 +403,18 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLO
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/88a37373e3cb5e1ab09e75dfb302b083168e6654.tar.gz
-    aed4389a9cf7777df7811185770dca7352f19a2fd68a41ae04e47071dada31eb
-    data-plane-api-88a37373e3cb5e1ab09e75dfb302b083168e6654
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz
+    cd8b49614408b43bd45d90e3e98d69e24eea632ff42ac3bfb8bca68bc31e377f
+    data-plane-api-4de3c74cf21a9958c1cf26d8993c55c6e0d28b49
   )
 endif()
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://github.com/envoyproxy/data-plane-api/archive/88a37373e3cb5e1ab09e75dfb302b083168e6654.tar.gz
-    aed4389a9cf7777df7811185770dca7352f19a2fd68a41ae04e47071dada31eb
-    data-plane-api-88a37373e3cb5e1ab09e75dfb302b083168e6654
+    https://github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz
+    cd8b49614408b43bd45d90e3e98d69e24eea632ff42ac3bfb8bca68bc31e377f
+    data-plane-api-4de3c74cf21a9958c1cf26d8993c55c6e0d28b49
   )
 endif()
 # Setup external proto library at third_party/googleapis with 2 download URLs
@@ -455,14 +455,23 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src AND 
     opencensus-proto-0.3.0/src
   )
 endif()
-# Setup external proto library at third_party/protoc-gen-validate if it doesn't exist
+# Setup external proto library at third_party/protoc-gen-validate with 2 download URLs
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/protoc-gen-validate.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate
-    https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.0.4.zip
-    9372f9ecde8fbadf83c8c7de3dbb49b11067aa26fb608c501106d0b4bf06c28f
-    protoc-gen-validate-1.0.4
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip
+    ab51e978326b87e06be7a12fc6496f3ff6586339043557dbbd31f622332a5d45
+    protoc-gen-validate-1.2.1
+  )
+endif()
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate AND gRPC_DOWNLOAD_ARCHIVES)
+  # Download the archive via HTTP, validate the checksum, and extract to third_party/protoc-gen-validate.
+  download_archive(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate
+    https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip
+    ab51e978326b87e06be7a12fc6496f3ff6586339043557dbbd31f622332a5d45
+    protoc-gen-validate-1.2.1
   )
 endif()
 # Setup external proto library at third_party/xds with 2 download URLs
@@ -765,6 +774,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/testing/xds/v3/orca_service.proto src/proto/grpc/testing/xds/v3/orca_service.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
+  test/core/end2end/end2end_test_fuzzer.proto test/core/end2end/end2end_test_fuzzer.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -1060,6 +1072,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/envoy-api/envoy/type/http/v3/path_transformation.proto envoy/type/http/v3/path_transformation.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
+  third_party/envoy-api/envoy/type/matcher/v3/address.proto envoy/type/matcher/v3/address.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto envoy/type/matcher/v3/filter_state.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -1250,7 +1265,6 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
     add_dependencies(buildtests_c pollset_windows_starvation_test)
   endif()
-  add_dependencies(buildtests_c test_core_iomgr_timer_list_test)
 
   add_custom_target(buildtests_cxx)
   add_dependencies(buildtests_cxx activity_test)
@@ -1322,9 +1336,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx call_filters_test)
   add_dependencies(buildtests_cxx call_finalization_test)
   add_dependencies(buildtests_cxx call_host_override_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx call_spine_test)
-  endif()
   add_dependencies(buildtests_cxx call_state_test)
   add_dependencies(buildtests_cxx call_tracer_test)
   add_dependencies(buildtests_cxx call_utils_test)
@@ -1356,12 +1367,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx channel_trace_test)
   add_dependencies(buildtests_cxx channelz_registry_test)
   add_dependencies(buildtests_cxx channelz_service_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx chaotic_good_one_byte_chunk_test)
-  endif()
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx chaotic_good_single_connection_test)
-  endif()
+  add_dependencies(buildtests_cxx chaotic_good_test)
   add_dependencies(buildtests_cxx check_gcp_environment_linux_test)
   add_dependencies(buildtests_cxx check_gcp_environment_windows_test)
   add_dependencies(buildtests_cxx chttp2_server_listener_test)
@@ -1369,14 +1375,8 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx cli_call_test)
   add_dependencies(buildtests_cxx client_auth_filter_test)
   add_dependencies(buildtests_cxx client_authority_filter_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx client_call_test)
-  endif()
   add_dependencies(buildtests_cxx client_callback_end2end_test)
   add_dependencies(buildtests_cxx client_channel_service_config_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx client_channel_test)
-  endif()
   add_dependencies(buildtests_cxx client_context_test_peer_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx client_fork_test)
@@ -1400,9 +1400,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx compressed_payload_test)
   add_dependencies(buildtests_cxx compression_test)
   add_dependencies(buildtests_cxx concurrent_connectivity_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx connected_subchannel_test)
-  endif()
   add_dependencies(buildtests_cxx connection_context_test)
   add_dependencies(buildtests_cxx connection_prefix_bad_client_test)
   add_dependencies(buildtests_cxx connection_refused_test)
@@ -1461,6 +1458,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx file_watcher_certificate_provider_factory_test)
   add_dependencies(buildtests_cxx filter_causes_close_test)
+  add_dependencies(buildtests_cxx filter_fusion_test)
   add_dependencies(buildtests_cxx filter_init_fails_test)
   add_dependencies(buildtests_cxx filter_test_test)
   add_dependencies(buildtests_cxx filtered_metadata_test)
@@ -1544,9 +1542,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx if_test)
   add_dependencies(buildtests_cxx init_test)
   add_dependencies(buildtests_cxx initial_settings_frame_bad_client_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx inproc_test)
-  endif()
   add_dependencies(buildtests_cxx insecure_security_connector_test)
   add_dependencies(buildtests_cxx inter_activity_latch_test)
   add_dependencies(buildtests_cxx inter_activity_pipe_test)
@@ -1572,9 +1567,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx lb_get_cpu_stats_test)
   add_dependencies(buildtests_cxx lb_load_data_store_test)
   add_dependencies(buildtests_cxx lb_metadata_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx load_balanced_call_destination_test)
-  endif()
   add_dependencies(buildtests_cxx load_config_test)
   add_dependencies(buildtests_cxx load_file_test)
   add_dependencies(buildtests_cxx local_security_connector_test)
@@ -1634,6 +1626,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx parsed_metadata_test)
   add_dependencies(buildtests_cxx parser_test)
+  add_dependencies(buildtests_cxx party_mpsc_test)
   add_dependencies(buildtests_cxx party_test)
   add_dependencies(buildtests_cxx payload_test)
   add_dependencies(buildtests_cxx percent_encoding_test)
@@ -1711,9 +1704,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx retry_exceeds_buffer_size_in_delay_test)
   add_dependencies(buildtests_cxx retry_exceeds_buffer_size_in_initial_batch_test)
   add_dependencies(buildtests_cxx retry_exceeds_buffer_size_in_subsequent_batch_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx retry_interceptor_test)
-  endif()
   add_dependencies(buildtests_cxx retry_lb_drop_test)
   add_dependencies(buildtests_cxx retry_lb_fail_test)
   add_dependencies(buildtests_cxx retry_non_retriable_status_before_trailers_test)
@@ -1760,9 +1750,6 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx server_builder_with_socket_mutator_test)
   endif()
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx server_call_test)
-  endif()
   add_dependencies(buildtests_cxx server_call_tracer_factory_test)
   add_dependencies(buildtests_cxx server_chttp2_test)
   add_dependencies(buildtests_cxx server_config_selector_test)
@@ -1792,7 +1779,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx single_set_ptr_test)
   add_dependencies(buildtests_cxx sleep_test)
   add_dependencies(buildtests_cxx slice_string_helpers_test)
-  add_dependencies(buildtests_cxx smoke_test)
   add_dependencies(buildtests_cxx sockaddr_resolver_test)
   add_dependencies(buildtests_cxx sockaddr_utils_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -1846,20 +1832,15 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx test_core_channelz_channelz_test)
   add_dependencies(buildtests_cxx test_core_end2end_channelz_test)
   add_dependencies(buildtests_cxx test_core_event_engine_posix_timer_heap_test)
-  add_dependencies(buildtests_cxx test_core_event_engine_posix_timer_list_test)
   add_dependencies(buildtests_cxx test_core_event_engine_slice_buffer_test)
   add_dependencies(buildtests_cxx test_core_iomgr_timer_heap_test)
   add_dependencies(buildtests_cxx test_core_security_credentials_test)
   add_dependencies(buildtests_cxx test_core_security_ssl_credentials_test)
   add_dependencies(buildtests_cxx test_core_slice_slice_buffer_test)
   add_dependencies(buildtests_cxx test_core_slice_slice_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx test_core_transport_test_suite_chaotic_good_test)
-  endif()
   add_dependencies(buildtests_cxx test_core_util_time_test)
   add_dependencies(buildtests_cxx test_cpp_client_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_end2end_ssl_credentials_test)
-  add_dependencies(buildtests_cxx test_cpp_ext_chaotic_good_test)
   add_dependencies(buildtests_cxx test_cpp_server_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_util_slice_test)
   add_dependencies(buildtests_cxx test_cpp_util_time_test)
@@ -1879,6 +1860,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx time_util_test)
   add_dependencies(buildtests_cxx timeout_before_request_call_test)
   add_dependencies(buildtests_cxx timeout_encoding_test)
+  add_dependencies(buildtests_cxx timer_list_test)
   add_dependencies(buildtests_cxx timer_manager_test)
   add_dependencies(buildtests_cxx timer_test)
   add_dependencies(buildtests_cxx tls_certificate_verifier_test)
@@ -1905,6 +1887,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx validation_errors_test)
   add_dependencies(buildtests_cxx varint_test)
   add_dependencies(buildtests_cxx wait_for_callback_test)
+  add_dependencies(buildtests_cxx wait_for_single_owner_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx wakeup_fd_posix_test)
   endif()
@@ -2139,6 +2122,7 @@ target_link_libraries(gpr
   absl::base
   absl::core_headers
   absl::log_severity
+  absl::cleanup
   absl::flags
   absl::flags_marshalling
   absl::any_invocable
@@ -2155,7 +2139,6 @@ target_link_libraries(gpr
   absl::synchronization
   absl::time
   absl::optional
-  absl::variant
 )
 if(_gRPC_PLATFORM_ANDROID)
   target_link_libraries(gpr
@@ -2389,6 +2372,7 @@ add_library(grpc
   src/core/ext/upb-gen/envoy/service/status/v3/csds.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/http/v3/cookie.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/matcher/v3/http_inputs.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/matcher/v3/metadata.upb_minitable.c
@@ -2550,6 +2534,7 @@ add_library(grpc
   src/core/ext/upbdefs-gen/envoy/service/status/v3/csds.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/type/http/v3/cookie.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/type/http/v3/path_transformation.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/matcher/v3/address.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/type/matcher/v3/filter_state.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/type/matcher/v3/http_inputs.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/type/matcher/v3/metadata.upbdefs.c
@@ -3088,7 +3073,6 @@ target_link_libraries(grpc
   absl::algorithm_container
   absl::config
   absl::no_destructor
-  absl::cleanup
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
@@ -3133,30 +3117,15 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
-  include/grpc/impl/call.h
   include/grpc/impl/channel_arg_names.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
   include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/fork.h
-  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/log.h
-  include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_abseil.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
   include/grpc/impl/compression_types.h
   include/grpc/impl/connectivity_state.h
   include/grpc/impl/grpc_types.h
@@ -3167,25 +3136,6 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
-  include/grpc/support/alloc.h
-  include/grpc/support/atm_gcc_atomic.h
-  include/grpc/support/atm_gcc_sync.h
-  include/grpc/support/atm_windows.h
-  include/grpc/support/cpu.h
-  include/grpc/support/json.h
-  include/grpc/support/log.h
-  include/grpc/support/log_windows.h
-  include/grpc/support/metrics.h
-  include/grpc/support/port_platform.h
-  include/grpc/support/string_util.h
-  include/grpc/support/sync.h
-  include/grpc/support/sync_abseil.h
-  include/grpc/support/sync_custom.h
-  include/grpc/support/sync_generic.h
-  include/grpc/support/sync_posix.h
-  include/grpc/support/sync_windows.h
-  include/grpc/support/thd_id.h
-  include/grpc/support/time.h
   include/grpc/support/workaround_list.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -3787,7 +3737,6 @@ target_link_libraries(grpc_unsecure
   absl::algorithm_container
   absl::config
   absl::no_destructor
-  absl::cleanup
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
@@ -3831,30 +3780,15 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
-  include/grpc/impl/call.h
   include/grpc/impl/channel_arg_names.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
   include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/fork.h
-  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/log.h
-  include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_abseil.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
   include/grpc/impl/compression_types.h
   include/grpc/impl/connectivity_state.h
   include/grpc/impl/grpc_types.h
@@ -3865,25 +3799,6 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
-  include/grpc/support/alloc.h
-  include/grpc/support/atm_gcc_atomic.h
-  include/grpc/support/atm_gcc_sync.h
-  include/grpc/support/atm_windows.h
-  include/grpc/support/cpu.h
-  include/grpc/support/json.h
-  include/grpc/support/log.h
-  include/grpc/support/log_windows.h
-  include/grpc/support/metrics.h
-  include/grpc/support/port_platform.h
-  include/grpc/support/string_util.h
-  include/grpc/support/sync.h
-  include/grpc/support/sync_abseil.h
-  include/grpc/support/sync_custom.h
-  include/grpc/support/sync_generic.h
-  include/grpc/support/sync_posix.h
-  include/grpc/support/sync_windows.h
-  include/grpc/support/thd_id.h
-  include/grpc/support/time.h
   include/grpc/support/workaround_list.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -4505,7 +4420,6 @@ add_library(benchmark_helpers ${_gRPC_STATIC_WIN32}
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -4837,6 +4751,8 @@ foreach(_hdr
   include/grpcpp/impl/status.h
   include/grpcpp/impl/sync.h
   include/grpcpp/passive_listener.h
+  include/grpcpp/ports_def.inc
+  include/grpcpp/ports_undef.inc
   include/grpcpp/resource_quota.h
   include/grpcpp/security/audit_logging.h
   include/grpcpp/security/auth_context.h
@@ -5260,7 +5176,6 @@ add_library(grpc++_test_util
   test/core/end2end/data/server1_key.cc
   test/core/end2end/data/test_root_cert.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -5584,6 +5499,8 @@ foreach(_hdr
   include/grpcpp/impl/status.h
   include/grpcpp/impl/sync.h
   include/grpcpp/passive_listener.h
+  include/grpcpp/ports_def.inc
+  include/grpcpp/ports_undef.inc
   include/grpcpp/resource_quota.h
   include/grpcpp/security/audit_logging.h
   include/grpcpp/security/auth_context.h
@@ -5799,7 +5716,6 @@ add_library(grpc_authorization_provider
   src/core/lib/promise/party.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -5960,7 +5876,6 @@ target_link_libraries(grpc_authorization_provider
   ${_gRPC_ZLIB_LIBRARIES}
   absl::config
   absl::no_destructor
-  absl::cleanup
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
@@ -5997,30 +5912,15 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
-  include/grpc/impl/call.h
   include/grpc/impl/channel_arg_names.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
   include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/fork.h
-  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/log.h
-  include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_abseil.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
   include/grpc/impl/compression_types.h
   include/grpc/impl/connectivity_state.h
   include/grpc/impl/grpc_types.h
@@ -6031,25 +5931,6 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
-  include/grpc/support/alloc.h
-  include/grpc/support/atm_gcc_atomic.h
-  include/grpc/support/atm_gcc_sync.h
-  include/grpc/support/atm_windows.h
-  include/grpc/support/cpu.h
-  include/grpc/support/json.h
-  include/grpc/support/log.h
-  include/grpc/support/log_windows.h
-  include/grpc/support/metrics.h
-  include/grpc/support/port_platform.h
-  include/grpc/support/string_util.h
-  include/grpc/support/sync.h
-  include/grpc/support/sync_abseil.h
-  include/grpc/support/sync_custom.h
-  include/grpc/support/sync_generic.h
-  include/grpc/support/sync_posix.h
-  include/grpc/support/sync_windows.h
-  include/grpc/support/thd_id.h
-  include/grpc/support/time.h
   include/grpc/support/workaround_list.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -6306,7 +6187,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(fd_conservation_posix_test
     test/core/iomgr/fd_conservation_posix_test.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -6423,51 +6303,6 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(test_core_iomgr_timer_list_test
-  test/core/iomgr/timer_list_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(test_core_iomgr_timer_list_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(test_core_iomgr_timer_list_test PUBLIC cxx_std_17)
-target_include_directories(test_core_iomgr_timer_list_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(test_core_iomgr_timer_list_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(activity_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
@@ -6573,7 +6408,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/util/subprocess_posix.cc
     src/core/util/subprocess_windows.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -6910,6 +6744,10 @@ add_executable(admin_services_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -7191,7 +7029,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(alarm_test
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -7737,7 +7574,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(alts_security_connector_test
   test/core/security/alts_security_connector_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -8128,7 +7964,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(auth_context_test
   test/core/security/auth_context_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -8222,7 +8057,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(authorization_matchers_test
   test/core/security/authorization_matchers_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -8362,7 +8196,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(aws_request_signer_test
   test/core/security/aws_request_signer_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -8516,6 +8349,18 @@ add_executable(bad_ping_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -8524,17 +8369,9 @@ add_executable(bad_ping_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -8542,8 +8379,11 @@ add_executable(bad_ping_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/bad_ping.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -8578,7 +8418,6 @@ target_link_libraries(bad_ping_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -8637,7 +8476,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/bad_ssl/bad_ssl_test.cc
     test/core/end2end/cq_verifier.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -8693,7 +8531,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/bad_ssl/bad_ssl_test.cc
     test/core/end2end/cq_verifier.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -9005,6 +8842,18 @@ add_executable(binary_metadata_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -9013,17 +8862,9 @@ add_executable(binary_metadata_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -9031,8 +8872,11 @@ add_executable(binary_metadata_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/binary_metadata.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -9067,7 +8911,6 @@ target_link_libraries(binary_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -9170,7 +9013,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(buffer_list_test
   test/core/iomgr/buffer_list_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -9352,6 +9194,18 @@ add_executable(call_creds_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -9360,17 +9214,9 @@ add_executable(call_creds_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -9378,8 +9224,11 @@ add_executable(call_creds_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/call_creds.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -9414,7 +9263,6 @@ target_link_libraries(call_creds_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -9441,7 +9289,6 @@ add_executable(call_filters_test
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -9566,6 +9413,18 @@ add_executable(call_host_override_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -9574,17 +9433,9 @@ add_executable(call_host_override_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -9592,8 +9443,11 @@ add_executable(call_host_override_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/call_host_override.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -9628,65 +9482,11 @@ target_link_libraries(call_host_override_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
 
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(call_spine_test
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-    test/core/call/yodel/test_main.cc
-    test/core/call/yodel/yodel_test.cc
-    test/core/event_engine/event_engine_test_utils.cc
-    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-    test/core/transport/call_spine_test.cc
-  )
-  if(WIN32 AND MSVC)
-    if(BUILD_SHARED_LIBS)
-      target_compile_definitions(call_spine_test
-      PRIVATE
-        "GPR_DLL_IMPORTS"
-        "GRPC_DLL_IMPORTS"
-      )
-    endif()
-  endif()
-  target_compile_features(call_spine_test PUBLIC cxx_std_17)
-  target_include_directories(call_spine_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(call_spine_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
-  )
-
-
-endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -9939,7 +9739,6 @@ add_executable(call_utils_test
   src/core/lib/promise/party.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -10062,7 +9861,6 @@ target_link_libraries(call_utils_test
   ${_gRPC_ZLIB_LIBRARIES}
   absl::config
   absl::no_destructor
-  absl::cleanup
   absl::flat_hash_map
   absl::inlined_vector
   absl::function_ref
@@ -10085,6 +9883,18 @@ add_executable(cancel_after_accept_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -10093,17 +9903,9 @@ add_executable(cancel_after_accept_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -10111,8 +9913,11 @@ add_executable(cancel_after_accept_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/cancel_after_accept.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -10147,7 +9952,6 @@ target_link_libraries(cancel_after_accept_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -10161,6 +9965,18 @@ add_executable(cancel_after_client_done_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -10169,17 +9985,9 @@ add_executable(cancel_after_client_done_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -10187,8 +9995,11 @@ add_executable(cancel_after_client_done_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/cancel_after_client_done.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -10223,7 +10034,6 @@ target_link_libraries(cancel_after_client_done_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -10237,6 +10047,18 @@ add_executable(cancel_after_invoke_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -10245,17 +10067,9 @@ add_executable(cancel_after_invoke_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -10263,8 +10077,11 @@ add_executable(cancel_after_invoke_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/cancel_after_invoke.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -10299,7 +10116,6 @@ target_link_libraries(cancel_after_invoke_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -10313,6 +10129,18 @@ add_executable(cancel_after_round_trip_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -10321,17 +10149,9 @@ add_executable(cancel_after_round_trip_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -10339,8 +10159,11 @@ add_executable(cancel_after_round_trip_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/cancel_after_round_trip.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -10375,7 +10198,6 @@ target_link_libraries(cancel_after_round_trip_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -10436,6 +10258,18 @@ add_executable(cancel_before_invoke_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -10444,17 +10278,9 @@ add_executable(cancel_before_invoke_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -10462,8 +10288,11 @@ add_executable(cancel_before_invoke_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/cancel_before_invoke.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -10498,7 +10327,6 @@ target_link_libraries(cancel_before_invoke_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -10522,7 +10350,6 @@ add_executable(cancel_callback_test
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -10589,6 +10416,18 @@ add_executable(cancel_in_a_vacuum_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -10597,17 +10436,9 @@ add_executable(cancel_in_a_vacuum_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -10615,8 +10446,11 @@ add_executable(cancel_in_a_vacuum_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/cancel_in_a_vacuum.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -10651,7 +10485,6 @@ target_link_libraries(cancel_in_a_vacuum_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -10665,6 +10498,18 @@ add_executable(cancel_with_status_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -10673,17 +10518,9 @@ add_executable(cancel_with_status_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -10691,8 +10528,11 @@ add_executable(cancel_with_status_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/cancel_with_status.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -10727,7 +10567,6 @@ target_link_libraries(cancel_with_status_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -10761,6 +10600,7 @@ add_executable(cel_authorization_engine_test
   src/core/ext/upb-gen/envoy/config/route/v3/route.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/route/v3/route_components.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/route/v3/scoped_route.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/matcher/v3/http_inputs.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/matcher/v3/metadata.upb_minitable.c
@@ -10829,7 +10669,6 @@ add_executable(cel_authorization_engine_test
   src/core/lib/security/authorization/cel_authorization_engine.cc
   test/core/security/cel_authorization_engine_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -11219,7 +11058,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(channel_creds_registry_test
   test/core/security/channel_creds_registry_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -11563,150 +11401,68 @@ target_link_libraries(channelz_service_test
 
 endif()
 if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(chaotic_good_one_byte_chunk_test
-    ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-    src/core/ext/transport/chaotic_good/client_transport.cc
-    src/core/ext/transport/chaotic_good/control_endpoint.cc
-    src/core/ext/transport/chaotic_good/data_endpoints.cc
-    src/core/ext/transport/chaotic_good/frame.cc
-    src/core/ext/transport/chaotic_good/frame_header.cc
-    src/core/ext/transport/chaotic_good/server_transport.cc
-    src/core/lib/transport/promise_endpoint.cc
-    test/core/call/yodel/test_main.cc
-    test/core/call/yodel/yodel_test.cc
-    test/core/event_engine/event_engine_test_utils.cc
-    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-    test/core/transport/test_suite/call_content.cc
-    test/core/transport/test_suite/call_shapes.cc
-    test/core/transport/test_suite/chaotic_good_fixture_helpers.cc
-    test/core/transport/test_suite/chaotic_good_one_byte_chunk_fixture.cc
-    test/core/transport/test_suite/no_op.cc
-    test/core/transport/test_suite/transport_test.cc
-  )
-  if(WIN32 AND MSVC)
-    if(BUILD_SHARED_LIBS)
-      target_compile_definitions(chaotic_good_one_byte_chunk_test
-      PRIVATE
-        "GPR_DLL_IMPORTS"
-        "GRPC_DLL_IMPORTS"
-      )
-    endif()
-  endif()
-  target_compile_features(chaotic_good_one_byte_chunk_test PUBLIC cxx_std_17)
-  target_include_directories(chaotic_good_one_byte_chunk_test
+add_executable(chaotic_good_test
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/control_endpoint.cc
+  src/core/ext/transport/chaotic_good/data_endpoints.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/lib/transport/promise_endpoint.cc
+  src/cpp/ext/chaotic_good.cc
+  test/cpp/ext/chaotic_good_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(chaotic_good_test
     PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(chaotic_good_one_byte_chunk_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
-  )
-
-
-endif()
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(chaotic_good_single_connection_test
-    ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-    src/core/ext/transport/chaotic_good/client_transport.cc
-    src/core/ext/transport/chaotic_good/control_endpoint.cc
-    src/core/ext/transport/chaotic_good/data_endpoints.cc
-    src/core/ext/transport/chaotic_good/frame.cc
-    src/core/ext/transport/chaotic_good/frame_header.cc
-    src/core/ext/transport/chaotic_good/server_transport.cc
-    src/core/lib/transport/promise_endpoint.cc
-    test/core/call/yodel/test_main.cc
-    test/core/call/yodel/yodel_test.cc
-    test/core/event_engine/event_engine_test_utils.cc
-    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-    test/core/transport/test_suite/call_content.cc
-    test/core/transport/test_suite/call_shapes.cc
-    test/core/transport/test_suite/chaotic_good_fixture_helpers.cc
-    test/core/transport/test_suite/chaotic_good_single_connection_fixture.cc
-    test/core/transport/test_suite/no_op.cc
-    test/core/transport/test_suite/stress.cc
-    test/core/transport/test_suite/transport_test.cc
-  )
-  if(WIN32 AND MSVC)
-    if(BUILD_SHARED_LIBS)
-      target_compile_definitions(chaotic_good_single_connection_test
-      PRIVATE
-        "GPR_DLL_IMPORTS"
-        "GRPC_DLL_IMPORTS"
-      )
-    endif()
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
   endif()
-  target_compile_features(chaotic_good_single_connection_test PUBLIC cxx_std_17)
-  target_include_directories(chaotic_good_single_connection_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(chaotic_good_single_connection_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
-  )
-
-
 endif()
+target_compile_features(chaotic_good_test PUBLIC cxx_std_17)
+target_include_directories(chaotic_good_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(chaotic_good_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc++
+  grpc_test_util
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(check_gcp_environment_linux_test
   test/core/security/check_gcp_environment_linux_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -11757,7 +11513,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(check_gcp_environment_windows_test
   test/core/security/check_gcp_environment_windows_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -11808,7 +11563,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(chttp2_server_listener_test
   test/core/end2end/cq_verifier.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -11872,7 +11626,6 @@ add_executable(chunked_vector_test
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -12117,61 +11870,6 @@ target_link_libraries(client_authority_filter_test
 
 endif()
 if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(client_call_test
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-    test/core/call/batch_builder.cc
-    test/core/call/client_call_test.cc
-    test/core/call/yodel/test_main.cc
-    test/core/call/yodel/yodel_test.cc
-    test/core/end2end/cq_verifier.cc
-    test/core/event_engine/event_engine_test_utils.cc
-    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  )
-  if(WIN32 AND MSVC)
-    if(BUILD_SHARED_LIBS)
-      target_compile_definitions(client_call_test
-      PRIVATE
-        "GPR_DLL_IMPORTS"
-        "GRPC_DLL_IMPORTS"
-      )
-    endif()
-  endif()
-  target_compile_features(client_call_test PUBLIC cxx_std_17)
-  target_include_directories(client_call_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(client_call_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
-  )
-
-
-endif()
-endif()
-if(gRPC_BUILD_TESTS)
 
 add_executable(client_callback_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
@@ -12289,59 +11987,6 @@ target_link_libraries(client_channel_service_config_test
 )
 
 
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(client_channel_test
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-    test/core/call/yodel/test_main.cc
-    test/core/call/yodel/yodel_test.cc
-    test/core/client_channel/client_channel_test.cc
-    test/core/event_engine/event_engine_test_utils.cc
-    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  )
-  if(WIN32 AND MSVC)
-    if(BUILD_SHARED_LIBS)
-      target_compile_definitions(client_channel_test
-      PRIVATE
-        "GPR_DLL_IMPORTS"
-        "GRPC_DLL_IMPORTS"
-      )
-    endif()
-  endif()
-  target_compile_features(client_channel_test PUBLIC cxx_std_17)
-  target_include_directories(client_channel_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(client_channel_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
-  )
-
-
-endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -12690,6 +12335,18 @@ add_executable(client_streaming_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -12698,17 +12355,9 @@ add_executable(client_streaming_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -12716,8 +12365,11 @@ add_executable(client_streaming_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/client_streaming.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -12752,7 +12404,6 @@ target_link_libraries(client_streaming_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -12764,7 +12415,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(cmdline_test
   test/core/test_util/cmdline.cc
   test/core/test_util/cmdline_test.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -12904,7 +12554,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(combiner_test
     test/core/iomgr/combiner_test.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -13042,6 +12691,18 @@ add_executable(compressed_payload_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -13050,17 +12711,9 @@ add_executable(compressed_payload_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -13068,8 +12721,11 @@ add_executable(compressed_payload_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/compressed_payload.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -13104,7 +12760,6 @@ target_link_libraries(compressed_payload_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -13196,64 +12851,10 @@ target_link_libraries(concurrent_connectivity_test
 
 endif()
 if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(connected_subchannel_test
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-    test/core/call/yodel/test_main.cc
-    test/core/call/yodel/yodel_test.cc
-    test/core/client_channel/connected_subchannel_test.cc
-    test/core/event_engine/event_engine_test_utils.cc
-    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  )
-  if(WIN32 AND MSVC)
-    if(BUILD_SHARED_LIBS)
-      target_compile_definitions(connected_subchannel_test
-      PRIVATE
-        "GPR_DLL_IMPORTS"
-        "GRPC_DLL_IMPORTS"
-      )
-    endif()
-  endif()
-  target_compile_features(connected_subchannel_test PUBLIC cxx_std_17)
-  target_include_directories(connected_subchannel_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(connected_subchannel_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
-  )
-
-
-endif()
-endif()
-if(gRPC_BUILD_TESTS)
 
 add_executable(connection_context_test
   test/core/surface/connection_context_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -13390,7 +12991,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(connectivity_state_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -13444,6 +13044,18 @@ add_executable(connectivity_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -13452,17 +13064,9 @@ add_executable(connectivity_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -13470,8 +13074,11 @@ add_executable(connectivity_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/connectivity.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -13506,7 +13113,6 @@ target_link_libraries(connectivity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -13918,6 +13524,18 @@ add_executable(default_host_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -13926,17 +13544,9 @@ add_executable(default_host_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -13944,8 +13554,11 @@ add_executable(default_host_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/default_host.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -13980,7 +13593,6 @@ target_link_libraries(default_host_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -14155,6 +13767,18 @@ add_executable(disappearing_server_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -14163,17 +13787,9 @@ add_executable(disappearing_server_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -14181,8 +13797,11 @@ add_executable(disappearing_server_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/disappearing_server.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -14217,7 +13836,6 @@ target_link_libraries(disappearing_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -14524,6 +14142,18 @@ add_executable(empty_batch_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -14532,17 +14162,9 @@ add_executable(empty_batch_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -14550,8 +14172,11 @@ add_executable(empty_batch_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/empty_batch.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -14586,7 +14211,6 @@ target_link_libraries(empty_batch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -14772,7 +14396,6 @@ add_executable(endpoint_pair_test
   test/core/iomgr/endpoint_pair_test.cc
   test/core/iomgr/endpoint_tests.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -14934,7 +14557,6 @@ add_executable(error_test
   test/core/iomgr/endpoint_tests.cc
   test/core/iomgr/error_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -14984,7 +14606,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(error_utils_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -15036,7 +14657,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(evaluate_args_test
   test/core/security/evaluate_args_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -15581,7 +15201,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(fd_posix_test
     test/core/iomgr/fd_posix_test.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -15677,6 +15296,18 @@ add_executable(filter_causes_close_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -15685,17 +15316,9 @@ add_executable(filter_causes_close_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -15703,8 +15326,11 @@ add_executable(filter_causes_close_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/filter_causes_close.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -15739,9 +15365,103 @@ target_link_libraries(filter_causes_close_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(filter_fusion_test
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/lib/channel/channel_args.cc
+  src/core/lib/compression/compression.cc
+  src/core/lib/compression/compression_internal.cc
+  src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
+  src/core/lib/iomgr/closure.cc
+  src/core/lib/iomgr/combiner.cc
+  src/core/lib/iomgr/error.cc
+  src/core/lib/iomgr/exec_ctx.cc
+  src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/promise/activity.cc
+  src/core/lib/resource_quota/arena.cc
+  src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/periodic_update.cc
+  src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/thread_quota.cc
+  src/core/lib/slice/percent_encoding.cc
+  src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/surface/channel_stack_type.cc
+  src/core/lib/transport/call_filters.cc
+  src/core/lib/transport/call_final_info.cc
+  src/core/lib/transport/call_state.cc
+  src/core/lib/transport/error_utils.cc
+  src/core/lib/transport/message.cc
+  src/core/lib/transport/metadata.cc
+  src/core/lib/transport/metadata_batch.cc
+  src/core/lib/transport/parsed_metadata.cc
+  src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/timeout_encoding.cc
+  src/core/util/dump_args.cc
+  src/core/util/glob.cc
+  src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
+  test/core/call/filter_fusion_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(filter_fusion_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(filter_fusion_test PUBLIC cxx_std_17)
+target_include_directories(filter_fusion_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(filter_fusion_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  upb_mini_descriptor_lib
+  upb_wire_lib
+  absl::config
+  absl::no_destructor
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::function_ref
+  absl::hash
+  absl::type_traits
+  absl::statusor
+  absl::utility
+  gpr
 )
 
 
@@ -15753,6 +15473,18 @@ add_executable(filter_init_fails_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -15761,17 +15493,9 @@ add_executable(filter_init_fails_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -15779,8 +15503,11 @@ add_executable(filter_init_fails_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/filter_init_fails.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -15815,7 +15542,6 @@ target_link_libraries(filter_init_fails_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -15879,6 +15605,18 @@ add_executable(filtered_metadata_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -15887,17 +15625,9 @@ add_executable(filtered_metadata_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -15905,8 +15635,11 @@ add_executable(filtered_metadata_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/filtered_metadata.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -15941,7 +15674,6 @@ target_link_libraries(filtered_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -16043,7 +15775,6 @@ add_executable(flow_control_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -16123,7 +15854,6 @@ add_executable(for_each_test
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -16282,7 +16012,6 @@ add_executable(format_request_test
   test/core/end2end/data/server1_key.cc
   test/core/end2end/data/test_root_cert.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -16833,6 +16562,18 @@ add_executable(graceful_server_shutdown_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -16841,17 +16582,9 @@ add_executable(graceful_server_shutdown_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -16859,8 +16592,11 @@ add_executable(graceful_server_shutdown_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/graceful_server_shutdown.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -16895,7 +16631,6 @@ target_link_libraries(graceful_server_shutdown_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -16950,7 +16685,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(grpc_alts_credentials_options_test
   test/core/security/grpc_alts_credentials_options_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -17044,7 +16778,6 @@ add_executable(grpc_authorization_engine_test
   test/core/security/grpc_authorization_engine_test.cc
   test/core/test_util/audit_logging_utils.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -17095,7 +16828,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(grpc_authorization_policy_provider_test
   test/core/security/grpc_authorization_policy_provider_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -17228,6 +16960,18 @@ add_executable(grpc_authz_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -17236,17 +16980,9 @@ add_executable(grpc_authz_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -17254,8 +16990,11 @@ add_executable(grpc_authz_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/grpc_authz.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -17290,7 +17029,6 @@ target_link_libraries(grpc_authz_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -17512,7 +17250,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(grpc_ipv6_loopback_available_test
   test/core/iomgr/grpc_ipv6_loopback_available_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -17753,7 +17490,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(grpc_tls_certificate_distributor_test
   test/core/security/grpc_tls_certificate_distributor_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -17804,7 +17540,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(grpc_tls_certificate_provider_test
   test/core/security/grpc_tls_certificate_provider_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -17855,7 +17590,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(grpc_tls_certificate_verifier_test
   test/core/security/grpc_tls_certificate_verifier_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -17906,7 +17640,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(grpc_tls_credentials_options_comparator_test
   test/core/security/grpc_tls_credentials_options_comparator_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -17957,7 +17690,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(grpc_tls_credentials_options_test
   test/core/security/grpc_tls_credentials_options_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -18280,16 +18012,46 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(h2_ssl_cert_test
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/control_endpoint.cc
+  src/core/ext/transport/chaotic_good/data_endpoints.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/data/client_certs.cc
   test/core/end2end/data/server1_cert.cc
   test/core/end2end/data/server1_key.cc
   test/core/end2end/data/test_root_cert.cc
+  test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
+  test/core/end2end/fixtures/http_proxy_fixture.cc
   test/core/end2end/fixtures/local_util.cc
+  test/core/end2end/fixtures/proxy.cc
   test/core/end2end/h2_ssl_cert_test.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/test_util/fuzz_config_vars.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -18323,6 +18085,7 @@ target_include_directories(h2_ssl_cert_test
 target_link_libraries(h2_ssl_cert_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -18681,6 +18444,18 @@ add_executable(high_initial_seqno_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -18689,17 +18464,9 @@ add_executable(high_initial_seqno_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -18707,8 +18474,11 @@ add_executable(high_initial_seqno_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/high_initial_seqno.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -18743,7 +18513,6 @@ target_link_libraries(high_initial_seqno_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -18754,7 +18523,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(histogram_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/histogram_test.cc
@@ -18847,7 +18615,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(hpack_encoder_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -18898,7 +18665,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(hpack_parser_table_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -18949,7 +18715,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(hpack_parser_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -19003,6 +18768,18 @@ add_executable(hpack_size_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -19011,17 +18788,9 @@ add_executable(hpack_size_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -19029,8 +18798,11 @@ add_executable(hpack_size_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/hpack_size.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -19065,7 +18837,6 @@ target_link_libraries(hpack_size_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -19129,7 +18900,6 @@ add_executable(http2_client_transport_test
   src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -19183,7 +18953,6 @@ add_executable(http2_server_transport_test
   src/core/ext/transport/chttp2/transport/http2_server_transport.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -19280,6 +19049,18 @@ add_executable(http2_stats_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -19288,17 +19069,9 @@ add_executable(http2_stats_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -19306,8 +19079,11 @@ add_executable(http2_stats_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/http2_stats.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -19342,7 +19118,6 @@ target_link_libraries(http2_stats_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -19635,14 +19410,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(if_test
   test/core/promise/if_test.cc
 )
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(if_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
 target_compile_features(if_test PUBLIC cxx_std_17)
 target_include_directories(if_test
   PRIVATE
@@ -19666,9 +19433,11 @@ target_include_directories(if_test
 target_link_libraries(if_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::any_invocable
+  absl::check
   absl::type_traits
   absl::statusor
-  gpr
+  absl::str_format
 )
 
 
@@ -19760,78 +19529,10 @@ target_link_libraries(initial_settings_frame_bad_client_test
 
 endif()
 if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(inproc_test
-    ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-    src/core/ext/transport/chaotic_good/control_endpoint.cc
-    src/core/ext/transport/chaotic_good/data_endpoints.cc
-    src/core/ext/transport/chaotic_good/frame.cc
-    src/core/ext/transport/chaotic_good/frame_header.cc
-    src/core/lib/transport/promise_endpoint.cc
-    test/core/call/yodel/test_main.cc
-    test/core/call/yodel/yodel_test.cc
-    test/core/event_engine/event_engine_test_utils.cc
-    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-    test/core/transport/test_suite/call_content.cc
-    test/core/transport/test_suite/call_shapes.cc
-    test/core/transport/test_suite/inproc_fixture.cc
-    test/core/transport/test_suite/no_op.cc
-    test/core/transport/test_suite/stress.cc
-    test/core/transport/test_suite/transport_test.cc
-  )
-  if(WIN32 AND MSVC)
-    if(BUILD_SHARED_LIBS)
-      target_compile_definitions(inproc_test
-      PRIVATE
-        "GPR_DLL_IMPORTS"
-        "GRPC_DLL_IMPORTS"
-      )
-    endif()
-  endif()
-  target_compile_features(inproc_test PUBLIC cxx_std_17)
-  target_include_directories(inproc_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(inproc_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
-  )
-
-
-endif()
-endif()
-if(gRPC_BUILD_TESTS)
 
 add_executable(insecure_security_connector_test
   test/core/security/insecure_security_connector_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -20032,7 +19733,6 @@ add_executable(interceptor_list_test
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -20251,6 +19951,18 @@ add_executable(invoke_large_request_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -20259,17 +19971,9 @@ add_executable(invoke_large_request_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -20277,8 +19981,11 @@ add_executable(invoke_large_request_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/invoke_large_request.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -20313,7 +20020,6 @@ target_link_libraries(invoke_large_request_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -20551,7 +20257,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(json_token_test
   test/core/security/json_token_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -20602,7 +20307,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(jwt_verifier_test
   test/core/security/jwt_verifier_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -20655,6 +20359,18 @@ add_executable(keepalive_timeout_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -20663,17 +20379,9 @@ add_executable(keepalive_timeout_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -20681,8 +20389,11 @@ add_executable(keepalive_timeout_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/keepalive_timeout.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -20717,7 +20428,6 @@ target_link_libraries(keepalive_timeout_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -20774,6 +20484,18 @@ add_executable(large_metadata_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -20782,17 +20504,9 @@ add_executable(large_metadata_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -20800,8 +20514,11 @@ add_executable(large_metadata_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/large_metadata.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -20836,7 +20553,6 @@ target_link_libraries(large_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -21031,59 +20747,6 @@ target_link_libraries(lb_metadata_test
 
 endif()
 if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(load_balanced_call_destination_test
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-    test/core/call/yodel/test_main.cc
-    test/core/call/yodel/yodel_test.cc
-    test/core/client_channel/load_balanced_call_destination_test.cc
-    test/core/event_engine/event_engine_test_utils.cc
-    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  )
-  if(WIN32 AND MSVC)
-    if(BUILD_SHARED_LIBS)
-      target_compile_definitions(load_balanced_call_destination_test
-      PRIVATE
-        "GPR_DLL_IMPORTS"
-        "GRPC_DLL_IMPORTS"
-      )
-    endif()
-  endif()
-  target_compile_features(load_balanced_call_destination_test PUBLIC cxx_std_17)
-  target_include_directories(load_balanced_call_destination_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(load_balanced_call_destination_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
-  )
-
-
-endif()
-endif()
-if(gRPC_BUILD_TESTS)
 
 add_executable(load_config_test
   test/core/config/load_config_test.cc
@@ -21172,7 +20835,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(local_security_connector_test
   test/core/security/local_security_connector_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -21340,7 +21002,6 @@ target_link_libraries(lru_cache_test
   absl::flat_hash_map
   absl::any_invocable
   absl::check
-  absl::statusor
 )
 
 
@@ -21362,7 +21023,6 @@ add_executable(map_pipe_test
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -21427,14 +21087,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(match_promise_test
   test/core/promise/match_promise_test.cc
 )
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(match_promise_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
 target_compile_features(match_promise_test PUBLIC cxx_std_17)
 target_include_directories(match_promise_test
   PRIVATE
@@ -21458,8 +21110,11 @@ target_include_directories(match_promise_test
 target_link_libraries(match_promise_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::any_invocable
+  absl::check
   absl::type_traits
-  gpr
+  absl::status
+  absl::str_format
 )
 
 
@@ -21500,7 +21155,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(matchers_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -21554,6 +21208,18 @@ add_executable(max_concurrent_streams_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -21562,17 +21228,9 @@ add_executable(max_concurrent_streams_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -21580,8 +21238,11 @@ add_executable(max_concurrent_streams_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/max_concurrent_streams.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -21616,7 +21277,6 @@ target_link_libraries(max_concurrent_streams_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -21630,6 +21290,18 @@ add_executable(max_connection_age_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -21638,17 +21310,9 @@ add_executable(max_connection_age_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -21656,8 +21320,11 @@ add_executable(max_connection_age_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/max_connection_age.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -21692,7 +21359,6 @@ target_link_libraries(max_connection_age_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -21706,6 +21372,18 @@ add_executable(max_connection_idle_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -21714,17 +21392,9 @@ add_executable(max_connection_idle_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -21732,8 +21402,11 @@ add_executable(max_connection_idle_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/max_connection_idle.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -21768,7 +21441,6 @@ target_link_libraries(max_connection_idle_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -21782,6 +21454,18 @@ add_executable(max_message_length_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -21790,17 +21474,9 @@ add_executable(max_message_length_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -21808,8 +21484,11 @@ add_executable(max_message_length_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/max_message_length.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -21844,7 +21523,6 @@ target_link_libraries(max_message_length_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -22018,7 +21696,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(message_compress_test
   test/core/compression/message_compress_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -22110,7 +21787,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(metadata_map_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -22533,6 +22209,18 @@ add_executable(negative_deadline_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -22541,17 +22229,9 @@ add_executable(negative_deadline_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -22559,8 +22239,11 @@ add_executable(negative_deadline_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/negative_deadline.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -22595,7 +22278,6 @@ target_link_libraries(negative_deadline_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -22641,6 +22323,18 @@ add_executable(no_logging_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -22649,17 +22343,9 @@ add_executable(no_logging_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -22667,8 +22353,11 @@ add_executable(no_logging_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/no_logging.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -22703,7 +22392,6 @@ target_link_libraries(no_logging_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -22717,6 +22405,18 @@ add_executable(no_op_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -22725,17 +22425,9 @@ add_executable(no_op_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -22743,8 +22435,11 @@ add_executable(no_op_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/no_op.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -22779,7 +22474,6 @@ target_link_libraries(no_op_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -23663,7 +23357,6 @@ add_executable(parser_test
   test/core/end2end/data/server1_key.cc
   test/core/end2end/data/test_root_cert.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -23706,6 +23399,48 @@ target_link_libraries(parser_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(party_mpsc_test
+  test/core/promise/party_mpsc_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(party_mpsc_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(party_mpsc_test PUBLIC cxx_std_17)
+target_include_directories(party_mpsc_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(party_mpsc_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_unsecure
 )
 
 
@@ -23759,6 +23494,18 @@ add_executable(payload_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -23767,17 +23514,9 @@ add_executable(payload_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -23785,8 +23524,11 @@ add_executable(payload_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/payload.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -23821,7 +23563,6 @@ target_link_libraries(payload_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -23992,7 +23733,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(ping_abuse_policy_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -24085,7 +23825,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(ping_configuration_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -24139,6 +23878,18 @@ add_executable(ping_pong_streaming_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -24147,17 +23898,9 @@ add_executable(ping_pong_streaming_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -24165,8 +23908,11 @@ add_executable(ping_pong_streaming_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/ping_pong_streaming.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -24201,7 +23947,6 @@ target_link_libraries(ping_pong_streaming_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -24212,7 +23957,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(ping_rate_policy_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -24266,6 +24010,18 @@ add_executable(ping_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -24274,17 +24030,9 @@ add_executable(ping_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -24292,8 +24040,11 @@ add_executable(ping_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/ping.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -24328,7 +24079,6 @@ target_link_libraries(ping_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -24382,14 +24132,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(poll_test
   test/core/promise/poll_test.cc
 )
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(poll_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
 target_compile_features(poll_test PUBLIC cxx_std_17)
 target_include_directories(poll_test
   PRIVATE
@@ -24413,7 +24155,8 @@ target_include_directories(poll_test
 target_link_libraries(poll_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  gpr
+  absl::check
+  absl::str_format
 )
 
 
@@ -25043,6 +24786,10 @@ add_executable(pre_stop_hook_server_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -25328,14 +25075,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(prioritized_race_test
   test/core/promise/prioritized_race_test.cc
 )
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(prioritized_race_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
 target_compile_features(prioritized_race_test PUBLIC cxx_std_17)
 target_include_directories(prioritized_race_test
   PRIVATE
@@ -25359,7 +25098,10 @@ target_include_directories(prioritized_race_test
 target_link_libraries(prioritized_race_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  gpr
+  absl::any_invocable
+  absl::check
+  absl::type_traits
+  absl::str_format
 )
 
 
@@ -25412,14 +25154,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(promise_factory_test
   test/core/promise/promise_factory_test.cc
 )
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(promise_factory_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
 target_compile_features(promise_factory_test PUBLIC cxx_std_17)
 target_include_directories(promise_factory_test
   PRIVATE
@@ -25443,9 +25177,11 @@ target_include_directories(promise_factory_test
 target_link_libraries(promise_factory_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::any_invocable
   absl::bind_front
+  absl::check
   absl::type_traits
-  gpr
+  absl::str_format
 )
 
 
@@ -25455,14 +25191,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(promise_map_test
   test/core/promise/map_test.cc
 )
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(promise_map_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
 target_compile_features(promise_map_test PUBLIC cxx_std_17)
 target_include_directories(promise_map_test
   PRIVATE
@@ -25486,9 +25214,13 @@ target_include_directories(promise_map_test
 target_link_libraries(promise_map_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::any_invocable
+  absl::check
+  absl::log
   absl::type_traits
+  absl::status
   absl::statusor
-  gpr
+  absl::str_format
 )
 
 
@@ -25552,14 +25284,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(promise_test
   test/core/promise/promise_test.cc
 )
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(promise_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
 target_compile_features(promise_test PUBLIC cxx_std_17)
 target_include_directories(promise_test
   PRIVATE
@@ -25583,8 +25307,11 @@ target_include_directories(promise_test
 target_link_libraries(promise_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::any_invocable
+  absl::check
   absl::type_traits
-  gpr
+  absl::status
+  absl::str_format
 )
 
 
@@ -25808,6 +25535,18 @@ add_executable(proxy_auth_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -25816,17 +25555,9 @@ add_executable(proxy_auth_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -25834,8 +25565,11 @@ add_executable(proxy_auth_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/proxy_auth.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -25870,7 +25604,6 @@ target_link_libraries(proxy_auth_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -26076,14 +25809,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(race_test
   test/core/promise/race_test.cc
 )
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(race_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
 target_compile_features(race_test PUBLIC cxx_std_17)
 target_include_directories(race_test
   PRIVATE
@@ -26107,7 +25832,8 @@ target_include_directories(race_test
 target_link_libraries(race_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  gpr
+  absl::check
+  absl::str_format
 )
 
 
@@ -26275,7 +26001,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(rbac_translator_test
   test/core/security/rbac_translator_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -26413,6 +26138,18 @@ add_executable(registered_call_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -26421,17 +26158,9 @@ add_executable(registered_call_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -26439,8 +26168,11 @@ add_executable(registered_call_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/registered_call.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -26475,7 +26207,6 @@ target_link_libraries(registered_call_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -26548,7 +26279,6 @@ add_executable(request_buffer_test
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
   src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -26633,6 +26363,18 @@ add_executable(request_with_flags_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -26641,17 +26383,9 @@ add_executable(request_with_flags_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -26659,8 +26393,11 @@ add_executable(request_with_flags_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/request_with_flags.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -26695,7 +26432,6 @@ target_link_libraries(request_with_flags_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -26709,6 +26445,18 @@ add_executable(request_with_payload_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -26717,17 +26465,9 @@ add_executable(request_with_payload_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -26735,8 +26475,11 @@ add_executable(request_with_payload_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/request_with_payload.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -26771,7 +26514,6 @@ target_link_libraries(request_with_payload_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -26784,7 +26526,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(resolve_address_using_ares_resolver_posix_test
     test/core/iomgr/resolve_address_posix_test.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -26837,7 +26578,6 @@ add_executable(resolve_address_using_ares_resolver_test
   test/core/iomgr/resolve_address_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/fake_udp_and_tcp_server.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -26890,7 +26630,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(resolve_address_using_native_resolver_posix_test
     test/core/iomgr/resolve_address_posix_test.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -26943,7 +26682,6 @@ add_executable(resolve_address_using_native_resolver_test
   test/core/iomgr/resolve_address_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/fake_udp_and_tcp_server.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -27072,6 +26810,18 @@ add_executable(resource_quota_server_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -27080,17 +26830,9 @@ add_executable(resource_quota_server_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -27098,8 +26840,11 @@ add_executable(resource_quota_server_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/resource_quota_server.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -27134,7 +26879,6 @@ target_link_libraries(resource_quota_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -27190,6 +26934,18 @@ add_executable(retry_cancel_after_first_attempt_starts_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -27198,17 +26954,9 @@ add_executable(retry_cancel_after_first_attempt_starts_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -27216,8 +26964,11 @@ add_executable(retry_cancel_after_first_attempt_starts_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -27252,7 +27003,6 @@ target_link_libraries(retry_cancel_after_first_attempt_starts_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -27266,6 +27016,18 @@ add_executable(retry_cancel_during_delay_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -27274,17 +27036,9 @@ add_executable(retry_cancel_during_delay_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -27292,8 +27046,11 @@ add_executable(retry_cancel_during_delay_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_cancel_during_delay.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -27328,7 +27085,6 @@ target_link_libraries(retry_cancel_during_delay_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -27342,6 +27098,18 @@ add_executable(retry_cancel_with_multiple_send_batches_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -27350,17 +27118,9 @@ add_executable(retry_cancel_with_multiple_send_batches_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -27368,8 +27128,11 @@ add_executable(retry_cancel_with_multiple_send_batches_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -27404,7 +27167,6 @@ target_link_libraries(retry_cancel_with_multiple_send_batches_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -27418,6 +27180,18 @@ add_executable(retry_cancellation_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -27426,17 +27200,9 @@ add_executable(retry_cancellation_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -27444,8 +27210,11 @@ add_executable(retry_cancellation_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_cancellation.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -27480,7 +27249,6 @@ target_link_libraries(retry_cancellation_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -27494,6 +27262,18 @@ add_executable(retry_disabled_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -27502,17 +27282,9 @@ add_executable(retry_disabled_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -27520,8 +27292,11 @@ add_executable(retry_disabled_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_disabled.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -27556,7 +27331,6 @@ target_link_libraries(retry_disabled_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -27570,6 +27344,18 @@ add_executable(retry_exceeds_buffer_size_in_delay_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -27578,17 +27364,9 @@ add_executable(retry_exceeds_buffer_size_in_delay_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -27596,8 +27374,11 @@ add_executable(retry_exceeds_buffer_size_in_delay_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -27632,7 +27413,6 @@ target_link_libraries(retry_exceeds_buffer_size_in_delay_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -27646,6 +27426,18 @@ add_executable(retry_exceeds_buffer_size_in_initial_batch_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -27654,17 +27446,9 @@ add_executable(retry_exceeds_buffer_size_in_initial_batch_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -27672,8 +27456,11 @@ add_executable(retry_exceeds_buffer_size_in_initial_batch_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -27708,7 +27495,6 @@ target_link_libraries(retry_exceeds_buffer_size_in_initial_batch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -27722,6 +27508,18 @@ add_executable(retry_exceeds_buffer_size_in_subsequent_batch_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -27730,17 +27528,9 @@ add_executable(retry_exceeds_buffer_size_in_subsequent_batch_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -27748,8 +27538,11 @@ add_executable(retry_exceeds_buffer_size_in_subsequent_batch_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -27784,65 +27577,11 @@ target_link_libraries(retry_exceeds_buffer_size_in_subsequent_batch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
 
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(retry_interceptor_test
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-    test/core/call/yodel/test_main.cc
-    test/core/call/yodel/yodel_test.cc
-    test/core/client_channel/retry_interceptor_test.cc
-    test/core/event_engine/event_engine_test_utils.cc
-    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  )
-  if(WIN32 AND MSVC)
-    if(BUILD_SHARED_LIBS)
-      target_compile_definitions(retry_interceptor_test
-      PRIVATE
-        "GPR_DLL_IMPORTS"
-        "GRPC_DLL_IMPORTS"
-      )
-    endif()
-  endif()
-  target_compile_features(retry_interceptor_test PUBLIC cxx_std_17)
-  target_include_directories(retry_interceptor_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(retry_interceptor_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
-  )
-
-
-endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -27851,6 +27590,18 @@ add_executable(retry_lb_drop_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -27859,17 +27610,9 @@ add_executable(retry_lb_drop_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -27877,8 +27620,11 @@ add_executable(retry_lb_drop_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_lb_drop.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -27913,7 +27659,6 @@ target_link_libraries(retry_lb_drop_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -27927,6 +27672,18 @@ add_executable(retry_lb_fail_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -27935,17 +27692,9 @@ add_executable(retry_lb_fail_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -27953,8 +27702,11 @@ add_executable(retry_lb_fail_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_lb_fail.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -27989,7 +27741,6 @@ target_link_libraries(retry_lb_fail_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -28003,6 +27754,18 @@ add_executable(retry_non_retriable_status_before_trailers_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -28011,17 +27774,9 @@ add_executable(retry_non_retriable_status_before_trailers_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -28029,8 +27784,11 @@ add_executable(retry_non_retriable_status_before_trailers_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_non_retriable_status_before_trailers.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -28065,7 +27823,6 @@ target_link_libraries(retry_non_retriable_status_before_trailers_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -28079,6 +27836,18 @@ add_executable(retry_non_retriable_status_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -28087,17 +27856,9 @@ add_executable(retry_non_retriable_status_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -28105,8 +27866,11 @@ add_executable(retry_non_retriable_status_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_non_retriable_status.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -28141,7 +27905,6 @@ target_link_libraries(retry_non_retriable_status_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -28155,6 +27918,18 @@ add_executable(retry_per_attempt_recv_timeout_on_last_attempt_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -28163,17 +27938,9 @@ add_executable(retry_per_attempt_recv_timeout_on_last_attempt_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -28181,8 +27948,11 @@ add_executable(retry_per_attempt_recv_timeout_on_last_attempt_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -28217,7 +27987,6 @@ target_link_libraries(retry_per_attempt_recv_timeout_on_last_attempt_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -28231,6 +28000,18 @@ add_executable(retry_per_attempt_recv_timeout_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -28239,17 +28020,9 @@ add_executable(retry_per_attempt_recv_timeout_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -28257,8 +28030,11 @@ add_executable(retry_per_attempt_recv_timeout_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -28293,7 +28069,6 @@ target_link_libraries(retry_per_attempt_recv_timeout_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -28307,6 +28082,18 @@ add_executable(retry_recv_initial_metadata_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -28315,17 +28102,9 @@ add_executable(retry_recv_initial_metadata_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -28333,8 +28112,11 @@ add_executable(retry_recv_initial_metadata_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_recv_initial_metadata.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -28369,7 +28151,6 @@ target_link_libraries(retry_recv_initial_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -28383,6 +28164,18 @@ add_executable(retry_recv_message_replay_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -28391,17 +28184,9 @@ add_executable(retry_recv_message_replay_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -28409,8 +28194,11 @@ add_executable(retry_recv_message_replay_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_recv_message_replay.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -28445,7 +28233,6 @@ target_link_libraries(retry_recv_message_replay_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -28459,6 +28246,18 @@ add_executable(retry_recv_message_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -28467,17 +28266,9 @@ add_executable(retry_recv_message_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -28485,8 +28276,11 @@ add_executable(retry_recv_message_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_recv_message.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -28521,7 +28315,6 @@ target_link_libraries(retry_recv_message_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -28535,6 +28328,18 @@ add_executable(retry_recv_trailing_metadata_error_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -28543,17 +28348,9 @@ add_executable(retry_recv_trailing_metadata_error_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -28561,8 +28358,11 @@ add_executable(retry_recv_trailing_metadata_error_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -28597,7 +28397,6 @@ target_link_libraries(retry_recv_trailing_metadata_error_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -28611,6 +28410,18 @@ add_executable(retry_send_initial_metadata_refs_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -28619,17 +28430,9 @@ add_executable(retry_send_initial_metadata_refs_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -28637,8 +28440,11 @@ add_executable(retry_send_initial_metadata_refs_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_send_initial_metadata_refs.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -28673,7 +28479,6 @@ target_link_libraries(retry_send_initial_metadata_refs_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -28687,6 +28492,18 @@ add_executable(retry_send_op_fails_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -28695,17 +28512,9 @@ add_executable(retry_send_op_fails_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -28713,8 +28522,11 @@ add_executable(retry_send_op_fails_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_send_op_fails.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -28749,7 +28561,6 @@ target_link_libraries(retry_send_op_fails_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -28763,6 +28574,18 @@ add_executable(retry_send_recv_batch_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -28771,17 +28594,9 @@ add_executable(retry_send_recv_batch_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -28789,8 +28604,11 @@ add_executable(retry_send_recv_batch_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_send_recv_batch.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -28825,7 +28643,6 @@ target_link_libraries(retry_send_recv_batch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -28839,6 +28656,18 @@ add_executable(retry_server_pushback_delay_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -28847,17 +28676,9 @@ add_executable(retry_server_pushback_delay_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -28865,8 +28686,11 @@ add_executable(retry_server_pushback_delay_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_server_pushback_delay.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -28901,7 +28725,6 @@ target_link_libraries(retry_server_pushback_delay_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -28915,6 +28738,18 @@ add_executable(retry_server_pushback_disabled_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -28923,17 +28758,9 @@ add_executable(retry_server_pushback_disabled_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -28941,8 +28768,11 @@ add_executable(retry_server_pushback_disabled_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_server_pushback_disabled.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -28977,7 +28807,6 @@ target_link_libraries(retry_server_pushback_disabled_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -29033,6 +28862,18 @@ add_executable(retry_streaming_after_commit_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -29041,17 +28882,9 @@ add_executable(retry_streaming_after_commit_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -29059,8 +28892,11 @@ add_executable(retry_streaming_after_commit_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_streaming_after_commit.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29095,7 +28931,6 @@ target_link_libraries(retry_streaming_after_commit_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -29109,6 +28944,18 @@ add_executable(retry_streaming_succeeds_before_replay_finished_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -29117,17 +28964,9 @@ add_executable(retry_streaming_succeeds_before_replay_finished_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -29135,8 +28974,11 @@ add_executable(retry_streaming_succeeds_before_replay_finished_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29171,7 +29013,6 @@ target_link_libraries(retry_streaming_succeeds_before_replay_finished_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -29185,6 +29026,18 @@ add_executable(retry_streaming_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -29193,17 +29046,9 @@ add_executable(retry_streaming_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -29211,8 +29056,11 @@ add_executable(retry_streaming_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_streaming.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29247,7 +29095,6 @@ target_link_libraries(retry_streaming_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -29261,6 +29108,18 @@ add_executable(retry_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -29269,17 +29128,9 @@ add_executable(retry_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -29287,8 +29138,11 @@ add_executable(retry_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29323,7 +29177,6 @@ target_link_libraries(retry_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -29379,6 +29232,18 @@ add_executable(retry_throttled_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -29387,17 +29252,9 @@ add_executable(retry_throttled_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -29405,8 +29262,11 @@ add_executable(retry_throttled_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_throttled.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29441,7 +29301,6 @@ target_link_libraries(retry_throttled_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -29455,6 +29314,18 @@ add_executable(retry_too_many_attempts_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -29463,17 +29334,9 @@ add_executable(retry_too_many_attempts_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -29481,8 +29344,11 @@ add_executable(retry_too_many_attempts_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_too_many_attempts.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29517,7 +29383,6 @@ target_link_libraries(retry_too_many_attempts_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -29531,6 +29396,18 @@ add_executable(retry_transparent_goaway_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -29539,17 +29416,9 @@ add_executable(retry_transparent_goaway_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -29557,8 +29426,11 @@ add_executable(retry_transparent_goaway_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_transparent_goaway.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29593,7 +29465,6 @@ target_link_libraries(retry_transparent_goaway_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -29607,6 +29478,18 @@ add_executable(retry_transparent_max_concurrent_streams_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -29615,17 +29498,9 @@ add_executable(retry_transparent_max_concurrent_streams_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -29633,8 +29508,11 @@ add_executable(retry_transparent_max_concurrent_streams_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29669,7 +29547,6 @@ target_link_libraries(retry_transparent_max_concurrent_streams_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -29683,6 +29560,18 @@ add_executable(retry_transparent_not_sent_on_wire_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -29691,17 +29580,9 @@ add_executable(retry_transparent_not_sent_on_wire_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -29709,8 +29590,11 @@ add_executable(retry_transparent_not_sent_on_wire_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29745,7 +29629,6 @@ target_link_libraries(retry_transparent_not_sent_on_wire_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -29759,6 +29642,18 @@ add_executable(retry_unref_before_finish_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -29767,17 +29662,9 @@ add_executable(retry_unref_before_finish_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -29785,8 +29672,11 @@ add_executable(retry_unref_before_finish_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_unref_before_finish.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29821,7 +29711,6 @@ target_link_libraries(retry_unref_before_finish_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -29835,6 +29724,18 @@ add_executable(retry_unref_before_recv_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -29843,17 +29744,9 @@ add_executable(retry_unref_before_recv_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -29861,8 +29754,11 @@ add_executable(retry_unref_before_recv_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/retry_unref_before_recv.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29897,7 +29793,6 @@ target_link_libraries(retry_unref_before_recv_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -30256,7 +30151,6 @@ add_executable(secure_endpoint_test
   test/core/iomgr/endpoint_tests.cc
   test/core/security/secure_endpoint_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -30307,7 +30201,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(security_connector_test
   test/core/security/security_connector_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -30560,7 +30453,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
     test/core/event_engine/event_engine_test_utils.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -30647,7 +30539,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -30692,61 +30583,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gtest
     grpc++_unsecure
     grpc_test_util_unsecure
-  )
-
-
-endif()
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(server_call_test
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-    test/core/call/batch_builder.cc
-    test/core/call/server_call_test.cc
-    test/core/call/yodel/test_main.cc
-    test/core/call/yodel/yodel_test.cc
-    test/core/end2end/cq_verifier.cc
-    test/core/event_engine/event_engine_test_utils.cc
-    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  )
-  if(WIN32 AND MSVC)
-    if(BUILD_SHARED_LIBS)
-      target_compile_definitions(server_call_test
-      PRIVATE
-        "GPR_DLL_IMPORTS"
-        "GRPC_DLL_IMPORTS"
-      )
-    endif()
-  endif()
-  target_compile_features(server_call_test PUBLIC cxx_std_17)
-  target_include_directories(server_call_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(server_call_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
   )
 
 
@@ -31003,6 +30839,18 @@ add_executable(server_finishes_request_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -31011,17 +30859,9 @@ add_executable(server_finishes_request_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -31029,8 +30869,11 @@ add_executable(server_finishes_request_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/server_finishes_request.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -31065,7 +30908,6 @@ target_link_libraries(server_finishes_request_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -31230,7 +31072,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -31332,6 +31173,18 @@ add_executable(server_streaming_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -31340,17 +31193,9 @@ add_executable(server_streaming_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -31358,8 +31203,11 @@ add_executable(server_streaming_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/server_streaming.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -31394,7 +31242,6 @@ target_link_libraries(server_streaming_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -31569,7 +31416,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(settings_timeout_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -31623,6 +31469,18 @@ add_executable(shutdown_finishes_calls_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -31631,17 +31489,9 @@ add_executable(shutdown_finishes_calls_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -31649,8 +31499,11 @@ add_executable(shutdown_finishes_calls_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/shutdown_finishes_calls.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -31685,7 +31538,6 @@ target_link_libraries(shutdown_finishes_calls_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -31699,6 +31551,18 @@ add_executable(shutdown_finishes_tags_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -31707,17 +31571,9 @@ add_executable(shutdown_finishes_tags_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -31725,8 +31581,11 @@ add_executable(shutdown_finishes_tags_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/shutdown_finishes_tags.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -31761,7 +31620,6 @@ target_link_libraries(shutdown_finishes_tags_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -31854,6 +31712,18 @@ add_executable(simple_delayed_request_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -31862,17 +31732,9 @@ add_executable(simple_delayed_request_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -31880,8 +31742,11 @@ add_executable(simple_delayed_request_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/simple_delayed_request.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -31916,7 +31781,6 @@ target_link_libraries(simple_delayed_request_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -31930,6 +31794,18 @@ add_executable(simple_metadata_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -31938,17 +31814,9 @@ add_executable(simple_metadata_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -31956,8 +31824,11 @@ add_executable(simple_metadata_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/simple_metadata.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -31992,7 +31863,6 @@ target_link_libraries(simple_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -32050,6 +31920,18 @@ add_executable(simple_request_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -32058,17 +31940,9 @@ add_executable(simple_request_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -32076,8 +31950,11 @@ add_executable(simple_request_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/simple_request.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -32112,7 +31989,6 @@ target_link_libraries(simple_request_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -32253,48 +32129,6 @@ target_link_libraries(slice_string_helpers_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(smoke_test
-  test/core/event_engine/smoke_test.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(smoke_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(smoke_test PUBLIC cxx_std_17)
-target_include_directories(smoke_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(smoke_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc_test_util_unsecure
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(sockaddr_resolver_test
   test/core/resolver/sockaddr_resolver_test.cc
 )
@@ -32383,7 +32217,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(socket_utils_test
     test/core/iomgr/socket_utils_test.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -32769,7 +32602,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(status_conversion_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -32821,14 +32653,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(status_flag_test
   test/core/promise/status_flag_test.cc
 )
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(status_flag_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
 target_compile_features(status_flag_test PUBLIC cxx_std_17)
 target_include_directories(status_flag_test
   PRIVATE
@@ -32852,8 +32676,9 @@ target_include_directories(status_flag_test
 target_link_libraries(status_flag_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
+  absl::status
   absl::statusor
-  gpr
 )
 
 
@@ -32991,6 +32816,18 @@ add_executable(streaming_error_response_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -32999,17 +32836,9 @@ add_executable(streaming_error_response_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -33017,8 +32846,11 @@ add_executable(streaming_error_response_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/streaming_error_response.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -33053,7 +32885,6 @@ target_link_libraries(streaming_error_response_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -33146,7 +32977,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(streams_not_seen_test
   test/core/end2end/cq_verifier.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -33411,7 +33241,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(system_roots_test
   test/core/security/system_roots_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -33499,7 +33328,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(tcp_client_posix_test
     test/core/iomgr/tcp_client_posix_test.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -33597,7 +33425,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/iomgr/endpoint_tests.cc
     test/core/iomgr/tcp_posix_test.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -33650,7 +33477,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(tcp_server_posix_test
     test/core/iomgr/tcp_server_posix_test.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -33835,6 +33661,18 @@ add_executable(test_core_end2end_channelz_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -33843,17 +33681,9 @@ add_executable(test_core_end2end_channelz_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -33861,8 +33691,11 @@ add_executable(test_core_end2end_channelz_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/channelz.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -33897,7 +33730,6 @@ target_link_libraries(test_core_end2end_channelz_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -33942,52 +33774,6 @@ target_include_directories(test_core_event_engine_posix_timer_heap_test
 )
 
 target_link_libraries(test_core_event_engine_posix_timer_heap_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  absl::statusor
-  gpr
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(test_core_event_engine_posix_timer_list_test
-  src/core/lib/event_engine/posix_engine/timer.cc
-  src/core/lib/event_engine/posix_engine/timer_heap.cc
-  src/core/util/time.cc
-  src/core/util/time_averaged_stats.cc
-  test/core/event_engine/posix/timer_list_test.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(test_core_event_engine_posix_timer_list_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(test_core_event_engine_posix_timer_list_test PUBLIC cxx_std_17)
-target_include_directories(test_core_event_engine_posix_timer_list_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(test_core_event_engine_posix_timer_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::statusor
@@ -34056,7 +33842,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(test_core_iomgr_timer_heap_test
   test/core/iomgr/timer_heap_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -34113,7 +33898,6 @@ add_executable(test_core_security_credentials_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/security/credentials_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -34165,7 +33949,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(test_core_security_ssl_credentials_test
   test/core/security/ssl_credentials_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -34295,76 +34078,6 @@ target_link_libraries(test_core_slice_slice_test
 )
 
 
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(test_core_transport_test_suite_chaotic_good_test
-    ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-    src/core/ext/transport/chaotic_good/client_transport.cc
-    src/core/ext/transport/chaotic_good/control_endpoint.cc
-    src/core/ext/transport/chaotic_good/data_endpoints.cc
-    src/core/ext/transport/chaotic_good/frame.cc
-    src/core/ext/transport/chaotic_good/frame_header.cc
-    src/core/ext/transport/chaotic_good/server_transport.cc
-    src/core/lib/transport/promise_endpoint.cc
-    test/core/call/yodel/test_main.cc
-    test/core/call/yodel/yodel_test.cc
-    test/core/event_engine/event_engine_test_utils.cc
-    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-    test/core/transport/test_suite/call_content.cc
-    test/core/transport/test_suite/call_shapes.cc
-    test/core/transport/test_suite/chaotic_good_fixture.cc
-    test/core/transport/test_suite/chaotic_good_fixture_helpers.cc
-    test/core/transport/test_suite/no_op.cc
-    test/core/transport/test_suite/stress.cc
-    test/core/transport/test_suite/transport_test.cc
-  )
-  if(WIN32 AND MSVC)
-    if(BUILD_SHARED_LIBS)
-      target_compile_definitions(test_core_transport_test_suite_chaotic_good_test
-      PRIVATE
-        "GPR_DLL_IMPORTS"
-        "GRPC_DLL_IMPORTS"
-      )
-    endif()
-  endif()
-  target_compile_features(test_core_transport_test_suite_chaotic_good_test PUBLIC cxx_std_17)
-  target_include_directories(test_core_transport_test_suite_chaotic_good_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(test_core_transport_test_suite_chaotic_good_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
-  )
-
-
-endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -34526,71 +34239,6 @@ target_link_libraries(test_cpp_end2end_ssl_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc++_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(test_cpp_ext_chaotic_good_test
-  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
-  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good/client_transport.cc
-  src/core/ext/transport/chaotic_good/control_endpoint.cc
-  src/core/ext/transport/chaotic_good/data_endpoints.cc
-  src/core/ext/transport/chaotic_good/frame.cc
-  src/core/ext/transport/chaotic_good/frame_header.cc
-  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
-  src/core/lib/transport/promise_endpoint.cc
-  src/cpp/ext/chaotic_good.cc
-  test/cpp/ext/chaotic_good_test.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(test_cpp_ext_chaotic_good_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-      "GRPCXX_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(test_cpp_ext_chaotic_good_test PUBLIC cxx_std_17)
-target_include_directories(test_cpp_ext_chaotic_good_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(test_cpp_ext_chaotic_good_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc++
-  grpc_test_util
 )
 
 
@@ -35125,6 +34773,18 @@ add_executable(timeout_before_request_call_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -35133,17 +34793,9 @@ add_executable(timeout_before_request_call_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -35151,8 +34803,11 @@ add_executable(timeout_before_request_call_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/timeout_before_request_call.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -35187,7 +34842,6 @@ target_link_libraries(timeout_before_request_call_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -35198,7 +34852,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(timeout_encoding_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -35241,6 +34894,52 @@ target_link_libraries(timeout_encoding_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(timer_list_test
+  src/core/lib/event_engine/posix_engine/timer.cc
+  src/core/lib/event_engine/posix_engine/timer_heap.cc
+  src/core/util/time.cc
+  src/core/util/time_averaged_stats.cc
+  test/core/event_engine/posix/timer_list_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(timer_list_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(timer_list_test PUBLIC cxx_std_17)
+target_include_directories(timer_list_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(timer_list_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::statusor
+  gpr
 )
 
 
@@ -35532,7 +35231,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(tls_security_connector_test
   test/core/security/tls_security_connector_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -35716,6 +35414,18 @@ add_executable(trailing_metadata_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -35724,17 +35434,9 @@ add_executable(trailing_metadata_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -35742,8 +35444,11 @@ add_executable(trailing_metadata_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/trailing_metadata.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -35778,7 +35483,6 @@ target_link_libraries(trailing_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -36377,6 +36081,49 @@ target_link_libraries(wait_for_callback_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+
+add_executable(wait_for_single_owner_test
+  src/core/util/time.cc
+  test/core/util/wait_for_single_owner_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(wait_for_single_owner_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(wait_for_single_owner_test PUBLIC cxx_std_17)
+target_include_directories(wait_for_single_owner_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(wait_for_single_owner_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::statusor
+  gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(wakeup_fd_posix_test
@@ -36699,6 +36446,18 @@ add_executable(write_buffering_at_end_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -36707,17 +36466,9 @@ add_executable(write_buffering_at_end_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -36725,8 +36476,11 @@ add_executable(write_buffering_at_end_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/write_buffering_at_end.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -36761,7 +36515,6 @@ target_link_libraries(write_buffering_at_end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -36775,6 +36528,18 @@ add_executable(write_buffering_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -36783,17 +36548,9 @@ add_executable(write_buffering_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/frame.cc
-  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
@@ -36801,8 +36558,11 @@ add_executable(write_buffering_test
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/write_buffering.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
   test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -36837,7 +36597,6 @@ target_link_libraries(write_buffering_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -36931,7 +36690,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -37092,6 +36850,10 @@ add_executable(xds_audit_logger_registry_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/rbac/audit_loggers/stream/v3/stream.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/rbac/audit_loggers/stream/v3/stream.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/rbac/audit_loggers/stream/v3/stream.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -37750,6 +37512,10 @@ add_executable(xds_client_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/service/status/v3/csds.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/service/status/v3/csds.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/service/status/v3/csds.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -38273,6 +38039,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -38788,6 +38558,10 @@ add_executable(xds_cluster_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -39312,6 +39086,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -39702,6 +39480,10 @@ add_executable(xds_common_types_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -40189,6 +39971,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -40553,7 +40339,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(xds_credentials_test
   test/core/security/xds_credentials_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -40935,6 +40720,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -41462,6 +41251,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -41839,6 +41632,10 @@ add_executable(xds_endpoint_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/load_report.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/load_report.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -42299,6 +42096,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -42833,6 +42634,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -43363,6 +43168,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -43893,6 +43702,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -44367,6 +44180,10 @@ add_executable(xds_http_filters_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -44785,6 +44602,10 @@ add_executable(xds_lb_policy_registry_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -45247,6 +45068,10 @@ add_executable(xds_listener_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -45613,6 +45438,10 @@ add_executable(xds_metadata_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -46077,6 +45906,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -46611,6 +46444,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -47236,6 +47073,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -47767,6 +47608,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -48302,6 +48147,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -48704,6 +48553,10 @@ add_executable(xds_route_config_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/rbac/v3/rbac.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/rbac/v3/rbac.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/rbac/v3/rbac.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -49235,6 +49088,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -49785,6 +49642,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -50364,6 +50225,10 @@ add_executable(xds_stats_watcher_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -50895,6 +50760,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/http/v3/path_transformation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -51244,7 +51113,7 @@ generate_pkgconfig(
   "gpr"
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
-  "absl_any_invocable absl_base absl_bits absl_check absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_log absl_log_globals absl_log_severity absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time absl_variant"
+  "absl_any_invocable absl_base absl_bits absl_check absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_log absl_log_globals absl_log_severity absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time"
   ""
   "-lgpr"
   ""
@@ -51255,7 +51124,7 @@ generate_pkgconfig(
   "gRPC"
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
-  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr"
+  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr"
   "libcares openssl re2 zlib"
   "-lgrpc"
   "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mem_lib -lupb_base_lib"
@@ -51266,7 +51135,7 @@ generate_pkgconfig(
   "gRPC unsecure"
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
-  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr"
+  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr"
   "libcares zlib"
   "-lgrpc_unsecure"
   "-laddress_sorting -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mem_lib -lupb_base_lib"
@@ -51277,7 +51146,7 @@ generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
-  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc"
+  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr grpc"
   "libcares openssl re2 zlib"
   "-lgrpc++"
   "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mem_lib -lupb_base_lib"
@@ -51288,7 +51157,7 @@ generate_pkgconfig(
   "gRPC++ unsecure"
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
-  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc_unsecure"
+  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr grpc_unsecure"
   "libcares zlib"
   "-lgrpc++_unsecure"
   "-laddress_sorting -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mem_lib -lupb_base_lib"
@@ -51299,7 +51168,7 @@ generate_pkgconfig(
   "gRPC++ OpenTelemetry Plugin"
   "OpenTelemetry Plugin for gRPC C++"
   "${gRPC_CPP_VERSION}"
-  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc grpc++ opentelemetry_api"
+  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr grpc grpc++ opentelemetry_api"
   "libcares openssl re2 zlib"
   "-lgrpcpp_otel_plugin"
   "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mem_lib -lupb_base_lib"

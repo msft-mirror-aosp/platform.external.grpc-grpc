@@ -750,10 +750,10 @@ cc_defaults {
     target: {
         // Needs to be updated when a new version is imported.
         vendor: {
-            suffix: "-1.70.2",
+            suffix: "-1.71.2",
         },
         product: {
-            suffix: "-1.70.2",
+            suffix: "-1.71.2",
         },
     },
 }

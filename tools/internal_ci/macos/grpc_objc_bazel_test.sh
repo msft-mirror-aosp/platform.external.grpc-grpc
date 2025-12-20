@@ -56,9 +56,6 @@ TEST_TARGETS=(
   //src/objective-c/tests:InteropTestsRemote
   //src/objective-c/tests:MacTests
   //src/objective-c/tests:UnitTests
-  # TODO: Enable this again once @CronetFramework is working
-  #//src/objective-c/tests:CppCronetTests
-  #//src/objective-c/tests:CronetTests
   #//src/objective-c/tests:PerfTests
   //src/objective-c/tests:CFStreamTests
   # Needs oracle engine, which doesn't work with GRPC_IOS_EVENT_ENGINE_CLIENT=1
@@ -76,7 +73,6 @@ TEST_TARGETS=(
 # TODO(jtattermusch): can we make ObjC test not depend on running a local interop_server?
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path build_interop_server
 build_interop_server/bazel_wrapper \
-  --output_base=.bazel_rbe \
   --bazelrc=tools/remote_build/mac.bazelrc \
   build \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \

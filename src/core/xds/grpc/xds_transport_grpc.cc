@@ -35,6 +35,8 @@
 #include "absl/strings/str_cat.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/credentials/transport/channel_creds_registry.h"
+#include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -43,8 +45,6 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/security/credentials/channel_creds_registry.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
@@ -263,7 +263,7 @@ RefCountedPtr<Channel> CreateXdsChannel(const ChannelArgs& args,
 
 GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
     WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
-    const XdsBootstrap::XdsServer& server, absl::Status* status)
+    const XdsBootstrap::XdsServerTarget& server, absl::Status* status)
     : XdsTransport(GRPC_TRACE_FLAG_ENABLED(xds_client_refcount)
                        ? "GrpcXdsTransport"
                        : nullptr),
@@ -372,8 +372,8 @@ GrpcXdsTransportFactory::~GrpcXdsTransportFactory() {
 }
 
 RefCountedPtr<XdsTransportFactory::XdsTransport>
-GrpcXdsTransportFactory::GetTransport(const XdsBootstrap::XdsServer& server,
-                                      absl::Status* status) {
+GrpcXdsTransportFactory::GetTransport(
+    const XdsBootstrap::XdsServerTarget& server, absl::Status* status) {
   std::string key = server.Key();
   RefCountedPtr<GrpcXdsTransport> transport;
   MutexLock lock(&mu_);

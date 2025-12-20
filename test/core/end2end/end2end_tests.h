@@ -189,6 +189,11 @@ class CoreEnd2endTest {
     quiesce_event_engine_ = std::move(quiesce_event_engine);
   }
 
+  static void DisableCoreConfigurationReset() {
+    CHECK(core_configuration_reset_);
+    core_configuration_reset_ = false;
+  }
+
   class Call;
   struct RegisteredCall {
     void* p;
@@ -202,18 +207,18 @@ class CoreEnd2endTest {
    public:
     explicit TestNotification(CoreEnd2endTest* test) : test_(test) {}
 
-    void WaitForNotificationWithTimeout(absl::Duration wait_time) {
+    bool WaitForNotificationWithTimeout(absl::Duration wait_time) {
       if (test_->fuzzing_) {
         Timestamp end = Timestamp::Now() + Duration::NanosecondsRoundUp(
                                                ToInt64Nanoseconds(wait_time));
         while (true) {
-          if (base_.HasBeenNotified()) return;
+          if (base_.HasBeenNotified()) return true;
           auto now = Timestamp::Now();
-          if (now >= end) return;
+          if (now >= end) return false;
           test_->step_fn_(now - end);
         }
       } else {
-        base_.WaitForNotificationWithTimeout(wait_time);
+        return base_.WaitForNotificationWithTimeout(wait_time);
       }
     }
 
@@ -550,9 +555,6 @@ class CoreEnd2endTest {
 
   bool fuzzing() const { return fuzzing_; }
 
- private:
-  void ForceInitialized();
-
   CoreTestFixture& fixture() {
     if (fixture_ == nullptr) {
       grpc_init();
@@ -562,6 +564,11 @@ class CoreEnd2endTest {
     }
     return *fixture_;
   }
+
+  bool core_configuration_reset() const { return core_configuration_reset_; }
+
+ private:
+  void ForceInitialized();
 
   CqVerifier& cq_verifier() {
     if (cq_verifier_ == nullptr) {
@@ -593,6 +600,7 @@ class CoreEnd2endTest {
   };
   int expectations_ = 0;
   bool initialized_ = false;
+  static bool core_configuration_reset_;
   absl::AnyInvocable<void()> post_grpc_init_func_ = []() {};
   absl::AnyInvocable<void(
       grpc_event_engine::experimental::EventEngine::Duration) const>
@@ -658,6 +666,22 @@ DECLARE_SUITE(ProxyAuthTests);
 
 core_end2end_test_fuzzer::Msg ParseTestProto(std::string text);
 
+// This function should be provided by the config_src C++ file for the
+// end2end test suite binary being compiled. It provides an extension
+// point so that different test configurations can be executed by the
+// core test suite.
+std::vector<CoreTestConfiguration> End2endTestConfigs();
+
+// Helper function to add a nullptr to a vector of CoreConfiguration pointers
+// if the vector is empty - for fuzzers to avoid ElementOf from asserting.
+inline auto MaybeAddNullConfig(
+    std::vector<const CoreTestConfiguration*> configs) {
+  if (configs.empty()) {
+    configs.push_back(nullptr);
+  }
+  return configs;
+}
+
 }  // namespace grpc_core
 
 // If this test fixture is being run under minstack, skip the test.
@@ -678,12 +702,18 @@ core_end2end_test_fuzzer::Msg ParseTestProto(std::string text);
     GTEST_SKIP() << "Disabled for Local TCP Connection";               \
   }
 
+#define SKIP_IF_CORE_CONFIGURATION_RESET_DISABLED() \
+  if (!core_configuration_reset()) {                \
+    GTEST_SKIP() << "Skipping test for fuzzing";    \
+  }
+
 #ifndef GRPC_END2END_TEST_INCLUDE_FUZZER
 #define CORE_END2END_FUZZER(suite, name)
 #else
 #define CORE_END2END_FUZZER(suite, name)                                  \
   FUZZ_TEST(Fuzzers, suite##_##name)                                      \
-      .WithDomains(::fuzztest::ElementOf(suite::AllSuiteConfigs(true)),   \
+      .WithDomains(::fuzztest::ElementOf(grpc_core::MaybeAddNullConfig(   \
+                       suite::AllSuiteConfigs(true))),                    \
                    ::fuzztest::Arbitrary<core_end2end_test_fuzzer::Msg>() \
                        .WithProtobufField("config_vars", AnyConfigVars()));
 #endif
@@ -722,9 +752,7 @@ core_end2end_test_fuzzer::Msg ParseTestProto(std::string text);
   };                                                                           \
   void suite##_##name(const grpc_core::CoreTestConfiguration* config,          \
                       core_end2end_test_fuzzer::Msg msg) {                     \
-    if (config == nullptr) {                                                   \
-      GTEST_SKIP() << "config not available on this platform";                 \
-    }                                                                          \
+    if (config == nullptr) return;                                             \
     if (absl::StartsWith(#name, "DISABLED_")) GTEST_SKIP() << "disabled test"; \
     if (!IsEventEngineListenerEnabled() || !IsEventEngineClientEnabled() ||    \
         !IsEventEngineDnsEnabled()) {                                          \
@@ -741,6 +769,16 @@ core_end2end_test_fuzzer::Msg ParseTestProto(std::string text);
   CORE_END2END_FUZZER(suite, name)                                             \
   void CoreEnd2endTest_##suite##_##name::RunTest()
 
+#define CORE_END2END_TEST_INCOMPATIBLE_WITH_FUZZING(suite, name) \
+  class CoreEnd2endTest_##suite##_##name final                   \
+      : public grpc_core::CoreEnd2endTest {                      \
+   public:                                                       \
+    using grpc_core::CoreEnd2endTest::CoreEnd2endTest;           \
+    void RunTest();                                              \
+  };                                                             \
+  CORE_END2END_TEST_P(suite, name)                               \
+  void CoreEnd2endTest_##suite##_##name::RunTest()
+
 #define CORE_END2END_TEST_SUITE(suite, configs)                                \
   CORE_END2END_INSTANTIATE_TEST_SUITE_P(suite)                                 \
   std::vector<const grpc_core::CoreTestConfiguration*> suite::AllSuiteConfigs( \
@@ -748,5 +786,13 @@ core_end2end_test_fuzzer::Msg ParseTestProto(std::string text);
     return configs;                                                            \
   }
 // NOLINTEND(bugprone-macro-parentheses)
+
+#define CORE_END2END_TEST_DISABLE_CORE_CONFIGURATION_RESET()     \
+  namespace {                                                    \
+  int g_core_configuration_reset_disabled_called = []() {        \
+    grpc_core::CoreEnd2endTest::DisableCoreConfigurationReset(); \
+    return 42;                                                   \
+  }();                                                           \
+  }
 
 #endif  // GRPC_TEST_CORE_END2END_END2END_TESTS_H

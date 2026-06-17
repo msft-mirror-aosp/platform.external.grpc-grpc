@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import atexit
 
 def _spawn_callback_in_thread(cb_func, args):
   t = ForkManagedThread(target=cb_func, args=args)
@@ -41,7 +42,7 @@ cdef int _get_metadata(void *state,
                        grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
                        size_t *num_creds_md,
                        grpc_status_code *status,
-                       const char **error_details) except * with gil:
+                       const char **error_details) except -1 with gil:
   cdef size_t metadata_count
   cdef grpc_metadata *c_metadata
   def callback(metadata, grpc_status_code status, bytes error_details):
@@ -65,10 +66,58 @@ cdef int _get_metadata(void *state,
   return 0  # Asynchronous return
 
 
-cdef void _destroy(void *state) except * with gil:
-  cpython.Py_DECREF(<object>state)
+# Protects access to GIL from _destroy() and to g_shutting_down.
+# Do NOT hold this while holding GIL to prevent a deadlock.
+cdef mutex g_shutdown_mu
+# Number of C-core clean up calls in progress. Set to -1 when Python is shutting
+# down.
+cdef int g_shutting_down = 0
+
+# This is called by C-core when the plugin is destroyed, which may race between
+# GIL destruction during process shutdown. Since GIL destruction happens after
+# Python's exit handlers, we mark that Python is shutting down from an exit
+# handler and don't grab GIL in this function afterwards using a C mutex.
+cdef void _destroy(void *state) noexcept nogil:
+  global g_shutdown_mu
+  global g_shutting_down
+  g_shutdown_mu.lock()
+  if g_shutting_down > -1:
+    g_shutting_down += 1
+    g_shutdown_mu.unlock()
+    with gil:
+      cpython.Py_DECREF(<object>state)
+    g_shutdown_mu.lock()
+    g_shutting_down -= 1
+  g_shutdown_mu.unlock()
   grpc_shutdown()
 
+
+g_shutdown_handler_registered = False
+
+def _maybe_register_shutdown_handler():
+  global g_shutdown_handler_registered
+  if g_shutdown_handler_registered:
+    return
+  g_shutdown_handler_registered = True
+  atexit.register(_on_shutdown)
+
+cdef void _on_shutdown() noexcept nogil:
+  global g_shutdown_mu
+  global g_shutting_down
+  # Wait for up to ~2s if C-core is still cleaning up.
+  cdef int wait_ms = 10
+  while wait_ms < 1500:
+    g_shutdown_mu.lock()
+    if g_shutting_down == 0:
+      g_shutting_down = -1
+      g_shutdown_mu.unlock()
+      return
+    g_shutdown_mu.unlock()
+    with gil:
+      time.sleep(wait_ms / 1000)
+    wait_ms = wait_ms * 2
+  with gil:
+    _LOGGER.error('Timed out waiting for C-core clean-up')
 
 cdef class MetadataPluginCallCredentials(CallCredentials):
 
@@ -83,6 +132,7 @@ cdef class MetadataPluginCallCredentials(CallCredentials):
     c_metadata_plugin.state = <void *>self._metadata_plugin
     c_metadata_plugin.type = self._name
     cpython.Py_INCREF(self._metadata_plugin)
+    _maybe_register_shutdown_handler()
     fork_handlers_and_grpc_init()
     # TODO(yihuazhang): Expose min_security_level via the Python API so that
     # applications can decide what minimum security level their plugins require.
@@ -138,36 +188,64 @@ cdef class SSLSessionCacheLRU:
 
 cdef class SSLChannelCredentials(ChannelCredentials):
 
-  def __cinit__(self, pem_root_certificates, private_key, certificate_chain):
+  def __cinit__(self, pem_root_certificates, private_key, certificate_chain, private_key_signer=None):
     if pem_root_certificates is not None and not isinstance(pem_root_certificates, bytes):
       raise TypeError('expected certificate to be bytes, got %s' % (type(pem_root_certificates)))
     self._pem_root_certificates = pem_root_certificates
     self._private_key = private_key
     self._certificate_chain = certificate_chain
+    self._private_key_signer = private_key_signer
+    # This gets passed around C++, make sure it stays
+    if self._private_key_signer is not None:
+      Py_INCREF(self._private_key_signer)
+
+  def __dealloc__(self):
+    # We manually increased the reference count, decrease it on dealloc of this object
+    if self._private_key_signer is not None:
+      Py_DECREF(self._private_key_signer)
 
   cdef grpc_channel_credentials *c(self) except *:
     cdef const char *c_pem_root_certificates
-    cdef grpc_ssl_pem_key_cert_pair c_pem_key_certificate_pair
-    if self._pem_root_certificates is None:
-      c_pem_root_certificates = NULL
-    else:
-      c_pem_root_certificates = self._pem_root_certificates
-    if self._private_key is None and self._certificate_chain is None:
-      with nogil:
-        return grpc_ssl_credentials_create(
-            c_pem_root_certificates, NULL, NULL, NULL)
-    else:
-      if self._private_key:
-        c_pem_key_certificate_pair.private_key = self._private_key
+    cdef const char *c_private_key
+    cdef const char *c_cert_chain
+    cdef shared_ptr[PrivateKeySigner] c_private_key_signer
+    cdef grpc_tls_credentials_options* c_tls_credentials_options
+    cdef grpc_tls_identity_pairs* c_tls_identity_pairs = NULL
+    cdef grpc_tls_certificate_provider* c_tls_certificate_provider
+    cdef Status private_key_status
+
+    c_tls_credentials_options = grpc_tls_credentials_options_create()
+    c_pem_root_certificates = self._pem_root_certificates or <const char*>NULL
+    if self._private_key or self._certificate_chain or self._private_key_signer:
+      c_tls_identity_pairs = grpc_tls_identity_pairs_create()
+      c_private_key = self._private_key or <const char*>NULL
+      c_cert_chain = self._certificate_chain or <const char*>NULL
+      if self._private_key_signer:
+        c_private_key_signer = build_private_key_signer(self._private_key_signer)
+        private_key_status = grpc_tls_identity_pairs_add_pair_with_signer(c_tls_identity_pairs, c_private_key_signer, c_cert_chain)
+        if not private_key_status.ok():
+          grpc_tls_identity_pairs_destroy(c_tls_identity_pairs)
+          grpc_tls_credentials_options_destroy(c_tls_credentials_options)
+          raise RuntimeError("Unable to create custom PrivateKeySigner with user provided function: ", private_key_status.ToString());
       else:
-        c_pem_key_certificate_pair.private_key = NULL
-      if self._certificate_chain:
-        c_pem_key_certificate_pair.certificate_chain = self._certificate_chain
-      else:
-        c_pem_key_certificate_pair.certificate_chain = NULL
-      with nogil:
-        return grpc_ssl_credentials_create(
-            c_pem_root_certificates, &c_pem_key_certificate_pair, NULL, NULL)
+        grpc_tls_identity_pairs_add_pair(c_tls_identity_pairs, c_private_key, c_cert_chain)
+
+    if c_pem_root_certificates != NULL or c_tls_identity_pairs != NULL:
+      c_tls_certificate_provider = grpc_tls_certificate_provider_in_memory_create()
+      if c_pem_root_certificates != NULL:
+        grpc_tls_certificate_provider_in_memory_set_root_certificate(
+          c_tls_certificate_provider, c_pem_root_certificates)
+        grpc_tls_credentials_options_set_root_certificate_provider(
+            c_tls_credentials_options, c_tls_certificate_provider)
+      if c_tls_identity_pairs != NULL:
+        grpc_tls_certificate_provider_in_memory_set_identity_certificate(
+          c_tls_certificate_provider, c_tls_identity_pairs)
+        grpc_tls_credentials_options_set_identity_certificate_provider(
+            c_tls_credentials_options, c_tls_certificate_provider)
+      grpc_tls_certificate_provider_release(c_tls_certificate_provider)
+
+    with nogil:
+      return grpc_tls_credentials_create(c_tls_credentials_options)
 
 
 cdef class CompositeChannelCredentials(ChannelCredentials):
@@ -316,7 +394,7 @@ def server_credentials_ssl_dynamic_cert_config(initial_cert_config,
   return credentials
 
 cdef grpc_ssl_certificate_config_reload_status _server_cert_config_fetcher_wrapper(
-        void* user_data, grpc_ssl_server_certificate_config **config) with gil:
+        void* user_data, grpc_ssl_server_certificate_config **config) noexcept with gil:
   # This is a credentials.ServerCertificateConfig
   cdef ServerCertificateConfig cert_config = None
   if not user_data:
@@ -437,8 +515,9 @@ cdef class ComputeEngineChannelCredentials(ChannelCredentials):
       raise ValueError("Call credentials may not be NULL.")
 
   cdef grpc_channel_credentials *c(self) except *:
-    self._c_creds = grpc_google_default_credentials_create(self._call_creds)
-    return self._c_creds
+    with nogil:
+      self._c_creds = grpc_google_default_credentials_create(self._call_creds, NULL)
+      return self._c_creds
 
 
 def channel_credentials_compute_engine(call_creds):

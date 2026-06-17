@@ -15,18 +15,18 @@
 // limitations under the License.
 //
 //
-#include <sstream>
-
-#include "absl/flags/flag.h"
-
-#include <grpc/support/log.h>
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include <sstream>
+
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
-#include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
 
 ABSL_FLAG(int32_t, handshaker_port, 55056,
           "TCP port on which the fake handshaker server listens to.");
@@ -39,8 +39,7 @@ static void RunFakeHandshakerServer(const std::string& server_address,
   grpc::ServerBuilder builder;
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(service.get());
-  gpr_log(GPR_INFO, "Fake handshaker server listening on %s",
-          server_address.c_str());
+  LOG(INFO) << "Fake handshaker server listening on " << server_address;
   std::unique_ptr<grpc::Server> server = builder.BuildAndStart();
   server->Wait();
 }
@@ -49,7 +48,7 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
 
-  GPR_ASSERT(absl::GetFlag(FLAGS_handshaker_port) != 0);
+  GRPC_CHECK_NE(absl::GetFlag(FLAGS_handshaker_port), 0);
   std::ostringstream server_address;
   server_address << "[::1]:" << absl::GetFlag(FLAGS_handshaker_port);
 

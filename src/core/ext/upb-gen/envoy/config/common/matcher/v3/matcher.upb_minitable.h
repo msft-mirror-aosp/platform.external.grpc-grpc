@@ -3,10 +3,11 @@
  *     envoy/config/common/matcher/v3/matcher.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_COMMON_MATCHER_V3_MATCHER_PROTO_UPB_MINITABLE_H_
-#define ENVOY_CONFIG_COMMON_MATCHER_V3_MATCHER_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_CONFIG_COMMON_MATCHER_V3_MATCHER_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_CONFIG_COMMON_MATCHER_V3_MATCHER_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -41,4 +42,4 @@ extern const upb_MiniTableFile envoy_config_common_matcher_v3_matcher_proto_upb_
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_COMMON_MATCHER_V3_MATCHER_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_CONFIG_COMMON_MATCHER_V3_MATCHER_PROTO_UPB_H__UPB_MINITABLE_H_ */

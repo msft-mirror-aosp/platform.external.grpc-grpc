@@ -123,7 +123,7 @@ def parse_test_cases(arg):
             test_cases = test_cases.union([arg])
     if not all([test_case in all_test_cases for test_case in test_cases]):
         raise Exception("Failed to parse test cases %s" % arg)
-    # Perserve order.
+    # Preserve order.
     return [x for x in all_test_cases if x in test_cases]
 
 
@@ -1436,7 +1436,7 @@ def test_api_listener(
         )
         if not gcp.service_port:
             raise Exception(
-                "Faied to find a valid port for the forwarding rule"
+                "Failed to find a valid port for the forwarding rule"
             )
         potential_ip_addresses = []
         max_attempts = 10
@@ -2179,7 +2179,7 @@ def test_circuit_breaking(
     """
     Since backend service circuit_breakers configuration cannot be unset,
     which causes trouble for restoring validate_for_proxy flag in target
-    proxy/global forwarding rule. This test uses dedicated backend sevices.
+    proxy/global forwarding rule. This test uses dedicated backend services.
     The url_map and backend services undergoes the following state changes:
 
     Before test:
@@ -2870,7 +2870,7 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                 ok = False
             finally:
                 if ok:
-                    # Successfully fetched xDS config, and they looks good.
+                    # Successfully fetched xDS config, and it looks good.
                     logger.info("success")
                     return
         logger.info("test_csds attempt %d failed", cnt)
@@ -3839,20 +3839,20 @@ def clean_up(gcp):
         delete_instance_template(gcp)
 
 
-class InstanceGroup(object):
+class InstanceGroup:
     def __init__(self, name, url, zone):
         self.name = name
         self.url = url
         self.zone = zone
 
 
-class GcpResource(object):
+class GcpResource:
     def __init__(self, name, url):
         self.name = name
         self.url = url
 
 
-class GcpState(object):
+class GcpState:
     def __init__(self, compute, alpha_compute, project, project_num):
         self.compute = compute
         self.alpha_compute = alpha_compute
@@ -4066,6 +4066,16 @@ try:
         client_env["GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT"] = "true"
         client_env["GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION"] = "true"
         for test_case in args.test_case:
+            # Circuit breaking ported to the new framework.
+            # https://github.com/grpc/psm-interop/blob/main/tests/circuit_breaking_test.py
+            # To avoid backports, skipping it in the driver.
+            if test_case == "circuit_breaking":
+                logger.info(
+                    "Ported to https://github.com/grpc/psm-interop/"
+                    "blob/main/tests/circuit_breaking_test.py"
+                )
+                continue
+
             if test_case in _V3_TEST_CASES and not args.xds_v3_support:
                 logger.info(
                     "skipping test %s due to missing v3 support", test_case

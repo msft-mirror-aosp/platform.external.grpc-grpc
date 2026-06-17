@@ -3,10 +3,11 @@
  *     envoy/config/bootstrap/v3/bootstrap.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_BOOTSTRAP_V3_BOOTSTRAP_PROTO_UPB_MINITABLE_H_
-#define ENVOY_CONFIG_BOOTSTRAP_V3_BOOTSTRAP_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_CONFIG_BOOTSTRAP_V3_BOOTSTRAP_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_CONFIG_BOOTSTRAP_V3_BOOTSTRAP_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -22,6 +23,8 @@ extern const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__StaticResour
 extern const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__DynamicResources_msg_init;
 extern const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__ApplicationLogConfig_msg_init;
 extern const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__ApplicationLogConfig__LogFormat_msg_init;
+extern const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__DeferredStatOptions_msg_init;
+extern const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__GrpcAsyncClientManagerConfig_msg_init;
 extern const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__CertificateProviderInstancesEntry_msg_init;
 extern const upb_MiniTable envoy__config__bootstrap__v3__Admin_msg_init;
 extern const upb_MiniTable envoy__config__bootstrap__v3__ClusterManager_msg_init;
@@ -37,6 +40,7 @@ extern const upb_MiniTable envoy__config__bootstrap__v3__RuntimeLayer__AdminLaye
 extern const upb_MiniTable envoy__config__bootstrap__v3__RuntimeLayer__RtdsLayer_msg_init;
 extern const upb_MiniTable envoy__config__bootstrap__v3__LayeredRuntime_msg_init;
 extern const upb_MiniTable envoy__config__bootstrap__v3__CustomInlineHeader_msg_init;
+extern const upb_MiniTable envoy__config__bootstrap__v3__MemoryAllocatorManager_msg_init;
 
 extern const upb_MiniTableFile envoy_config_bootstrap_v3_bootstrap_proto_upb_file_layout;
 
@@ -46,4 +50,4 @@ extern const upb_MiniTableFile envoy_config_bootstrap_v3_bootstrap_proto_upb_fil
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_BOOTSTRAP_V3_BOOTSTRAP_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_CONFIG_BOOTSTRAP_V3_BOOTSTRAP_PROTO_UPB_H__UPB_MINITABLE_H_ */

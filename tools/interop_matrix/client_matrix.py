@@ -53,7 +53,7 @@ def should_build_docker_interop_image_from_release_tag(lang):
 # Dictionary of default runtimes per language
 LANG_RUNTIME_MATRIX = {
     "cxx": ["cxx"],  # This is actually debian8.
-    "go": ["go1.8", "go1.11", "go1.16", "go1.19"],
+    "go": ["go1.x"],
     "java": ["java"],
     "python": ["python", "pythonasyncio"],
     "node": ["node"],
@@ -130,6 +130,23 @@ LANG_RELEASE_MATRIX = {
             ("v1.57.0", ReleaseInfo()),
             ("v1.58.0", ReleaseInfo()),
             ("v1.60.0", ReleaseInfo()),
+            ("v1.61.0", ReleaseInfo()),
+            ("v1.62.0", ReleaseInfo()),
+            ("v1.63.1", ReleaseInfo()),
+            ("v1.64.1", ReleaseInfo()),
+            ("v1.65.0", ReleaseInfo()),
+            ("v1.66.0", ReleaseInfo()),
+            ("v1.67.0", ReleaseInfo()),
+            ("v1.69.0", ReleaseInfo()),
+            ("v1.70.0", ReleaseInfo()),
+            ("v1.71.0", ReleaseInfo()),
+            ("v1.72.0", ReleaseInfo()),
+            ("v1.73.0", ReleaseInfo()),
+            ("v1.74.0", ReleaseInfo()),
+            ("v1.75.1", ReleaseInfo()),
+            ("v1.76.0", ReleaseInfo()),
+            ("v1.78.0", ReleaseInfo()),
+            ("v1.80.0", ReleaseInfo()),
         ]
     ),
     "go": OrderedDict(
@@ -294,6 +311,26 @@ LANG_RELEASE_MATRIX = {
             ("v1.58.3", ReleaseInfo(runtimes=["go1.19"])),
             ("v1.59.0", ReleaseInfo(runtimes=["go1.19"])),
             ("v1.60.1", ReleaseInfo(runtimes=["go1.19"])),
+            ("v1.61.2", ReleaseInfo(runtimes=["go1.19"])),
+            ("v1.62.2", ReleaseInfo(runtimes=["go1.19"])),
+            ("v1.63.3", ReleaseInfo()),
+            ("v1.64.1", ReleaseInfo()),
+            ("v1.65.1", ReleaseInfo()),
+            ("v1.66.3", ReleaseInfo()),
+            ("v1.67.3", ReleaseInfo()),
+            ("v1.68.2", ReleaseInfo()),
+            ("v1.69.4", ReleaseInfo()),
+            ("v1.70.0", ReleaseInfo()),
+            ("v1.71.3", ReleaseInfo()),
+            ("v1.72.3", ReleaseInfo()),
+            ("v1.73.1", ReleaseInfo()),
+            ("v1.74.3", ReleaseInfo()),
+            ("v1.75.1", ReleaseInfo()),
+            ("v1.76.0", ReleaseInfo()),
+            ("v1.77.0", ReleaseInfo()),
+            ("v1.78.0", ReleaseInfo()),
+            ("v1.79.3", ReleaseInfo()),
+            ("v1.80.0", ReleaseInfo()),
         ]
     ),
     "java": OrderedDict(
@@ -433,7 +470,27 @@ LANG_RELEASE_MATRIX = {
             ("v1.57.2", ReleaseInfo()),
             ("v1.58.0", ReleaseInfo()),
             ("v1.59.1", ReleaseInfo()),
-            ("v1.60.0", ReleaseInfo()),
+            ("v1.60.1", ReleaseInfo()),
+            ("v1.61.0", ReleaseInfo()),
+            ("v1.63.2", ReleaseInfo()),
+            ("v1.64.2", ReleaseInfo()),
+            ("v1.65.1", ReleaseInfo()),
+            ("v1.66.0", ReleaseInfo()),
+            ("v1.67.1", ReleaseInfo()),
+            ("v1.68.3", ReleaseInfo()),
+            ("v1.69.1", ReleaseInfo()),
+            ("v1.70.0", ReleaseInfo()),
+            ("v1.71.0", ReleaseInfo()),
+            ("v1.72.0", ReleaseInfo()),
+            ("v1.73.0", ReleaseInfo()),
+            ("v1.74.0", ReleaseInfo()),
+            ("v1.75.0", ReleaseInfo()),
+            ("v1.76.1", ReleaseInfo()),
+            ("v1.77.0", ReleaseInfo()),
+            ("v1.78.0", ReleaseInfo()),
+            ("v1.79.0", ReleaseInfo()),
+            ("v1.80.0", ReleaseInfo()),
+            ("v1.81.0", ReleaseInfo()),
         ]
     ),
     "python": OrderedDict(
@@ -762,6 +819,111 @@ LANG_RELEASE_MATRIX = {
                     runtimes=["python"], testcases_file="python__master"
                 ),
             ),
+            (
+                "v1.61.0",
+                ReleaseInfo(
+                    runtimes=["python"], testcases_file="python__master"
+                ),
+            ),
+            (
+                "v1.62.0",
+                ReleaseInfo(
+                    runtimes=["python"], testcases_file="python__master"
+                ),
+            ),
+            (
+                "v1.63.0",
+                ReleaseInfo(
+                    runtimes=["python"], testcases_file="python__master"
+                ),
+            ),
+            (
+                "v1.64.1",
+                ReleaseInfo(
+                    runtimes=["python"], testcases_file="python__master"
+                ),
+            ),
+            (
+                "v1.65.0",
+                ReleaseInfo(
+                    runtimes=["python"], testcases_file="python__master"
+                ),
+            ),
+            (
+                "v1.66.0",
+                ReleaseInfo(
+                    runtimes=["python"], testcases_file="python__master"
+                ),
+            ),
+            (
+                "v1.67.0",
+                ReleaseInfo(
+                    runtimes=["python"], testcases_file="python__master"
+                ),
+            ),
+            (
+                "v1.69.0",
+                ReleaseInfo(
+                    runtimes=["python"], testcases_file="python__master"
+                ),
+            ),
+            (
+                "v1.70.0",
+                ReleaseInfo(
+                    runtimes=["python"], testcases_file="python__master"
+                ),
+            ),
+            (
+                "v1.71.0",
+                ReleaseInfo(
+                    runtimes=["python"], testcases_file="python__master"
+                ),
+            ),
+            (
+                "v1.72.0",
+                ReleaseInfo(
+                    runtimes=["python"], testcases_file="python__master"
+                ),
+            ),
+            (
+                "v1.73.0",
+                ReleaseInfo(
+                    runtimes=["python"], testcases_file="python__master"
+                ),
+            ),
+            (
+                "v1.74.0",
+                ReleaseInfo(
+                    runtimes=["python"], testcases_file="python__master"
+                ),
+            ),
+            (
+                "v1.75.1",
+                ReleaseInfo(
+                    runtimes=["python"], testcases_file="python__master"
+                ),
+            ),
+            # Python images can't be anymore built without #40959 temporary fix,
+            # or #40833 proper pyproject migration.
+            # TODO(sreenithi): update this once v1.76.1 is out.
+            # (
+            #     "v1.76.0",
+            #     ReleaseInfo(
+            #         runtimes=["python"], testcases_file="python__master"
+            #     ),
+            # ),
+            (
+                "v1.78.0",
+                ReleaseInfo(
+                    runtimes=["python"], testcases_file="python__master"
+                ),
+            ),
+            (
+                "v1.80.0",
+                ReleaseInfo(
+                    runtimes=["python"], testcases_file="python__master"
+                ),
+            ),
         ]
     ),
     "node": OrderedDict(
@@ -856,6 +1018,23 @@ LANG_RELEASE_MATRIX = {
             ("v1.57.0", ReleaseInfo()),
             ("v1.58.0", ReleaseInfo()),
             ("v1.60.0", ReleaseInfo()),
+            ("v1.61.0", ReleaseInfo()),
+            ("v1.62.0", ReleaseInfo()),
+            ("v1.63.0", ReleaseInfo()),
+            ("v1.64.0", ReleaseInfo()),
+            ("v1.65.0", ReleaseInfo()),
+            ("v1.66.0", ReleaseInfo()),
+            ("v1.67.0", ReleaseInfo()),
+            ("v1.69.0", ReleaseInfo()),
+            ("v1.70.0", ReleaseInfo()),
+            ("v1.71.0", ReleaseInfo()),
+            ("v1.72.0", ReleaseInfo()),
+            ("v1.73.0", ReleaseInfo()),
+            ("v1.74.0", ReleaseInfo()),
+            ("v1.75.1", ReleaseInfo()),
+            ("v1.76.0", ReleaseInfo()),
+            ("v1.78.0", ReleaseInfo()),
+            ("v1.80.0", ReleaseInfo()),
         ]
     ),
     "php": OrderedDict(
@@ -914,6 +1093,22 @@ LANG_RELEASE_MATRIX = {
             ("v1.57.0", ReleaseInfo()),
             ("v1.58.0", ReleaseInfo()),
             ("v1.60.0", ReleaseInfo()),
+            ("v1.61.0", ReleaseInfo()),
+            ("v1.62.0", ReleaseInfo()),
+            ("v1.63.0", ReleaseInfo()),
+            ("v1.64.0", ReleaseInfo()),
+            ("v1.65.0", ReleaseInfo()),
+            ("v1.66.0", ReleaseInfo()),
+            ("v1.67.0", ReleaseInfo()),
+            ("v1.70.0", ReleaseInfo()),
+            ("v1.71.0", ReleaseInfo()),
+            ("v1.72.0", ReleaseInfo()),
+            ("v1.73.0", ReleaseInfo()),
+            ("v1.74.0", ReleaseInfo()),
+            ("v1.75.1", ReleaseInfo()),
+            ("v1.76.0", ReleaseInfo()),
+            ("v1.78.0", ReleaseInfo()),
+            ("v1.80.0", ReleaseInfo()),
         ]
     ),
     "csharp": OrderedDict(

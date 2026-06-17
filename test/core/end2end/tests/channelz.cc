@@ -16,21 +16,20 @@
 //
 //
 
-#include "src/core/lib/channel/channelz.h"
-
-#include <string>
-
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include "src/core/channelz/channelz.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <string>
+
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/server.h"
+#include "src/core/server/server.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 using testing::HasSubstr;
 using testing::Not;
@@ -40,8 +39,8 @@ namespace {
 
 void RunOneRequest(CoreEnd2endTest& test, bool request_is_success) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -50,7 +49,7 @@ void RunOneRequest(CoreEnd2endTest& test, bool request_is_success) {
   auto s = test.RequestCall(101);
   test.Expect(101, true);
   test.Step();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(
@@ -60,16 +59,19 @@ void RunOneRequest(CoreEnd2endTest& test, bool request_is_success) {
   test.Expect(102, true);
   test.Expect(1, true);
   test.Step();
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(),
+            request_is_success && IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(s.method(), "/foo");
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, Channelz) {
-  auto args = ChannelArgs()
-                  .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 0)
-                  .Set(GRPC_ARG_ENABLE_CHANNELZ, true);
-  InitServer(args);
-  InitClient(args);
+CORE_END2END_TEST(CoreEnd2endTests, Channelz) {
+  SKIP_IF_V3();
+  InitServer(DefaultServerArgs()
+                 .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 0)
+                 .Set(GRPC_ARG_ENABLE_CHANNELZ, true));
+  InitClient(ChannelArgs()
+                 .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 0)
+                 .Set(GRPC_ARG_ENABLE_CHANNELZ, true));
 
   channelz::ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(client());
@@ -117,13 +119,16 @@ CORE_END2END_TEST(CoreEnd2endTest, Channelz) {
   EXPECT_THAT(json, HasSubstr("\"end\":true"));
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, ChannelzWithChannelTrace) {
-  auto args =
+CORE_END2END_TEST(CoreEnd2endTests, ChannelzWithChannelTrace) {
+  SKIP_IF_V3();
+  InitServer(
+      DefaultServerArgs()
+          .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 1024 * 1024)
+          .Set(GRPC_ARG_ENABLE_CHANNELZ, true));
+  InitClient(
       ChannelArgs()
           .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 1024 * 1024)
-          .Set(GRPC_ARG_ENABLE_CHANNELZ, true);
-  InitServer(args);
-  InitClient(args);
+          .Set(GRPC_ARG_ENABLE_CHANNELZ, true));
 
   channelz::ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(client());
@@ -146,12 +151,14 @@ CORE_END2END_TEST(CoreEnd2endTest, ChannelzWithChannelTrace) {
   EXPECT_THAT(json, HasSubstr("\"severity\":\"CT_INFO\""));
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, ChannelzDisabled) {
-  auto args = ChannelArgs()
-                  .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 0)
-                  .Set(GRPC_ARG_ENABLE_CHANNELZ, false);
-  InitServer(args);
-  InitClient(args);
+CORE_END2END_TEST(CoreEnd2endTests, ChannelzDisabled) {
+  SKIP_IF_V3();
+  InitServer(DefaultServerArgs()
+                 .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 0)
+                 .Set(GRPC_ARG_ENABLE_CHANNELZ, false));
+  InitClient(ChannelArgs()
+                 .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 0)
+                 .Set(GRPC_ARG_ENABLE_CHANNELZ, false));
   channelz::ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(client());
   EXPECT_EQ(channelz_channel, nullptr);

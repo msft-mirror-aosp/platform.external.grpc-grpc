@@ -16,48 +16,86 @@
 #define GRPC_SRC_CORE_LIB_PROMISE_TRY_SEQ_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stdlib.h>
 
 #include <type_traits>
 #include <utility>
-
-#include "absl/meta/type_traits.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/detail/seq_state.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/status_flag.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
 namespace promise_detail {
+
+// TrySeq Promise combinator.
+//
+// Input :
+// 1. The TrySeq combinator needs minimum one promise as input.
+// 2. The first input to TrySeq combinator is a promise.
+// 3. The remaining inputs to TrySeq combinator are Promise Factories (functors
+// that return a promise). The input type of the Nth functor should be the
+// return value of the (N-1)th promise.
+// 4. Functors can return promises with return type any of the following :
+//    1. StatusOr<> to signal that a value is fed forward, or Status to
+//       indicate only success/failure. In the case of returning Status, the
+//       next functor in the chain takes no arguments.
+//    2. StatusFlag and ValueOrStatus can be return types if rich error
+//       information is not necessary. In this case the next functor in the
+//       chain takes no arguments.
+//
+// Return :
+// Polling the TrySeq Promise combinator returns Poll<StatusOr<T>> where T is
+// the type returned by the last promise in the list of input promises.
+//
+// Polling the TrySeq combinator works in the following way :
+// Run the first promise. If it returns Pending{}, nothing else is executed.
+// If the first promise returns a value, pass this result to the second functor,
+// and run the returned promise. If it returns Pending{}, nothing else is
+// executed. If it returns a value, pass this result to the third functor, and
+// run the returned promise. etc. Return the final value.
+//
+// If any of the promises in the TrySeq chain returns a failure status, TrySeq
+// will NOT proceed with the execution of the remaining promises. If you want
+// the execution to continue when a failure status is received, use the Seq
+// combinator instead.
+//
+// Promises in the TrySeq combinator are run in order, serially and on the same
+// thread.
+//
+// Example :
+// The unit tests (esp ThreeTypedPendingThens) in try_seq_test.cc provide all
+// possible permutations of how TrySeq combinator can be used.
 
 template <typename T, typename Ignored = void>
 struct TrySeqTraitsWithSfinae {
   using UnwrappedType = T;
   using WrappedType = absl::StatusOr<T>;
   template <typename Next>
-  static auto CallFactory(Next* next, T&& value) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallFactory(Next* next,
+                                                               T&& value) {
     return next->Make(std::forward<T>(value));
   }
-  static bool IsOk(const T&) { return true; }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(const T&) {
+    return true;
+  }
   static const char* ErrorString(const T&) { abort(); }
   template <typename R>
   static R ReturnValue(T&&) {
     abort();
   }
-  template <typename F, typename Elem>
-  static auto CallSeqFactory(F& f, Elem&& elem, T&& value)
-      -> decltype(f(std::forward<Elem>(elem), std::forward<T>(value))) {
-    return f(std::forward<Elem>(elem), std::forward<T>(value));
-  }
   template <typename Result, typename RunNext>
-  static Poll<Result> CheckResultAndRunNext(T prior, RunNext run_next) {
-    return run_next(std::move(prior));
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<Result>
+  CheckResultAndRunNext(T&& prior, RunNext run_next) {
+    return run_next(std::forward<T>(prior));
   }
 };
 
@@ -66,29 +104,45 @@ struct TrySeqTraitsWithSfinae<absl::StatusOr<T>> {
   using UnwrappedType = T;
   using WrappedType = absl::StatusOr<T>;
   template <typename Next>
-  static auto CallFactory(Next* next, absl::StatusOr<T>&& status) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallFactory(
+      Next* next, absl::StatusOr<T>&& status) {
     return next->Make(std::move(*status));
   }
-  static bool IsOk(const absl::StatusOr<T>& status) { return status.ok(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(
+      const absl::StatusOr<T>& status) {
+    return status.ok();
+  }
   static std::string ErrorString(const absl::StatusOr<T>& status) {
     return status.status().ToString();
   }
   template <typename R>
-  static R ReturnValue(absl::StatusOr<T>&& status) {
-    return StatusCast<R>(status.status());
-  }
-  template <typename F, typename Elem>
-  static auto CallSeqFactory(F& f, Elem&& elem, absl::StatusOr<T> value)
-      -> decltype(f(std::forward<Elem>(elem), std::move(*value))) {
-    return f(std::forward<Elem>(elem), std::move(*value));
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static R ReturnValue(
+      absl::StatusOr<T>&& status) {
+    return FailureStatusCast<R>(status.status());
   }
   template <typename Result, typename RunNext>
-  static Poll<Result> CheckResultAndRunNext(absl::StatusOr<T> prior,
-                                            RunNext run_next) {
-    if (!prior.ok()) return StatusCast<Result>(prior.status());
-    return run_next(std::move(prior));
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<Result>
+  CheckResultAndRunNext(absl::StatusOr<T>&& prior, RunNext run_next) {
+    if (!prior.ok()) return FailureStatusCast<Result>(prior.status());
+    return run_next(std::forward<absl::StatusOr<T>>(prior));
   }
 };
+
+template <typename T>
+struct AllowGenericTrySeqTraits {
+  static constexpr bool value = true;
+};
+
+template <>
+struct AllowGenericTrySeqTraits<absl::Status> {
+  static constexpr bool value = false;
+};
+
+template <typename T>
+struct AllowGenericTrySeqTraits<absl::StatusOr<T>> {
+  static constexpr bool value = false;
+};
+
 template <typename T, typename AnyType = void>
 struct TakeValueExists {
   static constexpr bool value = false;
@@ -105,53 +159,63 @@ template <typename T>
 struct TrySeqTraitsWithSfinae<
     T, absl::enable_if_t<
            std::is_same<decltype(IsStatusOk(std::declval<T>())), bool>::value &&
-               !TakeValueExists<T>::value,
+               !TakeValueExists<T>::value && AllowGenericTrySeqTraits<T>::value,
            void>> {
   using UnwrappedType = void;
   using WrappedType = T;
   template <typename Next>
-  static auto CallFactory(Next* next, T&&) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallFactory(Next* next,
+                                                               T&&) {
     return next->Make();
   }
-  static bool IsOk(const T& status) { return IsStatusOk(status); }
-  static std::string ErrorString(const T& status) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(const T& status) {
+    return IsStatusOk(status);
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static std::string ErrorString(
+      const T& status) {
     return IsStatusOk(status) ? "OK" : "FAILED";
   }
   template <typename R>
-  static R ReturnValue(T&& status) {
-    return StatusCast<R>(std::move(status));
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static R ReturnValue(T&& status) {
+    return FailureStatusCast<R>(std::move(status));
   }
   template <typename Result, typename RunNext>
-  static Poll<Result> CheckResultAndRunNext(T prior, RunNext run_next) {
-    if (!IsStatusOk(prior)) return Result(std::move(prior));
-    return run_next(std::move(prior));
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<Result>
+  CheckResultAndRunNext(T&& prior, RunNext run_next) {
+    if (!IsStatusOk(prior)) return Result(std::forward<T>(prior));
+    return run_next(std::forward<T>(prior));
   }
 };
 template <typename T>
 struct TrySeqTraitsWithSfinae<
     T, absl::enable_if_t<
            std::is_same<decltype(IsStatusOk(std::declval<T>())), bool>::value &&
-               TakeValueExists<T>::value,
+               TakeValueExists<T>::value && AllowGenericTrySeqTraits<T>::value,
            void>> {
   using UnwrappedType = decltype(TakeValue(std::declval<T>()));
   using WrappedType = T;
   template <typename Next>
-  static auto CallFactory(Next* next, T&& status) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallFactory(Next* next,
+                                                               T&& status) {
     return next->Make(TakeValue(std::forward<T>(status)));
   }
-  static bool IsOk(const T& status) { return IsStatusOk(status); }
-  static std::string ErrorString(const T& status) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(const T& status) {
+    return IsStatusOk(status);
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static std::string ErrorString(
+      const T& status) {
     return IsStatusOk(status) ? "OK" : "FAILED";
   }
   template <typename R>
-  static R ReturnValue(T&& status) {
-    GPR_DEBUG_ASSERT(!IsStatusOk(status));
-    return StatusCast<R>(std::move(status));
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static R ReturnValue(T&& status) {
+    GRPC_DCHECK(!IsStatusOk(status));
+    return FailureStatusCast<R>(status.status());
   }
   template <typename Result, typename RunNext>
-  static Poll<Result> CheckResultAndRunNext(T prior, RunNext run_next) {
-    if (!IsStatusOk(prior)) return Result(std::move(prior));
-    return run_next(std::move(prior));
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<Result>
+  CheckResultAndRunNext(T&& prior, RunNext run_next) {
+    if (!IsStatusOk(prior)) return Result(std::forward<T>(prior));
+    return run_next(std::forward<T>(prior));
   }
 };
 template <>
@@ -159,22 +223,27 @@ struct TrySeqTraitsWithSfinae<absl::Status> {
   using UnwrappedType = void;
   using WrappedType = absl::Status;
   template <typename Next>
-  static auto CallFactory(Next* next, absl::Status&&) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallFactory(Next* next,
+                                                               absl::Status&&) {
     return next->Make();
   }
-  static bool IsOk(const absl::Status& status) { return status.ok(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(
+      const absl::Status& status) {
+    return status.ok();
+  }
   static std::string ErrorString(const absl::Status& status) {
     return status.ToString();
   }
   template <typename R>
-  static R ReturnValue(absl::Status&& status) {
-    return StatusCast<R>(std::move(status));
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static R ReturnValue(
+      absl::Status&& status) {
+    return FailureStatusCast<R>(std::move(status));
   }
   template <typename Result, typename RunNext>
-  static Poll<Result> CheckResultAndRunNext(absl::Status prior,
-                                            RunNext run_next) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<Result>
+  CheckResultAndRunNext(absl::Status&& prior, RunNext run_next) {
     if (!prior.ok()) return StatusCast<Result>(std::move(prior));
-    return run_next(std::move(prior));
+    return run_next(std::forward<absl::Status>(prior));
   }
 };
 
@@ -184,110 +253,130 @@ using TrySeqTraits = TrySeqTraitsWithSfinae<T>;
 template <typename P, typename... Fs>
 class TrySeq {
  public:
-  explicit TrySeq(P&& promise, Fs&&... factories, DebugLocation whence)
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit TrySeq(P&& promise,
+                                                       Fs&&... factories,
+                                                       DebugLocation whence)
       : state_(std::forward<P>(promise), std::forward<Fs>(factories)...,
                whence) {}
 
-  auto operator()() { return state_.PollOnce(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto operator()() {
+    return state_.PollOnce();
+  }
+
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    state_.ToProto(grpc_channelz_v2_Promise_TRY, promise_proto, arena);
+  }
 
  private:
   SeqState<TrySeqTraits, P, Fs...> state_;
 };
 
-template <typename I, typename F, typename Arg>
-struct TrySeqIterTraits {
-  using Iter = I;
-  using Factory = F;
-  using Argument = Arg;
-  using IterValue = decltype(*std::declval<Iter>());
-  using StateCreated = decltype(std::declval<F>()(std::declval<IterValue>(),
-                                                  std::declval<Arg>()));
-  using State = PromiseLike<StateCreated>;
-  using Wrapped = typename State::Result;
-
-  using Traits = TrySeqTraits<Wrapped>;
-};
-
 template <typename Iter, typename Factory, typename Argument>
-struct TrySeqIterResultTraits {
-  using IterTraits = TrySeqIterTraits<Iter, Factory, Argument>;
-  using Result = BasicSeqIter<IterTraits>;
+using TrySeqIter = BasicSeqIter<TrySeqTraits, Iter, Factory, Argument>;
+
+template <typename Container, typename Factory, typename Argument>
+struct TrySeqContainerResultTraits {
+  using BaseResult =
+      TrySeqIter<typename Container::iterator, Factory, Argument>;
+  class Result {
+   public:
+    Result(Container container, Factory factory, Argument argument)
+        : container_(std::move(container)),
+          base_result_(container_.begin(), container_.end(), std::move(factory),
+                       std::move(argument)) {}
+    Result(const Result&) = delete;
+    Result& operator=(const Result&) = delete;
+    Result(Result&&) = default;
+    Result& operator=(Result&&) = default;
+
+    auto operator()() { return base_result_(); }
+
+   private:
+    Container container_;
+    BaseResult base_result_;
+  };
 };
 
 }  // namespace promise_detail
 
-// Try a sequence of operations.
-// * Run the first functor as a promise.
-// * Feed its success result into the second functor to create a promise,
-//   then run that.
-// * ...
-// * Feed the second-final success result into the final functor to create a
-//   promise, then run that, with the overall success result being that
-//   promises success result.
-// If any step fails, fail everything.
-// Functors can return StatusOr<> to signal that a value is fed forward, or
-// Status to indicate only success/failure. In the case of returning Status,
-// the construction functors take no arguments.
 template <typename F>
-F TrySeq(F functor) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline F TrySeq(F functor) {
   return functor;
 }
 
 template <typename F0, typename F1>
-promise_detail::TrySeq<F0, F1> TrySeq(F0 f0, F1 f1, DebugLocation whence = {}) {
-  return promise_detail::TrySeq<F0, F1>(std::move(f0), std::move(f1), whence);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto TrySeq(
+    F0&& f0, F1&& f1, DebugLocation whence = {}) {
+  return promise_detail::TrySeq<std::decay_t<F0>, std::decay_t<F1>>(
+      std::forward<F0>(f0), std::forward<F1>(f1), whence);
 }
 
 template <typename F0, typename F1, typename F2>
-promise_detail::TrySeq<F0, F1, F2> TrySeq(F0 f0, F1 f1, F2 f2,
-                                          DebugLocation whence = {}) {
-  return promise_detail::TrySeq<F0, F1, F2>(std::move(f0), std::move(f1),
-                                            std::move(f2), whence);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto TrySeq(
+    F0&& f0, F1&& f1, F2&& f2, DebugLocation whence = {}) {
+  return promise_detail::TrySeq<std::decay_t<F0>, std::decay_t<F1>,
+                                std::decay_t<F2>>(
+      std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3>
-promise_detail::TrySeq<F0, F1, F2, F3> TrySeq(F0 f0, F1 f1, F2 f2, F3 f3,
-                                              DebugLocation whence = {}) {
-  return promise_detail::TrySeq<F0, F1, F2, F3>(
-      std::move(f0), std::move(f1), std::move(f2), std::move(f3), whence);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto TrySeq(
+    F0&& f0, F1&& f1, F2&& f2, F3&& f3, DebugLocation whence = {}) {
+  return promise_detail::TrySeq<std::decay_t<F0>, std::decay_t<F1>,
+                                std::decay_t<F2>, std::decay_t<F3>>(
+      std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2),
+      std::forward<F3>(f3), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4>
-promise_detail::TrySeq<F0, F1, F2, F3, F4> TrySeq(F0 f0, F1 f1, F2 f2, F3 f3,
-                                                  F4 f4,
-                                                  DebugLocation whence = {}) {
-  return promise_detail::TrySeq<F0, F1, F2, F3, F4>(
-      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
-      whence);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto TrySeq(
+    F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, DebugLocation whence = {}) {
+  return promise_detail::TrySeq<std::decay_t<F0>, std::decay_t<F1>,
+                                std::decay_t<F2>, std::decay_t<F3>,
+                                std::decay_t<F4>>(
+      std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2),
+      std::forward<F3>(f3), std::forward<F4>(f4), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5>
-promise_detail::TrySeq<F0, F1, F2, F3, F4, F5> TrySeq(
-    F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, DebugLocation whence = {}) {
-  return promise_detail::TrySeq<F0, F1, F2, F3, F4, F5>(
-      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
-      std::move(f5), whence);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto TrySeq(F0&& f0, F1&& f1, F2&& f2,
+                                                 F3&& f3, F4&& f4, F5&& f5,
+                                                 DebugLocation whence = {}) {
+  return promise_detail::TrySeq<std::decay_t<F0>, std::decay_t<F1>,
+                                std::decay_t<F2>, std::decay_t<F3>,
+                                std::decay_t<F4>, std::decay_t<F5>>(
+      std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2),
+      std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5, typename F6>
-promise_detail::TrySeq<F0, F1, F2, F3, F4, F5, F6> TrySeq(
-    F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6,
-    DebugLocation whence = {}) {
-  return promise_detail::TrySeq<F0, F1, F2, F3, F4, F5, F6>(
-      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
-      std::move(f5), std::move(f6), whence);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto TrySeq(F0&& f0, F1&& f1, F2&& f2,
+                                                 F3&& f3, F4&& f4, F5&& f5,
+                                                 F6&& f6,
+                                                 DebugLocation whence = {}) {
+  return promise_detail::TrySeq<
+      std::decay_t<F0>, std::decay_t<F1>, std::decay_t<F2>, std::decay_t<F3>,
+      std::decay_t<F4>, std::decay_t<F5>, std::decay_t<F6>>(
+      std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2),
+      std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5),
+      std::forward<F6>(f6), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5, typename F6, typename F7>
-promise_detail::TrySeq<F0, F1, F2, F3, F4, F5, F6, F7> TrySeq(
-    F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7,
-    DebugLocation whence = {}) {
-  return promise_detail::TrySeq<F0, F1, F2, F3, F4, F5, F6, F7>(
-      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
-      std::move(f5), std::move(f6), std::move(f7), whence);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto TrySeq(F0&& f0, F1&& f1, F2&& f2,
+                                                 F3&& f3, F4&& f4, F5&& f5,
+                                                 F6&& f6, F7&& f7,
+                                                 DebugLocation whence = {}) {
+  return promise_detail::TrySeq<
+      std::decay_t<F0>, std::decay_t<F1>, std::decay_t<F2>, std::decay_t<F3>,
+      std::decay_t<F4>, std::decay_t<F5>, std::decay_t<F6>, std::decay_t<F7>>(
+      std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2),
+      std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5),
+      std::forward<F6>(f6), std::forward<F7>(f7), whence);
 }
 
 // Try a sequence of operations of unknown length.
@@ -299,12 +388,24 @@ promise_detail::TrySeq<F0, F1, F2, F3, F4, F5, F6, F7> TrySeq(
 //   }
 //   return argument;
 template <typename Iter, typename Factory, typename Argument>
-typename promise_detail::TrySeqIterResultTraits<Iter, Factory, Argument>::Result
-TrySeqIter(Iter begin, Iter end, Argument argument, Factory factory) {
-  using Result =
-      typename promise_detail::TrySeqIterResultTraits<Iter, Factory,
-                                                      Argument>::Result;
-  return Result(begin, end, std::move(factory), std::move(argument));
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto TrySeqIter(Iter begin, Iter end,
+                                                     Argument&& argument,
+                                                     Factory&& factory) {
+  return promise_detail::TrySeqIter<Iter, std::decay_t<Factory>,
+                                    std::decay_t<Argument>>(
+      begin, end, std::forward<Factory>(factory),
+      std::forward<Argument>(argument));
+}
+
+template <typename Container, typename Factory, typename Argument>
+auto TrySeqContainer(Container&& container, Argument&& argument,
+                     Factory&& factory) {
+  using Result = typename promise_detail::TrySeqContainerResultTraits<
+      std::decay_t<Container>, std::decay_t<Factory>,
+      std::decay_t<Argument>>::Result;
+  return Result(std::forward<Container>(container),
+                std::forward<Factory>(factory),
+                std::forward<Argument>(argument));
 }
 
 }  // namespace grpc_core

@@ -25,34 +25,43 @@ _DESERIALIZE_REQUEST = lambda bytestring: bytestring[len(bytestring) // 2 :]
 _SERIALIZE_RESPONSE = lambda bytestring: bytestring * 3
 _DESERIALIZE_RESPONSE = lambda bytestring: bytestring[: len(bytestring) // 3]
 
-_UNARY_UNARY = "/test/UnaryUnary"
-_UNARY_STREAM = "/test/UnaryStream"
-_STREAM_UNARY = "/test/StreamUnary"
-_STREAM_STREAM = "/test/StreamStream"
+_SERVICE_NAME = "test"
+_UNARY_UNARY = "UnaryUnary"
+_UNARY_STREAM = "UnaryStream"
+_STREAM_UNARY = "StreamUnary"
+_STREAM_STREAM = "StreamStream"
 
 
 def _unary_unary_multi_callable(channel):
-    return channel.unary_unary(_UNARY_UNARY)
+    return channel.unary_unary(
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
+        _registered_method=True,
+    )
 
 
 def _unary_stream_multi_callable(channel):
     return channel.unary_stream(
-        _UNARY_STREAM,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_STREAM),
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
+        _registered_method=True,
     )
 
 
 def _stream_unary_multi_callable(channel):
     return channel.stream_unary(
-        _STREAM_UNARY,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_UNARY),
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
+        _registered_method=True,
     )
 
 
 def _stream_stream_multi_callable(channel):
-    return channel.stream_stream(_STREAM_STREAM)
+    return channel.stream_stream(
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_STREAM),
+        _registered_method=True,
+    )
 
 
 class InvalidMetadataTest(unittest.TestCase):
@@ -69,74 +78,99 @@ class InvalidMetadataTest(unittest.TestCase):
     def testUnaryRequestBlockingUnaryResponse(self):
         request = b"\x07\x08"
         metadata = (("InVaLiD", "UnaryRequestBlockingUnaryResponse"),)
-        expected_error_details = "metadata was invalid: %s" % metadata
-        with self.assertRaises(ValueError) as exception_context:
+        with self.assertRaises(grpc.RpcError) as exception_context:
             self._unary_unary(request, metadata=metadata)
-        self.assertIn(expected_error_details, str(exception_context.exception))
+
+        self.assertEqual(
+            grpc.StatusCode.INTERNAL, exception_context.exception.code()
+        )
 
     def testUnaryRequestBlockingUnaryResponseWithCall(self):
         request = b"\x07\x08"
         metadata = (("InVaLiD", "UnaryRequestBlockingUnaryResponseWithCall"),)
-        expected_error_details = "metadata was invalid: %s" % metadata
-        with self.assertRaises(ValueError) as exception_context:
+        with self.assertRaises(grpc.RpcError) as exception_context:
             self._unary_unary.with_call(request, metadata=metadata)
-        self.assertIn(expected_error_details, str(exception_context.exception))
+
+        self.assertEqual(
+            grpc.StatusCode.INTERNAL, exception_context.exception.code()
+        )
 
     def testUnaryRequestFutureUnaryResponse(self):
         request = b"\x07\x08"
         metadata = (("InVaLiD", "UnaryRequestFutureUnaryResponse"),)
-        expected_error_details = "metadata was invalid: %s" % metadata
-        with self.assertRaises(ValueError) as exception_context:
-            self._unary_unary.future(request, metadata=metadata)
+        response_future = self._unary_unary.future(request, metadata=metadata)
+
+        with self.assertRaises(grpc.RpcError) as exception_context:
+            response_future.result()
+        self.assertEqual(
+            grpc.StatusCode.INTERNAL, exception_context.exception.code()
+        )
 
     def testUnaryRequestStreamResponse(self):
         request = b"\x37\x58"
         metadata = (("InVaLiD", "UnaryRequestStreamResponse"),)
-        expected_error_details = "metadata was invalid: %s" % metadata
-        with self.assertRaises(ValueError) as exception_context:
-            self._unary_stream(request, metadata=metadata)
-        self.assertIn(expected_error_details, str(exception_context.exception))
+        response_iterator = self._unary_stream(request, metadata=metadata)
+
+        with self.assertRaises(grpc.RpcError) as exception_context:
+            list(response_iterator)
+        self.assertEqual(
+            grpc.StatusCode.INTERNAL, exception_context.exception.code()
+        )
 
     def testStreamRequestBlockingUnaryResponse(self):
         request_iterator = (
             b"\x07\x08" for _ in range(test_constants.STREAM_LENGTH)
         )
         metadata = (("InVaLiD", "StreamRequestBlockingUnaryResponse"),)
-        expected_error_details = "metadata was invalid: %s" % metadata
-        with self.assertRaises(ValueError) as exception_context:
+        with self.assertRaises(grpc.RpcError) as exception_context:
             self._stream_unary(request_iterator, metadata=metadata)
-        self.assertIn(expected_error_details, str(exception_context.exception))
+
+        self.assertEqual(
+            grpc.StatusCode.INTERNAL, exception_context.exception.code()
+        )
 
     def testStreamRequestBlockingUnaryResponseWithCall(self):
         request_iterator = (
             b"\x07\x08" for _ in range(test_constants.STREAM_LENGTH)
         )
         metadata = (("InVaLiD", "StreamRequestBlockingUnaryResponseWithCall"),)
-        expected_error_details = "metadata was invalid: %s" % metadata
         multi_callable = _stream_unary_multi_callable(self._channel)
-        with self.assertRaises(ValueError) as exception_context:
+        with self.assertRaises(grpc.RpcError) as exception_context:
             multi_callable.with_call(request_iterator, metadata=metadata)
-        self.assertIn(expected_error_details, str(exception_context.exception))
+
+        self.assertEqual(
+            grpc.StatusCode.INTERNAL, exception_context.exception.code()
+        )
 
     def testStreamRequestFutureUnaryResponse(self):
         request_iterator = (
             b"\x07\x08" for _ in range(test_constants.STREAM_LENGTH)
         )
         metadata = (("InVaLiD", "StreamRequestFutureUnaryResponse"),)
-        expected_error_details = "metadata was invalid: %s" % metadata
-        with self.assertRaises(ValueError) as exception_context:
-            self._stream_unary.future(request_iterator, metadata=metadata)
-        self.assertIn(expected_error_details, str(exception_context.exception))
+        response_future = self._stream_unary.future(
+            request_iterator, metadata=metadata
+        )
+
+        with self.assertRaises(grpc.RpcError) as exception_context:
+            response_future.result()
+        self.assertEqual(
+            grpc.StatusCode.INTERNAL, exception_context.exception.code()
+        )
 
     def testStreamRequestStreamResponse(self):
         request_iterator = (
             b"\x07\x08" for _ in range(test_constants.STREAM_LENGTH)
         )
         metadata = (("InVaLiD", "StreamRequestStreamResponse"),)
-        expected_error_details = "metadata was invalid: %s" % metadata
-        with self.assertRaises(ValueError) as exception_context:
-            self._stream_stream(request_iterator, metadata=metadata)
-        self.assertIn(expected_error_details, str(exception_context.exception))
+        response_iterator = self._stream_stream(
+            request_iterator, metadata=metadata
+        )
+
+        with self.assertRaises(grpc.RpcError) as exception_context:
+            list(response_iterator)
+        self.assertEqual(
+            grpc.StatusCode.INTERNAL, exception_context.exception.code()
+        )
 
     def testInvalidMetadata(self):
         self.assertRaises(TypeError, self._unary_unary, b"", metadata=42)

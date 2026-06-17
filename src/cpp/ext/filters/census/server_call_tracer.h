@@ -21,8 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/telemetry/call_tracer.h"
 
 namespace grpc {
 namespace internal {
@@ -30,8 +30,8 @@ namespace internal {
 class OpenCensusServerCallTracerFactory
     : public grpc_core::ServerCallTracerFactory {
  public:
-  grpc_core::ServerCallTracer* CreateNewServerCallTracer(
-      grpc_core::Arena* arena) override;
+  grpc_core::ServerCallTracerInterface* CreateNewServerCallTracer(
+      grpc_core::Arena* arena, const grpc_core::ChannelArgs& /*args*/) override;
 };
 
 }  // namespace internal

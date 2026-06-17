@@ -13,6 +13,9 @@
 // limitations under the License.
 #include <errno.h>
 #include <fcntl.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <poll.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -26,29 +29,26 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/wait_for_single_owner.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/posix_engine/posix_engine.h"
-#include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
-#include "test/core/event_engine/event_engine_test_utils.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -120,7 +120,7 @@ std::vector<int> CreateConnectedSockets(
         pfd.revents = 0;
         int ret = poll(&pfd, 1, 1000);
         if (ret == -1) {
-          gpr_log(GPR_ERROR, "poll() failed during connect; errno=%d", errno);
+          LOG(ERROR) << "poll() failed during connect; errno=" << errno;
           abort();
         } else if (ret == 0) {
           // current connection attempt timed out. It indicates that the
@@ -145,8 +145,9 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
-  GPR_ASSERT(resolved_addr.ok());
-  std::shared_ptr<EventEngine> posix_ee = std::make_shared<PosixEventEngine>();
+  GRPC_CHECK_OK(resolved_addr);
+  std::shared_ptr<EventEngine> posix_ee =
+      PosixEventEngine::MakePosixEventEngine();
   std::string resolved_addr_str =
       ResolvedAddressToNormalizedString(*resolved_addr).value();
   auto sockets = CreateConnectedSockets(*resolved_addr);
@@ -155,7 +156,8 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   auto quota = grpc_core::ResourceQuota::Default();
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
   ChannelArgsEndpointConfig config(args);
-  auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>("bar"));
   posix_ee->Connect(
       [&signal](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> status) {
         EXPECT_EQ(status.status().code(), absl::StatusCode::kUnknown);
@@ -167,15 +169,16 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   for (auto sock : sockets) {
     close(sock);
   }
-  WaitForSingleOwner(std::move(posix_ee));
+  grpc_core::WaitForSingleOwner(std::move(posix_ee));
 }
 
 TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
-  GPR_ASSERT(resolved_addr.ok());
-  std::shared_ptr<EventEngine> posix_ee = std::make_shared<PosixEventEngine>();
+  GRPC_CHECK_OK(resolved_addr);
+  std::shared_ptr<EventEngine> posix_ee =
+      PosixEventEngine::MakePosixEventEngine();
   std::string resolved_addr_str =
       ResolvedAddressToNormalizedString(*resolved_addr).value();
   auto sockets = CreateConnectedSockets(*resolved_addr);
@@ -183,7 +186,8 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
   auto quota = grpc_core::ResourceQuota::Default();
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
   ChannelArgsEndpointConfig config(args);
-  auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>("bar"));
   auto connection_handle = posix_ee->Connect(
       [](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> /*status*/) {
         FAIL() << "The on_connect callback should not have run since the "
@@ -197,7 +201,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
   for (auto sock : sockets) {
     close(sock);
   }
-  WaitForSingleOwner(std::move(posix_ee));
+  grpc_core::WaitForSingleOwner(std::move(posix_ee));
 }
 
 }  // namespace experimental

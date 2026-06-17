@@ -3,23 +3,25 @@
  *     udpa/annotations/sensitive.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPBDEFS_H_
-#define UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPBDEFS_H_
+
+
+#ifndef UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPB_H__UPBDEFS_H_
+#define UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
+
 #include "upb/port/def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "upb/reflection/def.h"
-
-#include "upb/port/def.inc"
-
 extern _upb_DefPool_Init udpa_annotations_sensitive_proto_upbdefinit;
+
 
 #ifdef __cplusplus
 }  /* extern "C" */
@@ -27,4 +29,4 @@ extern _upb_DefPool_Init udpa_annotations_sensitive_proto_upbdefinit;
 
 #include "upb/port/undef.inc"
 
-#endif  /* UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPBDEFS_H_ */
+#endif  /* UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPB_H__UPBDEFS_H_ */

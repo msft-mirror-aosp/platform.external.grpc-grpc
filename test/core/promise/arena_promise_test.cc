@@ -14,38 +14,31 @@
 
 #include "src/core/lib/promise/arena_promise.h"
 
+#include <grpc/event_engine/memory_allocator.h>
+
 #include <array>
 #include <memory>
 
-#include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/promise/test_context.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 
-class ArenaPromiseTest : public ::testing::Test {
- protected:
-  MemoryAllocator memory_allocator_ = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-};
-
-TEST_F(ArenaPromiseTest, DefaultInitializationYieldsNoValue) {
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
+TEST(ArenaPromiseTest, DefaultInitializationYieldsNoValue) {
+  auto arena = SimpleArenaAllocator()->MakeArena();
   TestContext<Arena> context(arena.get());
   ArenaPromise<int> p;
   EXPECT_FALSE(p.has_value());
 }
 
-TEST_F(ArenaPromiseTest, AllocatedWorks) {
+TEST(ArenaPromiseTest, AllocatedWorks) {
   ExecCtx exec_ctx;
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
+  auto arena = SimpleArenaAllocator()->MakeArena();
   TestContext<Arena> context(arena.get());
   int x = 42;
   ArenaPromise<int> p([x] { return Poll<int>(x); });
@@ -55,9 +48,9 @@ TEST_F(ArenaPromiseTest, AllocatedWorks) {
   EXPECT_EQ(p(), Poll<int>(43));
 }
 
-TEST_F(ArenaPromiseTest, DestructionWorks) {
+TEST(ArenaPromiseTest, DestructionWorks) {
   ExecCtx exec_ctx;
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
+  auto arena = SimpleArenaAllocator()->MakeArena();
   TestContext<Arena> context(arena.get());
   auto x = std::make_shared<int>(42);
   auto p = ArenaPromise<int>([x] { return Poll<int>(*x); });
@@ -65,18 +58,18 @@ TEST_F(ArenaPromiseTest, DestructionWorks) {
   EXPECT_EQ(q(), Poll<int>(42));
 }
 
-TEST_F(ArenaPromiseTest, MoveAssignmentWorks) {
+TEST(ArenaPromiseTest, MoveAssignmentWorks) {
   ExecCtx exec_ctx;
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
+  auto arena = SimpleArenaAllocator()->MakeArena();
   TestContext<Arena> context(arena.get());
   auto x = std::make_shared<int>(42);
   auto p = ArenaPromise<int>([x] { return Poll<int>(*x); });
   p = ArenaPromise<int>();
 }
 
-TEST_F(ArenaPromiseTest, AllocatedUniquePtrWorks) {
+TEST(ArenaPromiseTest, AllocatedUniquePtrWorks) {
   ExecCtx exec_ctx;
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
+  auto arena = SimpleArenaAllocator()->MakeArena();
   TestContext<Arena> context(arena.get());
   std::array<int, 5> garbage = {0, 1, 2, 3, 4};
   auto freer = [garbage](int* p) { free(p + garbage[0]); };
@@ -94,6 +87,28 @@ TEST_F(ArenaPromiseTest, AllocatedUniquePtrWorks) {
       [x = std::move(x)]() mutable { return Poll<Ptr>(std::move(x)); });
   ArenaPromise<Ptr> p(std::move(initial_promise));
   EXPECT_EQ(*p().value(), 42);
+}
+
+struct NonTriviallyRelocatable {
+  NonTriviallyRelocatable() : self_ptr(this) {}
+  NonTriviallyRelocatable(NonTriviallyRelocatable&&) noexcept
+      : self_ptr(this) {}
+  NonTriviallyRelocatable* self_ptr;
+
+  bool ok() const { return this == self_ptr; }
+};
+
+TEST(ArenaPromiseTest, NonTriviallyRelocatable) {
+  ExecCtx exec_ctx;
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  TestContext<Arena> context(arena.get());
+  ArenaPromise<bool> p1(
+      [ntr = NonTriviallyRelocatable()] { return Poll<bool>(ntr.ok()); });
+  auto p2 = std::move(p1);
+  ASSERT_TRUE(p2().value());
+  ArenaPromise<bool> p3;
+  p3 = std::move(p2);
+  ASSERT_TRUE(p3().value());
 }
 
 }  // namespace grpc_core

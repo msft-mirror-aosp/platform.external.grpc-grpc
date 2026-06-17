@@ -20,11 +20,10 @@
 #include <memory>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
 
 namespace grpc_core {
 
@@ -39,7 +38,7 @@ class WaitForCallback {
     return [state = state_]() -> Poll<Empty> {
       MutexLock lock(&state->mutex);
       if (state->done) return Empty{};
-      state->waker = Activity::current()->MakeNonOwningWaker();
+      state->waker = GetContext<Activity>()->MakeNonOwningWaker();
       return Pending{};
     };
   }

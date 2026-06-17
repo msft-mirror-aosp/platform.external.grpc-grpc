@@ -29,16 +29,19 @@ from tests.unit import test_common
 _TIMEOUT = 60 * 60 * 24
 
 
-class GenericStub(object):
+class GenericStub:
     def __init__(self, channel):
         self.UnaryCall = channel.unary_unary(
-            "/grpc.testing.BenchmarkService/UnaryCall"
+            "/grpc.testing.BenchmarkService/UnaryCall",
+            _registered_method=True,
         )
         self.StreamingFromServer = channel.unary_stream(
-            "/grpc.testing.BenchmarkService/StreamingFromServer"
+            "/grpc.testing.BenchmarkService/StreamingFromServer",
+            _registered_method=True,
         )
         self.StreamingCall = channel.stream_stream(
-            "/grpc.testing.BenchmarkService/StreamingCall"
+            "/grpc.testing.BenchmarkService/StreamingCall",
+            _registered_method=True,
         )
 
 
@@ -146,7 +149,7 @@ class UnaryAsyncBenchmarkClient(BenchmarkClient):
         self._stub = None
 
 
-class _SyncStream(object):
+class _SyncStream:
     def __init__(self, stub, generic, request, handle_response):
         self._stub = stub
         self._generic = generic

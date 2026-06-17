@@ -12,28 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
 #include <string.h>
 
 #include <memory>
 
-#include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(CoreDeadlineTest, TimeoutBeforeRequestCall) {
+CORE_END2END_TEST(CoreDeadlineTests, TimeoutBeforeRequestCall) {
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(1)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -71,13 +70,13 @@ CORE_END2END_TEST(CoreDeadlineTest, TimeoutBeforeRequestCall) {
   }
 }
 
-CORE_END2END_TEST(CoreDeadlineTest,
+CORE_END2END_TEST(CoreDeadlineTests,
                   TimeoutBeforeRequestCallWithRegisteredMethod) {
   auto method = RegisterServerMethod("/foo", GRPC_SRM_PAYLOAD_NONE);
 
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(1)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -115,21 +114,21 @@ CORE_END2END_TEST(CoreDeadlineTest,
   }
 }
 
-CORE_END2END_TEST(CoreDeadlineSingleHopTest,
+CORE_END2END_TEST(CoreDeadlineSingleHopTests,
                   TimeoutBeforeRequestCallWithRegisteredMethodWithPayload) {
   auto method =
       RegisterServerMethod("/foo", GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER);
 
   const size_t kMessageSize = 10 * 1024 * 1024;
   auto send_from_client = RandomSlice(kMessageSize);
-  InitServer(
-      ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, kMessageSize));
+  InitServer(DefaultServerArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH,
+                                     kMessageSize));
   InitClient(
       ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, kMessageSize));
 
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(1)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -144,6 +143,7 @@ CORE_END2END_TEST(CoreDeadlineSingleHopTest,
   bool got_call = false;
   std::unique_ptr<IncomingCloseOnServer> client_close;
   Expect(2, MaybePerformAction{[this, &s, &got_call, &client_close](bool ok) {
+           LOG(INFO) << "\n***\n*** got call: " << ok << "\n***";
            got_call = true;
            if (ok) {
              // If we successfully get a call, then we should additionally get a

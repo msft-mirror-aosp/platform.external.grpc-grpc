@@ -3,21 +3,22 @@
  *     google/protobuf/empty.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef GOOGLE_PROTOBUF_EMPTY_PROTO_UPBDEFS_H_
-#define GOOGLE_PROTOBUF_EMPTY_PROTO_UPBDEFS_H_
+
+
+#ifndef GOOGLE_PROTOBUF_EMPTY_PROTO_UPB_H__UPBDEFS_H_
+#define GOOGLE_PROTOBUF_EMPTY_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
+
 #include "upb/port/def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "upb/reflection/def.h"
-
-#include "upb/port/def.inc"
 
 extern _upb_DefPool_Init google_protobuf_empty_proto_upbdefinit;
 
@@ -26,10 +27,11 @@ UPB_INLINE const upb_MessageDef *google_protobuf_Empty_getmsgdef(upb_DefPool *s)
   return upb_DefPool_FindMessageByName(s, "google.protobuf.Empty");
 }
 
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
 #include "upb/port/undef.inc"
 
-#endif  /* GOOGLE_PROTOBUF_EMPTY_PROTO_UPBDEFS_H_ */
+#endif  /* GOOGLE_PROTOBUF_EMPTY_PROTO_UPB_H__UPBDEFS_H_ */

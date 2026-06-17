@@ -3,20 +3,23 @@
  *     xds/type/matcher/v3/http_inputs.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
 #include "xds/type/matcher/v3/http_inputs.upb_minitable.h"
-#include "xds/annotations/v3/status.upb_minitable.h"
 
 // Must be last.
 #include "upb/port/def.inc"
 
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
 const upb_MiniTable xds__type__matcher__v3__HttpAttributesCelMatchInput_msg_init = {
   NULL,
-  NULL,
-  0, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+  8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.type.matcher.v3.HttpAttributesCelMatchInput",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[1] = {

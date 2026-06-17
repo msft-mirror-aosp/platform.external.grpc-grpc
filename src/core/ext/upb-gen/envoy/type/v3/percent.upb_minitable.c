@@ -3,7 +3,8 @@
  *     envoy/type/v3/percent.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -15,33 +16,46 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableField envoy_type_v3_Percent__fields[1] = {
-  {1, 0, 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[1];
+} envoy__type__v3__Percent_msg_init_Fields;
+
+static const envoy__type__v3__Percent_msg_init_Fields envoy_type_v3_Percent__fields = {{
+  {1, 8, 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+}};
 
 const upb_MiniTable envoy__type__v3__Percent_msg_init = {
-  NULL,
-  &envoy_type_v3_Percent__fields[0],
-  8, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  &envoy_type_v3_Percent__fields.fields[0],
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.v3.Percent",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000000003f000009, &upb_psf8_1bt},
+    {0x000800003f000009, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
   })
 };
 
-static const upb_MiniTableField envoy_type_v3_FractionalPercent__fields[2] = {
-  {1, 0, 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
-  {2, 4, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
-};
+typedef struct {
+  upb_MiniTableField fields[2];
+} envoy__type__v3__FractionalPercent_msg_init_Fields;
+
+static const envoy__type__v3__FractionalPercent_msg_init_Fields envoy_type_v3_FractionalPercent__fields = {{
+  {1, 8, 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {2, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+}};
 
 const upb_MiniTable envoy__type__v3__FractionalPercent_msg_init = {
-  NULL,
-  &envoy_type_v3_FractionalPercent__fields[0],
-  8, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  &envoy_type_v3_FractionalPercent__fields.fields[0],
+  16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.v3.FractionalPercent",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000000003f000008, &upb_psv4_1bt},
-    {0x000400003f000010, &upb_psv4_1bt},
+    {0x000800003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x000c00003f000010, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };

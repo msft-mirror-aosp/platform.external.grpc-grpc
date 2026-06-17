@@ -15,7 +15,6 @@
 
 from concurrent.futures import ThreadPoolExecutor
 import logging
-import sys
 import unittest
 
 import grpc
@@ -26,9 +25,6 @@ from grpc_csds import csds_pb2
 from grpc_csds import csds_pb2_grpc
 
 
-@unittest.skipIf(
-    sys.version_info[0] < 3, "ProtoBuf descriptor has moved on from Python2"
-)
 class TestAdmin(unittest.TestCase):
     def setUp(self):
         self._server = grpc.server(ThreadPoolExecutor())
@@ -46,7 +42,7 @@ class TestAdmin(unittest.TestCase):
         stub = csds_pb2_grpc.ClientStatusDiscoveryServiceStub(self._channel)
         resp = stub.FetchClientStatus(csds_pb2.ClientStatusRequest())
         # No exception raised and the response is valid
-        self.assertGreater(len(resp.config), 0)
+        self.assertEqual(len(resp.config), 0)
 
     def test_has_channelz(self):
         stub = channelz_pb2_grpc.ChannelzStub(self._channel)

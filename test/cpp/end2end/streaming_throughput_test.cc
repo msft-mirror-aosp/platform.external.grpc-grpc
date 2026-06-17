@@ -16,16 +16,8 @@
 //
 //
 
-#include <time.h>
-
-#include <mutex>
-#include <thread>
-
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -35,12 +27,20 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <time.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include <mutex>
+#include <thread>
+
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -146,8 +146,10 @@ class End2endTest : public ::testing::Test {
   void TearDown() override { server_->Shutdown(); }
 
   void ResetStub() {
-    std::shared_ptr<Channel> channel = grpc::CreateChannel(
-        server_address_.str(), InsecureChannelCredentials());
+    ChannelArguments args;
+    ApplyCommonChannelArguments(args);
+    std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
+        server_address_.str(), InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 
@@ -165,6 +167,8 @@ static void Drainer(ClientReaderWriter<EchoRequest, EchoResponse>* reader) {
 }
 
 TEST_F(End2endTest, StreamingThroughput) {
+  SKIP_TEST_FOR_PH2_CLIENT(
+      "TODO(tjagtap) [PH2][P3][Client][CPPE2E] Fails 2/100 times ");
   ResetStub();
   grpc::ClientContext context;
   auto stream = stub_->BidiStream(&context);
@@ -177,7 +181,7 @@ TEST_F(End2endTest, StreamingThroughput) {
     request.set_message(kLargeString);
     ASSERT_TRUE(stream->Write(request));
     if (i % 1000 == 0) {
-      gpr_log(GPR_INFO, "Send count = %d", i);
+      LOG(INFO) << "Send count = " << i;
     }
   }
   stream->WritesDone();

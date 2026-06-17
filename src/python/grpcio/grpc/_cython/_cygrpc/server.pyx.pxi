@@ -13,9 +13,37 @@
 # limitations under the License.
 
 
+cdef class RegisteredMethod:
+
+  def __cinit__(self, bytes method, uintptr_t server):
+    self.method = method
+    cpython.Py_INCREF(self.method)
+    cdef const char *c_method = <const char *>self.method
+    cdef grpc_server *c_server = <grpc_server *>server
+    # TODO(xuanwn): Consider use GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER for unary request
+    # as optimization.
+    # Note that in stubs method is not bound to any host, thus we set host as NULL.
+    with nogil:
+      self.c_registered_method = grpc_server_register_method(c_server,
+      c_method, NULL, GRPC_SRM_PAYLOAD_NONE, 0)
+
+  def __dealloc__(self):
+    # c_registered_method should have the same lifetime as Cython Server since the method
+    # maybe called at any time during the server's lifetime.
+    # Since all RegisteredMethod belongs to Cython Server, they'll be destructed at the same
+    # time with Cython Server, at which point it's safe to assume core no longer holds any reference.
+    cpython.Py_DECREF(self.method)
+
+
 cdef class Server:
 
   def __cinit__(self, object arguments, bint xds):
+    cdef grpc_server_xds_status_notifier notifier
+    cdef _ChannelArgs tmp_channel_args
+    cdef grpc_arg fetcher_arg
+    cdef grpc_server_config_fetcher* config_fetcher
+    cdef _ChannelArgs channel_args
+    cdef list arguments_list
     fork_handlers_and_grpc_init()
     self.references = []
     self.registered_completion_queues = []
@@ -23,15 +51,25 @@ cdef class Server:
     self.is_shutting_down = False
     self.is_shutdown = False
     self.c_server = NULL
-    cdef _ChannelArgs channel_args = _ChannelArgs(arguments)
-    self.c_server = grpc_server_create(channel_args.c_args(), NULL)
-    cdef grpc_server_xds_status_notifier notifier
-    notifier.on_serving_status_update = NULL
-    notifier.user_data = NULL
+    self.registered_methods = {}  # Mapping[bytes, RegisteredMethod]
+    arguments_list = list(arguments) if arguments is not None else []
     if xds:
-      grpc_server_set_config_fetcher(self.c_server,
-        grpc_server_config_fetcher_xds_create(notifier, channel_args.c_args()))
-    self.references.append(arguments)
+      notifier.on_serving_status_update = NULL
+      notifier.user_data = NULL
+      tmp_channel_args = _ChannelArgs(arguments_list)
+      config_fetcher = grpc_server_config_fetcher_xds_create(
+          notifier, tmp_channel_args.c_args())
+      if config_fetcher != NULL:
+        fetcher_arg.key = <char *>GRPC_ARG_SERVER_CONFIG_FETCHER
+        fetcher_arg.type = GRPC_ARG_POINTER
+        fetcher_arg.value.pointer.vtable = <grpc_arg_pointer_vtable *>grpc_server_config_fetcher_arg_vtable()
+        fetcher_arg.value.pointer.address = config_fetcher
+        arguments_list.append((GRPC_ARG_SERVER_CONFIG_FETCHER, _wrap_grpc_arg(fetcher_arg)))
+    channel_args = _ChannelArgs(arguments_list)
+    self.c_server = grpc_server_create(channel_args.c_args(), NULL)
+    if xds and config_fetcher != NULL:
+      grpc_server_config_fetcher_unref(config_fetcher)
+    self.references.append(arguments_list)
 
   def request_call(
       self, CompletionQueue call_queue not None,
@@ -41,14 +79,62 @@ cdef class Server:
     if server_queue not in self.registered_completion_queues:
       raise ValueError("server_queue must be a registered completion queue")
     cdef _RequestCallTag request_call_tag = _RequestCallTag(tag)
+    return self._c_request_unregistered_call(request_call_tag, call_queue, server_queue)
+
+  def request_registered_call(
+      self, CompletionQueue call_queue not None,
+      CompletionQueue server_queue not None,
+      str method not None,
+      tag):
+    if not self.is_started or self.is_shutting_down:
+      raise ValueError("server must be started and not shutting down")
+    if server_queue not in self.registered_completion_queues:
+      raise ValueError("server_queue must be a registered completion queue")
+    cdef _RequestCallTag request_call_tag = _RequestCallTag(tag)
+    method_bytes = str_to_bytes(method)
+    return self._c_request_registered_call(request_call_tag, call_queue, server_queue, method_bytes)
+
+  cdef _c_request_registered_call(self,
+       _RequestCallTag request_call_tag,
+       CompletionQueue call_queue,
+       CompletionQueue server_queue,
+       bytes method):
     request_call_tag.prepare()
     cpython.Py_INCREF(request_call_tag)
-    return grpc_server_request_call(
-        self.c_server, &request_call_tag.call.c_call,
-        &request_call_tag.call_details.c_details,
-        &request_call_tag.c_invocation_metadata,
-        call_queue.c_completion_queue, server_queue.c_completion_queue,
-        <cpython.PyObject *>request_call_tag)
+    cdef cpython.PyObject *c_request_call_tag = <cpython.PyObject *>request_call_tag
+    cdef RegisteredMethod registered_method = self.registered_methods[method]
+    # optional_payload is set to NULL because we use GRPC_SRM_PAYLOAD_NONE for all method.
+    cdef grpc_call_error c_call_error = GRPC_CALL_OK
+    with nogil:
+      c_call_error = grpc_server_request_registered_call(
+          self.c_server, registered_method.c_registered_method, &request_call_tag.call.c_call,
+          &request_call_tag.call_details.c_details.deadline,
+          &request_call_tag.c_invocation_metadata,
+          NULL,
+          call_queue.c_completion_queue, server_queue.c_completion_queue,
+          c_request_call_tag)
+    if c_call_error != GRPC_CALL_OK:
+      raise InternalError("Error in grpc_server_request_registered_call: %s" % grpc_call_error_to_string(self.c_call_error).decode())
+    return c_call_error
+
+  cdef _c_request_unregistered_call(self,
+       _RequestCallTag request_call_tag,
+       CompletionQueue call_queue,
+       CompletionQueue server_queue):
+    request_call_tag.prepare()
+    cpython.Py_INCREF(request_call_tag)
+    cdef cpython.PyObject *c_request_call_tag = <cpython.PyObject *>request_call_tag
+    cdef grpc_call_error c_call_error = GRPC_CALL_OK
+    with nogil:
+      c_call_error = grpc_server_request_call(
+          self.c_server, &request_call_tag.call.c_call,
+          &request_call_tag.call_details.c_details,
+          &request_call_tag.c_invocation_metadata,
+          call_queue.c_completion_queue, server_queue.c_completion_queue,
+          c_request_call_tag)
+    if c_call_error != GRPC_CALL_OK:
+      raise InternalError("Error in grpc_server_request_call: %s" % grpc_call_error_to_string(self.c_call_error).decode())
+    return c_call_error
 
   def register_completion_queue(
       self, CompletionQueue queue not None):
@@ -58,6 +144,14 @@ cdef class Server:
       grpc_server_register_completion_queue(
           self.c_server, queue.c_completion_queue, NULL)
     self.registered_completion_queues.append(queue)
+
+  def register_method(self, str fully_qualified_method):
+    method_bytes = str_to_bytes(fully_qualified_method)
+    if method_bytes in self.registered_methods.keys():
+      # Ignore already registered method
+      return
+    cdef RegisteredMethod registered_method = RegisteredMethod(method_bytes, <uintptr_t>self.c_server)
+    self.registered_methods[method_bytes] = registered_method
 
   def start(self, backup_queue=True):
     """Start the Cython gRPC Server.

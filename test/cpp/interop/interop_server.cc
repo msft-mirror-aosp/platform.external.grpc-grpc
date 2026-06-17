@@ -16,15 +16,7 @@
 //
 //
 
-#include <fstream>
-#include <memory>
-#include <sstream>
-#include <thread>
-
-#include "absl/flags/flag.h"
-
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/orca_service.h>
@@ -34,14 +26,22 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
+#include <fstream>
+#include <memory>
+#include <sstream>
+#include <thread>
+
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/string.h"
+#include "src/core/util/sync.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
 
 ABSL_FLAG(bool, use_alts, false,
           "Whether to use alts. Enable alts will disable tls.");
@@ -75,27 +75,27 @@ const char kEchoUserAgentKey[] = "x-grpc-test-echo-useragent";
 
 void MaybeEchoMetadata(ServerContext* context) {
   const auto& client_metadata = context->client_metadata();
-  GPR_ASSERT(client_metadata.count(kEchoInitialMetadataKey) <= 1);
-  GPR_ASSERT(client_metadata.count(kEchoTrailingBinMetadataKey) <= 1);
+  GRPC_CHECK_LE(client_metadata.count(kEchoInitialMetadataKey), 1u);
+  GRPC_CHECK_LE(client_metadata.count(kEchoTrailingBinMetadataKey), 1u);
 
-  auto iter = client_metadata.find(kEchoInitialMetadataKey);
-  if (iter != client_metadata.end()) {
+  if (auto [iter, end] = client_metadata.equal_range(kEchoInitialMetadataKey);
+      iter != end) {
     context->AddInitialMetadata(
         kEchoInitialMetadataKey,
         std::string(iter->second.begin(), iter->second.end()));
   }
-  iter = client_metadata.find(kEchoTrailingBinMetadataKey);
-  if (iter != client_metadata.end()) {
+  if (auto [iter, end] =
+          client_metadata.equal_range(kEchoTrailingBinMetadataKey);
+      iter != end) {
     context->AddTrailingMetadata(
         kEchoTrailingBinMetadataKey,
         std::string(iter->second.begin(), iter->second.end()));
   }
   // Check if client sent a magic key in the header that makes us echo
   // back the user-agent (for testing purpose)
-  iter = client_metadata.find(kEchoUserAgentKey);
-  if (iter != client_metadata.end()) {
-    iter = client_metadata.find("user-agent");
-    if (iter != client_metadata.end()) {
+  if (client_metadata.count(kEchoUserAgentKey) > 0) {
+    if (auto [iter, end] = client_metadata.equal_range("user-agent");
+        iter != end) {
       context->AddInitialMetadata(
           kEchoUserAgentKey,
           std::string(iter->second.begin(), iter->second.end()));
@@ -118,22 +118,20 @@ bool CheckExpectedCompression(const ServerContext& context,
   if (compression_expected) {
     if (received_compression == GRPC_COMPRESS_NONE) {
       // Expected some compression, got NONE. This is an error.
-      gpr_log(GPR_ERROR,
-              "Expected compression but got uncompressed request from client.");
+      LOG(ERROR)
+          << "Expected compression but got uncompressed request from client.";
       return false;
     }
     if (!(inspector.WasCompressed())) {
-      gpr_log(GPR_ERROR,
-              "Failure: Requested compression in a compressable request, but "
-              "compression bit in message flags not set.");
+      LOG(ERROR) << "Failure: Requested compression in a compressable request, "
+                    "but compression bit in message flags not set.";
       return false;
     }
   } else {
     // Didn't expect compression -> make sure the request is uncompressed
     if (inspector.WasCompressed()) {
-      gpr_log(GPR_ERROR,
-              "Failure: Didn't requested compression, but compression bit in "
-              "message flags set.");
+      LOG(ERROR) << "Failure: Didn't requested compression, but compression "
+                    "bit in message flags set.";
       return false;
     }
   }
@@ -184,7 +182,7 @@ class TestServiceImpl : public TestService::Service {
   Status CacheableUnaryCall(ServerContext* context,
                             const SimpleRequest* /*request*/,
                             SimpleResponse* response) override {
-    gpr_timespec ts = gpr_now(GPR_CLOCK_PRECISE);
+    gpr_timespec ts = gpr_now(GPR_CLOCK_MONOTONIC);
     std::string timestamp = std::to_string(ts.tv_nsec);
     response->mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
     context->AddInitialMetadata("cache-control", "max-age=60, public");
@@ -196,8 +194,9 @@ class TestServiceImpl : public TestService::Service {
     MaybeEchoMetadata(context);
     if (request->has_response_compressed()) {
       const bool compression_requested = request->response_compressed().value();
-      gpr_log(GPR_DEBUG, "Request for compression (%s) present for %s",
-              compression_requested ? "enabled" : "disabled", __func__);
+      VLOG(2) << "Request for compression ("
+              << (compression_requested ? "enabled" : "disabled")
+              << ") present for " << __func__;
       if (compression_requested) {
         // Any level would do, let's go for HIGH because we are overachievers.
         context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
@@ -246,8 +245,9 @@ class TestServiceImpl : public TestService::Service {
         context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
         const bool compression_requested =
             request->response_parameters(i).compressed().value();
-        gpr_log(GPR_DEBUG, "Request for compression (%s) present for %s",
-                compression_requested ? "enabled" : "disabled", __func__);
+        VLOG(2) << "Request for compression ("
+                << (compression_requested ? "enabled" : "disabled")
+                << ") present for " << __func__;
         if (!compression_requested) {
           wopts.set_no_compression();
         }  // else, compression is already enabled via the context.
@@ -419,7 +419,7 @@ void grpc::testing::interop::RunServer(
     ServerStartedCondition* server_started_condition,
     std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
         server_options) {
-  GPR_ASSERT(port != 0);
+  GRPC_CHECK_NE(port, 0);
   std::ostringstream server_address;
   server_address << "0.0.0.0:" << port;
   auto server_metric_recorder =
@@ -444,7 +444,7 @@ void grpc::testing::interop::RunServer(
   grpc::ServerBuilder::experimental_type(&builder).EnableCallMetricRecording(
       nullptr);
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
+  LOG(INFO) << "Server listening on " << server_address.str();
 
   // Signal that the server has started.
   if (server_started_condition) {

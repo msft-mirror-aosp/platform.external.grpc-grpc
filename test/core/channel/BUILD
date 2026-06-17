@@ -13,51 +13,63 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
-grpc_package(name = "test/core/channel")
+grpc_package(
+    name = "test/core/channel",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
 grpc_cc_test(
-    name = "call_tracer_test",
-    srcs = ["call_tracer_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "channel_args_test",
     srcs = ["channel_args_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+        "gtest",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:channel_arg_names",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_core_credentials_header",
+        "//:ref_counted_ptr",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//src/core:grpc_check",
+        "//src/core:notification",
+        "//src/core:ref_counted",
+        "//src/core:useful",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "channel_stack_test",
     srcs = ["channel_stack_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
+    external_deps = [
+        "absl/status",
+        "gtest",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:config",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//src/core:channel_args_preconditioning",
+        "//src/core:status_helper",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -65,15 +77,18 @@ grpc_cc_test(
     name = "channel_stack_builder_test",
     srcs = ["channel_stack_builder_test.cc"],
     external_deps = [
+        "absl/status",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:channel_stack_builder",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
         "//src/core:closure",
-        "//test/core/util:grpc_test_util",
+        "//src/core:error",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -81,98 +96,33 @@ grpc_cc_test(
     name = "minimal_stack_is_minimal_test",
     srcs = ["minimal_stack_is_minimal_test.cc"],
     external_deps = [
+        "absl/log:check",
+        "absl/memory",
+        "absl/strings",
         "gtest",
     ],
-    language = "C++",
+    tags = [
+        # channel stacks are allowed to be different internally
+        "grpc:no-internal-poller",
+        "minimal_stack_test",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:channel_arg_names",
+        "//:config",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
+        "//:iomgr",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "channel_trace_test",
-    srcs = ["channel_trace_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:grpc++",
-        "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
-        "//test/cpp/util:channel_trace_proto_helper",
-    ],
-)
-
-grpc_cc_test(
-    name = "channelz_test",
-    srcs = ["channelz_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:grpc++",
-        "//src/core:channel_args",
-        "//test/core/event_engine:event_engine_test_utils",
-        "//test/core/util:grpc_test_util",
-        "//test/cpp/util:channel_trace_proto_helper",
-    ],
-)
-
-grpc_cc_test(
-    name = "channelz_registry_test",
-    srcs = ["channelz_registry_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:grpc++",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "status_util_test",
-    srcs = ["status_util_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "call_finalization_test",
-    srcs = ["call_finalization_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/promise:test_context",
-        "//test/core/util:grpc_test_util",
+        "//src/core:channel_init",
+        "//src/core:channel_stack_type",
+        "//src/core:experiments",
+        "//src/core:grpc_check",
+        "//src/core:iomgr_fwd",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -182,12 +132,25 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:call_tracer",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//src/core:arena",
+        "//src/core:channel_args",
+        "//test/core/test_util:grpc_test_util",
     ],
+)
+
+grpc_fuzz_test(
+    name = "union_with_test",
+    srcs = ["union_with_test.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = ["//src/core:channel_args"],
 )

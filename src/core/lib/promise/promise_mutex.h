@@ -19,10 +19,9 @@
 
 #include <utility>
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
@@ -36,7 +35,7 @@ class PromiseMutex {
     Lock() {}
     ~Lock() {
       if (mutex_ != nullptr) {
-        GPR_ASSERT(mutex_->locked_);
+        GRPC_CHECK(mutex_->locked_);
         mutex_->locked_ = false;
         mutex_->waiter_.Wake();
       }
@@ -53,18 +52,18 @@ class PromiseMutex {
     Lock& operator=(const Lock&) noexcept = delete;
 
     T* operator->() {
-      GPR_DEBUG_ASSERT(mutex_ != nullptr);
+      GRPC_DCHECK_NE(mutex_, nullptr);
       return &mutex_->value_;
     }
     T& operator*() {
-      GPR_DEBUG_ASSERT(mutex_ != nullptr);
+      GRPC_DCHECK_NE(mutex_, nullptr);
       return mutex_->value_;
     }
 
    private:
     friend class PromiseMutex;
     explicit Lock(PromiseMutex* mutex) : mutex_(mutex) {
-      GPR_DEBUG_ASSERT(!mutex_->locked_);
+      GRPC_DCHECK(!mutex_->locked_);
       mutex_->locked_ = true;
     }
     PromiseMutex* mutex_ = nullptr;
@@ -72,7 +71,7 @@ class PromiseMutex {
 
   PromiseMutex() = default;
   explicit PromiseMutex(T value) : value_(std::move(value)) {}
-  ~PromiseMutex() { GPR_DEBUG_ASSERT(!locked_); }
+  ~PromiseMutex() { GRPC_DCHECK(!locked_); }
 
   auto Acquire() {
     return [this]() -> Poll<Lock> {

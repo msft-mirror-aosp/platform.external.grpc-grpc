@@ -11,11 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <grpc/event_engine/slice.h>
 #include <grpc/support/port_platform.h>
-
 #include <stdlib.h>
 
-#include <grpc/event_engine/slice.h>
+#include "src/core/util/grpc_check.h"
 
 // The echo client wraps an EventEngine::Connect and EventEngine::Endpoint
 // implementations, allowing third-party TCP listeners to interact with your
@@ -30,34 +30,33 @@
 //    bazel run
 //    //test/core/event_engine/test_suite/tools:my_event_engine_echo_client
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice_buffer.h>
+#include <grpc/grpc.h>
+
 #include <chrono>
 #include <memory>
 #include <string>
 #include <utility>
 
+#include "src/core/config/core_configuration.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/resolver/resolver_registry.h"
+#include "src/core/util/notification.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/resolver/resolver_registry.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
-
 extern absl::AnyInvocable<
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine>(void)>
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>(void)>
 CustomEventEngineFactory();
 
 ABSL_FLAG(std::string, target, "ipv4:127.0.0.1:50051", "Target string");
@@ -79,10 +78,10 @@ void SendMessage(EventEngine::Endpoint* endpoint, int message_id) {
   grpc_core::Notification write_done;
   endpoint->Write(
       [&](absl::Status status) {
-        GPR_ASSERT(status.ok());
+        GRPC_CHECK_OK(status);
         write_done.Notify();
       },
-      &buf, nullptr);
+      &buf, EventEngine::Endpoint::WriteArgs());
   write_done.WaitForNotification();
 }
 
@@ -92,17 +91,15 @@ void ReceiveAndEchoMessage(EventEngine::Endpoint* endpoint, int message_id) {
   endpoint->Read(
       [&](absl::Status status) {
         if (!status.ok()) {
-          gpr_log(GPR_ERROR, "Error reading from endpoint: %s",
-                  status.ToString().c_str());
+          LOG(ERROR) << "Error reading from endpoint: " << status;
           exit(1);
         }
         Slice received = buf.TakeFirst();
-        gpr_log(GPR_ERROR, "Received message %d: %.*s", message_id,
-                static_cast<int>(received.as_string_view().length()),
-                received.as_string_view().data());
+        LOG(ERROR) << "Received message " << message_id << ": "
+                   << received.as_string_view();
         read_done.Notify();
       },
-      &buf, nullptr);
+      &buf, EventEngine::Endpoint::ReadArgs());
   read_done.WaitForNotification();
 }
 
@@ -110,7 +107,8 @@ void RunUntilInterrupted() {
   auto engine = GetDefaultEventEngine();
   std::unique_ptr<EventEngine::Endpoint> endpoint;
   grpc_core::Notification connected;
-  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>("bar"));
   ChannelArgsEndpointConfig config{grpc_core::CoreConfiguration::Get()
                                        .channel_args_preconditioning()
                                        .PreconditionChannelArgs(nullptr)};
@@ -119,12 +117,11 @@ void RunUntilInterrupted() {
           .resolver_registry()
           .AddDefaultPrefixIfNeeded(absl::GetFlag(FLAGS_target));
   auto addr = URIToResolvedAddress(canonical_target);
-  GPR_ASSERT(addr.ok());
+  GRPC_CHECK_OK(addr);
   engine->Connect(
       [&](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
         if (!ep.ok()) {
-          gpr_log(GPR_ERROR, "Error connecting: %s",
-                  ep.status().ToString().c_str());
+          LOG(ERROR) << "Error connecting: " << ep.status().ToString();
           exit(1);
         }
         endpoint = std::move(*ep);
@@ -132,11 +129,11 @@ void RunUntilInterrupted() {
       },
       *addr, config, memory_quota->CreateMemoryAllocator("client"), 2h);
   connected.WaitForNotification();
-  GPR_ASSERT(endpoint.get() != nullptr);
-  gpr_log(GPR_DEBUG, "peer addr: %s",
-          ResolvedAddressToString(endpoint->GetPeerAddress())->c_str());
-  gpr_log(GPR_DEBUG, "local addr: %s",
-          ResolvedAddressToString(endpoint->GetLocalAddress())->c_str());
+  GRPC_CHECK_NE(endpoint.get(), nullptr);
+  VLOG(2) << "peer addr: "
+          << ResolvedAddressToString(endpoint->GetPeerAddress());
+  VLOG(2) << "local addr: "
+          << ResolvedAddressToString(endpoint->GetLocalAddress());
   int message_id = 0;
   while (true) {
     SendMessage(endpoint.get(), message_id++);

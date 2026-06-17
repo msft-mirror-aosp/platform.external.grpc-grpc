@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc {
@@ -29,6 +30,10 @@ namespace internal {
 // EXPOSED FOR TESTING PURPOSES ONLY
 // Returns true if the channel is a CSM channel.
 bool CsmChannelTargetSelector(absl::string_view target);
+
+// EXPOSED FOR TESTING PURPOSES ONLY
+// Returns true if the server is a CSM server.
+bool CsmServerSelector(const grpc_core::ChannelArgs& args);
 
 }  // namespace internal
 }  // namespace grpc

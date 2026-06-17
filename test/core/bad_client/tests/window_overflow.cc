@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <algorithm>
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/surface/server.h"
+#include "src/core/server/server.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/bad_client/bad_client.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 #define PFX_STR                                                            \
   "\x00\x00\x00\x04\x01\x00\x00\x00\x00"                                   \
@@ -45,7 +45,7 @@
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* /*registered_method*/) {
   while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
-    GPR_ASSERT(grpc_completion_queue_next(
+    GRPC_CHECK(grpc_completion_queue_next(
                    cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
                    .type == GRPC_QUEUE_TIMEOUT);
   }
@@ -72,6 +72,7 @@ int main(int argc, char** argv) {
 #define SEND_SIZE (4 * 1024 * 1024)
 #define NUM_FRAMES (SEND_SIZE / FRAME_SIZE + 1)
   grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
 
   addbuf(PFX_STR, sizeof(PFX_STR) - 1);

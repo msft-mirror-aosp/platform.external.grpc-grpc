@@ -46,7 +46,7 @@ class FailingService
 
   def initialize(_default_var = 'ignored')
     @details = 'app error'
-    @code = 101
+    @code = 3
     @md = { 'failed_method' => 'an_rpc' }
   end
 
@@ -61,6 +61,7 @@ FailingStub = FailingService.rpc_stub_class
 class SlowService
   include GRPC::GenericService
   rpc :an_rpc, EchoMsg, EchoMsg
+  rpc :a_server_streaming_rpc, EchoMsg, stream(EchoMsg)
   attr_reader :received_md, :delay
 
   def initialize(_default_var = 'ignored')
@@ -73,6 +74,13 @@ class SlowService
     sleep @delay
     @received_md << call.metadata unless call.metadata.nil?
     req  # send back the req as the response
+  end
+
+  def a_server_streaming_rpc(_, call)
+    GRPC.logger.info("starting a slow #{@delay} server streaming rpc")
+    sleep @delay
+    @received_md << call.metadata unless call.metadata.nil?
+    [EchoMsg.new, EchoMsg.new]
   end
 end
 
@@ -410,6 +418,23 @@ describe GRPC::RpcServer do
         t.join
       end
 
+      it 'should raise DeadlineExceeded', server: true do
+        service = SlowService.new
+        @srv.handle(service)
+        t = Thread.new { @srv.run }
+        @srv.wait_till_running
+        req = EchoMsg.new
+        stub = SlowStub.new(@host, :this_channel_is_insecure, **client_opts)
+        timeout = service.delay - 0.1
+        deadline = GRPC::Core::TimeConsts.from_relative_time(timeout)
+        responses = stub.a_server_streaming_rpc(req,
+                                                deadline: deadline,
+                                                metadata: { k1: 'v1', k2: 'v2' })
+        expect { responses.to_a }.to raise_error(GRPC::DeadlineExceeded)
+        @srv.stop
+        t.join
+      end
+
       it 'should handle cancellation correctly', server: true do
         request_received = false
         request_received_mu = Mutex.new
@@ -522,7 +547,7 @@ describe GRPC::RpcServer do
         expect(one_failed_as_unavailable).to be(true)
       end
 
-      it 'should send a status UNKNOWN with a relevant message when the' \
+      it 'should send a status UNKNOWN with a relevant message when the ' \
         'servers response stream is not an enumerable' do
         @srv.handle(BidiService)
         t = Thread.new { @srv.run }
@@ -537,10 +562,9 @@ describe GRPC::RpcServer do
         end
         # Erroneous responses sent from the server handler should cause an
         # exception on the client with relevant info.
-        expected_details = 'NoMethodError: undefined method `each\' for '\
-          '"bad response. (not an enumerable, client sees an error)"'
+        expected_details = /NoMethodError: undefined method [`']each'/
 
-        expect(exception.inspect.include?(expected_details)).to be true
+        expect(exception.inspect).to match(expected_details)
         @srv.stop
         t.join
       end

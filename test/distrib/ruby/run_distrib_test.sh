@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
 set -ex
 
 cd "$(dirname "$0")"
@@ -25,6 +26,8 @@ function die {
 ARCH="$1"
 PLATFORM="$2"
 PACKAGE_TYPE="$3"
+PROTOBUF_VERSION="$4"
+
 echo "$EXTERNAL_GIT_ROOT"
 GRPC_VERSION="$(ruby -e 'require ENV["EXTERNAL_GIT_ROOT"] + "/src/ruby/lib/grpc/version.rb"; puts GRPC::VERSION')"
 if [[ "$PACKAGE_TYPE" == "source" ]]; then
@@ -45,6 +48,10 @@ if [[ "$(ls "${GEM_SOURCE}/gems" | grep -c grpc)" != 1 ]]; then
 fi;
 gem install builder
 gem generate_index --directory "${GEM_SOURCE}"
+
+if [[ -n "$PROTOBUF_VERSION" ]]; then
+  bundle add google-protobuf --version "~> $PROTOBUF_VERSION"
+fi;
 
 bundle install
 

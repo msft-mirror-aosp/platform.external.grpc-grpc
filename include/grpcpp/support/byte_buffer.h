@@ -19,15 +19,14 @@
 #ifndef GRPCPP_SUPPORT_BYTE_BUFFER_H
 #define GRPCPP_SUPPORT_BYTE_BUFFER_H
 
-#include <vector>
-
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
+
+#include <vector>
 
 namespace grpc {
 
@@ -56,10 +55,18 @@ class DeserializeFuncType;
 class GrpcByteBufferPeer;
 
 }  // namespace internal
+
+namespace experimental {
+namespace internal {
+template <class RequestType>
+class CallbackSessionHandler;
+}  // namespace internal
+}  // namespace experimental
+
 /// A sequence of bytes.
 class ByteBuffer final {
  public:
-  /// Constuct an empty buffer.
+  /// Construct an empty buffer.
   ByteBuffer() : buffer_(nullptr) {}
 
   /// Construct buffer from \a slices, of which there are \a nslices.
@@ -174,6 +181,8 @@ class ByteBuffer final {
   friend class internal::CallbackUnaryHandler;
   template <class RequestType, class ResponseType>
   friend class internal::CallbackServerStreamingHandler;
+  template <class RequestType>
+  friend class experimental::internal::CallbackSessionHandler;
   template <StatusCode code>
   friend class internal::ErrorMethodHandler;
   template <class R>

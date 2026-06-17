@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/server/load_reporter")
+grpc_package(
+    name = "test/cpp/server/load_reporter",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "lb_load_data_store_test",
@@ -25,8 +31,10 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//:gpr_platform",
+        "//:grpc",
         "//:lb_load_data_store",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -34,16 +42,22 @@ grpc_cc_test(
     name = "lb_load_reporter_test",
     srcs = ["load_reporter_test.cc"],
     external_deps = [
+        "absl/flags:flag",
+        "absl/log:check",
         "gtest",
         "opencensus-stats-test",
     ],
-    tags = ["no_windows"],
+    tags = [
+        # Uses opencensus features not enabled internally.
+        "grpc:broken-internally",
+        "no_windows",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:lb_load_reporter",
         "//src/core:lb_server_load_reporting_filter",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -57,6 +71,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:lb_get_cpu_stats",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

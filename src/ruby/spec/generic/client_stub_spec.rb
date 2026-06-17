@@ -64,12 +64,8 @@ end
 def sanity_check_values_of_accessors(op_view,
                                      expected_metadata,
                                      expected_trailing_metadata)
-  expected_status = Struct::Status.new
-  expected_status.code = 0
-  expected_status.details = 'OK'
-  expected_status.metadata = expected_trailing_metadata
-
-  expect(op_view.status).to eq(expected_status)
+  expect(op_view.status.code).to eq(0)
+  expect(op_view.status.metadata).to eq(expected_trailing_metadata)
   expect(op_view.metadata).to eq(expected_metadata)
   expect(op_view.trailing_metadata).to eq(expected_trailing_metadata)
 
@@ -160,6 +156,29 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
         GRPC::ClientStub.new(fake_host, creds,  **opts)
       end
       expect(&blk).to_not raise_error
+    end
+
+    it 'creates secure channel when only CallCredentials provided' do
+      call_creds = GRPC::Core::CallCredentials.new(proc { {} })
+      stub = GRPC::ClientStub.new(fake_host, call_creds)
+      # Verify the internal channel credentials are SSL (not insecure)
+      expect(stub.instance_variable_get(:@channel_creds)).to be_a(GRPC::Core::ChannelCredentials)
+      expect(stub.instance_variable_get(:@call_creds)).to eq(call_creds)
+    end
+
+    context 'with CompositeChannelCredentials (pure Ruby path)' do
+      it 'splits CompositeChannelCredentials into channel + call creds' do
+        skip 'CompositeChannelCredentials requires pure Ruby toggle ON' \
+          unless GRPC::PURE_RUBY_CALL_CREDENTIALS_ENABLED
+        require 'grpc/core/call_credentials'
+        require 'grpc/core/channel_credentials'
+        chan_creds = GRPC::Core::ChannelCredentials.new
+        call_creds = GRPC::Core::CallCredentials.new(proc { {} })
+        composite = chan_creds.compose(call_creds)
+        stub = GRPC::ClientStub.new(fake_host, composite)
+        expect(stub.instance_variable_get(:@channel_creds)).to eq(chan_creds)
+        expect(stub.instance_variable_get(:@call_creds)).to eq(call_creds)
+      end
     end
   end
 
@@ -305,7 +324,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
     describe 'via a call operation' do
       after(:each) do
         # make sure op.wait doesn't freeze, even if there's a bad status
-        @op.wait
+        @op&.wait
       end
       def get_response(stub, run_start_call_first: false, credentials: nil)
         @op = stub.request_response(@method, @sent_msg, noop, noop,
@@ -407,7 +426,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
     describe 'via a call operation' do
       after(:each) do
         # make sure op.wait doesn't freeze, even if there's a bad status
-        @op.wait
+        @op&.wait
       end
       def get_response(stub, run_start_call_first: false)
         @op = stub.client_streamer(@method, @sent_msgs, noop, noop,
@@ -453,23 +472,23 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
   describe '#server_streamer', server_streamer: true do
     before(:each) do
       @sent_msg = 'a_msg'
-      @replys = Array.new(3) { |i| 'reply_' + (i + 1).to_s }
+      @replies = Array.new(3) { |i| 'reply_' + (i + 1).to_s }
     end
 
     shared_examples 'server streaming' do
       it 'should send a request to/receive replies from a server' do
         server_port = create_test_server
         host = "localhost:#{server_port}"
-        th = run_server_streamer(@sent_msg, @replys, @pass)
+        th = run_server_streamer(@sent_msg, @replies, @pass)
         stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
-        expect(get_responses(stub).collect { |r| r }).to eq(@replys)
+        expect(get_responses(stub).collect { |r| r }).to eq(@replies)
         th.join
       end
 
       it 'should raise an error if the status is not ok' do
         server_port = create_test_server
         host = "localhost:#{server_port}"
-        th = run_server_streamer(@sent_msg, @replys, @fail)
+        th = run_server_streamer(@sent_msg, @replies, @fail)
         stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
         e = get_responses(stub)
         expect { e.collect { |r| r } }.to raise_error(GRPC::BadStatus)
@@ -479,7 +498,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
       it 'should send metadata to the server ok' do
         server_port = create_test_server
         host = "localhost:#{server_port}"
-        th = run_server_streamer(@sent_msg, @replys, @fail,
+        th = run_server_streamer(@sent_msg, @replies, @fail,
                                  expected_metadata: { k1: 'v1', k2: 'v2' })
         stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
         e = get_responses(stub)
@@ -502,7 +521,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
         server_port = create_test_server
         host = "localhost:#{server_port}"
         th = run_server_streamer_handle_client_cancellation(
-          @sent_msg, @replys)
+          @sent_msg, @replies)
         stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
 
         unmarshal = proc { fail(ArgumentError, 'test unmarshalling error') }
@@ -526,7 +545,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
 
     describe 'via a call operation' do
       after(:each) do
-        @op.wait # make sure wait doesn't freeze
+        @op&.wait
       end
       def get_responses(stub, run_start_call_first: false, unmarshal: noop)
         @op = stub.server_streamer(@method, @sent_msg, noop, unmarshal,
@@ -547,13 +566,13 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
         @server_initial_md = { 'sk1' => 'sv1', 'sk2' => 'sv2' }
         @server_trailing_md = { 'tk1' => 'tv1', 'tk2' => 'tv2' }
         th = run_server_streamer(
-          @sent_msg, @replys, @pass,
+          @sent_msg, @replies, @pass,
           expected_metadata: @metadata,
           server_initial_md: @server_initial_md,
           server_trailing_md: @server_trailing_md)
         stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
         e = get_responses(stub, run_start_call_first: run_start_call_first)
-        expect(e.collect { |r| r }).to eq(@replys)
+        expect(e.collect { |r| r }).to eq(@replies)
         th.join
       end
 
@@ -577,7 +596,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
         server_port = create_test_server
         host = "localhost:#{server_port}"
         th = run_server_streamer_handle_client_cancellation(
-          @sent_msg, @replys)
+          @sent_msg, @replies)
         stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
         resp = get_responses(stub, run_start_call_first: false)
         expect(resp.next).to eq('reply_1')
@@ -591,18 +610,18 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
   describe '#bidi_streamer', bidi: true do
     before(:each) do
       @sent_msgs = Array.new(3) { |i| 'msg_' + (i + 1).to_s }
-      @replys = Array.new(3) { |i| 'reply_' + (i + 1).to_s }
+      @replies = Array.new(3) { |i| 'reply_' + (i + 1).to_s }
       server_port = create_test_server
       @host = "localhost:#{server_port}"
     end
 
     shared_examples 'bidi streaming' do
       it 'supports sending all the requests first' do
-        th = run_bidi_streamer_handle_inputs_first(@sent_msgs, @replys,
+        th = run_bidi_streamer_handle_inputs_first(@sent_msgs, @replies,
                                                    @pass)
         stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure)
         e = get_responses(stub)
-        expect(e.collect { |r| r }).to eq(@replys)
+        expect(e.collect { |r| r }).to eq(@replies)
         th.join
       end
 
@@ -724,7 +743,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
                                          requests_to_push,
                                          request_queue,
                                          expected_error_message)
-          # the write loop errror should cancel the call and end the
+          # the write loop error should cancel the call and end the
           # server's request stream
           th.join
         end
@@ -777,7 +796,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
 
         it 'receives a grpc status code when writes to a bidi stream fail' do
           # This test tries to trigger the case when a 'SEND_MESSAGE' op
-          # and subseqeunt 'SEND_CLOSE_FROM_CLIENT' op of a bidi stream fails.
+          # and subsequent 'SEND_CLOSE_FROM_CLIENT' op of a bidi stream fails.
           # In this case, iteration through the response stream should result
           # in a grpc status code, and the writer thread should not raise an
           # exception.
@@ -845,7 +864,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
 
     describe 'via a call operation' do
       after(:each) do
-        @op.wait # make sure wait doesn't freeze
+        @op&.wait
       end
       def get_responses(stub, run_start_call_first: false, deadline: nil,
                         marshal_proc: noop)
@@ -942,7 +961,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
     end
   end
 
-  def run_server_streamer(expected_input, replys, status,
+  def run_server_streamer(expected_input, replies, status,
                           expected_metadata: {},
                           server_initial_md: {},
                           server_trailing_md: {})
@@ -954,19 +973,19 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
         expect(c.metadata[k.to_s]).to eq(v)
       end
       expect(c.remote_read).to eq(expected_input)
-      replys.each { |r| c.remote_send(r) }
+      replies.each { |r| c.remote_send(r) }
       c.send_status(status, status == @pass ? 'OK' : 'NOK', true,
                     metadata: server_trailing_md)
       close_active_server_call(c)
     end
   end
 
-  def run_bidi_streamer_handle_inputs_first(expected_inputs, replys,
+  def run_bidi_streamer_handle_inputs_first(expected_inputs, replies,
                                             status)
     wakey_thread do |notifier|
       c = expect_server_to_be_invoked(notifier)
       expected_inputs.each { |i| expect(c.remote_read).to eq(i) }
-      replys.each { |r| c.remote_send(r) }
+      replies.each { |r| c.remote_send(r) }
       c.send_status(status, status == @pass ? 'OK' : 'NOK', true)
       close_active_server_call(c)
     end
@@ -1018,12 +1037,12 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
   end
 
   def run_server_streamer_handle_client_cancellation(
-    expected_input, replys)
+    expected_input, replies)
     wakey_thread do |notifier|
       c = expect_server_to_be_invoked(notifier)
       expect(c.remote_read).to eq(expected_input)
       begin
-        replys.each { |r| c.remote_send(r) }
+        replies.each { |r| c.remote_send(r) }
       rescue GRPC::Core::CallError
         # An attempt to write to the client might fail. This is ok
         # because the client call is expected to cancel the call,

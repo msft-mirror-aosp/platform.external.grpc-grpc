@@ -3,10 +3,11 @@
  *     envoy/config/overload/v3/overload.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_OVERLOAD_V3_OVERLOAD_PROTO_UPB_MINITABLE_H_
-#define ENVOY_CONFIG_OVERLOAD_V3_OVERLOAD_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_CONFIG_OVERLOAD_V3_OVERLOAD_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_CONFIG_OVERLOAD_V3_OVERLOAD_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -36,4 +37,4 @@ extern const upb_MiniTableFile envoy_config_overload_v3_overload_proto_upb_file_
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_OVERLOAD_V3_OVERLOAD_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_CONFIG_OVERLOAD_V3_OVERLOAD_PROTO_UPB_H__UPB_MINITABLE_H_ */

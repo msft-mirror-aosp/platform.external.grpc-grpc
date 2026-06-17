@@ -14,32 +14,35 @@
 
 #include "test/core/event_engine/event_engine_test_utils.h"
 
-#include <stdlib.h>
-
-#include <algorithm>
-#include <memory>
-#include <random>
-#include <string>
-#include <utility>
-
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
+#include <stdlib.h>
+
+#include <algorithm>
+#include <chrono>
+#include <memory>
+#include <random>
+#include <string>
+#include <utility>
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/time.h"
+#include "test/core/test_util/build.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 // IWYU pragma: no_include <sys/socket.h>
 
@@ -75,14 +78,6 @@ std::string GetNextSendMessage() {
   return tmp_s;
 }
 
-void WaitForSingleOwner(std::shared_ptr<EventEngine> engine) {
-  while (engine.use_count() > 1) {
-    GRPC_LOG_EVERY_N_SEC(2, GPR_INFO, "engine.use_count() = %ld",
-                         engine.use_count());
-    absl::SleepFor(absl::Milliseconds(100));
-  }
-}
-
 void AppendStringToSliceBuffer(SliceBuffer* buf, absl::string_view data) {
   buf->Append(Slice::FromCopiedString(data));
 }
@@ -100,8 +95,10 @@ std::string ExtractSliceBufferIntoString(SliceBuffer* buf) {
 
 absl::Status SendValidatePayload(absl::string_view data,
                                  EventEngine::Endpoint* send_endpoint,
-                                 EventEngine::Endpoint* receive_endpoint) {
-  GPR_ASSERT(receive_endpoint != nullptr && send_endpoint != nullptr);
+                                 EventEngine::Endpoint* receive_endpoint,
+                                 int read_hint_bytes) {
+  GRPC_CHECK_NE(receive_endpoint, nullptr);
+  GRPC_CHECK_NE(send_endpoint, nullptr);
   int num_bytes_written = data.size();
   grpc_core::Notification read_signal;
   grpc_core::Notification write_signal;
@@ -116,36 +113,40 @@ absl::Status SendValidatePayload(absl::string_view data,
   // fflush(stdout);
 
   AppendStringToSliceBuffer(&write_slice_buf, data);
-  EventEngine::Endpoint::ReadArgs args = {num_bytes_written};
+  size_t num_bytes_remaining = num_bytes_written;
   std::function<void(absl::Status)> read_cb;
   read_cb = [receive_endpoint, &read_slice_buf, &read_store_buf, &read_cb,
-             &read_signal, &args](absl::Status status) {
-    GPR_ASSERT(status.ok());
-    if (read_slice_buf.Length() == static_cast<size_t>(args.read_hint_bytes)) {
+             &read_signal, &num_bytes_remaining](absl::Status status) {
+    GRPC_CHECK_OK(status);
+    if (read_slice_buf.Length() == num_bytes_remaining) {
       read_slice_buf.MoveFirstNBytesIntoSliceBuffer(read_slice_buf.Length(),
                                                     read_store_buf);
       read_signal.Notify();
       return;
     }
-    args.read_hint_bytes -= read_slice_buf.Length();
+    num_bytes_remaining -= read_slice_buf.Length();
     read_slice_buf.MoveFirstNBytesIntoSliceBuffer(read_slice_buf.Length(),
                                                   read_store_buf);
-    if (receive_endpoint->Read(read_cb, &read_slice_buf, &args)) {
-      GPR_ASSERT(read_slice_buf.Length() != 0);
+    EventEngine::Endpoint::ReadArgs args;
+    args.set_read_hint_bytes(num_bytes_remaining);
+    if (receive_endpoint->Read(read_cb, &read_slice_buf, args)) {
       read_cb(absl::OkStatus());
     }
   };
   // Start asynchronous reading at the receive_endpoint.
-  if (receive_endpoint->Read(read_cb, &read_slice_buf, &args)) {
+  EventEngine::Endpoint::ReadArgs args;
+  args.set_read_hint_bytes(
+      (read_hint_bytes == -1 ? num_bytes_written : read_hint_bytes));
+  if (receive_endpoint->Read(read_cb, &read_slice_buf, args)) {
     read_cb(absl::OkStatus());
   }
   // Start asynchronous writing at the send_endpoint.
   if (send_endpoint->Write(
           [&write_signal](absl::Status status) {
-            GPR_ASSERT(status.ok());
+            GRPC_CHECK_OK(status);
             write_signal.Notify();
           },
-          &write_slice_buf, nullptr)) {
+          &write_slice_buf, EventEngine::Endpoint::WriteArgs())) {
     write_signal.Notify();
   }
   write_signal.WaitForNotification();
@@ -153,8 +154,8 @@ absl::Status SendValidatePayload(absl::string_view data,
   // Check if data written == data read
   std::string data_read = ExtractSliceBufferIntoString(&read_store_buf);
   if (data != data_read) {
-    gpr_log(GPR_INFO, "Data written = %s", data.data());
-    gpr_log(GPR_INFO, "Data read = %s", data_read.c_str());
+    LOG(INFO) << "Data written = " << data;
+    LOG(INFO) << "Data read = " << data_read;
     return absl::CancelledError("Data read != Data written");
   }
   return absl::OkStatus();
@@ -185,9 +186,11 @@ absl::Status ConnectionManager::BindAndStartListener(
 
   ChannelArgsEndpointConfig config;
   auto status = event_engine->CreateListener(
-      std::move(accept_cb),
-      [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
-      std::make_unique<grpc_core::MemoryQuota>("foo"));
+      std::move(accept_cb), [](absl::Status status) { GRPC_CHECK_OK(status); },
+      config,
+      std::make_unique<grpc_core::MemoryQuota>(
+          grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+              "foo")));
   if (!status.ok()) {
     return status.status();
   }
@@ -196,16 +199,16 @@ absl::Status ConnectionManager::BindAndStartListener(
   for (auto& addr : addrs) {
     auto bind_status = listener->Bind(*URIToResolvedAddress(addr));
     if (!bind_status.ok()) {
-      gpr_log(GPR_ERROR, "Binding listener failed: %s",
-              bind_status.status().ToString().c_str());
+      LOG(ERROR) << "Binding listener failed: "
+                 << bind_status.status().ToString();
       return bind_status.status();
     }
   }
-  GPR_ASSERT(listener->Start().ok());
+  GRPC_CHECK_OK(listener->Start());
   // Insert same listener pointer for all bind addresses after the listener
   // has started successfully.
   for (auto& addr : addrs) {
-    listeners_.insert(std::make_pair(addr, listener));
+    listeners_.insert(std::pair(addr, listener));
   }
   return absl::OkStatus();
 }
@@ -225,8 +228,7 @@ ConnectionManager::CreateConnection(std::string target_addr,
   event_engine->Connect(
       [this](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> status) {
         if (!status.ok()) {
-          gpr_log(GPR_ERROR, "Connect failed: %s",
-                  status.status().ToString().c_str());
+          LOG(ERROR) << "Connect failed: " << status.status().ToString();
           last_in_progress_connection_.SetClientEndpoint(nullptr);
         } else {
           last_in_progress_connection_.SetClientEndpoint(std::move(*status));
@@ -241,12 +243,20 @@ ConnectionManager::CreateConnection(std::string target_addr,
     // There is a listener for the specified address. Wait until it
     // creates a ServerEndpoint after accepting the connection.
     auto server_endpoint = last_in_progress_connection_.GetServerEndpoint();
-    GPR_ASSERT(server_endpoint != nullptr);
+    GRPC_CHECK(server_endpoint != nullptr);
     // Set last_in_progress_connection_ to nullptr
-    return std::make_tuple(std::move(client_endpoint),
-                           std::move(server_endpoint));
+    return std::tuple(std::move(client_endpoint), std::move(server_endpoint));
   }
   return absl::CancelledError("Failed to create connection.");
+}
+
+bool IsSaneTimerEnvironment() {
+  return grpc_core::IsEventEngineClientEnabled() &&
+         grpc_core::IsEventEngineListenerEnabled() &&
+         grpc_core::IsEventEngineDnsEnabled() &&
+         grpc_core::IsEventEngineDnsNonClientChannelEnabled() &&
+         !grpc_event_engine::experimental::
+             EventEngineExperimentDisabledForPython();
 }
 
 }  // namespace experimental

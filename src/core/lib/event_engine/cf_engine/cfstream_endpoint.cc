@@ -17,13 +17,16 @@
 #ifdef GPR_APPLE
 #include <AvailabilityMacros.h>
 #ifdef AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
+#include <sys/socket.h>
+#include <sys/un.h>
 
 #include "src/core/lib/event_engine/cf_engine/cfstream_endpoint.h"
-#include "src/core/lib/event_engine/trace.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/strerror.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 
@@ -64,11 +67,31 @@ absl::StatusOr<EventEngine::ResolvedAddress> CFReadStreamLocallAddress(
 }  // namespace
 
 bool CFStreamEndpointImpl::CancelConnect(absl::Status status) {
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE(
-      "CFStreamEndpointImpl::CancelConnect: status: %s, this: %p",
-      status.ToString().c_str(), this);
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "CFStreamEndpointImpl::CancelConnect: status: " << status
+      << ", this: " << this;
 
   return open_event_.SetShutdown(std::move(status));
+}
+
+void CFStreamEndpointImpl::AcceptSocket(
+    absl::AnyInvocable<void(absl::Status)> on_connect,
+    CFSocketNativeHandle sock, const EventEngine::ResolvedAddress& addr) {
+  peer_address_ = addr;
+  auto host_port = ResolvedAddressToNormalizedString(peer_address_);
+  if (!host_port.ok()) {
+    on_connect(std::move(host_port).status());
+    return;
+  }
+
+  peer_address_string_ = host_port.value();
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "CFStreamEndpointImpl::AcceptSocket, host_port: "
+      << peer_address_string_;
+
+  CFStreamCreatePairWithSocket(nullptr, sock, &cf_read_stream_,
+                               &cf_write_stream_);
+  SetupStreams(std::move(on_connect));
 }
 
 void CFStreamEndpointImpl::Connect(
@@ -81,8 +104,8 @@ void CFStreamEndpointImpl::Connect(
     return;
   }
 
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("CFStreamEndpointImpl::Connect: %s",
-                                   addr_uri.value().c_str());
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "CFStreamEndpointImpl::Connect: " << addr_uri.value();
 
   peer_address_ = std::move(addr);
   auto host_port = ResolvedAddressToNormalizedString(peer_address_);
@@ -92,18 +115,48 @@ void CFStreamEndpointImpl::Connect(
   }
 
   peer_address_string_ = host_port.value();
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE(
-      "CFStreamEndpointImpl::Connect, host_port: %s", host_port->c_str());
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "CFStreamEndpointImpl::Connect, host_port: " << peer_address_string_;
 
-  std::string host_string;
-  std::string port_string;
-  grpc_core::SplitHostPort(host_port.value(), &host_string, &port_string);
-  CFTypeUniqueRef<CFStringRef> host = CFStringCreateWithCString(
-      NULL, host_string.c_str(), kCFStringEncodingUTF8);
-  int port = ResolvedAddressGetPort(peer_address_);
-  CFStreamCreatePairWithSocketToHost(NULL, host, port, &cf_read_stream_,
-                                     &cf_write_stream_);
+  if (peer_address_.address()->sa_family == AF_UNIX) {
+    struct sockaddr_un server_addr =
+        *reinterpret_cast<const struct sockaddr_un*>(peer_address_.address());
+    // ResolvedAddress does not set the length field, which does not exist on
+    // Linux.
+    server_addr.sun_len = sizeof(server_addr);
+    CFDataRef address =
+        CFDataCreate(NULL, reinterpret_cast<const UInt8*>(&server_addr),
+                     sizeof(server_addr));
+    if (address == NULL) {
+      on_connect(absl::UnknownError("Failed to allocate CFData for address"));
+      return;
+    }
 
+    CFSocketSignature signature = {
+        .protocolFamily = PF_UNIX,
+        .socketType = SOCK_STREAM,
+        .protocol = 0,
+        .address = address,
+    };
+    CFStreamCreatePairWithPeerSocketSignature(
+        NULL, &signature, &cf_read_stream_, &cf_write_stream_);
+    CFRelease(address);
+  } else {
+    std::string host_string;
+    std::string port_string;
+    grpc_core::SplitHostPort(host_port.value(), &host_string, &port_string);
+    CFTypeUniqueRef<CFStringRef> host = CFStringCreateWithCString(
+        NULL, host_string.c_str(), kCFStringEncodingUTF8);
+    int port = ResolvedAddressGetPort(peer_address_);
+    CFStreamCreatePairWithSocketToHost(NULL, host, port, &cf_read_stream_,
+                                       &cf_write_stream_);
+  }
+
+  SetupStreams(std::move(on_connect));
+}
+
+void CFStreamEndpointImpl::SetupStreams(
+    absl::AnyInvocable<void(absl::Status)> on_connect) {
   CFStreamClientContext cf_context = {0, this, Retain, Release, nullptr};
   CFReadStreamSetClient(
       cf_read_stream_,
@@ -159,22 +212,23 @@ void CFStreamEndpointImpl::Connect(
     void* client_callback_info) {
   auto self = static_cast<CFStreamEndpointImpl*>(client_callback_info);
 
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE(
-      "CFStreamEndpointImpl::ReadCallback, type: %lu, this: %p", type, self);
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "CFStreamEndpointImpl::ReadCallback, type: " << type
+      << ", this: " << self;
 
   switch (type) {
     case kCFStreamEventOpenCompleted:
       // wait for write stream open completed to signal connection ready
       break;
     case kCFStreamEventHasBytesAvailable:
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case kCFStreamEventEndEncountered:
       self->read_event_.SetReady();
       break;
     case kCFStreamEventErrorOccurred: {
       auto status = CFErrorToStatus(CFReadStreamCopyError(stream));
-      GRPC_EVENT_ENGINE_ENDPOINT_TRACE("CFStream Read error: %s",
-                                       status.ToString().c_str());
+      GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+          << "CFStream Read error: " << status;
 
       self->open_event_.SetShutdown(status);
       self->read_event_.SetShutdown(status);
@@ -190,22 +244,23 @@ void CFStreamEndpointImpl::WriteCallback(CFWriteStreamRef stream,
                                          CFStreamEventType type,
                                          void* client_callback_info) {
   auto self = static_cast<CFStreamEndpointImpl*>(client_callback_info);
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE(
-      "CFStreamEndpointImpl::WriteCallback, type: %lu, this: %p", type, self);
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "CFStreamEndpointImpl::WriteCallback, type: " << type
+      << ", this: " << self;
 
   switch (type) {
     case kCFStreamEventOpenCompleted:
       self->open_event_.SetReady();
       break;
     case kCFStreamEventCanAcceptBytes:
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case kCFStreamEventEndEncountered:
       self->write_event_.SetReady();
       break;
     case kCFStreamEventErrorOccurred: {
       auto status = CFErrorToStatus(CFWriteStreamCopyError(stream));
-      GRPC_EVENT_ENGINE_ENDPOINT_TRACE("CFStream Write error: %s",
-                                       status.ToString().c_str());
+      GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+          << "CFStream Write error: " << status;
 
       self->open_event_.SetShutdown(status);
       self->read_event_.SetShutdown(status);
@@ -220,9 +275,9 @@ CFStreamEndpointImpl::CFStreamEndpointImpl(
     std::shared_ptr<CFEventEngine> engine, MemoryAllocator memory_allocator)
     : engine_(std::move(engine)),
       memory_allocator_(std::move(memory_allocator)),
-      open_event_(engine_.get()),
-      read_event_(engine_.get()),
-      write_event_(engine_.get()) {
+      open_event_(engine_->thread_pool()),
+      read_event_(engine_->thread_pool()),
+      write_event_(engine_->thread_pool()) {
   open_event_.InitEvent();
   read_event_.InitEvent();
   write_event_.InitEvent();
@@ -232,11 +287,14 @@ CFStreamEndpointImpl::~CFStreamEndpointImpl() {
   open_event_.DestroyEvent();
   read_event_.DestroyEvent();
   write_event_.DestroyEvent();
+
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "CFStreamEndpointImpl::~CFStreamEndpointImpl: this: " << this;
 }
 
 void CFStreamEndpointImpl::Shutdown() {
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("CFStreamEndpointImpl::Shutdown: this: %p",
-                                   this);
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "CFStreamEndpointImpl::Shutdown: this: " << this;
 
   auto shutdownStatus =
       absl::Status(absl::StatusCode::kUnknown,
@@ -245,18 +303,18 @@ void CFStreamEndpointImpl::Shutdown() {
   read_event_.SetShutdown(shutdownStatus);
   write_event_.SetShutdown(shutdownStatus);
 
-  CFReadStreamSetClient(cf_read_stream_, kCFStreamEventNone, nullptr, nullptr);
-  CFWriteStreamSetClient(cf_write_stream_, kCFStreamEventNone, nullptr,
-                         nullptr);
+  CFReadStreamSetDispatchQueue(cf_read_stream_, nullptr);
+  CFWriteStreamSetDispatchQueue(cf_write_stream_, nullptr);
+
   CFReadStreamClose(cf_read_stream_);
   CFWriteStreamClose(cf_write_stream_);
 }
 
-bool CFStreamEndpointImpl::Read(
-    absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
-    const EventEngine::Endpoint::ReadArgs* /* args */) {
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("CFStreamEndpointImpl::Read, this: %p",
-                                   this);
+bool CFStreamEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
+                                SliceBuffer* buffer,
+                                EventEngine::Endpoint::ReadArgs /* args */) {
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "CFStreamEndpointImpl::Read, this: " << this;
 
   read_event_.NotifyOn(new PosixEngineClosure(
       [that = Ref(), on_read = std::move(on_read),
@@ -274,8 +332,8 @@ bool CFStreamEndpointImpl::Read(
 
 void CFStreamEndpointImpl::DoRead(
     absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer) {
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("CFStreamEndpointImpl::DoRead, this: %p",
-                                   this);
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "CFStreamEndpointImpl::DoRead, this: " << this;
 
   auto buffer_index = buffer->AppendIndexed(
       Slice(memory_allocator_.MakeSlice(kDefaultReadBufferSize)));
@@ -288,21 +346,22 @@ void CFStreamEndpointImpl::DoRead(
 
   if (read_size < 0) {
     auto status = CFErrorToStatus(CFReadStreamCopyError(cf_read_stream_));
-    GRPC_EVENT_ENGINE_ENDPOINT_TRACE("CFStream read error: %s, read_size: %ld",
-                                     status.ToString().c_str(), read_size);
+    GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+        << "CFStream read error: " << status << ", read_size: " << read_size;
     on_read(status);
     return;
   }
 
   buffer->RemoveLastNBytes(buffer->Length() - read_size);
-  on_read(absl::OkStatus());
+  on_read(read_size == 0 ? absl::InternalError("Socket closed")
+                         : absl::OkStatus());
 }
 
 bool CFStreamEndpointImpl::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
-    const EventEngine::Endpoint::WriteArgs* /* args */) {
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("CFStreamEndpointImpl::Write, this: %p",
-                                   this);
+    EventEngine::Endpoint::WriteArgs /* args */) {
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "CFStreamEndpointImpl::Write, this: " << this;
 
   write_event_.NotifyOn(new PosixEngineClosure(
       [that = Ref(), on_writable = std::move(on_writable),
@@ -320,14 +379,27 @@ bool CFStreamEndpointImpl::Write(
 
 void CFStreamEndpointImpl::DoWrite(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data) {
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("CFStreamEndpointImpl::DoWrite, this: %p",
-                                   this);
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "CFStreamEndpointImpl::DoWrite, this: " << this;
 
   size_t total_written_size = 0;
   for (size_t i = 0; i < data->Count(); i++) {
     auto slice = data->RefSlice(i);
-    size_t written_size =
+    if (slice.size() == 0) {
+      continue;
+    }
+
+    CFIndex written_size =
         CFWriteStreamWrite(cf_write_stream_, slice.begin(), slice.size());
+
+    if (written_size < 0) {
+      auto status = CFErrorToStatus(CFWriteStreamCopyError(cf_write_stream_));
+      GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+          << "CFStream write error: " << status
+          << ", written_size: " << written_size;
+      on_writable(status);
+      return;
+    }
 
     total_written_size += written_size;
     if (written_size < slice.size()) {
@@ -350,8 +422,7 @@ void CFStreamEndpointImpl::DoWrite(
   on_writable(absl::OkStatus());
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 #endif  // GPR_APPLE

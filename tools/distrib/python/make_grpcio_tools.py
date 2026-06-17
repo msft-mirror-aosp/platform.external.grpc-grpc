@@ -63,20 +63,31 @@ COMMIT_HASH_SUFFIX = '"'
 EXTERNAL_LINKS = [
     ("@com_google_absl//", "third_party/abseil-cpp/"),
     ("@com_google_protobuf//", "third_party/protobuf/"),
-    ("@utf8_range//:", "third_party/utf8_range/"),
+    ("@utf8_range//", "third_party/protobuf/third_party/utf8_range"),
 ]
 
-PROTOBUF_PROTO_PREFIX = "@com_google_protobuf//src/"
+PROTOBUF_PROTO_PREFIX = "@com_google_protobuf//"
+
+# Exclude conditional dependencies that are not needed by gRPC.
+# Required files can be found at third_party/protobuf/src/file_lists.cmake
+UPB_EXCLUDE_CC_FILES_PATTERN = "third_party/protobuf/upb/wire/decode_fast"
+UPB_EXCLUDE_CC_FILES_EXCEPTIONS = [
+    "third_party/protobuf/upb/wire/decode_fast/select.c",
+]
 
 # will be added to include path when building grpcio_tools
 CC_INCLUDES = [
     os.path.join("third_party", "abseil-cpp"),
+    os.path.join("third_party", "protobuf"),
     os.path.join("third_party", "protobuf", "src"),
-    os.path.join("third_party", "utf8_range"),
+    os.path.join("third_party", "protobuf", "upb_generator", "cmake"),
+    os.path.join("third_party", "protobuf", "upb"),
+    os.path.join("third_party", "protobuf", "upb", "reflection", "cmake"),
+    os.path.join("third_party", "protobuf", "third_party", "utf8_range"),
 ]
 
 # include path for .proto files
-PROTO_INCLUDE = os.path.join("third_party", "protobuf", "src")
+PROTO_INCLUDE = os.path.join("third_party", "protobuf")
 
 # the target directory is relative to the grpcio_tools package root.
 GRPCIO_TOOLS_ROOT_PREFIX = "tools/distrib/python/grpcio_tools/"
@@ -88,7 +99,17 @@ COPY_FILES_SOURCE_TARGET_PAIRS = [
     ("src/compiler", "grpc_root/src/compiler"),
     ("third_party/abseil-cpp/absl", "third_party/abseil-cpp/absl"),
     ("third_party/protobuf/src", "third_party/protobuf/src"),
-    ("third_party/utf8_range", "third_party/utf8_range"),
+    ("third_party/protobuf/go", "third_party/protobuf/go"),
+    ("third_party/protobuf/java", "third_party/protobuf/java"),
+    ("third_party/protobuf/upb", "third_party/protobuf/upb"),
+    (
+        "third_party/protobuf/upb_generator",
+        "third_party/protobuf/upb_generator",
+    ),
+    (
+        "third_party/protobuf/third_party/utf8_range",
+        "third_party/protobuf/third_party/utf8_range",
+    ),
 ]
 
 DELETE_TARGETS_ON_CLEANUP = ["third_party"]
@@ -125,6 +146,10 @@ BAZEL_DEPS_COMMON_PROTOS_QUERIES = [
     "@com_google_protobuf//:well_known_type_protos",
     # has both plugin.proto and descriptor.proto
     "@com_google_protobuf//:compiler_plugin_proto",
+    # language features protos
+    "@com_google_protobuf//:cpp_features_proto",
+    "@com_google_protobuf//:java_features_proto",
+    "@com_google_protobuf//:go_features_proto",
 ]
 
 
@@ -167,7 +192,32 @@ def _bazel_name_to_file_path(name):
             # end up being reported by bazel as having an extra 'wkt/google/protobuf'
             # in path. Removing it makes the compilation pass.
             # TODO(jtattermusch) Get dir of this hack.
-            return filepath.replace("wkt/google/protobuf/", "")
+            filepath = filepath.replace("wkt/google/protobuf/", "")
+
+            # The some files which Bazel generates during the build process,
+            # are not accessible for Python build. Therefore, they need to be redirected
+            # to use a pre-generated file for Cmake instead.
+            filepath = filepath.replace(
+                "/upb/reflection/stage1/", "/upb/reflection/cmake/"
+            )
+            filepath = filepath.replace(
+                "/upb_generator/stage1/", "/upb_generator/cmake/"
+            )
+            if (
+                "/upb/reflection/stage0/" in filepath
+                or "/upb_generator/stage0/" in filepath
+            ):
+                return None
+
+            # Unnecessary files that has main function need to be excluded.
+            if (
+                "/upb_generator/minitable/main.cc" in filepath
+                or "/upb_generator/c/generator.cc" in filepath
+                or "/protobuf/compiler/main_no_generators.cc" in filepath
+            ):
+                return None
+
+            return filepath
     return None
 
 
@@ -178,10 +228,21 @@ def _generate_deps_file_content():
     # Collect .cc files (that will be later included in the native extension build)
     cc_files = []
     for name in cc_files_output:
-        if name.endswith(".cc"):
+        if name.endswith(".c") or name.endswith(".cc"):
             filepath = _bazel_name_to_file_path(name)
             if filepath:
                 cc_files.append(filepath)
+
+    # Exclude certain conditional dependencies that don't build properly
+    # from upb.
+    def _should_include(cc_file):
+        if UPB_EXCLUDE_CC_FILES_PATTERN not in cc_file:
+            return True
+        if cc_file in UPB_EXCLUDE_CC_FILES_EXCEPTIONS:
+            return True
+        return False
+
+    cc_files = [f for f in cc_files if _should_include(f)]
 
     # Collect list of .proto files that will be bundled in the grpcio_tools package.
     raw_proto_files = []

@@ -3,10 +3,11 @@
  *     envoy/service/discovery/v3/discovery.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_SERVICE_DISCOVERY_V3_DISCOVERY_PROTO_UPB_MINITABLE_H_
-#define ENVOY_SERVICE_DISCOVERY_V3_DISCOVERY_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_SERVICE_DISCOVERY_V3_DISCOVERY_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_SERVICE_DISCOVERY_V3_DISCOVERY_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -20,6 +21,7 @@ extern "C" {
 extern const upb_MiniTable envoy__service__discovery__v3__ResourceLocator_msg_init;
 extern const upb_MiniTable envoy__service__discovery__v3__ResourceLocator__DynamicParametersEntry_msg_init;
 extern const upb_MiniTable envoy__service__discovery__v3__ResourceName_msg_init;
+extern const upb_MiniTable envoy__service__discovery__v3__ResourceError_msg_init;
 extern const upb_MiniTable envoy__service__discovery__v3__DiscoveryRequest_msg_init;
 extern const upb_MiniTable envoy__service__discovery__v3__DiscoveryResponse_msg_init;
 extern const upb_MiniTable envoy__service__discovery__v3__DeltaDiscoveryRequest_msg_init;
@@ -40,4 +42,4 @@ extern const upb_MiniTableFile envoy_service_discovery_v3_discovery_proto_upb_fi
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_SERVICE_DISCOVERY_V3_DISCOVERY_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_SERVICE_DISCOVERY_V3_DISCOVERY_PROTO_UPB_H__UPB_MINITABLE_H_ */

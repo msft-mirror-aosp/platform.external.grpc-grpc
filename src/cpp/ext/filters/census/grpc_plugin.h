@@ -20,6 +20,7 @@
 #define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
 
 #include <grpc/support/port_platform.h>
+#include <grpcpp/opencensus.h>
 
 #include <algorithm>
 #include <map>
@@ -27,12 +28,10 @@
 #include <utility>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/tags/tag_map.h"
-
-#include <grpcpp/opencensus.h>
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 

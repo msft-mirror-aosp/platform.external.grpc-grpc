@@ -17,6 +17,7 @@ import unittest
 
 import grpc
 from grpc.experimental import aio
+import typeguard
 
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
@@ -42,6 +43,7 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
     async def tearDown(self):
         await self._server.stop(None)
 
+    @typeguard.suppress_type_checks  # testing negative cases
     def test_invalid_interceptor(self):
         class InvalidInterceptor:
             """Just an invalid Interceptor"""
@@ -225,7 +227,7 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
             self.assertEqual(grpc.StatusCode.OK, await call.code())
 
             # Check that two calls were made, first one finishing with
-            # a deadline and second one finishing ok..
+            # a deadline and second one finishing ok.
             self.assertEqual(len(interceptor.calls), 2)
             self.assertEqual(
                 await interceptor.calls[0].code(),

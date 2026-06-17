@@ -16,19 +16,18 @@
 //
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
 #include <limits.h>
 
 #include <memory>
 
-#include "gtest/gtest.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #define MAX_CONNECTION_AGE_MS 500
 #define MAX_CONNECTION_AGE_GRACE_MS 2000
@@ -50,10 +49,12 @@
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(Http2Test, MaxAgeForciblyClose) {
+CORE_END2END_TEST(Http2Tests, MaxAgeForciblyClose) {
   SKIP_IF_MINSTACK();
+  // TODO(snohria): Do we need to support this for virtual channel?
+  SKIP_IF_VIRTUAL();
   InitClient(ChannelArgs());
-  InitServer(ChannelArgs()
+  InitServer(DefaultServerArgs()
                  .Set(GRPC_ARG_MAX_CONNECTION_AGE_MS, MAX_CONNECTION_AGE_MS)
                  .Set(GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS,
                       MAX_CONNECTION_AGE_GRACE_MS)
@@ -66,8 +67,8 @@ CORE_END2END_TEST(Http2Test, MaxAgeForciblyClose) {
           static_cast<int>(MAX_CONNECTION_AGE_MS *
                            MAX_CONNECTION_AGE_JITTER_MULTIPLIER) +
           MAX_CONNECTION_AGE_GRACE_MS + IMMEDIATE_SHUTDOWN_GRACE_TIME_MS));
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -88,7 +89,7 @@ CORE_END2END_TEST(Http2Test, MaxAgeForciblyClose) {
     Expect(1, true);
     Step();
     EXPECT_LT(Timestamp::Now(), expect_shutdown_time);
-    CoreEnd2endTest::IncomingCloseOnServer client_close;
+    IncomingCloseOnServer client_close;
     s.NewBatch(102)
         .SendInitialMetadata({})
         .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})
@@ -109,22 +110,23 @@ CORE_END2END_TEST(Http2Test, MaxAgeForciblyClose) {
   // The connection should be closed immediately after the max age grace period,
   // the in-progress RPC should fail.
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNAVAILABLE);
+  EXPECT_EQ(server_status.message(), "max connection age");
 }
 
-CORE_END2END_TEST(Http2Test, MaxAgeGracefullyClose) {
+CORE_END2END_TEST(Http2Tests, MaxAgeGracefullyClose) {
   SKIP_IF_MINSTACK();
   SKIP_IF_FUZZING();
 
   InitClient(ChannelArgs());
-  InitServer(ChannelArgs()
+  InitServer(DefaultServerArgs()
                  .Set(GRPC_ARG_MAX_CONNECTION_AGE_MS, MAX_CONNECTION_AGE_MS)
                  .Set(GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS, INT_MAX)
                  .Set(GRPC_ARG_MAX_CONNECTION_IDLE_MS, MAX_CONNECTION_IDLE_MS));
   auto c = NewClientCall("/foo")
                .Timeout(Duration::Seconds(CALL_DEADLINE_S))
                .Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -143,7 +145,7 @@ CORE_END2END_TEST(Http2Test, MaxAgeGracefullyClose) {
     // The connection is shutting down gracefully. In-progress rpc should not be
     // closed, hence the completion queue should see nothing here.
     Step(Duration::Seconds(CQ_MAX_CONNECTION_AGE_GRACE_WAIT_TIME_S));
-    CoreEnd2endTest::IncomingCloseOnServer client_close;
+    IncomingCloseOnServer client_close;
     s.NewBatch(102)
         .SendInitialMetadata({})
         .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})
@@ -162,10 +164,12 @@ CORE_END2END_TEST(Http2Test, MaxAgeGracefullyClose) {
     Expect(101, false);
   }
   Step();
-  // The connection is closed gracefully with goaway, the rpc should still be
-  // completed.
-  EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
-  EXPECT_EQ(server_status.message(), "xyz");
+  if (got_server) {
+    // The connection is closed gracefully with goaway, the rpc should still be
+    // completed.
+    EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
+    EXPECT_EQ(server_status.message(), "xyz");
+  }
 }
 
 }  // namespace

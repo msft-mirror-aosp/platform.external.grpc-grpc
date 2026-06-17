@@ -12,22 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@rules_python//python:defs.bzl", "py_library")
 load("//bazel:cython_library.bzl", "pyx_library")
 load("grpcio_tools.bzl", "internal_copied_filegroup")
 
-package(default_visibility = [
-    "//examples/python:__subpackages__",
-    "//src/python:__subpackages__",
-    "//tools/distrib/python/grpcio_tools:__subpackages__",
-])
+package(
+    default_visibility = [
+        "//examples/python:__subpackages__",
+        "//src/python:__subpackages__",
+        "//tools/distrib/python/grpcio_tools:__subpackages__",
+    ],
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 cc_library(
     name = "protoc_lib",
     srcs = ["grpc_tools/main.cc"],
     hdrs = ["grpc_tools/main.h"],
+    # TODO(rishesh007): fix once grpc_plugin_support also has layering_check enabled
+    features = [
+        "-layering_check",
+    ],
     includes = ["."],
     deps = [
         "//src/compiler:grpc_plugin_support",
+        "@com_google_absl//absl/strings",
         "@com_google_protobuf//:protoc_lib",
     ],
 )
@@ -49,6 +61,7 @@ py_library(
     name = "grpc_tools",
     srcs = [
         "grpc_tools/__init__.py",
+        "grpc_tools/grpc_version.py",
         "grpc_tools/protoc.py",
     ],
     data = [":well_known_protos"],

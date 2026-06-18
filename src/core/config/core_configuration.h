@@ -340,6 +340,18 @@ void AbslStringify(Sink& sink, CoreConfiguration::BuilderScope scope) {
   }
 }
 
+inline std::ostream& operator<<(std::ostream& os, CoreConfiguration::BuilderScope scope) {
+  switch (scope) {
+    case CoreConfiguration::BuilderScope::kPersistent:
+      return os << "Persistent";
+    case CoreConfiguration::BuilderScope::kEphemeral:
+      return os << "Ephemeral";
+    case CoreConfiguration::BuilderScope::kCount:
+      return os << "Count(" << std::to_string(static_cast<size_t>(scope)) << ")";
+  }
+  return os << "Unknown";
+}
+
 extern void BuildCoreConfiguration(CoreConfiguration::Builder* builder);
 
 }  // namespace grpc_core

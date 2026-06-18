@@ -96,6 +96,10 @@ class UniqueTypeName {
     sink.Append(name.name_);
   }
 
+  friend std::ostream& operator<<(std::ostream& os, const UniqueTypeName& name) {
+    return os << name.name_;
+  }
+
  private:
   explicit UniqueTypeName(absl::string_view name) : name_(name) {}
 

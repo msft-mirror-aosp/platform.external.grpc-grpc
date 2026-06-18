@@ -256,6 +256,10 @@ class InstrumentLabel {
     sink.Append(label.label());
   }
 
+  friend std::ostream& operator<<(std::ostream& os, InstrumentLabel label) {
+    return os << label.label();
+  }
+
   template <typename H>
   friend H AbslHashValue(H h, InstrumentLabel label) {
     return H::combine(std::move(h), label.index_);

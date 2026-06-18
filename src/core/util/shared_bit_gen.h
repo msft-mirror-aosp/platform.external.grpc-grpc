@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_UTIL_SHARED_BIT_GEN_H
 #define GRPC_SRC_CORE_UTIL_SHARED_BIT_GEN_H
 
+#include "absl/random/bit_gen_ref.h"
 #include "absl/random/random.h"
 
 namespace grpc_core {
@@ -30,6 +31,8 @@ class SharedBitGen {
 
   using result_type = absl::BitGen::result_type;
   result_type operator()() { return bit_gen_(); }
+
+  operator absl::BitGenRef() { return absl::BitGenRef(bit_gen_); }
 
   static constexpr auto min() { return absl::BitGen::min(); }
   static constexpr auto max() { return absl::BitGen::max(); }
@@ -48,6 +51,8 @@ class SharedBitGen {
 
   using result_type = absl::BitGen::result_type;
   result_type operator()() { return bit_gen_(); }
+
+  operator absl::BitGenRef() { return absl::BitGenRef(bit_gen_); }
 
   static constexpr auto min() { return absl::BitGen::min(); }
   static constexpr auto max() { return absl::BitGen::max(); }

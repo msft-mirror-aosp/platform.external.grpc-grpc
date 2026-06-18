@@ -421,6 +421,13 @@ protobuf_generate_grpc_cpp(
   OUTPUT_DIR ${_gRPC_PROTO_GENS_DIR}
   GENERATED REFLECTION_GRPC_SRC)
 
+protobuf_generate_grpc_cpp(
+  SOURCE_DIR ${_gRPC_ROOT}
+  INCLUDES ${_gRPC_ROOT}/src//proto/grpc/reflection/v1
+  SOURCES src/proto/grpc/reflection/v1/reflection.proto
+  OUTPUT_DIR ${_gRPC_PROTO_GENS_DIR}
+  GENERATED REFLECTION_V1_GRPC_SRC)
+
 
 
 android_add_library(TARGET address_sorting
@@ -1484,12 +1491,10 @@ target_link_libraries(grpc PUBLIC
   cares
   address_sorting
   ${_gRPC_RE2_LIBRARIES}
-  upb
   ${_gRPC_ALLTARGETS_LIBRARIES}
   upb_json_lib
   upb_textformat_lib
   re2
-  z
   absl::algorithm_container
   absl::no_destructor
   absl::btree
@@ -2001,10 +2006,8 @@ target_link_libraries(grpc_unsecure PUBLIC
   cares
   address_sorting
   ${_gRPC_RE2_LIBRARIES}
-  upb
   ${_gRPC_ALLTARGETS_LIBRARIES}
   upb_textformat_lib
-  z
   absl::algorithm_container
   absl::no_destructor
   absl::btree
@@ -2586,7 +2589,6 @@ target_link_libraries(grpc++ PUBLIC
   absl::charset
   absl::strings_internal
   grpc
-  protobuf
 )
 
 
@@ -2788,7 +2790,6 @@ target_link_libraries(grpc++_unsecure PUBLIC
   absl::charset
   absl::strings_internal
   grpc_unsecure
-  protobuf
 )
 
 
@@ -3126,11 +3127,9 @@ target_link_libraries(grpc_authorization_provider PUBLIC
   cares
   address_sorting
   ${_gRPC_RE2_LIBRARIES}
-  upb
   ${_gRPC_ALLTARGETS_LIBRARIES}
   upb_textformat_lib
   re2
-  z
   absl::no_destructor
   absl::btree
   absl::flat_hash_map

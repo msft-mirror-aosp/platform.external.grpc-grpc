@@ -11729,7 +11729,7 @@ protobuf_generate_grpc_cpp(
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  z
+  zlib
   absl/base:no_destructor
   absl/container:btree
   absl/container:flat_hash_map
@@ -19097,7 +19097,7 @@ endif()
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  z
+  zlib
   absl/base:no_destructor
   absl/container:btree
   absl/container:flat_hash_map
@@ -22621,7 +22621,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  z
+  zlib
   absl/base:no_destructor
   absl/container:btree
   absl/container:flat_hash_map
@@ -36061,7 +36061,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  z
+  zlib
   absl/base:no_destructor
   absl/container:btree
   absl/container:flat_hash_map

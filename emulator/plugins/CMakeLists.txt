@@ -33,7 +33,7 @@ if (NOT _gRPC_ROOT)
   get_filename_component(_gRPC_ROOT "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
 endif()
 set(_gRPC_PROTOBUF_PROTOC_LIBRARIES protobuf::libprotoc)
-set(_gRPC_PROTOBUF_LIBRARIES protobuf::protobuf)
+set(_gRPC_PROTOBUF_LIBRARIES protobuf::libprotobuf)
 
 if (NOT TARGET protoc)
   add_subdirectory(${ANDROID_QEMU2_TOP_DIR}/android/third_party/protobuf/ protoc)
@@ -91,45 +91,7 @@ target_link_libraries(grpc_plugin_support PRIVATE
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  utf8_range_lib
-  z
-  absl/algorithm:container
-  absl/base:base
-  absl/base:config
-  absl/base:core_headers
-  absl/base:dynamic_annotations
-  absl/base:no_destructor
-  absl/base:prefetch
-  absl/cleanup:cleanup
-  absl/container:btree
-  absl/container:fixed_array
-  absl/container:flat_hash_map
-  absl/container:flat_hash_set
-  absl/container:layout
-  absl/functional:any_invocable
-  absl/functional:function_ref
-  absl/functional:overload
-  absl/hash:hash
-  absl/log:absl_check
-  absl/log:absl_log
-  absl/memory:memory
-  absl/meta:type_traits
-  absl/numeric:bits
-  absl/status:status
-  absl/status:statusor
-  absl/strings:charset
-  absl/strings:cord
-  absl/strings:internal
-  absl/strings:str_format
-  absl/strings:string_view
-  absl/strings:strings
-  absl/synchronization:synchronization
-  absl/time:time
-  absl/types:optional
-  absl/types:span
-  absl/utility:utility
-  protobuf
-  protoc
+  zlib
 )
 
 

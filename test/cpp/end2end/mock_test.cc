@@ -16,16 +16,7 @@
 //
 //
 
-#include <climits>
-#include <iostream>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/types/optional.h"
-
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -33,15 +24,24 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/test/default_reactor_test_peer.h>
 #include <grpcpp/test/mock_stream.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include <climits>
+#include <iostream>
+#include <optional>
+
+#include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo_mock.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 using std::vector;
 using ::testing::_;
@@ -167,7 +167,7 @@ class CallbackTestServiceImpl : public EchoTestService::CallbackService {
     // adding this variance in Status return value just to improve coverage in
     // this test.
     auto* reactor = context->DefaultReactor();
-    if (request->message().length() > 0) {
+    if (!request->message().empty()) {
       response->set_message(request->message());
       reactor->Finish(Status::OK);
     } else {
@@ -190,7 +190,7 @@ TEST_F(MockCallbackTest, MockedCallSucceedsWithWait) {
   struct {
     grpc::internal::Mutex mu;
     grpc::internal::CondVar cv;
-    absl::optional<grpc::Status> ABSL_GUARDED_BY(mu) status;
+    std::optional<grpc::Status> ABSL_GUARDED_BY(mu) status;
   } status;
   DefaultReactorTestPeer peer(&ctx, [&](grpc::Status s) {
     grpc::internal::MutexLock l(&status.mu);
@@ -253,7 +253,7 @@ class TestServiceImpl : public EchoTestService::Service {
     EchoRequest request;
     std::string resp;
     while (reader->Read(&request)) {
-      gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
+      LOG(INFO) << "recv msg " << request.message();
       resp.append(request.message());
     }
     response->set_message(resp);
@@ -277,7 +277,7 @@ class TestServiceImpl : public EchoTestService::Service {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
-      gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
+      LOG(INFO) << "recv msg " << request.message();
       response.set_message(request.message());
       stream->Write(response);
     }
@@ -322,8 +322,10 @@ class MockTest : public ::testing::Test {
   void TearDown() override { server_->Shutdown(); }
 
   void ResetStub() {
-    std::shared_ptr<Channel> channel = grpc::CreateChannel(
-        server_address_.str(), InsecureChannelCredentials());
+    ChannelArguments args;
+    ApplyCommonChannelArguments(args);
+    std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
+        server_address_.str(), InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 

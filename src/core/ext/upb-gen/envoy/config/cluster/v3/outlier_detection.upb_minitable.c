@@ -3,11 +3,13 @@
  *     envoy/config/cluster/v3/outlier_detection.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
 #include "envoy/config/cluster/v3/outlier_detection.upb_minitable.h"
+#include "envoy/config/core/v3/extension.upb_minitable.h"
 #include "google/protobuf/duration.upb_minitable.h"
 #include "google/protobuf/wrappers.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
@@ -17,89 +19,86 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_config_cluster_v3_OutlierDetection_submsgs[21] = {
-  {.submsg = &google__protobuf__UInt32Value_msg_init},
-  {.submsg = &google__protobuf__Duration_msg_init},
-  {.submsg = &google__protobuf__Duration_msg_init},
-  {.submsg = &google__protobuf__UInt32Value_msg_init},
-  {.submsg = &google__protobuf__UInt32Value_msg_init},
-  {.submsg = &google__protobuf__UInt32Value_msg_init},
-  {.submsg = &google__protobuf__UInt32Value_msg_init},
-  {.submsg = &google__protobuf__UInt32Value_msg_init},
-  {.submsg = &google__protobuf__UInt32Value_msg_init},
-  {.submsg = &google__protobuf__UInt32Value_msg_init},
-  {.submsg = &google__protobuf__UInt32Value_msg_init},
-  {.submsg = &google__protobuf__UInt32Value_msg_init},
-  {.submsg = &google__protobuf__UInt32Value_msg_init},
-  {.submsg = &google__protobuf__UInt32Value_msg_init},
-  {.submsg = &google__protobuf__UInt32Value_msg_init},
-  {.submsg = &google__protobuf__UInt32Value_msg_init},
-  {.submsg = &google__protobuf__UInt32Value_msg_init},
-  {.submsg = &google__protobuf__UInt32Value_msg_init},
-  {.submsg = &google__protobuf__UInt32Value_msg_init},
-  {.submsg = &google__protobuf__Duration_msg_init},
-  {.submsg = &google__protobuf__Duration_msg_init},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[25];
+  upb_MiniTableSubInternal subs[24];
+} envoy__config__cluster__v3__OutlierDetection_msg_init_Fields;
 
-static const upb_MiniTableField envoy_config_cluster_v3_OutlierDetection__fields[22] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(8, 16), 2, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(12, 24), 3, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(16, 32), 4, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {5, UPB_SIZE(20, 40), 5, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {6, UPB_SIZE(24, 48), 6, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {7, UPB_SIZE(28, 56), 7, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {8, UPB_SIZE(32, 64), 8, 7, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {9, UPB_SIZE(36, 72), 9, 8, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {10, UPB_SIZE(40, 80), 10, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {11, UPB_SIZE(44, 88), 11, 10, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {12, UPB_SIZE(48, 3), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  {13, UPB_SIZE(52, 96), 12, 11, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {14, UPB_SIZE(56, 104), 13, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {15, UPB_SIZE(60, 112), 14, 13, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {16, UPB_SIZE(64, 120), 15, 14, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {17, UPB_SIZE(68, 128), 16, 15, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {18, UPB_SIZE(72, 136), 17, 16, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {19, UPB_SIZE(76, 144), 18, 17, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {20, UPB_SIZE(80, 152), 19, 18, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {21, UPB_SIZE(84, 160), 20, 19, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {22, UPB_SIZE(88, 168), 21, 20, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const envoy__config__cluster__v3__OutlierDetection_msg_init_Fields envoy_config_cluster_v3_OutlierDetection__fields = {{
+  {1, UPB_SIZE(12, 16), 64, UPB_SIZE(75, 76), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), 65, UPB_SIZE(73, 75), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(20, 32), 66, UPB_SIZE(71, 74), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(24, 40), 67, UPB_SIZE(69, 73), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(28, 48), 68, UPB_SIZE(67, 72), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(32, 56), 69, UPB_SIZE(65, 71), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(36, 64), 70, UPB_SIZE(63, 70), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {8, UPB_SIZE(40, 72), 71, UPB_SIZE(61, 69), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {9, UPB_SIZE(44, 80), 72, UPB_SIZE(59, 68), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {10, UPB_SIZE(48, 88), 73, UPB_SIZE(57, 67), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {11, UPB_SIZE(52, 96), 74, UPB_SIZE(55, 66), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {12, 11, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {13, UPB_SIZE(56, 104), 75, UPB_SIZE(50, 62), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {14, UPB_SIZE(60, 112), 76, UPB_SIZE(48, 61), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {15, UPB_SIZE(64, 120), 77, UPB_SIZE(46, 60), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {16, UPB_SIZE(68, 128), 78, UPB_SIZE(44, 59), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {17, UPB_SIZE(72, 136), 79, UPB_SIZE(42, 58), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {18, UPB_SIZE(76, 144), 80, UPB_SIZE(40, 57), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {19, UPB_SIZE(80, 152), 81, UPB_SIZE(38, 56), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {20, UPB_SIZE(84, 160), 82, UPB_SIZE(36, 55), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {21, UPB_SIZE(88, 168), 83, UPB_SIZE(34, 54), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {22, UPB_SIZE(92, 176), 84, UPB_SIZE(32, 53), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {23, UPB_SIZE(96, 184), 85, UPB_SIZE(30, 52), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {24, UPB_SIZE(100, 192), 0, UPB_SIZE(28, 51), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {25, UPB_SIZE(104, 200), 86, UPB_SIZE(26, 50), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+}};
 
 const upb_MiniTable envoy__config__cluster__v3__OutlierDetection_msg_init = {
-  &envoy_config_cluster_v3_OutlierDetection_submsgs[0],
-  &envoy_config_cluster_v3_OutlierDetection__fields[0],
-  UPB_SIZE(96, 176), 22, kUpb_ExtMode_NonExtendable, 22, UPB_FASTTABLE_MASK(248), 0,
+  &envoy_config_cluster_v3_OutlierDetection__fields.fields[0],
+  UPB_SIZE(112, 208), 25, kUpb_ExtMode_NonExtendable, 25, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.cluster.v3.OutlierDetection",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800000100000a, &upb_psm_1bt_maxmaxb},
-    {0x0010000002010012, &upb_psm_1bt_maxmaxb},
-    {0x001800000302001a, &upb_psm_1bt_maxmaxb},
-    {0x0020000004030022, &upb_psm_1bt_maxmaxb},
-    {0x002800000504002a, &upb_psm_1bt_maxmaxb},
-    {0x0030000006050032, &upb_psm_1bt_maxmaxb},
-    {0x003800000706003a, &upb_psm_1bt_maxmaxb},
-    {0x0040000008070042, &upb_psm_1bt_maxmaxb},
-    {0x004800000908004a, &upb_psm_1bt_maxmaxb},
-    {0x005000000a090052, &upb_psm_1bt_maxmaxb},
-    {0x005800000b0a005a, &upb_psm_1bt_maxmaxb},
-    {0x000300003f000060, &upb_psb1_1bt},
-    {0x006000000c0b006a, &upb_psm_1bt_maxmaxb},
-    {0x006800000d0c0072, &upb_psm_1bt_maxmaxb},
-    {0x007000000e0d007a, &upb_psm_1bt_maxmaxb},
-    {0x007800000f0e0182, &upb_psm_2bt_maxmaxb},
-    {0x00800000100f018a, &upb_psm_2bt_maxmaxb},
-    {0x0088000011100192, &upb_psm_2bt_maxmaxb},
-    {0x009000001211019a, &upb_psm_2bt_maxmaxb},
-    {0x00980000131201a2, &upb_psm_2bt_maxmaxb},
-    {0x00a00000141301aa, &upb_psm_2bt_maxmaxb},
-    {0x00a80000151401b2, &upb_psm_2bt_maxmaxb},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000b00003f000060, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},

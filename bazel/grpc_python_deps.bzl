@@ -14,34 +14,34 @@
 """Load dependencies needed to compile and test the grpc python library as a 3rd-party consumer."""
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@com_github_grpc_grpc//third_party/py:python_configure.bzl", "python_configure")
 
 # buildifier: disable=unnamed-macro
 def grpc_python_deps():
     """Loads dependencies for gRPC Python."""
-    if "io_bazel_rules_python" not in native.existing_rules():
+    if "rules_python" not in native.existing_rules():
         http_archive(
-            name = "io_bazel_rules_python",
-            url = "https://github.com/bazelbuild/rules_python/releases/download/0.4.0/rules_python-0.4.0.tar.gz",
-            sha256 = "954aa89b491be4a083304a2cb838019c8b8c3720a7abb9c4cb81ac7a24230cea",
-            patches = ["@com_github_grpc_grpc//third_party:rules_python.patch"],
-            patch_args = ["-p1"],
+            name = "rules_python",
+            sha256 = "2f5c284fbb4e86045c2632d3573fc006facbca5d1fa02976e89dc0cd5488b590",
+            strip_prefix = "rules_python-1.6.3",
+            url = "https://github.com/bazel-contrib/rules_python/releases/download/1.6.3/rules_python-1.6.3.tar.gz",
         )
 
-    python_configure(name = "local_config_python")
-
-    native.bind(
-        name = "python_headers",
-        actual = "@local_config_python//:python_headers",
+    # This version should be same as that in G3
+    http_archive(
+        name = "grpc_typing_extensions",
+        build_file = "@com_github_grpc_grpc//third_party:typing_extensions.BUILD",
+        sha256 = "bf6f56b36d8bc9156e518eb1cc37a146284082fa53522033f772aefbecfd15fc",
+        strip_prefix = "typing_extensions-4.12.2",
+        url = "https://github.com/python/typing_extensions/archive/4.12.2.tar.gz",
     )
 
     if "cython" not in native.existing_rules():
         http_archive(
             name = "cython",
             build_file = "@com_github_grpc_grpc//third_party:cython.BUILD",
-            sha256 = "a2da56cc22be823acf49741b9aa3aa116d4f07fa8e8b35a3cb08b8447b37c607",
-            strip_prefix = "cython-0.29.35",
+            sha256 = "2ec7d66d23d6da2328fb24f5c1bec6c63a59ec2e91027766ab904f417e1078aa",
+            strip_prefix = "cython-3.0.11",
             urls = [
-                "https://github.com/cython/cython/archive/0.29.35.tar.gz",
+                "https://github.com/cython/cython/archive/3.0.11.tar.gz",
             ],
         )

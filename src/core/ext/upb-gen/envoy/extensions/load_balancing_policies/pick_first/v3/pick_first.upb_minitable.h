@@ -3,10 +3,11 @@
  *     envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_PICK_FIRST_V3_PICK_FIRST_PROTO_UPB_MINITABLE_H_
-#define ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_PICK_FIRST_V3_PICK_FIRST_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_PICK_FIRST_V3_PICK_FIRST_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_PICK_FIRST_V3_PICK_FIRST_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -27,4 +28,4 @@ extern const upb_MiniTableFile envoy_extensions_load_balancing_policies_pick_fir
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_PICK_FIRST_V3_PICK_FIRST_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_PICK_FIRST_V3_PICK_FIRST_PROTO_UPB_H__UPB_MINITABLE_H_ */

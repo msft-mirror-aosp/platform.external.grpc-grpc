@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+set -eux
 
 ACTION="${1:-}"
 [[ $ACTION == '' ]] || [[ $ACTION == '--diff' ]] || [[ $ACTION == '--check' ]]
@@ -27,12 +27,19 @@ DIRS=(
     'test'
     'tools'
     'setup.py'
+    'doc/python'
 )
 
-VIRTUALENV=black_virtual_environment
+VIRTUALENV=".venv-ci-black"
+python3 -m virtualenv "${VIRTUALENV}"
+source "${VIRTUALENV}/bin/activate"
+python -VV
 
-python3 -m virtualenv $VIRTUALENV -p $(which python3)
-PYTHON=${VIRTUALENV}/bin/python
-"$PYTHON" -m pip install black==23.3.0
+pip install black==25.1.0
+pip list
 
-$PYTHON -m black --config=black.toml $ACTION "${DIRS[@]}"
+if [[ "$ACTION" == "--check" ]]; then
+    exec black --config=grpc-style-config.toml --check --diff "${DIRS[@]}"
+else
+    exec black --config=grpc-style-config.toml $ACTION "${DIRS[@]}"
+fi

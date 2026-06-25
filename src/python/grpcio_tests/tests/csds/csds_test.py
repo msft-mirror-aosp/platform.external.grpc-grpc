@@ -17,7 +17,6 @@ from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
 import queue
-import sys
 import time
 import unittest
 
@@ -57,9 +56,6 @@ _DUMMY_BOOTSTRAP_FILE = """
 """
 
 
-@unittest.skipIf(
-    sys.version_info[0] < 3, "ProtoBuf descriptor has moved on from Python2"
-)
 class TestCsds(unittest.TestCase):
     def setUp(self):
         os.environ["GRPC_XDS_BOOTSTRAP_CONFIG"] = _DUMMY_BOOTSTRAP_FILE
@@ -81,18 +77,15 @@ class TestCsds(unittest.TestCase):
     def get_xds_config_dump(self):
         return self._stub.FetchClientStatus(csds_pb2.ClientStatusRequest())
 
-    def test_has_node(self):
-        resp = self.get_xds_config_dump()
-        self.assertEqual(1, len(resp.config))
-        self.assertEqual("python_test_csds", resp.config[0].node.id)
-        self.assertEqual("test", resp.config[0].node.cluster)
-
     def test_no_lds_found(self):
         dummy_channel = grpc.insecure_channel(_DUMMY_XDS_ADDRESS)
 
         # Force the XdsClient to initialize and request a resource
         with self.assertRaises(grpc.RpcError) as rpc_error:
-            dummy_channel.unary_unary("")(b"", wait_for_ready=False, timeout=1)
+            dummy_channel.unary_unary(
+                "",
+                _registered_method=True,
+            )(b"", wait_for_ready=False, timeout=1)
         self.assertEqual(
             grpc.StatusCode.DEADLINE_EXCEEDED, rpc_error.exception.code()
         )
@@ -100,6 +93,10 @@ class TestCsds(unittest.TestCase):
         # The resource request will fail with DOES_NOT_EXIST (after 15s)
         while True:
             resp = self.get_xds_config_dump()
+            # Check node is setup in the CSDS response
+            self.assertEqual(1, len(resp.config))
+            self.assertEqual("python_test_csds", resp.config[0].node.id)
+            self.assertEqual("test", resp.config[0].node.cluster)
             config = json_format.MessageToDict(resp)
             ok = False
             try:
@@ -126,9 +123,6 @@ class TestCsds(unittest.TestCase):
         dummy_channel.close()
 
 
-@unittest.skipIf(
-    sys.version_info[0] < 3, "ProtoBuf descriptor has moved on from Python2"
-)
 class TestCsdsStream(TestCsds):
     def get_xds_config_dump(self):
         if not hasattr(self, "request_queue"):

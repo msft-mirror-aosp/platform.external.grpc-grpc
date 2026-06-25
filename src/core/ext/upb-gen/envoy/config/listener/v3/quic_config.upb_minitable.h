@@ -3,10 +3,11 @@
  *     envoy/config/listener/v3/quic_config.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_LISTENER_V3_QUIC_CONFIG_PROTO_UPB_MINITABLE_H_
-#define ENVOY_CONFIG_LISTENER_V3_QUIC_CONFIG_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_CONFIG_LISTENER_V3_QUIC_CONFIG_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_CONFIG_LISTENER_V3_QUIC_CONFIG_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -27,4 +28,4 @@ extern const upb_MiniTableFile envoy_config_listener_v3_quic_config_proto_upb_fi
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_LISTENER_V3_QUIC_CONFIG_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_CONFIG_LISTENER_V3_QUIC_CONFIG_PROTO_UPB_H__UPB_MINITABLE_H_ */

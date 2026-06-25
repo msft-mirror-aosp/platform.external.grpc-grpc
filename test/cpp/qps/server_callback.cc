@@ -15,17 +15,21 @@
 // limitations under the License.
 //
 //
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gprpp/host_port.h"
+#include <atomic>
+
+#include "src/core/util/host_port.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/qps_server_builder.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/qps/usage_timer.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {
@@ -80,6 +84,77 @@ class BenchmarkCallbackServiceImpl final
     return new Reactor;
   }
 
+  grpc::ServerReadReactor<grpc::testing::SimpleRequest>* StreamingFromClient(
+      grpc::CallbackServerContext* /*context*/,
+      grpc::testing::SimpleResponse* response) override {
+    class Reactor
+        : public grpc::ServerReadReactor<grpc::testing::SimpleRequest> {
+     public:
+      explicit Reactor(grpc::testing::SimpleResponse* response)
+          : response_(response) {
+        StartRead(&request_);
+      }
+
+      void OnReadDone(bool ok) override {
+        if (!ok) {
+          Finish(SetResponse(&request_, response_));
+          return;
+        }
+        StartRead(&request_);
+      }
+
+      void OnDone() override { delete this; }
+
+     private:
+      SimpleRequest request_;
+      SimpleResponse* response_;
+    };
+    return new Reactor(response);
+  }
+
+  grpc::ServerWriteReactor<grpc::testing::SimpleResponse>* StreamingFromServer(
+      grpc::CallbackServerContext* /*context*/,
+      const SimpleRequest* request) override {
+    class Reactor
+        : public grpc::ServerWriteReactor<grpc::testing::SimpleResponse> {
+     public:
+      explicit Reactor(const SimpleRequest* request) {
+        finished_.clear();
+        auto s = SetResponse(request, &response_);
+        if (!s.ok()) {
+          if (!finished_.test_and_set()) {
+            Finish(s);
+          }
+          return;
+        }
+        StartWrite(&response_);
+      }
+
+      void OnWriteDone(bool ok) override {
+        if (!ok) {
+          if (!finished_.test_and_set()) {
+            Finish(grpc::Status::OK);
+          }
+          return;
+        }
+        StartWrite(&response_);
+      }
+
+      void OnCancel() override {
+        if (!finished_.test_and_set()) {
+          Finish(grpc::Status::CANCELLED);
+        }
+      }
+
+      void OnDone() override { delete this; }
+
+     private:
+      SimpleResponse response_;
+      std::atomic_flag finished_;
+    };
+    return new Reactor(request);
+  }
+
  private:
   static Status SetResponse(const SimpleRequest* request,
                             SimpleResponse* response) {
@@ -113,9 +188,9 @@ class CallbackServer final : public grpc::testing::Server {
 
     impl_ = builder->BuildAndStart();
     if (impl_ == nullptr) {
-      gpr_log(GPR_ERROR, "Server: Fail to BuildAndStart(port=%d)", port_num);
+      LOG(ERROR) << "Server: Fail to BuildAndStart(port=" << port_num << ")";
     } else {
-      gpr_log(GPR_INFO, "Server: BuildAndStart(port=%d)", port_num);
+      LOG(INFO) << "Server: BuildAndStart(port=" << port_num << ")";
     }
   }
 

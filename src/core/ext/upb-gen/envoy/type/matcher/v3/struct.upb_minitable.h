@@ -3,10 +3,11 @@
  *     envoy/type/matcher/v3/struct.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_MATCHER_V3_STRUCT_PROTO_UPB_MINITABLE_H_
-#define ENVOY_TYPE_MATCHER_V3_STRUCT_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_TYPE_MATCHER_V3_STRUCT_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_TYPE_MATCHER_V3_STRUCT_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -28,4 +29,4 @@ extern const upb_MiniTableFile envoy_type_matcher_v3_struct_proto_upb_file_layou
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_MATCHER_V3_STRUCT_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_TYPE_MATCHER_V3_STRUCT_PROTO_UPB_H__UPB_MINITABLE_H_ */

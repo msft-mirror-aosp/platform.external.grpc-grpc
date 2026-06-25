@@ -11,20 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/query_extensions.h"
-
-#include <string>
-
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/slice_buffer.h>
+#include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include <string>
+
+#include "src/core/util/crash.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -47,17 +45,17 @@ class TestExtension {
 };
 
 class ExtendedTestEndpoint
-    : public ExtendedEndpoint<TestExtension<0>, TestExtension<1>,
-                              TestExtension<2>> {
+    : public ExtendedType<EventEngine::Endpoint, TestExtension<0>,
+                          TestExtension<1>, TestExtension<2>> {
  public:
   ExtendedTestEndpoint() = default;
   ~ExtendedTestEndpoint() override = default;
   bool Read(absl::AnyInvocable<void(absl::Status)> /*on_read*/,
-            SliceBuffer* /*buffer*/, const ReadArgs* /*args*/) override {
+            SliceBuffer* /*buffer*/, ReadArgs /*args*/) override {
     grpc_core::Crash("Not implemented");
   };
   bool Write(absl::AnyInvocable<void(absl::Status)> /*on_writable*/,
-             SliceBuffer* /*data*/, const WriteArgs* /*args*/) override {
+             SliceBuffer* /*data*/, WriteArgs /*args*/) override {
     grpc_core::Crash("Not implemented");
   }
   /// Returns an address in the format described in DNSResolver. The returned
@@ -68,6 +66,9 @@ class ExtendedTestEndpoint
   const EventEngine::ResolvedAddress& GetLocalAddress() const override {
     grpc_core::Crash("Not implemented");
   };
+  std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
+    return nullptr;
+  }
 };
 
 TEST(QueryExtensionsTest, EndpointSupportsMultipleExtensions) {

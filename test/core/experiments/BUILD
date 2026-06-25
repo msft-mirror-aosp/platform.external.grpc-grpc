@@ -12,7 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
+
+grpc_package(
+    name = "test/core/experiments",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_library(
     name = "experiments_lib",
@@ -22,10 +31,19 @@ grpc_cc_library(
     hdrs = [
         "fixtures/experiments.h",
     ],
-    language = "c++",
     deps = [
         "//:gpr",
         "//src/core:experiments",
+    ],
+)
+
+grpc_cc_benchmark(
+    name = "bm_experiments",
+    srcs = ["bm_experiments.cc"],
+    monitoring = HISTORY,
+    deps = [
+        "//src/core:experiments",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -33,7 +51,6 @@ grpc_cc_test(
     name = "experiments_test",
     srcs = ["experiments_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -52,7 +69,6 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "experiments_tag_test",
     ],

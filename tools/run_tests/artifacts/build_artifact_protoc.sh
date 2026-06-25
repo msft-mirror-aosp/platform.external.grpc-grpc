@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
 set -ex
 
 cd "$(dirname "$0")/../../.."
@@ -20,12 +21,17 @@ cd "$(dirname "$0")/../../.."
 mkdir -p cmake/build
 pushd cmake/build
 
-cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ../..
+cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 ../..
 
 # Use externally provided env to determine build parallelism, otherwise use default.
 GRPC_PROTOC_BUILD_COMPILER_JOBS=${GRPC_PROTOC_BUILD_COMPILER_JOBS:-2}
 
 make protoc plugins "-j${GRPC_PROTOC_BUILD_COMPILER_JOBS}"
+
+if [ -x "$(command -v ccache)" ]
+then
+  ccache --show-stats || true
+fi
 
 popd
 

@@ -15,8 +15,8 @@
 # Pinned version of the base image is used to avoid regressions caused
 # by rebuilding of this docker image. To see available versions, you can run
 # "gcloud container images list-tags gcr.io/oss-fuzz-base/base-builder"
-# Image(fd89316ac4c5) is built on Aug 17, 2023
-FROM gcr.io/oss-fuzz-base/base-builder@sha256:fd89316ac4c5f3e25802ca95a00062cece14f0602c5512d71ffeedc22734c0b9
+# This base image is built on Jul 16, 2025.
+FROM gcr.io/oss-fuzz-base/base-builder@sha256:4f3ca10accd14292556601d70e457fa85ad57180c913484427869d3379a07684
 
 # -------------------------- WARNING --------------------------------------
 # If you are making changes to this file, consider changing
@@ -38,7 +38,7 @@ RUN apt-get update && apt-get -y install \
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 6.4.0
+ENV BAZEL_VERSION 8.7.0
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1

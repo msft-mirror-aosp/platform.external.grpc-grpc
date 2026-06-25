@@ -16,31 +16,31 @@
 //
 //
 
-#include <memory>
-#include <new>
-
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <memory>
+#include <new>
+#include <optional>
+
+#include "src/core/config/core_configuration.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_core {
 namespace {
@@ -48,7 +48,7 @@ namespace {
 // Tests cancellation with multiple send op batches.
 void TestRetryCancelWithMultipleSendBatches(
     CoreEnd2endTest& test, std::unique_ptr<CancellationMode> mode) {
-  test.InitServer(ChannelArgs());
+  test.InitServer(CoreEnd2endTest::DefaultServerArgs());
   test.InitClient(
       ChannelArgs()
           .Set(
@@ -74,7 +74,7 @@ void TestRetryCancelWithMultipleSendBatches(
   auto c = test.NewClientCall("/service/method")
                .Timeout(Duration::Seconds(3))
                .Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   // Start a batch containing send_initial_metadata.
   c.NewBatch(1).SendInitialMetadata({});
   // Start a batch containing send_message.
@@ -82,9 +82,9 @@ void TestRetryCancelWithMultipleSendBatches(
   // Start a batch containing send_trailing_metadata.
   c.NewBatch(3).SendCloseFromClient();
   // Start a batch containing recv ops.
-  CoreEnd2endTest::IncomingMessage server_message;
-  CoreEnd2endTest::IncomingMetadata server_incoming_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMessage server_message;
+  IncomingMetadata server_incoming_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(4)
       .RecvInitialMetadata(server_incoming_metadata)
       .RecvMessage(server_message)
@@ -158,8 +158,6 @@ class FailSendOpsFilter {
 
 grpc_channel_filter FailSendOpsFilter::kFilterVtable = {
     CallData::StartTransportStreamOpBatch,
-    nullptr,
-    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,
@@ -170,26 +168,29 @@ grpc_channel_filter FailSendOpsFilter::kFilterVtable = {
     grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
-    "FailSendOpsFilter",
+    GRPC_UNIQUE_TYPE_NAME_HERE("FailSendOpsFilter"),
 };
 
 void RegisterFilter() {
-  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()
-        ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
-                         &FailSendOpsFilter::kFilterVtable)
-        // Skip on proxy (which explicitly disables retries).
-        .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
-  });
+  CoreConfiguration::RegisterEphemeralBuilder(
+      [](CoreConfiguration::Builder* builder) {
+        builder->channel_init()
+            ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                             &FailSendOpsFilter::kFilterVtable)
+            // Skip on proxy (which explicitly disables retries).
+            .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
+      });
 }
 
-CORE_END2END_TEST(RetryTest, RetryCancelWithMultipleSendBatches) {
+CORE_END2END_TEST(RetryTests, RetryCancelWithMultipleSendBatches) {
+  SKIP_IF_V3();  // Need to convert filter
   RegisterFilter();
   TestRetryCancelWithMultipleSendBatches(
       *this, std::make_unique<CancelCancellationMode>());
 }
 
-CORE_END2END_TEST(RetryTest, RetryDeadlineWithMultipleSendBatches) {
+CORE_END2END_TEST(RetryTests, RetryDeadlineWithMultipleSendBatches) {
+  SKIP_IF_V3();  // Need to convert filter
   RegisterFilter();
   TestRetryCancelWithMultipleSendBatches(
       *this, std::make_unique<DeadlineCancellationMode>());

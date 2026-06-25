@@ -16,7 +16,6 @@
 #define GRPC_SRC_CORE_LIB_IOMGR_RESOLVED_ADDRESS_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include "src/core/lib/iomgr/port.h"
@@ -28,8 +27,6 @@
 #if defined(GRPC_POSIX_SOCKET) || defined(GRPC_CFSTREAM)
 #include <sys/socket.h>
 #endif
-
-#define GRPC_MAX_SOCKADDR_SIZE 128
 
 struct grpc_resolved_address {
   char addr[GRPC_MAX_SOCKADDR_SIZE];

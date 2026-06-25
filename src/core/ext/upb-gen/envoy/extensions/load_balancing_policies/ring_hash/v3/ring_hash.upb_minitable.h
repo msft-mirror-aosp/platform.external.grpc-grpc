@@ -3,10 +3,11 @@
  *     envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_RING_HASH_V3_RING_HASH_PROTO_UPB_MINITABLE_H_
-#define ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_RING_HASH_V3_RING_HASH_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_RING_HASH_V3_RING_HASH_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_RING_HASH_V3_RING_HASH_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -27,4 +28,4 @@ extern const upb_MiniTableFile envoy_extensions_load_balancing_policies_ring_has
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_RING_HASH_V3_RING_HASH_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_RING_HASH_V3_RING_HASH_PROTO_UPB_H__UPB_MINITABLE_H_ */

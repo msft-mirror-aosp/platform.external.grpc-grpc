@@ -16,6 +16,14 @@
 //
 //
 
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+
 #include <chrono>
 #include <memory>
 #include <mutex>
@@ -24,20 +32,13 @@
 #include <thread>
 #include <vector>
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/usage_timer.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {
@@ -180,8 +181,8 @@ class SynchronousStreamingClient : public SynchronousClient {
     if (!s.ok()) {
       std::lock_guard<std::mutex> l(stream_mu_[thread_idx]);
       if (!shutdown_[thread_idx].val) {
-        gpr_log(GPR_ERROR, "Stream %" PRIuPTR " received an error %s",
-                thread_idx, s.error_message().c_str());
+        LOG(ERROR) << "Stream " << thread_idx << " received an error "
+                   << s.error_message();
       }
     }
     // Lock the stream_mu_ now because the client context could change
@@ -398,7 +399,7 @@ class SynchronousStreamingBothWaysClient final
 };
 
 std::unique_ptr<Client> CreateSynchronousClient(const ClientConfig& config) {
-  GPR_ASSERT(!config.use_coalesce_api());  // not supported yet.
+  GRPC_CHECK(!config.use_coalesce_api());  // not supported yet.
   switch (config.rpc_type()) {
     case UNARY:
       return std::unique_ptr<Client>(new SynchronousUnaryClient(config));

@@ -3,10 +3,11 @@
  *     xds/type/v3/range.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_TYPE_V3_RANGE_PROTO_UPB_MINITABLE_H_
-#define XDS_TYPE_V3_RANGE_PROTO_UPB_MINITABLE_H_
+#ifndef XDS_TYPE_V3_RANGE_PROTO_UPB_H__UPB_MINITABLE_H_
+#define XDS_TYPE_V3_RANGE_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -29,4 +30,4 @@ extern const upb_MiniTableFile xds_type_v3_range_proto_upb_file_layout;
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_TYPE_V3_RANGE_PROTO_UPB_MINITABLE_H_ */
+#endif  /* XDS_TYPE_V3_RANGE_PROTO_UPB_H__UPB_MINITABLE_H_ */

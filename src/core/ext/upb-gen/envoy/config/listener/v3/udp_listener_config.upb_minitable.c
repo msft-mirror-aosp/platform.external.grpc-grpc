@@ -3,7 +3,8 @@
  *     envoy/config/listener/v3/udp_listener_config.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -17,46 +18,37 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_config_listener_v3_UdpListenerConfig_submsgs[3] = {
-  {.submsg = &envoy__config__core__v3__UdpSocketConfig_msg_init},
-  {.submsg = &envoy__config__listener__v3__QuicProtocolOptions_msg_init},
-  {.submsg = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[3];
+  upb_MiniTableSubInternal subs[3];
+} envoy__config__listener__v3__UdpListenerConfig_msg_init_Fields;
 
-static const upb_MiniTableField envoy_config_listener_v3_UdpListenerConfig__fields[3] = {
-  {5, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {7, UPB_SIZE(8, 16), 2, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {8, UPB_SIZE(12, 24), 3, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const envoy__config__listener__v3__UdpListenerConfig_msg_init_Fields envoy_config_listener_v3_UdpListenerConfig__fields = {{
+  {5, UPB_SIZE(12, 16), 64, UPB_SIZE(9, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(16, 24), 65, UPB_SIZE(7, 9), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {8, UPB_SIZE(20, 32), 66, UPB_SIZE(5, 8), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__UdpSocketConfig_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__QuicProtocolOptions_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
+}};
 
 const upb_MiniTable envoy__config__listener__v3__UdpListenerConfig_msg_init = {
-  &envoy_config_listener_v3_UdpListenerConfig_submsgs[0],
-  &envoy_config_listener_v3_UdpListenerConfig__fields[0],
-  UPB_SIZE(16, 32), 3, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(120), 0,
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800000100002a, &upb_psm_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000000201003a, &upb_psm_1bt_maxmaxb},
-    {0x0018000003020042, &upb_psm_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
+  &envoy_config_listener_v3_UdpListenerConfig__fields.fields[0],
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.listener.v3.UdpListenerConfig",
+#endif
 };
 
 const upb_MiniTable envoy__config__listener__v3__ActiveRawUdpListenerConfig_msg_init = {
   NULL,
-  NULL,
-  0, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+  8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.listener.v3.ActiveRawUdpListenerConfig",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[2] = {

@@ -3,7 +3,8 @@
  *     envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -17,37 +18,44 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_submsgs[5] = {
-  {.submsg = &google__protobuf__UInt64Value_msg_init},
-  {.submsg = &google__protobuf__UInt64Value_msg_init},
-  {.submsg = &google__protobuf__UInt32Value_msg_init},
-  {.submsg = &envoy__extensions__load_0balancing_0policies__common__v3__ConsistentHashingLbConfig_msg_init},
-  {.submsg = &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__LocalityWeightedLbConfig_msg_init},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[7];
+  upb_MiniTableSubInternal subs[5];
+} envoy__extensions__load_0balancing_0policies__ring_0hash__v3__RingHash_msg_init_Fields;
 
-static const upb_MiniTableField envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash__fields[7] = {
-  {1, 4, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(8, 16), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(12, 24), 2, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(16, 8), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  {5, UPB_SIZE(20, 32), 3, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {6, UPB_SIZE(24, 40), 4, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {7, UPB_SIZE(28, 48), 5, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const envoy__extensions__load_0balancing_0policies__ring_0hash__v3__RingHash_msg_init_Fields envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash__fields = {{
+  {1, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {2, 16, 64, UPB_SIZE(18, 19), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(20, 24), 65, UPB_SIZE(16, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(24, 32), 66, UPB_SIZE(11, 14), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(28, 40), 67, UPB_SIZE(9, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(32, 48), 68, UPB_SIZE(7, 12), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt64Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt64Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__load_0balancing_0policies__common__v3__ConsistentHashingLbConfig_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__LocalityWeightedLbConfig_msg_init},
+}};
 
 const upb_MiniTable envoy__extensions__load_0balancing_0policies__ring_0hash__v3__RingHash_msg_init = {
-  &envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_submsgs[0],
-  &envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash__fields[0],
-  UPB_SIZE(32, 56), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+  &envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash__fields.fields[0],
+  UPB_SIZE(40, 56), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.load_balancing_policies.ring_hash.v3.RingHash",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000400003f000008, &upb_psv4_1bt},
-    {0x0010000001000012, &upb_psm_1bt_maxmaxb},
-    {0x001800000201001a, &upb_psm_1bt_maxmaxb},
-    {0x000800003f000020, &upb_psb1_1bt},
-    {0x002000000302002a, &upb_psm_1bt_maxmaxb},
-    {0x0028000004030032, &upb_psm_1bt_maxmaxb},
-    {0x003000000504003a, &upb_psm_1bt_maxmaxb},
+    {0x000c00003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000900003f000020, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 

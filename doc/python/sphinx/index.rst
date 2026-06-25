@@ -7,7 +7,7 @@ API Reference
 =============
 
 .. toctree::
-   :caption: Contents:
+   :maxdepth: 2
 
    grpc
    grpc_asyncio
@@ -18,6 +18,7 @@ API Reference
    grpc_reflection
    grpc_status
    grpc_testing
+   grpc_observability
    glossary
 
 

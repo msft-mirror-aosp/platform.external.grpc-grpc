@@ -16,9 +16,10 @@
 // is % allowed in string
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/thread_manager/thread_manager.h"
+
+#include <grpc/support/port_platform.h>
+#include <grpcpp/grpcpp.h>
 
 #include <atomic>
 #include <chrono>
@@ -26,13 +27,10 @@
 #include <memory>
 #include <thread>
 
-#include <gtest/gtest.h>
-
-#include <grpc/support/log.h>
-#include <grpcpp/grpcpp.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/crash.h"
+#include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace {
@@ -164,7 +162,7 @@ TEST_P(ThreadManagerTest, TestPollAndWork) {
   for (auto& tm : thread_manager_) {
     // Verify that The number of times DoWork() was called is equal to the
     // number of times WORK_FOUND was returned
-    gpr_log(GPR_DEBUG, "DoWork() called %d times", tm->num_do_work());
+    VLOG(2) << "DoWork() called " << tm->num_do_work() << " times";
     EXPECT_GE(tm->num_poll_for_work(), GetParam().max_poll_calls);
     EXPECT_EQ(tm->num_do_work(), tm->num_work_found());
   }
@@ -175,6 +173,16 @@ TEST_P(ThreadManagerTest, TestThreadQuota) {
     for (auto& tm : thread_manager_) {
       EXPECT_GE(tm->num_poll_for_work(), GetParam().max_poll_calls);
       EXPECT_LE(tm->GetMaxActiveThreadsSoFar(), GetParam().thread_limit);
+    }
+  }
+}
+
+TEST_P(ThreadManagerTest, TestMaxActiveThreadsSoFar) {
+  for (auto& tm : thread_manager_) {
+    int max_active = tm->GetMaxActiveThreadsSoFar();
+    EXPECT_GE(max_active, GetParam().min_pollers);
+    if (GetParam().thread_limit > 0) {
+      EXPECT_LE(max_active, GetParam().thread_limit);
     }
   }
 }

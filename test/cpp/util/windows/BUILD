@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/cpp/util/windows",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "tests",
 )
 
@@ -31,6 +35,7 @@ grpc_cc_library(
         "manifest_file.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/strings",
     ],
     deps = [

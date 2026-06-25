@@ -50,12 +50,12 @@ def _relative_path_to_module_prefix(path):
     return path.replace(os.path.sep, ".")
 
 
-class Loader(object):
+class Loader:
     """Test loader for setuptools test suite support.
 
     Attributes:
       suite (unittest.TestSuite): All tests collected by the loader.
-      loader (unittest.TestLoader): Standard Python unittest loader to be ran per
+      loader (unittest.TestLoader): Standard Python unittest loader to be run per
         module discovered.
       module_matcher (re.RegexObject): A regular expression object to match
         against module names and determine whether or not the discovered module

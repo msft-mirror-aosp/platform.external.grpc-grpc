@@ -34,12 +34,13 @@ def save(fpath, contents):
         f.write(contents)
 
 
-class QualificationValidator(object):
+class QualificationValidator:
     def __init__(self):
         self.fully_qualified_re = re.compile(r"([ (<])::(grpc[A-Za-z_:])")
         self.using_re = re.compile(
             r"(using +|using +[A-Za-z_]+ *= *|namespace [A-Za-z_]+ *= *)::"
         )
+        self.incomplete_using_re = re.compile(r"using [A-Za-z_]+ = *\n")
         self.define_re = re.compile(r"^#define")
 
     def check(self, fpath, fix):
@@ -53,6 +54,9 @@ class QualificationValidator(object):
                 continue
             # skip `#define` statements
             if self.define_re.search(line):
+                continue
+            # skip if previous line is an incomplete using namespace statement
+            if i > 1 and self.incomplete_using_re.fullmatch(fcontents[i - 1]):
                 continue
             # fully-qualified namespace found, which may be unnecessary
             if fix:
@@ -74,9 +78,13 @@ IGNORED_FILES = [
     # users would be better off using unique namespaces.
     "src/compiler/cpp_generator.cc",
     # multi-line #define statements are not handled
-    "src/core/lib/gprpp/global_config_env.h",
     "src/core/lib/profiling/timers.h",
-    "src/core/lib/gprpp/crash.h",
+    "src/core/util/crash.h",
+    "src/core/util/unique_type_name.h",
+    # The grpc_core::Server redundant namespace qualification is required for
+    # older gcc versions.
+    "src/core/ext/transport/chttp2/server/chttp2_server.h",
+    "src/core/server/server.h",
 ]
 
 # find our home

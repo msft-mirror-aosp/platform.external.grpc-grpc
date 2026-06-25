@@ -19,11 +19,10 @@
 #ifndef GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_CLIENT_H
 #define GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_CLIENT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -33,6 +32,7 @@
 #define ALTS_SERVICE_METHOD "/grpc.gcp.HandshakerService/DoHandshake"
 #define ALTS_APPLICATION_PROTOCOL "grpc"
 #define ALTS_RECORD_PROTOCOL "ALTSRP_GCM_AES128_REKEY"
+#define ALTS_INTEGRITY_ONLY_RECORD_PROTOCOL "ALTSRP_GMAC_128"
 #define ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING "lame"
 
 const size_t kAltsAes128GcmRekeyKeyLength = 44;
@@ -144,7 +144,9 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
     grpc_alts_credentials_options* options, const grpc_slice& target_name,
     grpc_iomgr_cb_func grpc_cb, tsi_handshaker_on_next_done_cb cb,
     void* user_data, alts_handshaker_client_vtable* vtable_for_testing,
-    bool is_client, size_t max_frame_size, std::string* error);
+    bool is_client, size_t max_frame_size,
+    std::optional<absl::string_view> preferred_transport_protocol,
+    std::string* error);
 
 ///
 /// This method handles handshaker response returned from ALTS handshaker

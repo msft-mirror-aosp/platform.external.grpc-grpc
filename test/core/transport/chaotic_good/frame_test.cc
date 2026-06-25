@@ -16,44 +16,38 @@
 
 #include <cstdint>
 
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/grpc_check.h"
+#include "test/core/transport/chaotic_good/test_frame.h"
+#include "gtest/gtest.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace chaotic_good {
 namespace {
 
-template <typename T>
-void AssertRoundTrips(const T input, FrameType expected_frame_type) {
-  HPackCompressor hpack_compressor;
-  absl::BitGen bitgen;
-  auto serialized = input.Serialize(&hpack_compressor);
-  EXPECT_GE(serialized.Length(), 24);
-  uint8_t header_bytes[24];
-  serialized.MoveFirstNBytesIntoBuffer(24, header_bytes);
-  auto header = FrameHeader::Parse(header_bytes);
-  EXPECT_TRUE(header.ok()) << header.status();
-  EXPECT_EQ(header->type, expected_frame_type);
-  T output;
-  HPackParser hpack_parser;
-  auto deser = output.Deserialize(&hpack_parser, header.value(),
-                                  absl::BitGenRef(bitgen), serialized);
-  EXPECT_TRUE(deser.ok()) << deser;
-  EXPECT_EQ(output, input);
+void AssertRoundTrips(const Frame& input) {
+  const auto& input_interface =
+      absl::ConvertVariantTo<const FrameInterface&>(input);
+  const auto hdr = input_interface.MakeHeader();
+  // Frames should always set connection id 0, though the transport may adjust
+  // it.
+  SliceBuffer output_buffer;
+  input_interface.SerializePayload(output_buffer);
+  EXPECT_EQ(hdr.payload_length, output_buffer.Length());
+  absl::StatusOr<Frame> output = ParseFrame(hdr, std::move(output_buffer));
+  GRPC_CHECK_OK(output);
+  GRPC_CHECK_EQ(
+      absl::ConvertVariantTo<const FrameInterface&>(*output).ToString(),
+      input_interface.ToString());
 }
+FUZZ_TEST(FrameTest, AssertRoundTrips).WithDomains(AnyFrame());
 
-TEST(FrameTest, SettingsFrameRoundTrips) {
-  AssertRoundTrips(SettingsFrame{}, FrameType::kSettings);
-}
+TEST(FrameTest, SettingsFrameRoundTrips) { AssertRoundTrips(SettingsFrame{}); }
 
 }  // namespace
 }  // namespace chaotic_good
 }  // namespace grpc_core
-
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  int r = RUN_ALL_TESTS();
-  return r;
-}

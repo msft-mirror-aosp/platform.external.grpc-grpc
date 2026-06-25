@@ -18,22 +18,20 @@
 #define GRPC_SRC_CORE_EXT_FILTERS_STATEFUL_SESSION_STATEFUL_SESSION_FILTER_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <utility>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/gprpp/ref_counted_string.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/service_config/service_config_call_data.h"
+#include "src/core/util/ref_counted_string.h"
+#include "src/core/util/unique_type_name.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -68,23 +66,66 @@ class XdsOverrideHostAttribute
 };
 
 // A filter to provide cookie-based stateful session affinity.
-class StatefulSessionFilter : public ChannelFilter {
+class StatefulSessionFilter
+    : public ImplementChannelFilter<StatefulSessionFilter> {
  public:
-  static const grpc_channel_filter kFilter;
+  struct Config : public FilterConfig {
+    static UniqueTypeName Type() {
+      return GRPC_UNIQUE_TYPE_NAME_HERE("stateful_session_filter_config");
+    }
+    UniqueTypeName type() const override { return Type(); }
 
-  static absl::StatusOr<StatefulSessionFilter> Create(
+    bool Equals(const FilterConfig& other) const override;
+    std::string ToString() const override;
+
+    std::string cookie_name;
+    std::string path;
+    Duration ttl;
+  };
+
+  static const grpc_channel_filter kFilterVtable;
+
+  static absl::string_view TypeName() { return "stateful_session_filter"; }
+
+  static absl::StatusOr<std::unique_ptr<StatefulSessionFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
-  // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  explicit StatefulSessionFilter(ChannelFilter::Args filter_args);
+
+  class Call {
+   public:
+    void OnClientInitialMetadata(ClientMetadata& md,
+                                 StatefulSessionFilter* filter);
+    void OnServerInitialMetadata(ServerMetadata& md,
+                                 StatefulSessionFilter* filter);
+    void OnServerTrailingMetadata(ServerMetadata& md,
+                                  StatefulSessionFilter* filter);
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList()
+          .Set("cluster_name", cluster_name_)
+          .Set("override_host_attribute_cookie_address_list",
+               override_host_attribute_->cookie_address_list())
+          .Set("override_host_attribute_actual_address_list",
+               override_host_attribute_->actual_address_list())
+          .Set("cookie_address_list", cookie_address_list_)
+          .Set("cluster_changed", cluster_changed_)
+          .Set("perform_filtering", perform_filtering_);
+    }
+
+   private:
+    XdsOverrideHostAttribute* override_host_attribute_;
+    absl::string_view cluster_name_;
+    absl::string_view cookie_address_list_;
+    bool cluster_changed_;
+    bool perform_filtering_ = false;
+  };
 
  private:
-  explicit StatefulSessionFilter(ChannelFilter::Args filter_args);
-  // The relative index of instances of the same filter.
-  const size_t index_;
-  // Index of the service config parser.
-  const size_t service_config_parser_index_;
+  const RefCountedPtr<const Config> config_;
 };
 
 }  // namespace grpc_core

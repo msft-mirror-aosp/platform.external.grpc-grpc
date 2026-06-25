@@ -85,6 +85,7 @@ VALID_ATTRIBUTE_KEYS_MAP = {
         "language": one_of(("c", "c89", "c++", "csharp")),
         "maxlen": anything(),
         "platforms": subset_of(("linux", "mac", "posix", "windows")),
+        "plugin_option": anything(),
         "run": one_of((True, False)),
         "secure": one_of(("check", True, False)),
         "src": anything(),
@@ -96,6 +97,7 @@ VALID_ATTRIBUTE_KEYS_MAP = {
     "external_proto_library": {
         "destination": anything(),
         "proto_prefix": anything(),
+        "strip_path_prefix": anything(),
         "urls": anything(),
         "hash": anything(),
         "strip_prefix": anything(),

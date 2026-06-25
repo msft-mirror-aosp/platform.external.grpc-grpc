@@ -19,24 +19,16 @@ set PATH=C:\%1;C:\%1\scripts;%PATH%
 set PATH=C:\msys64\mingw%2\bin;C:\tools\msys64\mingw%2\bin;%PATH%
 :end_mingw64_installation
 
-@rem check if building for Python3.7 in windows
-set IS_PYTHON_37=false
-If "%1" == "Python37_32bit" set IS_PYTHON_37=true
-If "%1" == "Python37" set IS_PYTHON_37=true
-
-@rem Python3.7 in windows doesn't support high version of setuptools
-if "%IS_PYTHON_37%" == "true" (
-python -m pip install --upgrade six
-python -m pip install --upgrade setuptools==59.6.0
-) else (
-python -m pip install --upgrade pip six setuptools wheel
-)
-
-python -m pip install --upgrade "cython<3.0.0rc1"
-python -m pip install -rrequirements.txt --user
+python -m pip install --upgrade pip==25.2 six
+@rem Ping to a single version to make sure we're building the same artifacts
+python -m pip install setuptools==77.0.1 wheel==0.43.0
+python -m pip install --upgrade "cython==3.1.1"
+python -m pip install -r requirements.txt --user
 
 @rem set GRPC_PYTHON_OVERRIDE_CYGWIN_DETECTION_FOR_27=1
 set GRPC_PYTHON_BUILD_WITH_CYTHON=1
+set CCACHE_NOHASHDIR=true
+set CCACHE_LOGFILE=T:\src\github\grpc\reports\ccache_%1_%2.log
 
 @rem Allow build_ext to build C/C++ files in parallel
 @rem by enabling a monkeypatch. It speeds up the build a lot.
@@ -48,25 +40,26 @@ if "%GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS%"=="" (
 mkdir -p %ARTIFACTS_OUT%
 set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 
+
+@rem use short temp directory to avoid linker command file errors caused by
+@rem exceeding 131071 characters.
+set "GRPC_PYTHON_BUILD_USE_SHORT_TEMP_DIR_NAME=1"
+
+@rem Build gRPC Python distribution
+python -m build --no-isolation --sdist || goto :error
+python -m build --no-isolation --wheel || goto :error
+
 @rem Set up gRPC Python tools
 python tools\distrib\python\make_grpcio_tools.py
 
-@rem Build gRPC Python extensions
-python setup.py build_ext -c %EXT_COMPILER% || goto :error
-
+@rem Build grpcio-tools Python distribution
 pushd tools\distrib\python\grpcio_tools
-python setup.py build_ext -c %EXT_COMPILER% || goto :error
-popd
-
-@rem Build gRPC Python distributions
-python setup.py bdist_wheel || goto :error
-
-pushd tools\distrib\python\grpcio_tools
-python setup.py bdist_wheel || goto :error
+python -m build --no-isolation --sdist || goto :error
+python -m build --no-isolation --wheel || goto :error
 popd
 
 @rem Ensure the generate artifacts are valid.
-python -m pip install packaging==21.3 twine==3.8.0
+python -m pip install packaging==21.3 twine==5.0.0
 python -m twine check dist\* tools\distrib\python\grpcio_tools\dist\* || goto :error
 
 xcopy /Y /I /S dist\* %ARTIFACT_DIR% || goto :error

@@ -52,17 +52,17 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 RUN python3 -m pip install twisted
 
 #=================
-# Install cmake
-# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
-
-RUN apt-get update && apt-get install -y cmake && apt-get clean
+# Install cmake using the install script.
+RUN curl -sSL -o cmake-linux.sh https://github.com/Kitware/CMake/releases/download/v3.16.1/cmake-3.16.1-Linux-x86_64.sh \
+    && sh cmake-linux.sh -- --skip-license --prefix=/usr \
+    && rm cmake-linux.sh
 
 #=================
-# Install ccache (use slighly older release of ccache that works older compilers and cmake)
+# Install ccache (use slightly older release of ccache that works older compilers and cmake)
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
-RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.5.1/ccache-4.5.1.tar.gz \
+RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.5.1/ccache-4.5.1.tar.gz \
     && tar -zxf ccache.tar.gz \
     && cd ccache-4.5.1 \
     && mkdir build && cd build \

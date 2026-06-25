@@ -3,10 +3,11 @@
  *     src/proto/grpc/gcp/handshaker.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef SRC_PROTO_GRPC_GCP_HANDSHAKER_PROTO_UPB_MINITABLE_H_
-#define SRC_PROTO_GRPC_GCP_HANDSHAKER_PROTO_UPB_MINITABLE_H_
+#ifndef SRC_PROTO_GRPC_GCP_HANDSHAKER_PROTO_UPB_H__UPB_MINITABLE_H_
+#define SRC_PROTO_GRPC_GCP_HANDSHAKER_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -38,4 +39,4 @@ extern const upb_MiniTableFile src_proto_grpc_gcp_handshaker_proto_upb_file_layo
 
 #include "upb/port/undef.inc"
 
-#endif  /* SRC_PROTO_GRPC_GCP_HANDSHAKER_PROTO_UPB_MINITABLE_H_ */
+#endif  /* SRC_PROTO_GRPC_GCP_HANDSHAKER_PROTO_UPB_H__UPB_MINITABLE_H_ */

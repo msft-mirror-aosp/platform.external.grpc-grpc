@@ -18,11 +18,14 @@ dist/
 htmlcov/
 py3*/
 pyb/
-python_pylint_venv/
 src/python/grpcio_*/=*
 src/python/grpcio_*/build/
 src/python/grpcio_*/LICENSE
 src/python/grpcio_status/grpc_status/google/rpc/status.proto
+.venv
+# TODO(sergiitk): conform all "named" virtual environments to .venv-*
+.venv-*
+python_pylint_venv/
 black_virtual_environment/
 isort_virtual_environment/
 
@@ -125,6 +128,7 @@ Podfile.lock
 bazel-*
 bazel_format_virtual_environment/
 tools/bazel-*
+.bazel_rbe
 
 # Bazel wrapper
 bazel_wrapper
@@ -143,9 +147,6 @@ perf.data
 perf.data.old
 
 # bm_diff
-bm_diff_new/
-bm_diff_old/
-bm_*.json
 bloat_diff_new/
 bloat_diff_old/
 bloaty-build/
@@ -181,3 +182,6 @@ iwyu_build/
 # fuzzer logs
 fuzz-*.log
 
+# bazel module files
+third_party/**/MODULE.bazel
+MODULE.bazel.lock

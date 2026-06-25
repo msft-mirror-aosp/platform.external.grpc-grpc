@@ -16,23 +16,17 @@
 //
 //
 
-#include <atomic>
-#include <cstring>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
-
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>
+#include <grpcpp/impl/call_context_registry.h>
 #include <grpcpp/impl/call_op_set_interface.h>
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/rpc_method.h>
@@ -40,7 +34,17 @@
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/slice.h>
 
+#include <atomic>
+#include <cstring>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/surface/call.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc {
 
@@ -64,6 +68,11 @@ Channel::~Channel() {
       CompletionQueue::ReleaseCallbackAlternativeCQ(callback_cq);
     }
   }
+}
+
+grpc_event_engine::experimental::MemoryAllocator* Channel::memory_allocator()
+    const {
+  return grpc_core::Channel::FromC(c_channel_)->memory_allocator();
 }
 
 namespace {
@@ -105,6 +114,12 @@ void ChannelResetConnectionBackoff(Channel* channel) {
   grpc_channel_reset_connect_backoff(channel->c_channel_);
 }
 
+int64_t ChannelGetChannelzUuid(Channel* channel) {
+  auto* node = grpc_channel_get_channelz_node(channel->c_channel_);
+  if (node == nullptr) return 0;
+  return node->uuid();
+}
+
 }  // namespace experimental
 
 grpc::internal::Call Channel::CreateCallInternal(
@@ -141,6 +156,10 @@ grpc::internal::Call Channel::CreateCallInternal(
     }
   }
   grpc_census_call_set_context(c_call, context->census_context());
+  if (context->context_elements_ != nullptr) {
+    grpc_core::Arena* arena = grpc_call_get_arena(c_call);
+    impl::CallContextRegistry::Propagate(context->context_elements_, arena);
+  }
 
   // ClientRpcInfo should be set before call because set_call also checks
   // whether the call has been cancelled, and if the call was cancelled, we
@@ -150,7 +169,7 @@ grpc::internal::Call Channel::CreateCallInternal(
       interceptor_creators_, interceptor_pos);
   context->set_call(c_call, shared_from_this());
 
-  return grpc::internal::Call(c_call, this, cq, info);
+  return grpc::internal::Call(c_call, cq, info);
 }
 
 grpc::internal::Call Channel::CreateCall(
@@ -159,11 +178,8 @@ grpc::internal::Call Channel::CreateCall(
   return CreateCallInternal(method, context, cq, 0);
 }
 
-void Channel::PerformOpsOnCall(grpc::internal::CallOpSetInterface* ops,
-                               grpc::internal::Call* call) {
-  ops->FillOps(
-      call);  // Make a copy of call. It's fine since Call just has pointers
-}
+void Channel::PerformOpsOnCall(grpc::internal::CallOpSetInterface*,
+                               grpc::internal::Call*) {}
 
 void* Channel::RegisterMethod(const char* method) {
   return grpc_channel_register_call(
@@ -207,7 +223,7 @@ bool Channel::WaitForStateChangeImpl(grpc_connectivity_state last_observed,
   void* tag = nullptr;
   NotifyOnStateChangeImpl(last_observed, deadline, &cq, nullptr);
   cq.Next(&tag, &ok);
-  GPR_ASSERT(tag == nullptr);
+  GRPC_CHECK_EQ(tag, nullptr);
   return ok;
 }
 
@@ -217,9 +233,9 @@ class ShutdownCallback : public grpc_completion_queue_functor {
   ShutdownCallback() {
     functor_run = &ShutdownCallback::Run;
     // Set inlineable to true since this callback is trivial and thus does not
-    // need to be run from the executor (triggering a thread hop). This should
-    // only be used by internal callbacks like this and not by user application
-    // code.
+    // need to be run from the EventEngine (potentially triggering a thread
+    // hop). This should only be used by internal callbacks like this and not by
+    // user application code.
     inlineable = true;
   }
   // TakeCQ takes ownership of the cq into the shutdown callback

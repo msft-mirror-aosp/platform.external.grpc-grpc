@@ -3,10 +3,11 @@
  *     envoy/type/v3/ratelimit_strategy.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_MINITABLE_H_
-#define ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -28,4 +29,4 @@ extern const upb_MiniTableFile envoy_type_v3_ratelimit_strategy_proto_upb_file_l
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H__UPB_MINITABLE_H_ */

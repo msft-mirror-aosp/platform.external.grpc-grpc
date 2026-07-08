@@ -3,7 +3,8 @@
  *     xds/type/matcher/v3/regex.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -13,31 +14,40 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub xds_type_matcher_v3_RegexMatcher_submsgs[1] = {
-  {.submsg = &xds__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[2];
+  upb_MiniTableSubInternal subs[1];
+} xds__type__matcher__v3__RegexMatcher_msg_init_Fields;
 
-static const upb_MiniTableField xds_type_matcher_v3_RegexMatcher__fields[2] = {
-  {1, UPB_SIZE(4, 24), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-};
+static const xds__type__matcher__v3__RegexMatcher_msg_init_Fields xds_type_matcher_v3_RegexMatcher__fields = {{
+  {1, UPB_SIZE(12, 32), -9, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init},
+}};
 
 const upb_MiniTable xds__type__matcher__v3__RegexMatcher_msg_init = {
-  &xds_type_matcher_v3_RegexMatcher_submsgs[0],
-  &xds_type_matcher_v3_RegexMatcher__fields[0],
-  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  &xds_type_matcher_v3_RegexMatcher__fields.fields[0],
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.type.matcher.v3.RegexMatcher",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001800000100000a, &upb_pom_1bt_max64b},
-    {0x000800003f000012, &upb_pss_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
 const upb_MiniTable xds__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init = {
   NULL,
-  NULL,
-  0, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+  8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.type.matcher.v3.RegexMatcher.GoogleRE2",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[2] = {

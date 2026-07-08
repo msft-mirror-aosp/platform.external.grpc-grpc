@@ -30,8 +30,27 @@ class RubyGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   ~RubyGrpcGenerator() {}
 
   uint64_t GetSupportedFeatures() const override {
-    return FEATURE_PROTO3_OPTIONAL;
+    return FEATURE_PROTO3_OPTIONAL
+#ifdef GRPC_PROTOBUF_EDITION_SUPPORT
+           | FEATURE_SUPPORTS_EDITIONS
+#endif
+        ;
   }
+
+#ifdef GRPC_PROTOBUF_EDITION_SUPPORT
+  grpc::protobuf::Edition GetMinimumEdition() const override {
+    return grpc::protobuf::Edition::EDITION_PROTO2;
+  }
+  grpc::protobuf::Edition GetMaximumEdition() const override {
+    // TODO(yuanweiz): Remove when the protobuf is updated to a version
+    //      that supports edition 2024.
+#if !defined(GOOGLE_PROTOBUF_VERSION) || GOOGLE_PROTOBUF_VERSION >= 6032000
+    return grpc::protobuf::Edition::EDITION_2024;
+#else
+    return grpc::protobuf::Edition::EDITION_2023;
+#endif
+  }
+#endif
 
   bool Generate(const grpc::protobuf::FileDescriptor* file,
                 const std::string& /*parameter*/,

@@ -17,6 +17,7 @@
 from __future__ import print_function
 
 import argparse
+import datetime
 import multiprocessing
 import os
 import sys
@@ -28,13 +29,20 @@ import python_utils.report_utils as report_utils
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), "../.."))
 os.chdir(_ROOT)
 
+# TODO(sergiitk): convert these constants to timedelta to improve readability.
 _DEFAULT_RUNTESTS_TIMEOUT = 1 * 60 * 60
 
 # C/C++ tests can take long time
-_CPP_RUNTESTS_TIMEOUT = 4 * 60 * 60
+_CPP_RUNTESTS_TIMEOUT = 6 * 60 * 60
 
 # Set timeout high for ObjC for Cocoapods to install pods
-_OBJC_RUNTESTS_TIMEOUT = 2 * 60 * 60
+_OBJC_RUNTESTS_TIMEOUT = 4 * 60 * 60
+
+# Set higher timeout for python_windows_opt_native test
+_PYTHON_WINDOWS_RUNTESTS_TIMEOUT = 1.5 * 60 * 60
+
+# Set timeout high for Ruby for MacOS for slow xcodebuild
+_RUBY_RUNTESTS_TIMEOUT = 2 * 60 * 60
 
 # Number of jobs assigned to each run_tests.py instance
 _DEFAULT_INNER_JOBS = 2
@@ -204,6 +212,9 @@ def _generate_jobs(
                             timeout_seconds=timeout_seconds,
                         )
                     else:
+                        if platform == "windows" and language == "python":
+                            timeout_seconds = _PYTHON_WINDOWS_RUNTESTS_TIMEOUT
+
                         job = _workspace_jobspec(
                             name=name,
                             runtests_args=runtests_args,
@@ -232,6 +243,10 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         labels=["basictests"],
         extra_args=extra_args + ["--report_multi_target"],
         inner_jobs=inner_jobs,
+        # Important! When changing the timeout, verify individual test timeouts
+        # in run_tests.py Sanity are less than this.
+        # TODO(ac-patel): decrease when the job is optimized to only consider code diff.
+        timeout_seconds=datetime.timedelta(hours=1, minutes=25).total_seconds(),
     )
 
     # supported on all platforms.
@@ -302,17 +317,18 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
     )
 
     test_jobs += _generate_jobs(
-        languages=["ruby", "php7"],
+        languages=["ruby", "php8"],
         configs=["dbg", "opt"],
         platforms=["linux", "macos"],
         labels=["basictests", "multilang"],
         extra_args=extra_args + ["--report_multi_target"],
         inner_jobs=inner_jobs,
+        timeout_seconds=_RUBY_RUNTESTS_TIMEOUT,
     )
 
     # ARM64 Linux Ruby and PHP tests
     test_jobs += _generate_jobs(
-        languages=["ruby", "php7"],
+        languages=["ruby", "php8"],
         configs=["dbg", "opt"],
         platforms=["linux"],
         arch="arm64",
@@ -355,14 +371,15 @@ def _create_portability_test_jobs(
     # portability C and C++ on x64
     for compiler in [
         "gcc8",
+        "gcc10",
         # TODO(b/283304471): Tests using OpenSSL's engine APIs were broken and removed
         "gcc10.2_openssl102",
         "gcc10.2_openssl111",
-        "gcc12",
         "gcc12_openssl309",
+        "gcc14",
         "gcc_musl",
-        "clang6",
-        "clang16",
+        "clang11",
+        "clang19",
     ]:
         test_jobs += _generate_jobs(
             languages=["c", "c++"],
@@ -370,64 +387,36 @@ def _create_portability_test_jobs(
             platforms=["linux"],
             arch="x64",
             compiler=compiler,
-            labels=["portability", "corelang"],
+            labels=["portability", "corelang"]
+            + (["openssl"] if "openssl" in compiler else []),
             extra_args=extra_args,
             inner_jobs=inner_jobs,
             timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
         )
 
-    # portability C on Windows 64-bit (x86 is the default)
+    # portability C & C++ on Windows 64-bit
     test_jobs += _generate_jobs(
-        languages=["c"],
-        configs=["dbg"],
-        platforms=["windows"],
-        arch="x64",
-        compiler="default",
-        labels=["portability", "corelang"],
-        extra_args=extra_args,
-        inner_jobs=inner_jobs,
-    )
-
-    # portability C on Windows with the "Visual Studio" cmake
-    # generator, i.e. not using Ninja (to verify that we can still build with msbuild)
-    test_jobs += _generate_jobs(
-        languages=["c"],
+        languages=["c", "c++"],
         configs=["dbg"],
         platforms=["windows"],
         arch="default",
-        compiler="cmake_vs2019",
+        compiler="cmake_ninja_vs2022",
         labels=["portability", "corelang"],
         extra_args=extra_args,
-        inner_jobs=inner_jobs,
-    )
-
-    # portability C++ on Windows
-    # TODO(jtattermusch): some of the tests are failing, so we force --build_only
-    test_jobs += _generate_jobs(
-        languages=["c++"],
-        configs=["dbg"],
-        platforms=["windows"],
-        arch="default",
-        compiler="default",
-        labels=["portability", "corelang"],
-        extra_args=extra_args + ["--build_only"],
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
     )
 
-    # portability C and C++ on Windows using VS2019 (build only)
-    # TODO(jtattermusch): The C tests with exactly the same config are already running as part of the
-    # basictests_c suite (so we force --build_only to avoid running them twice).
-    # The C++ tests aren't all passing, so also force --build_only.
-    # NOTE(veblush): This is not neded as default=cmake_ninja_vs2019
+    # portability C and C++ on Windows with the "Visual Studio 2022" cmake
+    # generator, i.e. not using Ninja (to verify that we can still build with msbuild)
     # test_jobs += _generate_jobs(
     #     languages=["c", "c++"],
     #     configs=["dbg"],
     #     platforms=["windows"],
     #     arch="x64",
-    #     compiler="cmake_ninja_vs2019",
+    #     compiler="cmake_vs2022",
     #     labels=["portability", "corelang"],
-    #     extra_args=extra_args + ["--build_only"],
+    #     extra_args=extra_args,
     #     inner_jobs=inner_jobs,
     #     timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
     # )
@@ -485,7 +474,7 @@ if __name__ == "__main__":
     argp.add_argument(
         "-j",
         "--jobs",
-        default=multiprocessing.cpu_count() / _DEFAULT_INNER_JOBS,
+        default=None,
         type=int,
         help="Number of concurrent run_tests.py instances.",
     )
@@ -498,6 +487,7 @@ if __name__ == "__main__":
         help="Filter targets to run by label with AND semantics.",
     )
     argp.add_argument(
+        "-e",
         "--exclude",
         choices=_allowed_labels(),
         nargs="+",
@@ -560,21 +550,17 @@ if __name__ == "__main__":
         + "(other tests will be skipped)",
     )
     argp.add_argument(
-        "--internal_ci",
-        default=False,
-        action="store_const",
-        const=True,
-        help=(
-            "(Deprecated, has no effect) Put reports into subdirectories to"
-            " improve presentation of results by Kokoro."
-        ),
-    )
-    argp.add_argument(
         "--bq_result_table",
         default="",
         type=str,
         nargs="?",
         help="Upload test results to a specified BQ table.",
+    )
+    argp.add_argument(
+        "--inner_jobs_extra_args",
+        default=[],
+        action="append",
+        help="Extra args passed down to the underlying scripts by run_tests.py",
     )
     argp.add_argument(
         "--extra_args",
@@ -584,6 +570,11 @@ if __name__ == "__main__":
         help="Extra test args passed to each sub-script.",
     )
     args = argp.parse_args()
+
+    if args.jobs is None:
+        args.jobs = int(multiprocessing.cpu_count() / args.inner_jobs)
+        if args.jobs < 1:
+            args.jobs = 1
 
     extra_args = []
     if args.build_only:
@@ -600,6 +591,9 @@ if __name__ == "__main__":
         extra_args.append("--bq_result_table")
         extra_args.append("%s" % args.bq_result_table)
         extra_args.append("--measure_cpu_costs")
+    extra_args.extend(
+        f"--script_args={inner_arg}" for inner_arg in args.inner_jobs_extra_args
+    )
     if args.extra_args:
         extra_args.extend(args.extra_args)
 

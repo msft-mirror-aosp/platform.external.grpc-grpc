@@ -34,8 +34,26 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   virtual ~CppGrpcGenerator() {}
 
   uint64_t GetSupportedFeatures() const override {
-    return FEATURE_PROTO3_OPTIONAL;
+    return FEATURE_PROTO3_OPTIONAL
+#ifdef GRPC_PROTOBUF_EDITION_SUPPORT
+           | FEATURE_SUPPORTS_EDITIONS
+#endif
+        ;
   }
+#ifdef GRPC_PROTOBUF_EDITION_SUPPORT
+  grpc::protobuf::Edition GetMinimumEdition() const override {
+    return grpc::protobuf::Edition::EDITION_PROTO2;
+  }
+  grpc::protobuf::Edition GetMaximumEdition() const override {
+    // TODO(yuanweiz): Remove when the protobuf is updated to a version
+    //      that supports edition 2024.
+#if !defined(GOOGLE_PROTOBUF_VERSION) || GOOGLE_PROTOBUF_VERSION >= 6032000
+    return grpc::protobuf::Edition::EDITION_2024;
+#else
+    return grpc::protobuf::Edition::EDITION_2023;
+#endif
+  }
+#endif
 
   virtual bool Generate(const grpc::protobuf::FileDescriptor* file,
                         const std::string& parameter,
@@ -53,6 +71,9 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     generator_parameters.use_system_headers = true;
     generator_parameters.generate_mock_code = false;
     generator_parameters.include_import_headers = false;
+    generator_parameters.allow_sync_server_api = true;
+    generator_parameters.allow_cq_api = true;
+    generator_parameters.allow_deprecated = false;
 
     ProtoBufFile pbfile(file);
 
@@ -83,6 +104,24 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
             *error = std::string("Invalid parameter: ") + *parameter_string;
             return false;
           }
+        } else if (param[0] == "allow_sync_server_api") {
+          if (param[1] == "true") {
+            generator_parameters.allow_sync_server_api = true;
+          } else if (param[1] == "false") {
+            generator_parameters.allow_sync_server_api = false;
+          } else {
+            *error = std::string("Invalid parameter: ") + *parameter_string;
+            return false;
+          }
+        } else if (param[0] == "allow_cq_api") {
+          if (param[1] == "true") {
+            generator_parameters.allow_cq_api = true;
+          } else if (param[1] == "false") {
+            generator_parameters.allow_cq_api = false;
+          } else {
+            *error = std::string("Invalid parameter: ") + *parameter_string;
+            return false;
+          }
         } else if (param[0] == "gmock_search_path") {
           generator_parameters.gmock_search_path = param[1];
         } else if (param[0] == "additional_header_includes") {
@@ -97,6 +136,15 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
             *error = std::string("Invalid parameter: ") + *parameter_string;
             return false;
           }
+        } else if (param[0] == "allow_deprecated") {
+          if (param[1] == "true") {
+            generator_parameters.allow_deprecated = true;
+          } else if (param[1] == "false") {
+            generator_parameters.allow_deprecated = false;
+          } else {
+            *error = std::string("Invalid parameter: ") + *parameter_string;
+            return false;
+          }
         } else {
           *error = std::string("Unknown parameter: ") + *parameter_string;
           return false;
@@ -104,7 +152,8 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       }
     }
 
-    std::string file_name = grpc_generator::StripProto(file->name());
+    std::string file_name =
+        grpc_generator::StripProto(std::string(file->name()));
 
     std::string header_code =
         grpc_cpp_generator::GetHeaderPrologue(&pbfile, generator_parameters) +

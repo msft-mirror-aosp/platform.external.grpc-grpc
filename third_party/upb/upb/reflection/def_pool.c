@@ -7,19 +7,36 @@
 
 #include "upb/reflection/internal/def_pool.h"
 
+#include <assert.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "upb/base/status.h"
+#include "upb/base/string_view.h"
+#include "upb/hash/common.h"
 #include "upb/hash/int_table.h"
 #include "upb/hash/str_table.h"
+#include "upb/mem/alloc.h"
+#include "upb/mem/arena.h"
+#include "upb/mini_descriptor/decode.h"
+#include "upb/mini_table/extension.h"
+#include "upb/mini_table/extension_registry.h"
+#include "upb/mini_table/file.h"
+#include "upb/mini_table/generated_registry.h"
+#include "upb/mini_table/message.h"
+#include "upb/reflection/def.h"
 #include "upb/reflection/def_type.h"
+#include "upb/reflection/file_def.h"
 #include "upb/reflection/internal/def_builder.h"
-#include "upb/reflection/internal/enum_def.h"
-#include "upb/reflection/internal/enum_value_def.h"
-#include "upb/reflection/internal/field_def.h"
 #include "upb/reflection/internal/file_def.h"
 #include "upb/reflection/internal/message_def.h"
-#include "upb/reflection/internal/service_def.h"
+#include "upb/reflection/internal/upb_edition_defaults.h"
 
 // Must be last.
 #include "upb/port/def.inc"
+#include "upb/wire/decode.h"
 
 struct upb_DefPool {
   upb_Arena* arena;
@@ -27,17 +44,24 @@ struct upb_DefPool {
   upb_strtable files;  // file_name -> (upb_FileDef*)
   upb_inttable exts;   // (upb_MiniTableExtension*) -> (upb_FieldDef*)
   upb_ExtensionRegistry* extreg;
+  const upb_GeneratedRegistryRef* generated_extreg;
+  const google_protobuf_FeatureSetDefaults* feature_set_defaults;
   upb_MiniTablePlatform platform;
   void* scratch_data;
   size_t scratch_size;
   size_t bytes_loaded;
+  bool disable_closed_enum_checking;
+  bool disable_implicit_field_presence;
 };
 
 void upb_DefPool_Free(upb_DefPool* s) {
+  upb_GeneratedRegistry_Release(s->generated_extreg);
   upb_Arena_Free(s->arena);
   upb_gfree(s->scratch_data);
   upb_gfree(s);
 }
+
+static const char serialized_defaults[] = UPB_INTERNAL_UPB_EDITION_DEFAULTS;
 
 upb_DefPool* upb_DefPool_New(void) {
   upb_DefPool* s = upb_gmalloc(sizeof(*s));
@@ -45,6 +69,8 @@ upb_DefPool* upb_DefPool_New(void) {
 
   s->arena = upb_Arena_New();
   s->bytes_loaded = 0;
+  s->disable_closed_enum_checking = false;
+  s->disable_implicit_field_presence = false;
 
   s->scratch_size = 240;
   s->scratch_data = upb_gmalloc(s->scratch_size);
@@ -57,13 +83,98 @@ upb_DefPool* upb_DefPool_New(void) {
   s->extreg = upb_ExtensionRegistry_New(s->arena);
   if (!s->extreg) goto err;
 
+  s->generated_extreg = upb_GeneratedRegistry_Load();
+  if (!s->generated_extreg) goto err;
+
   s->platform = kUpb_MiniTablePlatform_Native;
+
+  upb_Status status;
+  if (!upb_DefPool_SetFeatureSetDefaults(
+          s, serialized_defaults, sizeof(serialized_defaults) - 1, &status)) {
+    goto err;
+  }
+
+  if (!s->feature_set_defaults) goto err;
 
   return s;
 
 err:
   upb_DefPool_Free(s);
   return NULL;
+}
+
+void upb_DefPool_DisableClosedEnumChecking(upb_DefPool* s) {
+  UPB_ASSERT(upb_strtable_count(&s->files) == 0);
+  s->disable_closed_enum_checking = true;
+}
+
+bool upb_DefPool_ClosedEnumCheckingDisabled(const upb_DefPool* s) {
+  return s->disable_closed_enum_checking;
+}
+
+void upb_DefPool_DisableImplicitFieldPresence(upb_DefPool* s) {
+  UPB_ASSERT(upb_strtable_count(&s->files) == 0);
+  s->disable_implicit_field_presence = true;
+}
+
+bool upb_DefPool_ImplicitFieldPresenceDisabled(const upb_DefPool* s) {
+  return s->disable_implicit_field_presence;
+}
+
+const google_protobuf_FeatureSetDefaults* upb_DefPool_FeatureSetDefaults(
+    const upb_DefPool* s) {
+  return s->feature_set_defaults;
+}
+
+bool upb_DefPool_SetFeatureSetDefaults(upb_DefPool* s,
+                                       const char* serialized_defaults,
+                                       size_t serialized_len,
+                                       upb_Status* status) {
+  const google_protobuf_FeatureSetDefaults* defaults = google_protobuf_FeatureSetDefaults_parse(
+      serialized_defaults, serialized_len, s->arena);
+  if (!defaults) {
+    upb_Status_SetErrorFormat(status, "Failed to parse defaults");
+    return false;
+  }
+  if (upb_strtable_count(&s->files) > 0) {
+    upb_Status_SetErrorFormat(status,
+                              "Feature set defaults can't be changed once the "
+                              "pool has started building");
+    return false;
+  }
+  int min_edition = google_protobuf_FeatureSetDefaults_minimum_edition(defaults);
+  int max_edition = google_protobuf_FeatureSetDefaults_maximum_edition(defaults);
+  if (min_edition > max_edition) {
+    upb_Status_SetErrorFormat(status, "Invalid edition range %s to %s",
+                              upb_FileDef_EditionName(min_edition),
+                              upb_FileDef_EditionName(max_edition));
+    return false;
+  }
+  size_t size;
+  const google_protobuf_FeatureSetDefaults_FeatureSetEditionDefault* const*
+      default_list = google_protobuf_FeatureSetDefaults_defaults(defaults, &size);
+  int prev_edition = google_protobuf_EDITION_UNKNOWN;
+  for (size_t i = 0; i < size; ++i) {
+    int edition = google_protobuf_FeatureSetDefaults_FeatureSetEditionDefault_edition(
+        default_list[i]);
+    if (edition == google_protobuf_EDITION_UNKNOWN) {
+      upb_Status_SetErrorFormat(status, "Invalid edition UNKNOWN specified");
+      return false;
+    }
+    if (edition <= prev_edition) {
+      upb_Status_SetErrorFormat(status,
+                                "Feature set defaults are not strictly "
+                                "increasing, %s is greater than or equal to %s",
+                                upb_FileDef_EditionName(prev_edition),
+                                upb_FileDef_EditionName(edition));
+      return false;
+    }
+    prev_edition = edition;
+  }
+
+  // Copy the defaults into the pool.
+  s->feature_set_defaults = defaults;
+  return true;
 }
 
 bool _upb_DefPool_InsertExt(upb_DefPool* s, const upb_MiniTableExtension* ext,
@@ -119,7 +230,7 @@ void _upb_DefPool_SetPlatform(upb_DefPool* s, upb_MiniTablePlatform platform) {
 
 const upb_MessageDef* upb_DefPool_FindMessageByName(const upb_DefPool* s,
                                                     const char* sym) {
-  return _upb_DefPool_Unpack(s, sym, strlen(sym), UPB_DEFTYPE_MSG);
+  return upb_DefPool_FindMessageByNameWithSize(s, sym, strlen(sym));
 }
 
 const upb_MessageDef* upb_DefPool_FindMessageByNameWithSize(
@@ -129,12 +240,23 @@ const upb_MessageDef* upb_DefPool_FindMessageByNameWithSize(
 
 const upb_EnumDef* upb_DefPool_FindEnumByName(const upb_DefPool* s,
                                               const char* sym) {
-  return _upb_DefPool_Unpack(s, sym, strlen(sym), UPB_DEFTYPE_ENUM);
+  return upb_DefPool_FindEnumByNameWithSize(s, sym, strlen(sym));
 }
 
-const upb_EnumValueDef* upb_DefPool_FindEnumByNameval(const upb_DefPool* s,
-                                                      const char* sym) {
-  return _upb_DefPool_Unpack(s, sym, strlen(sym), UPB_DEFTYPE_ENUMVAL);
+const upb_EnumDef* upb_DefPool_FindEnumByNameWithSize(const upb_DefPool* s,
+                                                      const char* sym,
+                                                      size_t len) {
+  return _upb_DefPool_Unpack(s, sym, len, UPB_DEFTYPE_ENUM);
+}
+
+const upb_EnumValueDef* upb_DefPool_FindEnumValueByName(const upb_DefPool* s,
+                                                        const char* sym) {
+  return upb_DefPool_FindEnumValueByNameWithSize(s, sym, strlen(sym));
+}
+
+const upb_EnumValueDef* upb_DefPool_FindEnumValueByNameWithSize(
+    const upb_DefPool* s, const char* sym, size_t len) {
+  return _upb_DefPool_Unpack(s, sym, len, UPB_DEFTYPE_ENUMVAL);
 }
 
 const upb_FileDef* upb_DefPool_FindFileByName(const upb_DefPool* s,
@@ -163,9 +285,15 @@ const upb_FieldDef* upb_DefPool_FindExtensionByNameWithSize(
       return _upb_DefType_Unpack(v, UPB_DEFTYPE_FIELD);
     case UPB_DEFTYPE_MSG: {
       const upb_MessageDef* m = _upb_DefType_Unpack(v, UPB_DEFTYPE_MSG);
-      return _upb_MessageDef_InMessageSet(m)
-                 ? upb_MessageDef_NestedExtension(m, 0)
-                 : NULL;
+      if (_upb_MessageDef_InMessageSet(m)) {
+        for (int i = 0; i < upb_MessageDef_NestedExtensionCount(m); i++) {
+          const upb_FieldDef* ext = upb_MessageDef_NestedExtension(m, i);
+          if (upb_FieldDef_MessageSubDef(ext) == m) {
+            return ext;
+          }
+        }
+      }
+      return NULL;
     }
     default:
       break;
@@ -271,7 +399,7 @@ static void remove_filedef(upb_DefPool* s, upb_FileDef* file) {
 
 static const upb_FileDef* upb_DefBuilder_AddFileToPool(
     upb_DefBuilder* const builder, upb_DefPool* const s,
-    const UPB_DESC(FileDescriptorProto) * const file_proto,
+    const google_protobuf_FileDescriptorProto* const file_proto,
     const upb_StringView name, upb_Status* const status) {
   if (UPB_SETJMP(builder->err) != 0) {
     UPB_ASSERT(!upb_Status_IsOk(status));
@@ -279,7 +407,11 @@ static const upb_FileDef* upb_DefBuilder_AddFileToPool(
       remove_filedef(s, builder->file);
       builder->file = NULL;
     }
-  } else if (!builder->arena || !builder->tmp_arena) {
+  } else if (!builder->arena || !builder->tmp_arena ||
+             !upb_strtable_init(&builder->feature_cache, 16,
+                                builder->tmp_arena) ||
+             !(builder->legacy_features =
+                   google_protobuf_FeatureSet_new(builder->tmp_arena))) {
     _upb_DefBuilder_OomErr(builder);
   } else {
     _upb_FileDef_Create(builder, file_proto);
@@ -295,9 +427,9 @@ static const upb_FileDef* upb_DefBuilder_AddFileToPool(
 }
 
 static const upb_FileDef* _upb_DefPool_AddFile(
-    upb_DefPool* s, const UPB_DESC(FileDescriptorProto) * file_proto,
+    upb_DefPool* s, const google_protobuf_FileDescriptorProto* file_proto,
     const upb_MiniTableFile* layout, upb_Status* status) {
-  const upb_StringView name = UPB_DESC(FileDescriptorProto_name)(file_proto);
+  const upb_StringView name = google_protobuf_FileDescriptorProto_name(file_proto);
 
   // Determine whether we already know about this file.
   {
@@ -312,6 +444,8 @@ static const upb_FileDef* _upb_DefPool_AddFile(
 
   upb_DefBuilder ctx = {
       .symtab = s,
+      .tmp_buf = NULL,
+      .tmp_buf_size = 0,
       .layout = layout,
       .platform = s->platform,
       .msg_count = 0,
@@ -326,10 +460,9 @@ static const upb_FileDef* _upb_DefPool_AddFile(
   return upb_DefBuilder_AddFileToPool(&ctx, s, file_proto, name, status);
 }
 
-const upb_FileDef* upb_DefPool_AddFile(upb_DefPool* s,
-                                       const UPB_DESC(FileDescriptorProto) *
-                                           file_proto,
-                                       upb_Status* status) {
+const upb_FileDef* upb_DefPool_AddFile(
+    upb_DefPool* s, const google_protobuf_FileDescriptorProto* file_proto,
+    upb_Status* status) {
   return _upb_DefPool_AddFile(s, file_proto, NULL, status);
 }
 
@@ -338,7 +471,7 @@ bool _upb_DefPool_LoadDefInitEx(upb_DefPool* s, const _upb_DefPool_Init* init,
   /* Since this function should never fail (it would indicate a bug in upb) we
    * print errors to stderr instead of returning error status to the user. */
   _upb_DefPool_Init** deps = init->deps;
-  UPB_DESC(FileDescriptorProto) * file;
+  google_protobuf_FileDescriptorProto* file;
   upb_Arena* arena;
   upb_Status status;
 
@@ -354,7 +487,7 @@ bool _upb_DefPool_LoadDefInitEx(upb_DefPool* s, const _upb_DefPool_Init* init,
     if (!_upb_DefPool_LoadDefInitEx(s, *deps, rebuild_minitable)) goto err;
   }
 
-  file = UPB_DESC(FileDescriptorProto_parse_ex)(
+  file = google_protobuf_FileDescriptorProto_parse_ex(
       init->descriptor.data, init->descriptor.size, NULL,
       kUpb_DecodeOption_AliasString, arena);
   s->bytes_loaded += init->descriptor.size;
@@ -427,7 +560,7 @@ const upb_FieldDef** upb_DefPool_GetAllExtensions(const upb_DefPool* s,
     const upb_FieldDef* f = upb_value_getconstptr(val);
     if (upb_FieldDef_ContainingType(f) == m) n++;
   }
-  const upb_FieldDef** exts = malloc(n * sizeof(*exts));
+  const upb_FieldDef** exts = upb_gmalloc(n * sizeof(*exts));
   iter = UPB_INTTABLE_BEGIN;
   size_t i = 0;
   while (upb_inttable_next(&s->exts, &key, &val, &iter)) {
@@ -440,4 +573,9 @@ const upb_FieldDef** upb_DefPool_GetAllExtensions(const upb_DefPool* s,
 
 bool _upb_DefPool_LoadDefInit(upb_DefPool* s, const _upb_DefPool_Init* init) {
   return _upb_DefPool_LoadDefInitEx(s, init, false);
+}
+
+const upb_ExtensionRegistry* _upb_DefPool_GeneratedExtensionRegistry(
+    const upb_DefPool* s) {
+  return upb_GeneratedRegistry_Get(s->generated_extreg);
 }

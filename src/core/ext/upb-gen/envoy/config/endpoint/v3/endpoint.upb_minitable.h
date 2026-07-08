@@ -3,10 +3,11 @@
  *     envoy/config/endpoint/v3/endpoint.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_ENDPOINT_V3_ENDPOINT_PROTO_UPB_MINITABLE_H_
-#define ENVOY_CONFIG_ENDPOINT_V3_ENDPOINT_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_CONFIG_ENDPOINT_V3_ENDPOINT_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_CONFIG_ENDPOINT_V3_ENDPOINT_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -30,4 +31,4 @@ extern const upb_MiniTableFile envoy_config_endpoint_v3_endpoint_proto_upb_file_
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_ENDPOINT_V3_ENDPOINT_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_CONFIG_ENDPOINT_V3_ENDPOINT_PROTO_UPB_H__UPB_MINITABLE_H_ */

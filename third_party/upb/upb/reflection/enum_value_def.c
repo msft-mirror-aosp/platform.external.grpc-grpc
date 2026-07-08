@@ -7,16 +7,26 @@
 
 #include "upb/reflection/internal/enum_value_def.h"
 
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+#include "upb/base/string_view.h"
+#include "upb/mem/arena.h"
+#include "upb/reflection/def.h"
 #include "upb/reflection/def_type.h"
+#include "upb/reflection/descriptor_bootstrap.h"
+#include "upb/reflection/enum_def.h"
+#include "upb/reflection/enum_value_def.h"
 #include "upb/reflection/internal/def_builder.h"
 #include "upb/reflection/internal/enum_def.h"
-#include "upb/reflection/internal/file_def.h"
 
 // Must be last.
 #include "upb/port/def.inc"
 
 struct upb_EnumValueDef {
-  const UPB_DESC(EnumValueOptions) * opts;
+  UPB_ALIGN_AS(8) const google_protobuf_EnumValueOptions* opts;
+  const google_protobuf_FeatureSet* resolved_features;
   const upb_EnumDef* parent;
   const char* full_name;
   int32_t number;
@@ -33,7 +43,8 @@ static int _upb_EnumValueDef_Compare(const void* p1, const void* p2) {
 }
 
 const upb_EnumValueDef** _upb_EnumValueDefs_Sorted(const upb_EnumValueDef* v,
-                                                   int n, upb_Arena* a) {
+                                                   size_t n, upb_Arena* a) {
+  if (SIZE_MAX / sizeof(void*) < n) return NULL;
   // TODO: Try to replace this arena alloc with a persistent scratch buffer.
   upb_EnumValueDef** out =
       (upb_EnumValueDef**)upb_Arena_Malloc(a, n * sizeof(void*));
@@ -47,13 +58,18 @@ const upb_EnumValueDef** _upb_EnumValueDefs_Sorted(const upb_EnumValueDef* v,
   return (const upb_EnumValueDef**)out;
 }
 
-const UPB_DESC(EnumValueOptions) *
-    upb_EnumValueDef_Options(const upb_EnumValueDef* v) {
+const google_protobuf_EnumValueOptions* upb_EnumValueDef_Options(
+    const upb_EnumValueDef* v) {
   return v->opts;
 }
 
 bool upb_EnumValueDef_HasOptions(const upb_EnumValueDef* v) {
   return v->opts != (void*)kUpbDefOptDefault;
+}
+
+const google_protobuf_FeatureSet* upb_EnumValueDef_ResolvedFeatures(
+    const upb_EnumValueDef* e) {
+  return e->resolved_features;
 }
 
 const upb_EnumDef* upb_EnumValueDef_Enum(const upb_EnumValueDef* v) {
@@ -76,19 +92,21 @@ uint32_t upb_EnumValueDef_Index(const upb_EnumValueDef* v) {
 }
 
 static void create_enumvaldef(upb_DefBuilder* ctx, const char* prefix,
-                              const UPB_DESC(EnumValueDescriptorProto) *
-                                  val_proto,
+                              const google_protobuf_EnumValueDescriptorProto* val_proto,
+                              const google_protobuf_FeatureSet* parent_features,
                               upb_EnumDef* e, upb_EnumValueDef* v) {
-  upb_StringView name = UPB_DESC(EnumValueDescriptorProto_name)(val_proto);
+  UPB_DEF_SET_OPTIONS(v->opts, EnumValueDescriptorProto, EnumValueOptions,
+                      val_proto);
+  v->resolved_features = _upb_DefBuilder_ResolveFeatures(
+      ctx, parent_features, google_protobuf_EnumValueOptions_features(v->opts));
+
+  upb_StringView name = google_protobuf_EnumValueDescriptorProto_name(val_proto);
 
   v->parent = e;  // Must happen prior to _upb_DefBuilder_Add()
   v->full_name = _upb_DefBuilder_MakeFullName(ctx, prefix, name);
-  v->number = UPB_DESC(EnumValueDescriptorProto_number)(val_proto);
+  v->number = google_protobuf_EnumValueDescriptorProto_number(val_proto);
   _upb_DefBuilder_Add(ctx, v->full_name,
                       _upb_DefType_Pack(v, UPB_DEFTYPE_ENUMVAL));
-
-  UPB_DEF_SET_OPTIONS(v->opts, EnumValueDescriptorProto, EnumValueOptions,
-                      val_proto);
 
   bool ok = _upb_EnumDef_Insert(e, v, ctx->arena);
   if (!ok) _upb_DefBuilder_OomErr(ctx);
@@ -97,28 +115,20 @@ static void create_enumvaldef(upb_DefBuilder* ctx, const char* prefix,
 // Allocate and initialize an array of |n| enum value defs owned by |e|.
 upb_EnumValueDef* _upb_EnumValueDefs_New(
     upb_DefBuilder* ctx, const char* prefix, int n,
-    const UPB_DESC(EnumValueDescriptorProto) * const* protos, upb_EnumDef* e,
-    bool* is_sorted) {
+    const google_protobuf_EnumValueDescriptorProto* const* protos,
+    const google_protobuf_FeatureSet* parent_features, upb_EnumDef* e, bool* is_sorted) {
   _upb_DefType_CheckPadding(sizeof(upb_EnumValueDef));
 
-  upb_EnumValueDef* v =
-      _upb_DefBuilder_Alloc(ctx, sizeof(upb_EnumValueDef) * n);
+  upb_EnumValueDef* v = UPB_DEFBUILDER_ALLOCARRAY(ctx, upb_EnumValueDef, n);
 
   *is_sorted = true;
   uint32_t previous = 0;
   for (int i = 0; i < n; i++) {
-    create_enumvaldef(ctx, prefix, protos[i], e, &v[i]);
+    create_enumvaldef(ctx, prefix, protos[i], parent_features, e, &v[i]);
 
     const uint32_t current = v[i].number;
     if (previous > current) *is_sorted = false;
     previous = current;
-  }
-
-  if (upb_FileDef_Syntax(ctx->file) == kUpb_Syntax_Proto3 && n > 0 &&
-      v[0].number != 0) {
-    _upb_DefBuilder_Errf(ctx,
-                         "for proto3, the first enum value must be zero (%s)",
-                         upb_EnumDef_FullName(e));
   }
 
   return v;

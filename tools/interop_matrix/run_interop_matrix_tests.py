@@ -56,9 +56,9 @@ _RELEASES = sorted(
 argp = argparse.ArgumentParser(description="Run interop tests.")
 argp.add_argument("-j", "--jobs", default=multiprocessing.cpu_count(), type=int)
 argp.add_argument(
-    "--gcr_path",
-    default="gcr.io/grpc-testing",
-    help="Path of docker images in Google Container Registry",
+    "--docker_path",
+    default="us-docker.pkg.dev/grpc-testing/testing-images-public",
+    help="Path of docker images",
 )
 argp.add_argument(
     "--release",
@@ -160,7 +160,7 @@ def _read_test_cases_file(lang, runtime, release):
         testcases_file = "%s__master" % lang
 
     # For csharp, the testcases file used depends on the runtime
-    # TODO(jtattermusch): remove this odd specialcase
+    # TODO(jtattermusch): remove this odd special case
     if lang == "csharp" and runtime == "csharpcoreclr":
         testcases_file = testcases_file.replace("csharp_", "csharpcoreclr_")
 
@@ -348,7 +348,9 @@ languages = args.language if args.language != ["all"] else _LANGUAGES
 total_num_failures = 0
 _xml_report_tree = report_utils.new_junit_xml_tree()
 for lang in languages:
-    docker_images = _get_test_images_for_lang(lang, args.release, args.gcr_path)
+    docker_images = _get_test_images_for_lang(
+        lang, args.release, args.docker_path
+    )
     for runtime in sorted(docker_images.keys()):
         total_num_failures += _run_tests_for_lang(
             lang, runtime, docker_images[runtime], _xml_report_tree

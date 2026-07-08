@@ -67,69 +67,6 @@ RUN mkdir /var/local/jenkins
 
 
 #=================
-# Compile CPython 3.6.15 from source
-
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev && apt-get clean
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
-
-RUN cd /tmp && \
-    wget -q https://www.python.org/ftp/python/3.6.15/Python-3.6.15.tgz && \
-    tar xzvf Python-3.6.15.tgz && \
-    cd Python-3.6.15 && \
-    ./configure && \
-    make -j4 && \
-    make install
-
-RUN cd /tmp && \
-    echo "f9e6f91c754a604f4fc6f6c7683723fb Python-3.6.15.tgz" > checksum.md5 && \
-    md5sum -c checksum.md5
-
-RUN python3.6 -m ensurepip && \
-    python3.6 -m pip install coverage
-
-#=================
-# Compile CPython 3.7.13 from source
-
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
-
-RUN cd /tmp && \
-    wget -q https://www.python.org/ftp/python/3.7.13/Python-3.7.13.tgz && \
-    tar xzvf Python-3.7.13.tgz && \
-    cd Python-3.7.13 && \
-    ./configure && \
-    make -j4 && \
-    make install
-
-RUN cd /tmp && \
-    echo "e0d3321026d4a5f3a3890b5d821ad762 Python-3.7.13.tgz" > checksum.md5 && \
-    md5sum -c checksum.md5
-
-RUN python3.7 -m ensurepip && \
-    python3.7 -m pip install coverage
-
-#=================
-# Compile CPython 3.8.13 from source
-
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
-
-RUN cd /tmp && \
-    wget -q https://www.python.org/ftp/python/3.8.13/Python-3.8.13.tgz && \
-    tar xzvf Python-3.8.13.tgz && \
-    cd Python-3.8.13 && \
-    ./configure && \
-    make -j4 && \
-    make install
-
-RUN cd /tmp && \
-    echo "3c49180c6b43df3519849b7e390af0b9 Python-3.8.13.tgz" > checksum.md5 && \
-    md5sum -c checksum.md5
-
-RUN python3.8 -m ensurepip && \
-    python3.8 -m pip install coverage
-
-#=================
 # Compile CPython 3.10.3 from source
 
 RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
@@ -172,6 +109,72 @@ RUN cd /tmp && \
 RUN python3.11 -m ensurepip && \
     python3.11 -m pip install coverage
 
+#=================
+# Compile CPython 3.12.0 from source
+
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+
+RUN cd /tmp && \
+    wget -q https://www.python.org/ftp/python/3.12.0/Python-3.12.0.tgz && \
+    tar xzvf Python-3.12.0.tgz && \
+    cd Python-3.12.0 && \
+    ./configure && \
+    make -j4 && \
+    make install
+
+
+RUN cd /tmp && \
+    echo "d6eda3e1399cef5dfde7c4f319b0596c  Python-3.12.0.tgz" > checksum.md5 && \
+    md5sum -c checksum.md5
+
+RUN python3.12 -m ensurepip && \
+    python3.12 -m pip install coverage
+
+#=================
+# Compile CPython 3.13.0rc2 from source
+
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+
+RUN cd /tmp && \
+    wget -q https://www.python.org/ftp/python/3.13.0/Python-3.13.0rc2.tgz && \
+    tar xzvf Python-3.13.0rc2.tgz && \
+    cd Python-3.13.0rc2 && \
+    ./configure && \
+    make -j4 && \
+    make install
+
+
+RUN cd /tmp && \
+    echo "ad7f44153649e27ec385e7633e853e03  Python-3.13.0rc2.tgz" > checksum.md5 && \
+    md5sum -c checksum.md5
+
+RUN python3.13 -m ensurepip && \
+    python3.13 -m pip install coverage
+
+#=================
+# Compile CPython 3.14.0rc1 from source
+
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+
+RUN cd /tmp && \
+    wget -q https://www.python.org/ftp/python/3.14.0/Python-3.14.0rc1.tgz && \
+    tar xzvf Python-3.14.0rc1.tgz && \
+    cd Python-3.14.0rc1 && \
+    ./configure && \
+    make -j4 && \
+    make install
+
+
+RUN cd /tmp && \
+    echo "11fba5eb7576c1889498af3f8555ed2d  Python-3.14.0rc1.tgz" > checksum.md5 && \
+    md5sum -c checksum.md5
+
+RUN python3.14 -m ensurepip && \
+    python3.14 -m pip install coverage
+
 
 # Python test coverage requires libsqlite3, and it have
 # to be installed before Python.
@@ -202,12 +205,13 @@ RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
-RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.7.5/ccache-4.7.5.tar.gz \
+RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
     && tar -zxf ccache.tar.gz \
-    && cd ccache-4.7.5 \
+    && cd ccache-4.11.3 \
     && mkdir build && cd build \
     && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
     && make -j4 && make install \
     && cd ../.. \
-    && rm -rf ccache-4.7.5 ccache.tar.gz
+    && rm -rf ccache-4.11.3 ccache.tar.gz
+
 

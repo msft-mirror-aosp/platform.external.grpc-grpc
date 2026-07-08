@@ -3,7 +3,8 @@
  *     envoy/config/core/v3/udp_socket_config.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -15,26 +16,27 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_config_core_v3_UdpSocketConfig_submsgs[2] = {
-  {.submsg = &google__protobuf__UInt64Value_msg_init},
-  {.submsg = &google__protobuf__BoolValue_msg_init},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[2];
+  upb_MiniTableSubInternal subs[2];
+} envoy__config__core__v3__UdpSocketConfig_msg_init_Fields;
 
-static const upb_MiniTableField envoy_config_core_v3_UdpSocketConfig__fields[2] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(8, 16), 2, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const envoy__config__core__v3__UdpSocketConfig_msg_init_Fields envoy_config_core_v3_UdpSocketConfig__fields = {{
+  {1, UPB_SIZE(12, 16), 64, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), 65, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt64Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+}};
 
 const upb_MiniTable envoy__config__core__v3__UdpSocketConfig_msg_init = {
-  &envoy_config_core_v3_UdpSocketConfig_submsgs[0],
-  &envoy_config_core_v3_UdpSocketConfig__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800000100000a, &upb_psm_1bt_maxmaxb},
-    {0x0010000002010012, &upb_psm_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
+  &envoy_config_core_v3_UdpSocketConfig__fields.fields[0],
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.UdpSocketConfig",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[1] = {

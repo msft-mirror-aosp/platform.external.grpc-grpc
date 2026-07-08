@@ -12,25 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "test/cpp/util/windows/manifest_file.h"
+
+#include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINDOWS
 
 #include <Windows.h>
 
 #include <fstream>
+#include <memory>
 #include <string>
 #include <vector>
 
+#include "src/core/util/crash.h"
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
-
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/crash.h"
 
 namespace grpc {
 namespace testing {
@@ -57,7 +56,7 @@ std::string ManifestFile::Get(const std::string& key) {
     std::getline(filestream_, line);
     if (!line.empty()) {
       std::vector<std::string> kv = absl::StrSplit(line, " ");
-      GPR_ASSERT(kv.size() == 2);
+      CHECK_EQ(kv.size(), 2u);
       cache_.emplace(kv[0], kv[1]);
       if (kv[0] == key) {
         return kv[1];

@@ -3,7 +3,8 @@
  *     envoy/config/core/v3/resolver.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -15,43 +16,50 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableField envoy_config_core_v3_DnsResolverOptions__fields[2] = {
-  {1, 0, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  {2, 1, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[2];
+} envoy__config__core__v3__DnsResolverOptions_msg_init_Fields;
+
+static const envoy__config__core__v3__DnsResolverOptions_msg_init_Fields envoy_config_core_v3_DnsResolverOptions__fields = {{
+  {1, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {2, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+}};
 
 const upb_MiniTable envoy__config__core__v3__DnsResolverOptions_msg_init = {
-  NULL,
-  &envoy_config_core_v3_DnsResolverOptions__fields[0],
-  8, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  &envoy_config_core_v3_DnsResolverOptions__fields.fields[0],
+  16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.DnsResolverOptions",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000000003f000008, &upb_psb1_1bt},
-    {0x000100003f000010, &upb_psb1_1bt},
+    {0x000800003f000008, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
+    {0x000900003f000010, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_DnsResolutionConfig_submsgs[2] = {
-  {.submsg = &envoy__config__core__v3__Address_msg_init},
-  {.submsg = &envoy__config__core__v3__DnsResolverOptions_msg_init},
-};
+typedef struct {
+  upb_MiniTableField fields[2];
+  upb_MiniTableSubInternal subs[2];
+} envoy__config__core__v3__DnsResolutionConfig_msg_init_Fields;
 
-static const upb_MiniTableField envoy_config_core_v3_DnsResolutionConfig__fields[2] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(8, 16), 1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const envoy__config__core__v3__DnsResolutionConfig_msg_init_Fields envoy_config_core_v3_DnsResolutionConfig__fields = {{
+  {1, UPB_SIZE(12, 16), 0, 6, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), 64, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DnsResolverOptions_msg_init},
+}};
 
 const upb_MiniTable envoy__config__core__v3__DnsResolutionConfig_msg_init = {
-  &envoy_config_core_v3_DnsResolutionConfig_submsgs[0],
-  &envoy_config_core_v3_DnsResolutionConfig__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_maxmaxb},
-    {0x0010000001010012, &upb_psm_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
+  &envoy_config_core_v3_DnsResolutionConfig__fields.fields[0],
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.DnsResolutionConfig",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[2] = {

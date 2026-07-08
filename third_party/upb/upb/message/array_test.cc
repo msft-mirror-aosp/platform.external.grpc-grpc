@@ -1,32 +1,9 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2023 Google LLC.  All rights reserved.
-// https://developers.google.com/protocol-buffers/
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google LLC nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 #include "upb/message/array.h"
 
@@ -63,4 +40,63 @@ TEST(ArrayTest, Resize) {
   EXPECT_EQ(upb_Array_Get(array, 3).int32_val, 9);
   EXPECT_EQ(upb_Array_Get(array, 4).int32_val, 0);
   EXPECT_EQ(upb_Array_Get(array, 5).int32_val, 0);
+}
+
+TEST(ArrayTest, Copy) {
+  upb::Arena arena;
+  upb_Array* src = upb_Array_New(arena.ptr(), kUpb_CType_Int32);
+  for (int i = 0; i < 5; i++) {
+    upb_MessageValue mv;
+    mv.int32_val = i;
+    upb_Array_Append(src, mv, arena.ptr());
+  }
+
+  upb_Array* dst = upb_Array_New(arena.ptr(), kUpb_CType_Int32);
+  EXPECT_TRUE(upb_Array_Copy(dst, src, arena.ptr()));
+  EXPECT_EQ(upb_Array_Size(dst), 5);
+  for (int i = 0; i < 5; i++) {
+    EXPECT_EQ(upb_Array_Get(dst, i).int32_val, i);
+  }
+
+  // Copy empty array
+  upb_Array* empty_src = upb_Array_New(arena.ptr(), kUpb_CType_Int32);
+  EXPECT_TRUE(upb_Array_Copy(dst, empty_src, arena.ptr()));
+  EXPECT_EQ(upb_Array_Size(dst), 0);
+}
+
+TEST(ArrayTest, AppendAll) {
+  upb::Arena arena;
+  upb_Array* dst = upb_Array_New(arena.ptr(), kUpb_CType_Int32);
+  for (int i = 0; i < 3; i++) {
+    upb_MessageValue mv;
+    mv.int32_val = i;
+    upb_Array_Append(dst, mv, arena.ptr());
+  }
+
+  upb_Array* src = upb_Array_New(arena.ptr(), kUpb_CType_Int32);
+  for (int i = 0; i < 3; i++) {
+    upb_MessageValue mv;
+    mv.int32_val = i + 10;
+    upb_Array_Append(src, mv, arena.ptr());
+  }
+
+  EXPECT_TRUE(upb_Array_AppendAll(dst, src, arena.ptr()));
+  EXPECT_EQ(upb_Array_Size(dst), 6);
+  EXPECT_EQ(upb_Array_Get(dst, 0).int32_val, 0);
+  EXPECT_EQ(upb_Array_Get(dst, 1).int32_val, 1);
+  EXPECT_EQ(upb_Array_Get(dst, 2).int32_val, 2);
+  EXPECT_EQ(upb_Array_Get(dst, 3).int32_val, 10);
+  EXPECT_EQ(upb_Array_Get(dst, 4).int32_val, 11);
+  EXPECT_EQ(upb_Array_Get(dst, 5).int32_val, 12);
+
+  // Append empty array
+  upb_Array* empty_src = upb_Array_New(arena.ptr(), kUpb_CType_Int32);
+  EXPECT_TRUE(upb_Array_AppendAll(dst, empty_src, arena.ptr()));
+  EXPECT_EQ(upb_Array_Size(dst), 6);
+
+  // Append to empty array
+  upb_Array* empty_dst = upb_Array_New(arena.ptr(), kUpb_CType_Int32);
+  EXPECT_TRUE(upb_Array_AppendAll(empty_dst, src, arena.ptr()));
+  EXPECT_EQ(upb_Array_Size(empty_dst), 3);
+  EXPECT_EQ(upb_Array_Get(empty_dst, 0).int32_val, 10);
 }

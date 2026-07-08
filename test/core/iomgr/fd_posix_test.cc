@@ -16,10 +16,9 @@
 //
 //
 
-#include <gtest/gtest.h>
-
 #include "src/core/lib/iomgr/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_EV
@@ -27,6 +26,10 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <netinet/in.h>
 #include <poll.h>
 #include <stdio.h>
@@ -36,19 +39,12 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "absl/strings/str_format.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/lib/event_engine/shim.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/ev_posix.h"
-#include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/util/strerror.h"
+#include "absl/log/log.h"
 
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;
@@ -164,8 +160,7 @@ static void session_read_cb(void* arg,  // session
       // before notify_on_read is called.
       grpc_fd_notify_on_read(se->em_fd, &se->session_read_closure);
     } else {
-      grpc_core::Crash(absl::StrFormat("Unhandled read error %s",
-                                       grpc_core::StrError(errno).c_str()));
+      LOG(FATAL) << "Unhandled read error " << grpc_core::StrError(errno);
     }
   }
 }
@@ -330,8 +325,7 @@ static void client_session_write(void* arg,  // client
     }
     gpr_mu_unlock(g_mu);
   } else {
-    grpc_core::Crash(absl::StrFormat("unknown errno %s",
-                                     grpc_core::StrError(errno).c_str()));
+    LOG(FATAL) << "unknown errno " << grpc_core::StrError(errno).c_str();
   }
 }
 
@@ -348,12 +342,10 @@ static void client_start(client* cl, int port) {
       pfd.events = POLLOUT;
       pfd.revents = 0;
       if (poll(&pfd, 1, -1) == -1) {
-        gpr_log(GPR_ERROR, "poll() failed during connect; errno=%d", errno);
-        abort();
+        LOG(FATAL) << "poll() failed during connect; errno=" << errno;
       }
     } else {
-      grpc_core::Crash(
-          absl::StrFormat("Failed to connect to the server (errno=%d)", errno));
+      LOG(FATAL) << "Failed to connect to the server (errno=" << errno << ")";
     }
   }
 
@@ -396,7 +388,7 @@ static void test_grpc_fd(void) {
   client_wait_and_shutdown(&cl);
   server_wait_and_shutdown(&sv);
   ASSERT_EQ(sv.read_bytes_total, cl.write_bytes_total);
-  gpr_log(GPR_INFO, "Total read bytes %" PRIdPTR, sv.read_bytes_total);
+  LOG(INFO) << "Total read bytes " << sv.read_bytes_total;
 }
 
 typedef struct fd_change_data {
@@ -518,8 +510,19 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
 }
 
 TEST(FdPosixTest, MainTest) {
+  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled() &&
+      !grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
+    GTEST_SKIP() << "The event_engine_for_all_other_endpoints experiment is "
+                    "enabled, which replaces iomgr grpc_fds with minimal "
+                    "implementations. The full iomgr API is not supported, so "
+                    "this test needs to be disabled.";
+  }
   grpc_closure destroyed;
   grpc_init();
+  if (grpc_core::IsPollsetAlternativeEnabled()) {
+    GTEST_SKIP() << "Skipping test since we're using pollset alternative";
+  }
   {
     grpc_core::ExecCtx exec_ctx;
     g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));

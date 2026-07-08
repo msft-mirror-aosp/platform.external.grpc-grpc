@@ -17,23 +17,20 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/status/status.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/trace.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 
 // Apply a (possibly async) mapping function to src, and output into dst.
 //
-// In psuedo-code:
+// In pseudo-code:
 // for each element in wait_for src.Next:
 //   x = wait_for filter_factory(element)
 //   wait_for dst.Push(x)
@@ -46,16 +43,12 @@ auto MapPipe(PipeReceiver<T> src, PipeSender<T> dst, Filter filter_factory) {
        dst = std::move(dst)](T t) mutable {
         return TrySeq(
             [] {
-              if (grpc_trace_promise_primitives.enabled()) {
-                gpr_log(GPR_DEBUG, "MapPipe: start map");
-              }
+              GRPC_TRACE_VLOG(promise_primitives, 2) << "MapPipe: start map";
               return Empty{};
             },
             filter_factory.Make(std::move(t)),
             [&dst](T t) {
-              if (grpc_trace_promise_primitives.enabled()) {
-                gpr_log(GPR_DEBUG, "MapPipe: start push");
-              }
+              GRPC_TRACE_VLOG(promise_primitives, 2) << "MapPipe: start push";
               return Map(dst.Push(std::move(t)), [](bool successful_push) {
                 if (successful_push) {
                   return absl::OkStatus();
@@ -66,7 +59,7 @@ auto MapPipe(PipeReceiver<T> src, PipeSender<T> dst, Filter filter_factory) {
       });
 }
 
-// Helper to intecept a pipe and apply a mapping function.
+// Helper to intercept a pipe and apply a mapping function.
 // Each of the `Intercept` constructors will take a PipeSender or PipeReceiver,
 // construct a new pipe, and then replace the passed in pipe with its new end.
 // In this way it can interject logic per-element.

@@ -16,25 +16,33 @@
 //
 //
 
-#include <memory>
-
-#include "gtest/gtest.h"
-
 #include <grpc/status.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include <memory>
+#include <optional>
+#include <string>
+#include <vector>
+
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(CoreEnd2endTest, SimpleMetadata) {
+using ::testing::ElementsAre;
+
+CORE_END2END_TEST(CoreEnd2endTests, SimpleMetadata) {
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
   c.NewBatch(1)
-      .SendInitialMetadata({{"key1", "val1"}, {"key2", "val2"}})
+      .SendInitialMetadata({{"key1", "val1"},
+                            {"key2", "val2"},
+                            {"tracestate", "congo=1234,rojo=5678"},
+                            {"tracestate", "gato=abc"}})
       .SendMessage("hello world")
       .SendCloseFromClient()
       .RecvInitialMetadata(server_initial_metadata)
@@ -43,13 +51,13 @@ CORE_END2END_TEST(CoreEnd2endTest, SimpleMetadata) {
   auto s = RequestCall(101);
   Expect(101, true);
   Step();
-  CoreEnd2endTest::IncomingMessage client_message;
+  IncomingMessage client_message;
   s.NewBatch(102)
       .SendInitialMetadata({{"key3", "val3"}, {"key4", "val4"}})
       .RecvMessage(client_message);
   Expect(102, true);
   Step();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(103)
       .RecvCloseOnServer(client_close)
       .SendMessage("hello you")
@@ -59,17 +67,27 @@ CORE_END2END_TEST(CoreEnd2endTest, SimpleMetadata) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(server_message.payload(), "hello you");
   EXPECT_EQ(client_message.payload(), "hello world");
   EXPECT_EQ(s.GetInitialMetadata("key1"), "val1");
   EXPECT_EQ(s.GetInitialMetadata("key2"), "val2");
+  std::optional<std::vector<std::string>> tracestates =
+      s.GetRepeatedInitialMetadata("tracestate");
+  ASSERT_TRUE(tracestates.has_value());
+  EXPECT_THAT(*tracestates, ElementsAre("congo=1234,rojo=5678", "gato=abc"));
   EXPECT_EQ(server_initial_metadata.Get("key3"), "val3");
   EXPECT_EQ(server_initial_metadata.Get("key4"), "val4");
   EXPECT_EQ(server_status.GetTrailingMetadata("key5"), "val5");
   EXPECT_EQ(server_status.GetTrailingMetadata("key6"), "val6");
+}
+
+TEST(Fuzzers, CoreEnd2endTestsSimpleMetadataRegression1) {
+  CoreEnd2endTests_SimpleMetadata(
+      CoreTestConfigurationNamed("ChaoticGoodOneByteChunk"),
+      ParseTestProto(R"pb(config_vars { trace: "promise_primitives" })pb"));
 }
 
 }  // namespace

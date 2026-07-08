@@ -3,21 +3,22 @@
  *     envoy/admin/v3/clusters.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_ADMIN_V3_CLUSTERS_PROTO_UPBDEFS_H_
-#define ENVOY_ADMIN_V3_CLUSTERS_PROTO_UPBDEFS_H_
+
+
+#ifndef ENVOY_ADMIN_V3_CLUSTERS_PROTO_UPB_H__UPBDEFS_H_
+#define ENVOY_ADMIN_V3_CLUSTERS_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
+
 #include "upb/port/def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "upb/reflection/def.h"
-
-#include "upb/port/def.inc"
 
 extern _upb_DefPool_Init envoy_admin_v3_clusters_proto_upbdefinit;
 
@@ -41,10 +42,11 @@ UPB_INLINE const upb_MessageDef *envoy_admin_v3_HostHealthStatus_getmsgdef(upb_D
   return upb_DefPool_FindMessageByName(s, "envoy.admin.v3.HostHealthStatus");
 }
 
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_ADMIN_V3_CLUSTERS_PROTO_UPBDEFS_H_ */
+#endif  /* ENVOY_ADMIN_V3_CLUSTERS_PROTO_UPB_H__UPBDEFS_H_ */

@@ -3,10 +3,11 @@
  *     envoy/service/discovery/v3/ads.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_SERVICE_DISCOVERY_V3_ADS_PROTO_UPB_MINITABLE_H_
-#define ENVOY_SERVICE_DISCOVERY_V3_ADS_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_SERVICE_DISCOVERY_V3_ADS_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_SERVICE_DISCOVERY_V3_ADS_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -27,4 +28,4 @@ extern const upb_MiniTableFile envoy_service_discovery_v3_ads_proto_upb_file_lay
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_SERVICE_DISCOVERY_V3_ADS_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_SERVICE_DISCOVERY_V3_ADS_PROTO_UPB_H__UPB_MINITABLE_H_ */

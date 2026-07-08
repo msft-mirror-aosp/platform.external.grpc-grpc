@@ -20,6 +20,13 @@
 
 #include "rb_server.h"
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/log.h>
+#include <stdbool.h>
+
 #include "rb_byte_buffer.h"
 #include "rb_call.h"
 #include "rb_channel_args.h"
@@ -28,11 +35,6 @@
 #include "rb_grpc_imports.generated.h"
 #include "rb_server_credentials.h"
 #include "rb_xds_server_credentials.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 
 /* grpc_rb_cServer is the ruby class that proxies grpc_server. */
 static VALUE grpc_rb_cServer = Qnil;
@@ -60,16 +62,19 @@ static void grpc_rb_server_maybe_shutdown_and_notify(grpc_rb_server* server,
     server->shutdown_and_notify_done = 1;
     if (server->wrapped != NULL) {
       grpc_server_shutdown_and_notify(server->wrapped, server->queue, tag);
-      ev = rb_completion_queue_pluck(server->queue, tag, deadline, NULL);
+      ev = rb_completion_queue_pluck(
+          server->queue, tag, deadline,
+          "grpc_server_shutdown_and_notify first try");
       if (ev.type == GRPC_QUEUE_TIMEOUT) {
         grpc_server_cancel_all_calls(server->wrapped);
         ev = rb_completion_queue_pluck(
-            server->queue, tag, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+            server->queue, tag, gpr_inf_future(GPR_CLOCK_REALTIME),
+            "grpc_server_shutdown_and_notify second try");
       }
       if (ev.type != GRPC_OP_COMPLETE) {
-        gpr_log(GPR_INFO,
-                "GRPC_RUBY: bad grpc_server_shutdown_and_notify result:%d",
-                ev.type);
+        grpc_absl_log_int(
+            GPR_DEBUG,
+            "GRPC_RUBY: bad grpc_server_shutdown_and_notify result: ", ev.type);
       }
     }
   }
@@ -89,19 +94,15 @@ static void grpc_rb_server_maybe_destroy(grpc_rb_server* server) {
 }
 
 static void grpc_rb_server_free_internal(void* p) {
-  grpc_rb_server* svr = NULL;
-  gpr_timespec deadline;
   if (p == NULL) {
     return;
   };
-  svr = (grpc_rb_server*)p;
-
-  deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                          gpr_time_from_seconds(2, GPR_TIMESPAN));
-
-  grpc_rb_server_maybe_shutdown_and_notify(svr, deadline);
-  grpc_rb_server_maybe_destroy(svr);
-
+  grpc_rb_server* server = (grpc_rb_server*)p;
+  // Shutdown the server first if we haven't already
+  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                       gpr_time_from_seconds(2, GPR_TIMESPAN));
+  grpc_rb_server_maybe_shutdown_and_notify(server, deadline);
+  grpc_rb_server_maybe_destroy(server);
   xfree(p);
 }
 
@@ -213,8 +214,9 @@ static VALUE grpc_rb_server_request_call_try(VALUE value_args) {
              grpc_call_error_detail_of(err), err);
   }
 
-  grpc_event ev = rb_completion_queue_pluck(
-      args->server->queue, tag, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  grpc_event ev = rb_completion_queue_pluck(args->server->queue, tag,
+                                            gpr_inf_future(GPR_CLOCK_REALTIME),
+                                            "server request call");
   if (!ev.success) {
     rb_raise(grpc_rb_eCallError, "request_call completion failed");
   }

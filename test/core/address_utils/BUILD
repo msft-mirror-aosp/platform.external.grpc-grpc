@@ -13,12 +13,16 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
 grpc_package(
     name = "test/core/address_utils",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "private",
 )
 
@@ -26,13 +30,22 @@ grpc_cc_test(
     name = "sockaddr_utils_test",
     srcs = ["sockaddr_utils_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//:parse_address",
+        "//:sockaddr_utils",
+        "//src/core:grpc_check",
+        "//src/core:grpc_sockaddr",
+        "//src/core:iomgr_port",
+        "//src/core:resolved_address",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -40,41 +53,60 @@ grpc_cc_test(
     name = "parse_address_test",
     srcs = ["parse_address_test.cc"],
     external_deps = [
+        "absl/log:log",
         "absl/strings",
         "gtest",
+        "absl/status",
     ],
-    language = "C++",
     deps = [
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//:parse_address",
+        "//src/core:grpc_sockaddr",
+        "//src/core:iomgr_port",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
-grpc_fuzzer(
+grpc_fuzz_test(
     name = "sockaddr_utils_fuzzer_test",
     srcs = ["sockaddr_utils_fuzzer_test.cc"],
-    corpus = "sockaddr_uri_corpus",
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+        "absl/status:statusor",
+    ],
     tags = ["no_windows"],
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//:iomgr",
+        "//:sockaddr_utils",
+        "//:uri",
+        "//src/core:grpc_check",
+        "//src/core:resolved_address",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "parse_address_with_named_scope_id_test",
     srcs = ["parse_address_with_named_scope_id_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    tags = ["no_windows"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
+    tags = [
+        # Invalid interface name: 'lo'.
+        "grpc:fails-internally",
+        "no_windows",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

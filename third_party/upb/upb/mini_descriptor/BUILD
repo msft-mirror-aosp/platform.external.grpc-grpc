@@ -1,8 +1,13 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load(
-    "//bazel:build_defs.bzl",
+    "//upb/bazel:copts.bzl",
     "UPB_DEFAULT_COPTS",
     "UPB_DEFAULT_CPPOPTS",
+    "UPB_DEFAULT_FEATURES",
 )
+
+package(default_applicable_licenses = ["//:license"])
 
 cc_library(
     name = "mini_descriptor",
@@ -17,15 +22,24 @@ cc_library(
         "link.h",
     ],
     copts = UPB_DEFAULT_COPTS,
+    features = UPB_DEFAULT_FEATURES,
     visibility = ["//visibility:public"],
     deps = [
         ":internal",
-        "//upb:base",
-        "//upb:mem",
-        "//upb:mini_table",
-        "//upb:mini_table_internal",
-        "//upb:port",
-    ],
+        "//upb/base",
+        "//upb/base:internal",
+        "//upb/mem",
+        "//upb/message:types",
+        "//upb/mini_table",
+        "//upb/mini_table:internal",
+        "//upb/port",
+    ] + select({
+        "//upb:fasttable_enabled_setting": [
+            "//upb/wire/decode_fast:function_array",
+            "//upb/wire/decode_fast:select",
+        ],
+        "//conditions:default": [],
+    }),
 )
 
 cc_library(
@@ -43,11 +57,12 @@ cc_library(
         "internal/wire_constants.h",
     ],
     copts = UPB_DEFAULT_COPTS,
+    features = UPB_DEFAULT_FEATURES,
     visibility = ["//visibility:public"],
     deps = [
-        "//upb:base",
-        "//upb:base_internal",
-        "//upb:port",
+        "//upb/base",
+        "//upb/base:internal",
+        "//upb/port",
     ],
 )
 
@@ -55,21 +70,24 @@ cc_test(
     name = "encode_test",
     srcs = ["internal/encode_test.cc"],
     copts = UPB_DEFAULT_CPPOPTS,
+    features = UPB_DEFAULT_FEATURES,
     deps = [
         ":internal",
         ":mini_descriptor",
-        "//:protobuf",
-        "@com_google_googletest//:gtest_main",
-        "//upb:base",
-        "//upb:mem",
-        "//upb:message_accessors_internal",
-        "//upb:mini_table",
-        "//upb:wire",
-        "@com_google_absl//absl/container:flat_hash_set",
+        "//src/google/protobuf",
+        "//upb/base",
+        "//upb/mem",
+        "//upb/message",
+        "//upb/message:internal",
+        "//upb/mini_table",
+        "//upb/port",
+        "//upb/wire",
+        "@abseil-cpp//absl/container:flat_hash_set",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
-# begin:github_only
 filegroup(
     name = "source_files",
     srcs = glob(
@@ -79,8 +97,17 @@ filegroup(
         ],
     ),
     visibility = [
-        "//upb/cmake:__pkg__",
         "//python/dist:__pkg__",
-    ]
+        "//upb/cmake:__pkg__",
+    ],
 )
-# end:github_only
+
+filegroup(
+    name = "test_srcs",
+    srcs = glob(
+        [
+            "**/*test.cc",
+        ],
+    ),
+    visibility = ["//upb:__pkg__"],
+)

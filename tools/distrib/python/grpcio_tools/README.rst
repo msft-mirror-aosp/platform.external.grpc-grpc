@@ -10,7 +10,7 @@ Python >= 3.6
 Installation
 ------------
 
-The gRPC Python tools package is available for Linux, Mac OS X, and Windows.
+The gRPC Python tools package is available for Linux, macOS, and Windows.
 
 Installing From PyPI
 ~~~~~~~~~~~~~~~~~~~~
@@ -37,7 +37,7 @@ when you installed Python (if not go back and install it!) then invoke:
 Windows users may need to invoke :code:`pip.exe` from a command line ran as
 administrator.
 
-n.b. On Windows and on Mac OS X one *must* have a recent release of :code:`pip`
+n.b. On Windows and on macOS one *must* have a recent release of :code:`pip`
 to retrieve the proper wheel from PyPI. Be sure to upgrade to the latest
 version!
 
@@ -74,32 +74,6 @@ Troubleshooting
 ~~~~~~~~~~~~~~~
 
 Help, I ...
-
-* **... see a** :code:`pkg_resources.VersionConflict` **when I try to install
-  grpc**
-
-  This is likely because :code:`pip` doesn't own the offending dependency,
-  which in turn is likely because your operating system's package manager owns
-  it. You'll need to force the installation of the dependency:
-
-  :code:`pip install --ignore-installed $OFFENDING_DEPENDENCY`
-
-  For example, if you get an error like the following:
-
-  ::
-
-    Traceback (most recent call last):
-    File "<string>", line 17, in <module>
-     ...
-    File "/usr/lib/python2.7/dist-packages/pkg_resources.py", line 509, in find
-      raise VersionConflict(dist, req)
-    pkg_resources.VersionConflict: (six 1.8.0 (/usr/lib/python2.7/dist-packages), Requirement.parse('six>=1.10'))
-
-  You can fix it by doing:
-
-  ::
-
-    sudo pip install --ignore-installed six
 
 * **... see compiler errors on some platforms when either installing from source or from the source distribution**
 

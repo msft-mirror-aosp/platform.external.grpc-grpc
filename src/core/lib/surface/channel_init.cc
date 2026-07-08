@@ -16,46 +16,71 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/surface/channel_init.h"
 
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <algorithm>
 #include <map>
+#include <optional>
+#include <queue>
 #include <set>
 #include <string>
 #include <type_traits>
+#include <vector>
 
+#include "src/core/channelz/channelz.h"
+#include "src/core/channelz/property_list.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/unique_type_name.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/support/log.h>
-
-#include "src/core/lib/channel/channel_stack_trace.h"
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/surface/channel_stack_type.h"
 
 namespace grpc_core {
 
-const char* (*NameFromChannelFilter)(const grpc_channel_filter*);
+UniqueTypeName (*NameFromChannelFilter)(const grpc_channel_filter*);
 
 namespace {
 struct CompareChannelFiltersByName {
-  bool operator()(const grpc_channel_filter* a,
-                  const grpc_channel_filter* b) const {
-    return strcmp(NameFromChannelFilter(a), NameFromChannelFilter(b)) < 0;
+  bool operator()(UniqueTypeName a, UniqueTypeName b) const {
+    // Compare lexicographically instead of by pointer value so that different
+    // builds make the same choices.
+    return a.name() < b.name();
   }
 };
+
+struct CompareFusedChannelFiltersByName {
+  bool operator()(ChannelInit::FilterRegistration* a,
+                  ChannelInit::FilterRegistration* b) const {
+    // Sort by descending order based on number of filters contained in the
+    // FusedFilter.
+    int num_filters_a =
+        std::count(a->name().name().begin(), a->name().name().end(), '+') + 1;
+    int num_filters_b =
+        std::count(b->name().name().begin(), b->name().name().end(), '+') + 1;
+    if (num_filters_a == num_filters_b) {
+      return a->name().name() > b->name().name();
+    }
+    return num_filters_a > num_filters_b;
+  }
+};
+
+struct Node {
+  const grpc_channel_filter* filter;
+  int next;
+};
+
 }  // namespace
 
 ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::After(
-    std::initializer_list<const grpc_channel_filter*> filters) {
+    std::initializer_list<UniqueTypeName> filters) {
   for (auto filter : filters) {
     after_.push_back(filter);
   }
@@ -63,7 +88,7 @@ ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::After(
 }
 
 ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::Before(
-    std::initializer_list<const grpc_channel_filter*> filters) {
+    std::initializer_list<UniqueTypeName> filters) {
   for (auto filter : filters) {
     before_.push_back(filter);
   }
@@ -103,89 +128,247 @@ ChannelInit::FilterRegistration::ExcludeFromMinimalStack() {
 }
 
 ChannelInit::FilterRegistration& ChannelInit::Builder::RegisterFilter(
-    grpc_channel_stack_type type, const grpc_channel_filter* filter,
+    grpc_channel_stack_type type, UniqueTypeName name,
+    const grpc_channel_filter* filter, FilterAdder filter_adder,
     SourceLocation registration_source) {
-  filters_[type].emplace_back(
-      std::make_unique<FilterRegistration>(filter, registration_source));
+  filters_[type].emplace_back(std::make_unique<FilterRegistration>(
+      name, filter, filter_adder, registration_source));
   return *filters_[type].back();
 }
 
-ChannelInit::StackConfig ChannelInit::BuildStackConfig(
+void ChannelInit::Builder::RegisterFusedFilter(
+    grpc_channel_stack_type type, UniqueTypeName name,
+    const grpc_channel_filter* filter, FilterAdder filter_adder,
+    SourceLocation registration_source) {
+  fused_filters_[type].emplace_back(std::make_unique<FilterRegistration>(
+      name, filter, filter_adder, registration_source));
+}
+
+class ChannelInit::DependencyTracker {
+ public:
+  // Declare that a filter exists.
+  void Declare(FilterRegistration* registration) {
+    nodes_.emplace(registration->name_, registration);
+  }
+  // Insert an edge from a to b
+  // Both nodes must be declared.
+  void InsertEdge(UniqueTypeName a, UniqueTypeName b) {
+    auto it_a = nodes_.find(a);
+    auto it_b = nodes_.find(b);
+    if (it_a == nodes_.end()) {
+      GRPC_TRACE_LOG(channel_stack, INFO)
+          << "gRPC Filter " << a.name()
+          << " was not declared before adding an edge to " << b.name();
+      return;
+    }
+    if (it_b == nodes_.end()) {
+      GRPC_TRACE_LOG(channel_stack, INFO)
+          << "gRPC Filter " << b.name()
+          << " was not declared before adding an edge from " << a.name();
+      return;
+    }
+    auto& node_a = it_a->second;
+    auto& node_b = it_b->second;
+    node_a.dependents.push_back(&node_b);
+    node_b.all_dependencies.push_back(a);
+    ++node_b.waiting_dependencies;
+  }
+
+  // Finish the dependency graph and begin iteration.
+  void FinishDependencyMap() {
+    for (auto& p : nodes_) {
+      if (p.second.waiting_dependencies == 0) {
+        ready_dependencies_.emplace(&p.second);
+      }
+    }
+  }
+
+  FilterRegistration* Next() {
+    if (ready_dependencies_.empty()) {
+      GRPC_CHECK_EQ(nodes_taken_, nodes_.size())
+          << "Unresolvable graph of channel filters :\n " << GraphString();
+      return nullptr;
+    }
+    auto next = ready_dependencies_.top();
+    ready_dependencies_.pop();
+    if (!ready_dependencies_.empty() &&
+        next.node->ordering() != Ordering::kDefault) {
+      // Constraint: if we use ordering other than default, then we must have an
+      // unambiguous pick. If there is ambiguity, we must fix it by adding
+      // explicit ordering constraints.
+      GRPC_CHECK_NE(next.node->ordering(),
+                    ready_dependencies_.top().node->ordering())
+          << "Ambiguous ordering between " << next.node->name() << " and "
+          << ready_dependencies_.top().node->name();
+    }
+    for (Node* dependent : next.node->dependents) {
+      GRPC_CHECK_GT(dependent->waiting_dependencies, 0u);
+      --dependent->waiting_dependencies;
+      if (dependent->waiting_dependencies == 0) {
+        ready_dependencies_.emplace(dependent);
+      }
+    }
+    ++nodes_taken_;
+    return next.node->registration;
+  }
+
+  // Debug helper to dump the graph
+  std::string GraphString() const {
+    std::string result;
+    for (const auto& p : nodes_) {
+      absl::StrAppend(&result, p.first, " ->");
+      for (const auto& d : p.second.all_dependencies) {
+        absl::StrAppend(&result, " ", d);
+      }
+      absl::StrAppend(&result, "\n");
+    }
+    return result;
+  }
+
+  absl::Span<const UniqueTypeName> DependenciesFor(UniqueTypeName name) const {
+    auto it = nodes_.find(name);
+    GRPC_CHECK(it != nodes_.end()) << "Filter " << name.name() << " not found";
+    return it->second.all_dependencies;
+  }
+
+ private:
+  struct Node {
+    explicit Node(FilterRegistration* registration)
+        : registration(registration) {}
+    // Nodes that depend on this node
+    std::vector<Node*> dependents;
+    // Nodes that this node depends on - for debugging purposes only
+    std::vector<UniqueTypeName> all_dependencies;
+    // The registration for this node
+    FilterRegistration* registration;
+    // Number of nodes this node is waiting on
+    size_t waiting_dependencies = 0;
+
+    Ordering ordering() const { return registration->ordering_; }
+    absl::string_view name() const { return registration->name_.name(); }
+  };
+  struct ReadyDependency {
+    explicit ReadyDependency(Node* node) : node(node) {}
+    Node* node;
+    bool operator<(const ReadyDependency& other) const {
+      // Sort first on ordering, and then lexically on name.
+      // The lexical sort means that the ordering is stable between builds
+      // (UniqueTypeName ordering is not stable between builds).
+      return node->ordering() > other.node->ordering() ||
+             (node->ordering() == other.node->ordering() &&
+              node->name() > other.node->name());
+    }
+  };
+  absl::flat_hash_map<UniqueTypeName, Node> nodes_;
+  std::priority_queue<ReadyDependency> ready_dependencies_;
+  size_t nodes_taken_ = 0;
+};
+
+template <bool is_terminal>
+std::vector<ChannelInit::FilterNode> ChannelInit::SelectFiltersByPredicate(
+    const std::vector<Filter>& filters, ChannelStackBuilder* builder) {
+  std::vector<FilterNode> filter_list;
+  int i = 0;
+  // Create an in-place linked list of individual filters
+  for (const auto& filter : filters) {
+    if (!is_terminal && SkipV2(filter.version)) continue;
+    if (!filter.CheckPredicates(builder->channel_args())) continue;
+    filter_list.push_back(FilterNode{&filter, ++i});
+  }
+  if (!filter_list.empty()) {
+    filter_list.back().next = -1;
+  }
+  return filter_list;
+}
+
+void ChannelInit::MergeFusedFilters(ChannelStackBuilder* builder,
+                                    const std::vector<Filter>& fused_filters) {
+  int i = 0;
+  int j = 0;
+  auto& stack = *builder->mutable_stack();
+  std::vector<Node> filter_list;
+  for (const auto& [filter, _] : stack) {
+    filter_list.push_back({filter, ++i});
+  }
+  filter_list.back().next = -1;
+  // Iterate through fused filters (by size) and check if a given fused filter
+  // can replace one of the existing sequence of filters.
+  for (auto& curr_fused_filter : fused_filters) {
+    i = 0;
+    while (i != -1 && filter_list[i].next != -1) {
+      std::string fused_prefix(
+          NameFromChannelFilter(filter_list[i].filter).name());
+      j = filter_list[i].next;
+      do {
+        absl::StrAppend(&fused_prefix, "+",
+                        NameFromChannelFilter(filter_list[j].filter).name());
+        if (fused_prefix == curr_fused_filter.name.name()) {
+          filter_list[i].filter = curr_fused_filter.filter;
+          filter_list[i].next = filter_list[j].next;
+        }
+        j = filter_list[j].next;
+      } while (j != -1);
+      i = filter_list[i].next;
+    }
+  }
+  // Replace the stack with the new filter list.
+  stack.clear();
+  i = 0;
+  while (i != -1 && !filter_list.empty()) {
+    builder->AppendFilter(filter_list[i].filter);
+    i = filter_list[i].next;
+  };
+}
+
+void ChannelInit::AppendFiltersToBuilder(
+    const std::vector<FilterNode>& filter_list, ChannelStackBuilder* builder) {
+  int i = 0;
+  while (i != -1 && !filter_list.empty()) {
+    builder->AppendFilter(filter_list[i].curr->filter);
+    i = filter_list[i].next;
+  };
+}
+
+std::tuple<std::vector<ChannelInit::Filter>, std::vector<ChannelInit::Filter>>
+ChannelInit::SortFilterRegistrationsByDependencies(
     const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
-        registrations,
-    PostProcessor* post_processors, grpc_channel_stack_type type) {
+        filter_registrations,
+    grpc_channel_stack_type type, channelz::PropertyTable& filter_ordering) {
   // Phase 1: Build a map from filter to the set of filters that must be
   // initialized before it.
   // We order this map (and the set of dependent filters) by filter name to
   // ensure algorithm ordering stability is deterministic for a given build.
   // We should not require this, but at the time of writing it's expected that
   // this will help overall stability.
-  using F = const grpc_channel_filter*;
-  std::map<F, FilterRegistration*> filter_to_registration;
-  using DependencyMap = std::map<F, std::set<F, CompareChannelFiltersByName>,
-                                 CompareChannelFiltersByName>;
-  DependencyMap dependencies;
+  DependencyTracker dependencies;
   std::vector<Filter> terminal_filters;
-  for (const auto& registration : registrations) {
-    if (filter_to_registration.count(registration->filter_) > 0) {
-      const auto first =
-          filter_to_registration[registration->filter_]->registration_source_;
-      const auto second = registration->registration_source_;
-      Crash(absl::StrCat("Duplicate registration of channel filter ",
-                         NameFromChannelFilter(registration->filter_),
-                         "\nfirst: ", first.file(), ":", first.line(),
-                         "\nsecond: ", second.file(), ":", second.line()));
-    }
-    filter_to_registration[registration->filter_] = registration.get();
+  for (const auto& registration : filter_registrations) {
     if (registration->terminal_) {
-      GPR_ASSERT(registration->after_.empty());
-      GPR_ASSERT(registration->before_.empty());
-      GPR_ASSERT(!registration->before_all_);
-      terminal_filters.emplace_back(registration->filter_,
-                                    std::move(registration->predicates_),
-                                    registration->registration_source_);
+      GRPC_CHECK(registration->after_.empty());
+      GRPC_CHECK(registration->before_.empty());
+      GRPC_CHECK(!registration->before_all_);
+      GRPC_CHECK_EQ(registration->ordering_, Ordering::kDefault);
+      terminal_filters.emplace_back(
+          registration->name_, registration->filter_, nullptr,
+          std::move(registration->predicates_), registration->version_,
+          registration->ordering_, registration->registration_source_);
     } else {
-      dependencies[registration->filter_];  // Ensure it's in the map.
+      dependencies.Declare(registration.get());
     }
   }
-  for (const auto& registration : registrations) {
+  for (const auto& registration : filter_registrations) {
     if (registration->terminal_) continue;
-    GPR_ASSERT(filter_to_registration.count(registration->filter_) > 0);
-    for (F after : registration->after_) {
-      if (filter_to_registration.count(after) == 0) {
-        gpr_log(
-            GPR_DEBUG, "%s",
-            absl::StrCat(
-                "Filter ", NameFromChannelFilter(after),
-                " not registered, but is referenced in the after clause of ",
-                NameFromChannelFilter(registration->filter_),
-                " when building channel stack ",
-                grpc_channel_stack_type_string(type))
-                .c_str());
-        continue;
-      }
-      dependencies[registration->filter_].insert(after);
+    for (UniqueTypeName after : registration->after_) {
+      dependencies.InsertEdge(after, registration->name_);
     }
-    for (F before : registration->before_) {
-      if (filter_to_registration.count(before) == 0) {
-        gpr_log(
-            GPR_DEBUG, "%s",
-            absl::StrCat(
-                "Filter ", NameFromChannelFilter(before),
-                " not registered, but is referenced in the before clause of ",
-                NameFromChannelFilter(registration->filter_),
-                " when building channel stack ",
-                grpc_channel_stack_type_string(type))
-                .c_str());
-        continue;
-      }
-      dependencies[before].insert(registration->filter_);
+    for (UniqueTypeName before : registration->before_) {
+      dependencies.InsertEdge(registration->name_, before);
     }
     if (registration->before_all_) {
-      for (const auto& other : registrations) {
+      for (const auto& other : filter_registrations) {
         if (other.get() == registration.get()) continue;
         if (other->terminal_) continue;
-        dependencies[other->filter_].insert(registration->filter_);
+        dependencies.InsertEdge(registration->name_, other->name_);
       }
     }
   }
@@ -193,42 +376,63 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   // We can simply iterate through and add anything with no dependency.
   // We then remove that filter from the dependency list of all other filters.
   // We repeat until we have no more filters to add.
-  auto build_remaining_dependency_graph =
-      [](const DependencyMap& dependencies) {
-        std::string result;
-        for (const auto& p : dependencies) {
-          absl::StrAppend(&result, NameFromChannelFilter(p.first), " ->");
-          for (const auto& d : p.second) {
-            absl::StrAppend(&result, " ", NameFromChannelFilter(d));
-          }
-          absl::StrAppend(&result, "\n");
-        }
-        return result;
-      };
-  const DependencyMap original = dependencies;
-  auto take_ready_dependency = [&]() {
-    for (auto it = dependencies.begin(); it != dependencies.end(); ++it) {
-      if (it->second.empty()) {
-        auto r = it->first;
-        dependencies.erase(it);
-        return r;
-      }
-    }
-    Crash(absl::StrCat(
-        "Unresolvable graph of channel filters - remaining graph:\n",
-        build_remaining_dependency_graph(dependencies), "original:\n",
-        build_remaining_dependency_graph(original)));
-  };
+  dependencies.FinishDependencyMap();
   std::vector<Filter> filters;
-  while (!dependencies.empty()) {
-    auto filter = take_ready_dependency();
-    filters.emplace_back(filter,
-                         std::move(filter_to_registration[filter]->predicates_),
-                         filter_to_registration[filter]->registration_source_);
-    for (auto& p : dependencies) {
-      p.second.erase(filter);
-    }
+  while (auto registration = dependencies.Next()) {
+    filters.emplace_back(
+        registration->name_, registration->filter_, registration->filter_adder_,
+        std::move(registration->predicates_), registration->version_,
+        registration->ordering_, registration->registration_source_);
   }
+
+  for (const auto& filter : filters) {
+    auto after = dependencies.DependenciesFor(filter.name);
+    std::string ordering_str;
+    if (!after.empty()) {
+      ordering_str = absl::StrCat("after ", absl::StrJoin(after, ", "));
+    }
+    absl::StrAppend(&ordering_str, " [", filter.ordering, "/", filter.version,
+                    "]");
+    filter_ordering.AppendRow(channelz::PropertyList()
+                                  .Set("name", filter.name.name())
+                                  .Set("ordering", ordering_str));
+  }
+  // Log out the graph we built if that's been requested.
+  if (GRPC_TRACE_FLAG_ENABLED(channel_stack)) {
+    PrintChannelStackTrace(type, filter_registrations, dependencies, filters,
+                           terminal_filters);
+  }
+  return std::tuple(std::move(filters), std::move(terminal_filters));
+}
+
+std::vector<ChannelInit::Filter> ChannelInit::SortFusedFilterRegistrations(
+    const std::vector<std::unique_ptr<FilterRegistration>>&
+        filter_registrations) {
+  std::vector<FilterRegistration*> fused_filter_registrations;
+  std::vector<Filter> filters;
+  for (const auto& registration : filter_registrations) {
+    GRPC_CHECK(!registration->terminal_);
+    fused_filter_registrations.push_back(registration.get());
+  }
+  std::sort(fused_filter_registrations.begin(),
+            fused_filter_registrations.end(),
+            CompareFusedChannelFiltersByName());
+
+  for (auto registration : fused_filter_registrations) {
+    filters.emplace_back(
+        registration->name_, registration->filter_, registration->filter_adder_,
+        std::move(registration->predicates_), registration->version_,
+        registration->ordering_, registration->registration_source_);
+  }
+  return filters;
+}
+
+ChannelInit::StackConfig ChannelInit::BuildStackConfig(
+    const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
+        filter_registrations,
+    const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
+        fused_filter_registrations,
+    PostProcessor* post_processors, grpc_channel_stack_type type) {
   // Collect post processors that need to be applied.
   // We've already ensured the one-per-slot constraint, so now we can just
   // collect everything up into a vector and run it in order.
@@ -237,120 +441,131 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
     if (post_processors[i] == nullptr) continue;
     post_processor_functions.emplace_back(std::move(post_processors[i]));
   }
-  // Log out the graph we built if that's been requested.
-  if (grpc_trace_channel_stack.enabled()) {
-    // It can happen that multiple threads attempt to construct a core config at
-    // once.
-    // This is benign - the first one wins and others are discarded.
-    // However, it messes up our logging and makes it harder to reason about the
-    // graph, so we add some protection here.
-    static Mutex* const m = new Mutex();
-    MutexLock lock(m);
-    // List the channel stack type (since we'll be repeatedly printing graphs in
-    // this loop).
-    gpr_log(GPR_INFO,
-            "ORDERED CHANNEL STACK %s:", grpc_channel_stack_type_string(type));
-    // First build up a map of filter -> file:line: strings, because it helps
-    // the readability of this log to get later fields aligned vertically.
-    std::map<const grpc_channel_filter*, std::string> loc_strs;
-    size_t max_loc_str_len = 0;
-    size_t max_filter_name_len = 0;
-    auto add_loc_str = [&max_loc_str_len, &loc_strs, &filter_to_registration,
-                        &max_filter_name_len](
-                           const grpc_channel_filter* filter) {
-      max_filter_name_len =
-          std::max(strlen(NameFromChannelFilter(filter)), max_filter_name_len);
-      const auto registration =
-          filter_to_registration[filter]->registration_source_;
-      absl::string_view file = registration.file();
-      auto slash_pos = file.rfind('/');
-      if (slash_pos != file.npos) {
-        file = file.substr(slash_pos + 1);
-      }
-      auto loc_str = absl::StrCat(file, ":", registration.line(), ":");
-      max_loc_str_len = std::max(max_loc_str_len, loc_str.length());
-      loc_strs.emplace(filter, std::move(loc_str));
-    };
-    for (const auto& filter : filters) {
-      add_loc_str(filter.filter);
-    }
-    for (const auto& terminal : terminal_filters) {
-      add_loc_str(terminal.filter);
-    }
-    for (auto& loc_str : loc_strs) {
-      loc_str.second = absl::StrCat(
-          loc_str.second,
-          std::string(max_loc_str_len + 2 - loc_str.second.length(), ' '));
-    }
-    // For each regular filter, print the location registered, the name of the
-    // filter, and if it needed to occur after some other filters list those
-    // filters too.
-    // Note that we use the processed after list here - earlier we turned Before
-    // registrations into After registrations and we used those converted
-    // registrations to build the final ordering.
-    // If you're trying to track down why 'A' is listed as after 'B', look at
-    // the following:
-    //  - If A is registered with .After({B}), then A will be 'after' B here.
-    //  - If B is registered with .Before({A}), then A will be 'after' B here.
-    //  - If B is registered as BeforeAll, then A will be 'after' B here.
-    for (const auto& filter : filters) {
-      auto dep_it = original.find(filter.filter);
-      std::string after_str;
-      if (dep_it != original.end() && !dep_it->second.empty()) {
-        after_str = absl::StrCat(
-            std::string(max_filter_name_len + 1 -
-                            strlen(NameFromChannelFilter(filter.filter)),
-                        ' '),
-            "after ",
-            absl::StrJoin(
-                dep_it->second, ", ",
-                [](std::string* out, const grpc_channel_filter* filter) {
-                  out->append(NameFromChannelFilter(filter));
-                }));
-      }
-      const auto filter_str =
-          absl::StrCat("  ", loc_strs[filter.filter],
-                       NameFromChannelFilter(filter.filter), after_str);
-      gpr_log(GPR_INFO, "%s", filter_str.c_str());
-    }
-    // Finally list out the terminal filters and where they were registered
-    // from.
-    for (const auto& terminal : terminal_filters) {
-      const auto filter_str = absl::StrCat(
-          "  ", loc_strs[terminal.filter],
-          NameFromChannelFilter(terminal.filter),
-          std::string(max_filter_name_len + 1 -
-                          strlen(NameFromChannelFilter(terminal.filter)),
-                      ' '),
-          "[terminal]");
-      gpr_log(GPR_INFO, "%s", filter_str.c_str());
-    }
-  }
+  channelz::PropertyTable filter_ordering;
+
+  auto sorted_filters = SortFilterRegistrationsByDependencies(
+      filter_registrations, type, filter_ordering);
+  std::vector<Filter> filters = std::move(std::get<0>(sorted_filters));
+  std::vector<Filter> terminal_filters = std::move(std::get<1>(sorted_filters));
+
+  std::vector<Filter> fused_filters =
+      SortFusedFilterRegistrations(fused_filter_registrations);
+
   // Check if there are no terminal filters: this would be an error.
-  // GRPC_CLIENT_DYNAMIC stacks don't use this mechanism, so we don't check that
-  // condition here.
-  // Right now we only log: many tests end up with a core configuration that
-  // is invalid.
+  // GRPC_CLIENT_DYNAMIC stacks don't use this mechanism, so we don't check
+  // that condition here. Right now we only log: many tests end up with a
+  // core configuration that is invalid.
   // TODO(ctiller): evaluate if we can turn this into a crash one day.
-  // Right now it forces too many tests to know about channel initialization,
-  // either by supplying a valid configuration or by including an opt-out flag.
+  // Right now it forces too many tests to know about channel
+  // initialization, either by supplying a valid configuration or by
+  // including an opt-out flag.
   if (terminal_filters.empty() && type != GRPC_CLIENT_DYNAMIC) {
-    gpr_log(
-        GPR_ERROR,
-        "No terminal filters registered for channel stack type %s; this is "
-        "common for unit tests messing with CoreConfiguration, but will result "
-        "in a ChannelInit::CreateStack that never completes successfully.",
-        grpc_channel_stack_type_string(type));
+    VLOG(2) << "No terminal filters registered for channel stack type "
+            << grpc_channel_stack_type_string(type)
+            << "; this is common for unit tests messing with "
+               "CoreConfiguration, but will result in a "
+               "ChannelInit::CreateStack that never completes successfully.";
   }
-  return StackConfig{std::move(filters), std::move(terminal_filters),
-                     std::move(post_processor_functions)};
+  return StackConfig{std::move(filters), std::move(fused_filters),
+                     std::move(terminal_filters),
+                     std::move(post_processor_functions), filter_ordering};
 };
+
+void ChannelInit::PrintChannelStackTrace(
+    grpc_channel_stack_type type,
+    const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
+        registrations,
+    const DependencyTracker& dependencies, const std::vector<Filter>& filters,
+    const std::vector<Filter>& terminal_filters) {
+  // It can happen that multiple threads attempt to construct a core config at
+  // once.
+  // This is benign - the first one wins and others are discarded.
+  // However, it messes up our logging and makes it harder to reason about the
+  // graph, so we add some protection here.
+  static Mutex* const m = new Mutex();
+  MutexLock lock(m);
+  // List the channel stack type (since we'll be repeatedly printing graphs in
+  // this loop).
+
+  LOG(INFO) << "ORDERED CHANNEL STACK " << grpc_channel_stack_type_string(type)
+            << ":";
+  // First build up a map of filter -> file:line: strings, because it helps
+  // the readability of this log to get later fields aligned vertically.
+  absl::flat_hash_map<UniqueTypeName, std::string> loc_strs;
+  size_t max_loc_str_len = 0;
+  size_t max_filter_name_len = 0;
+  auto add_loc_str = [&max_loc_str_len, &loc_strs, &registrations,
+                      &max_filter_name_len](UniqueTypeName name) {
+    max_filter_name_len = std::max(name.name().length(), max_filter_name_len);
+    for (const auto& registration : registrations) {
+      if (registration->name_ == name) {
+        auto source = registration->registration_source_;
+        absl::string_view file = source.file();
+        auto slash_pos = file.rfind('/');
+        if (slash_pos != file.npos) {
+          file = file.substr(slash_pos + 1);
+        }
+        auto loc_str = absl::StrCat(file, ":", source.line(), ":");
+        max_loc_str_len = std::max(max_loc_str_len, loc_str.length());
+        loc_strs.emplace(name, std::move(loc_str));
+        break;
+      }
+    }
+  };
+  for (const auto& filter : filters) {
+    add_loc_str(filter.name);
+  }
+  for (const auto& terminal : terminal_filters) {
+    add_loc_str(terminal.name);
+  }
+  for (auto& loc_str : loc_strs) {
+    loc_str.second = absl::StrCat(
+        loc_str.second,
+        std::string(max_loc_str_len + 2 - loc_str.second.length(), ' '));
+  }
+  // For each regular filter, print the location registered, the name of the
+  // filter, and if it needed to occur after some other filters list those
+  // filters too.
+  // Note that we use the processed after list here - earlier we turned Before
+  // registrations into After registrations and we used those converted
+  // registrations to build the final ordering.
+  // If you're trying to track down why 'A' is listed as after 'B', look at
+  // the following:
+  //  - If A is registered with .After({B}), then A will be 'after' B here.
+  //  - If B is registered with .Before({A}), then A will be 'after' B here.
+  //  - If B is registered as BeforeAll, then A will be 'after' B here.
+  for (const auto& filter : filters) {
+    auto after = dependencies.DependenciesFor(filter.name);
+    std::string after_str;
+    if (!after.empty()) {
+      after_str = absl::StrCat(
+          std::string(max_filter_name_len + 1 - filter.name.name().length(),
+                      ' '),
+          "after ", absl::StrJoin(after, ", "));
+    } else {
+      after_str =
+          std::string(max_filter_name_len - filter.name.name().length(), ' ');
+    }
+    LOG(INFO) << "  " << loc_strs[filter.name] << filter.name << after_str
+              << " [" << filter.ordering << "/" << filter.version << "]";
+  }
+  // Finally list out the terminal filters and where they were registered
+  // from.
+  for (const auto& terminal : terminal_filters) {
+    const auto filter_str = absl::StrCat(
+        "  ", loc_strs[terminal.name], terminal.name,
+        std::string(max_filter_name_len + 1 - terminal.name.name().length(),
+                    ' '),
+        "[terminal]");
+    LOG(INFO) << filter_str;
+  }
+}
 
 ChannelInit ChannelInit::Builder::Build() {
   ChannelInit result;
   for (int i = 0; i < GRPC_NUM_CHANNEL_STACK_TYPES; i++) {
     result.stack_configs_[i] =
-        BuildStackConfig(filters_[i], post_processors_[i],
+        BuildStackConfig(filters_[i], fused_filters_[i], post_processors_[i],
                          static_cast<grpc_channel_stack_type>(i));
   }
   return result;
@@ -365,44 +580,81 @@ bool ChannelInit::Filter::CheckPredicates(const ChannelArgs& args) const {
 
 bool ChannelInit::CreateStack(ChannelStackBuilder* builder) const {
   const auto& stack_config = stack_configs_[builder->channel_stack_type()];
-  for (const auto& filter : stack_config.filters) {
-    if (!filter.CheckPredicates(builder->channel_args())) continue;
-    builder->AppendFilter(filter.filter);
-  }
-  int found_terminators = 0;
-  for (const auto& terminator : stack_config.terminators) {
-    if (!terminator.CheckPredicates(builder->channel_args())) continue;
-    builder->AppendFilter(terminator.filter);
-    ++found_terminators;
-  }
-  if (found_terminators != 1) {
+  auto filter_list =
+      SelectFiltersByPredicate<false>(stack_config.filters, builder);
+  auto terminal_filter_list =
+      SelectFiltersByPredicate<true>(stack_config.terminators, builder);
+
+  if (terminal_filter_list.size() != 1) {
+    int filter_count = terminal_filter_list.size();
     std::string error = absl::StrCat(
-        found_terminators,
-        " terminating filters found creating a channel of type ",
+        filter_count, " terminating filters found creating a channel of type ",
         grpc_channel_stack_type_string(builder->channel_stack_type()),
         " with arguments ", builder->channel_args().ToString(),
         " (we insist upon one and only one terminating "
         "filter)\n");
-    if (stack_config.terminators.empty()) {
+    if (terminal_filter_list.empty()) {
       absl::StrAppend(&error, "  No terminal filters were registered");
     } else {
-      for (const auto& terminator : stack_config.terminators) {
+      for (const auto& terminator : terminal_filter_list) {
         absl::StrAppend(
-            &error, "  ", NameFromChannelFilter(terminator.filter),
-            " registered @ ", terminator.registration_source.file(), ":",
-            terminator.registration_source.line(), ": enabled = ",
-            terminator.CheckPredicates(builder->channel_args()) ? "true"
-                                                                : "false",
+            &error, "  ", terminator.curr->name, " registered @ ",
+            terminator.curr->registration_source.file(), ":",
+            terminator.curr->registration_source.line(), ": enabled = ",
+            terminator.curr->CheckPredicates(builder->channel_args()) ? "true"
+                                                                      : "false",
             "\n");
       }
     }
-    gpr_log(GPR_ERROR, "%s", error.c_str());
+    LOG(ERROR) << error;
     return false;
   }
+
+  AppendFiltersToBuilder(filter_list, builder);
+  AppendFiltersToBuilder(terminal_filter_list, builder);
+
   for (const auto& post_processor : stack_config.post_processors) {
     post_processor(*builder);
   }
+
+  // Only perform the merge with fused filters operation after running
+  // through all the post processors. This ensures that modifications made by
+  // post processors are taken into account before finding fusions to match.
+  MergeFusedFilters(builder, stack_config.fused_filters);
   return true;
+}
+
+void ChannelInit::AddToInterceptionChainBuilder(
+    grpc_channel_stack_type type, InterceptionChainBuilder& builder) const {
+  const auto& stack_config = stack_configs_[type];
+  // Based on predicates build a list of filters to include in this segment.
+  for (const auto& filter : stack_config.filters) {
+    if (SkipV3(filter.version)) continue;
+    if (!filter.CheckPredicates(builder.channel_args())) continue;
+    if (filter.filter_adder == nullptr) {
+      builder.Fail(absl::InvalidArgumentError(
+          absl::StrCat("Filter ", filter.name, " has no v3-callstack vtable")));
+      return;
+    }
+    filter.filter_adder(builder);
+  }
+}
+
+void ChannelInit::AddData(channelz::DataSink sink,
+                          grpc_channel_stack_type type) const {
+  const auto& stack_config = stack_configs_[type];
+  sink.AddData(
+      "channel_stack_filters",
+      channelz::PropertyList().Set("elements", stack_config.filter_ordering));
+  sink.AddData("fused_filters",
+               channelz::PropertyList().Set("elements", [&stack_config]() {
+                 channelz::PropertyTable elements;
+                 for (const auto& filter : stack_config.fused_filters) {
+                   elements.AppendRow(channelz::PropertyList().Set(
+                       "name", filter.name.name()));
+                 }
+                 return elements;
+               }()));
 }
 
 }  // namespace grpc_core

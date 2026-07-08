@@ -51,6 +51,10 @@ Clients should accept these arguments:
 
       Keys must be ASCII only (no `-bin` headers allowed). Values may contain
       any character except semi-colons.
+* -- google_c2p_universe_domain=UNIVERSE_DOMAIN
+    * Universe domain to configure for the google-c2p resolver. Optional,
+      defaults to the empty string in which case we should *not* explicitly
+      configure a universe domain.
 
 Clients must support TLS with ALPN. Clients must not disable certificate
 checking.
@@ -91,7 +95,7 @@ Procedure:
     set to current timestamp. Timestamp format is irrelevant, and resolution is
     in nanoseconds.
     Client adds a `x-user-ip` header with value `1.2.3.4` to the request.
-    This is done since some proxys such as GFE will not cache requests from
+    This is done since some proxies such as GFE will not cache requests from
     localhost.
     Client marks the request as cacheable by setting the cacheable flag in the
     request context. Longer term this should be driven by the method option
@@ -1005,14 +1009,21 @@ Client asserts:
 ### rpc_soak
 
 The client performs many large_unary RPCs in sequence over the same channel.
-The client records the latency and status of each RPC in some data structure.
-If the test ever consumes `soak_overall_timeout_seconds` seconds and still hasn't
-completed `soak_iterations` RPCs, then the test should discontinue sending RPCs
-as soon as possible. After performing all RPCs, the test should examine
-previously recorded RPC latency and status results in a second pass and fail if
-either:
+The total number of RPCs to execute is controlled by the `soak_iterations` 
+parameter, which defaults to 10. The number of threads used to execute RPCs 
+is controlled by `soak_num_threads`. By default, `soak_num_threads` is set to 1. 
 
-a) not all `soak_iterations` RPCs were completed
+The client records the latency and status of each RPC in 
+thread-specific data structure, which are later aggregated to form the overall 
+results. If the test ever consumes `soak_overall_timeout_seconds` seconds 
+and still hasn't completed `soak_iterations` RPCs, then the test should 
+discontinue sending RPCs as soon as possible. Each thread should independently 
+track its progress and stop once the overall timeout is reached.
+
+After performing all RPCs, the test should examine the previously aggregated RPC
+latency and status results from all threads in a second pass and fail if either:
+
+a) not all `soak_iterations` RPCs were completed across all threads
 
 b) the sum of RPCs that either completed with a non-OK status or exceeded
    `max_acceptable_per_rpc_latency_ms` exceeds `soak_max_failures`
@@ -1029,10 +1040,15 @@ results of each iteration (i.e. RPC) in a format the matches the following
 regexes:
 
 - Upon success:
-  - `soak iteration: \d+ elapsed_ms: \d+ peer: \S+ succeeded`
+  - `thread_id: \d+ soak iteration: \d+ elapsed_ms: \d+ peer: \S+ server_uri: 
+  \S+ succeeded`
 
 - Upon failure:
-  - `soak iteration: \d+ elapsed_ms: \d+ peer: \S+ failed:`
+  - `thread_id: \d+ soak iteration: \d+ elapsed_ms: \d+ peer: \S+ server_uri: 
+  \S+ failed`
+
+- Thread-specific logs will include the thread_id, helping to track performance
+  across threads.
 
 This test must be configurable via a few different command line flags:
 
@@ -1057,6 +1073,14 @@ This test must be configurable via a few different command line flags:
 * `soak_min_time_ms_between_rpcs`: The minimum time in milliseconds between
   consecutive RPCs. Useful for limiting QPS.
 
+* `soak_num_threads`: Specifies the number of threads to use for concurrently 
+  executing the soak test. Each thread performs `soak_iterations / soak_num_threads`
+  RPCs.
+
+This value defaults to 1 (i.e., no concurrency) but can be 
+  increased for concurrent execution. The total soak_iterations must be 
+  divisible by soak_num_threads.
+
 The following is optional but encouraged to improve debuggability:
 
 * Implementations should log the number of milliseconds that each RPC takes.
@@ -1077,7 +1101,6 @@ latency measurement, but the teardown of that channel should **not** be
 included in that latency measurement (channel teardown semantics differ widely
 between languages). This latency measurement should also be the value that is
 logged and recorded in the latency histogram.
-
 
 ### orca_per_rpc
 [orca_per_rpc]: #orca_per_rpc
@@ -1252,7 +1275,7 @@ Failed TLS hostname verification (ejona?)
 
 Large amount of headers to cause CONTINUATIONs; 63K of 'X's, all in one header.
 
-#### To priorize:
+#### To prioritize:
 
 Start streaming RPC but don't send any requests, server responds
 
@@ -1286,6 +1309,12 @@ Servers should accept these arguments:
 * --use_tls=BOOLEAN
 
     * Whether to use a plaintext or encrypted connection
+
+Servers that want to be used for dual stack testing must accept this argument:
+
+* --address_type=IPV4|IPV6|IPV4_IPV6
+    
+    * What type of addresses to listen on. Default IPV4_IPV6
 
 Servers must support TLS with ALPN. They should use
 [server1.pem](https://github.com/grpc/grpc/blob/master/src/core/tsi/test_creds/server1.pem)

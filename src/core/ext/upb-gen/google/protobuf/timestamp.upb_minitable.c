@@ -3,7 +3,8 @@
  *     google/protobuf/timestamp.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -12,19 +13,26 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableField google_protobuf_Timestamp__fields[2] = {
-  {1, 8, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
-  {2, 0, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[2];
+} google__protobuf__Timestamp_msg_init_Fields;
+
+static const google__protobuf__Timestamp_msg_init_Fields google_protobuf_Timestamp__fields = {{
+  {1, 16, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {2, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+}};
 
 const upb_MiniTable google__protobuf__Timestamp_msg_init = {
-  NULL,
-  &google_protobuf_Timestamp__fields[0],
-  16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  &google_protobuf_Timestamp__fields.fields[0],
+  24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "google.protobuf.Timestamp",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000008, &upb_psv8_1bt},
-    {0x000000003f000010, &upb_psv4_1bt},
+    {0x001000003f000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x000800003f000010, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };

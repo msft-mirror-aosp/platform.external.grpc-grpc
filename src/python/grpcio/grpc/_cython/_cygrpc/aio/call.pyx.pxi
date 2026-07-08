@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from grpc import _observability
 
 _EMPTY_FLAGS = 0
 _EMPTY_MASK = 0
@@ -59,6 +60,7 @@ cdef class _AioCall(GrpcCallWrapper):
         self._is_locally_cancelled = False
         self._deadline = deadline
         self._send_initial_metadata_flags = _get_send_initial_metadata_flags(wait_for_ready)
+        self._call_tracer_capsule = None
         self._create_grpc_call(deadline, method, call_credentials)
 
     def __dealloc__(self):
@@ -130,6 +132,24 @@ cdef class _AioCall(GrpcCallWrapper):
                 raise InternalError("Credentials couldn't have been set: {0}".format(set_credentials_error))
 
         grpc_slice_unref(method_slice)
+        self._maybe_set_client_call_tracer_on_call(method)
+
+    cdef void _maybe_set_client_call_tracer_on_call(self, bytes method) except *:
+        # TODO(zgoda): use channel args to exclude those metrics.
+        for exclude_prefix in _observability._SERVICES_TO_EXCLUDE:
+            if exclude_prefix in method:
+                return
+        with _observability.get_plugin() as plugin:
+            if not (plugin and plugin.observability_enabled):
+                return
+            try:
+                capsule = plugin.create_client_call_tracer(method, self._channel.target)
+                capsule_ptr = cpython.PyCapsule_GetPointer(capsule, CLIENT_CALL_TRACER)
+                _set_call_tracer(self.call, capsule_ptr)
+                self._call_tracer_capsule = capsule
+            except Exception as e:
+                _LOGGER.exception(f"Failed to set client call tracer for {method}")
+
 
     cdef void _set_status(self, AioRpcStatus status) except *:
         cdef list waiters
@@ -214,7 +234,7 @@ cdef class _AioCall(GrpcCallWrapper):
         """Returns if the RPC call has finished.
 
         Checks if the status has been provided, either
-        because the RPC finished or because was cancelled..
+        because the RPC finished or because was cancelled.
 
         Returns:
             True if the RPC can be considered finished.
@@ -235,7 +255,7 @@ cdef class _AioCall(GrpcCallWrapper):
     async def status(self):
         """Returns the status of the RPC call.
 
-        It returns the finshed status of the RPC. If the RPC
+        It returns the finished status of the RPC. If the RPC
         has not finished yet this function will wait until the RPC
         gets finished.
 
@@ -277,7 +297,7 @@ cdef class _AioCall(GrpcCallWrapper):
         """Returns if the RPC was cancelled locally.
 
         Returns:
-            True when was cancelled locally, False when was cancelled remotelly or
+            True when was cancelled locally, False when was cancelled remotely or
             is still ongoing.
         """
         if self._is_locally_cancelled:
@@ -397,7 +417,7 @@ cdef class _AioCall(GrpcCallWrapper):
                            tuple outbound_initial_metadata,
                            object context = None):
         """Implementation of the start of a unary-stream call."""
-        # Peer may prematurely end this RPC at any point. We need a corutine
+        # Peer may prematurely end this RPC at any point. We need a coroutine
         # that watches if the server sends the final status.
         status_task = self._loop.create_task(self._handle_status_once_received())
 
@@ -503,7 +523,7 @@ cdef class _AioCall(GrpcCallWrapper):
         propagate the final status exception, then we have to raise it.
         Othersize, it would end normally and raise `StopAsyncIteration()`.
         """
-        # Peer may prematurely end this RPC at any point. We need a corutine
+        # Peer may prematurely end this RPC at any point. We need a coroutine
         # that watches if the server sends the final status.
         status_task = self._loop.create_task(self._handle_status_once_received())
 

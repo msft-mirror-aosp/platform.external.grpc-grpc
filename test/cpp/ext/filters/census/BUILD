@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/cpp/ext/filters/census",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "tests",
 )
 
@@ -27,18 +31,22 @@ grpc_cc_library(
     srcs = ["library.cc"],
     hdrs = ["library.h"],
     external_deps = [
+        "absl/strings",
         "gtest",
+        "opencensus-stats",
         "opencensus-stats-test",
         "opencensus-tags",
+        "opencensus-trace",
         "opencensus-with-tag-map",
     ],
-    language = "C++",
     deps = [
+        "//:config",
         "//:grpc++",
+        "//:grpc++_base",
         "//:grpc_opencensus_plugin",
-        "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:test_lb_policies",
+        "//src/proto/grpc/testing:echo_cc_grpc",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:test_lb_policies",
         "//test/cpp/end2end:test_service_impl",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
@@ -51,24 +59,30 @@ grpc_cc_test(
         "stats_plugin_end2end_test.cc",
     ],
     external_deps = [
+        "absl/log:log",
         "gtest",
         "opencensus-stats-test",
         "opencensus-tags",
         "opencensus-with-tag-map",
+        "absl/strings",
+        "opencensus-stats",
     ],
     flaky = True,
-    language = "C++",
     linkstatic = True,
     tags = [
         "census_test",
+        # Incompatible with internal stats engine.
+        "grpc:no-internal-poller",
+        "grpc:no-internal-test",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
         "library",
         "//:grpc++",
         "//:grpc_opencensus_plugin",
-        "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:grpc_test_util",
+        "//src/core:experiments",
+        "//src/proto/grpc/testing:echo_cc_grpc",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
@@ -80,24 +94,27 @@ grpc_cc_test(
         "constant_labels_test.cc",
     ],
     external_deps = [
+        "absl/strings",
         "gtest",
+        "opencensus-stats",
         "opencensus-stats-test",
         "opencensus-tags",
         "opencensus-with-tag-map",
     ],
     flaky = True,
-    language = "C++",
     linkstatic = True,
     tags = [
         "census_test",
+        # Incompatible with internal stats engine.
+        "grpc:no-internal-poller",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
         "library",
         "//:grpc++",
         "//:grpc_opencensus_plugin",
-        "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:grpc_test_util",
+        "//src/proto/grpc/testing:echo_cc_grpc",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],

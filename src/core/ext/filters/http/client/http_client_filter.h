@@ -20,14 +20,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/status/statusor.h"
-
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -35,26 +34,32 @@ class HttpClientFilter : public ImplementChannelFilter<HttpClientFilter> {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<HttpClientFilter> Create(
+  static absl::string_view TypeName() { return "http-client"; }
+
+  static absl::StatusOr<std::unique_ptr<HttpClientFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
+
+  HttpClientFilter(HttpSchemeMetadata::ValueType scheme, Slice user_agent,
+                   bool test_only_use_put_requests);
 
   class Call {
    public:
     void OnClientInitialMetadata(ClientMetadata& md, HttpClientFilter* filter);
     absl::Status OnServerInitialMetadata(ServerMetadata& md);
     absl::Status OnServerTrailingMetadata(ServerMetadata& md);
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
   };
 
  private:
-  HttpClientFilter(HttpSchemeMetadata::ValueType scheme, Slice user_agent,
-                   bool test_only_use_put_requests);
-
   HttpSchemeMetadata::ValueType scheme_;
-  Slice user_agent_;
   bool test_only_use_put_requests_;
+  Slice user_agent_;
 };
 
 // A test-only channel arg to allow testing gRPC Core server behavior on PUT

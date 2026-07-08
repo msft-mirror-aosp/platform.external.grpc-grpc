@@ -18,36 +18,36 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 
-#include <memory>
-#include <string>
-
-#include "absl/cleanup/cleanup.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
+#include <memory>
+#include <optional>
+#include <string>
+
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "test/core/util/parse_hexstring.h"
-#include "test/core/util/slice_splitter.h"
-#include "test/core/util/test_config.h"
+#include "src/core/mitigation_engine/mitigation_engine.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
+#include "test/core/test_util/parse_hexstring.h"
+#include "test/core/test_util/slice_splitter.h"
+#include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace {
@@ -65,8 +65,8 @@ struct TestInput {
 
 struct Test {
   std::string name;
-  absl::optional<size_t> table_size;
-  absl::optional<size_t> max_metadata_size;
+  std::optional<size_t> table_size;
+  std::optional<size_t> max_metadata_size;
   std::vector<TestInput> inputs;
 };
 
@@ -104,13 +104,9 @@ class ParseTest : public ::testing::TestWithParam<Test> {
   }
 
   void TestVector(grpc_slice_split_mode mode,
-                  absl::optional<size_t> max_metadata_size,
+                  std::optional<size_t> max_metadata_size,
                   std::string hexstring, absl::StatusOr<std::string> expect,
                   uint32_t flags) {
-    MemoryAllocator memory_allocator = MemoryAllocator(
-        ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-            "test"));
-    auto arena = MakeScopedArena(1024, &memory_allocator);
     ExecCtx exec_ctx;
     auto input = ParseHexstring(hexstring);
     grpc_slice* slices;
@@ -118,7 +114,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     size_t i;
     absl::BitGen bitgen;
 
-    grpc_metadata_batch b(arena.get());
+    grpc_metadata_batch b;
 
     parser_->BeginFrame(
         &b, max_metadata_size.value_or(4096), max_metadata_size.value_or(4096),
@@ -128,7 +124,8 @@ class ParseTest : public ::testing::TestWithParam<Test> {
                                        : HPackParser::Boundary::None),
         flags & kWithPriority ? HPackParser::Priority::Included
                               : HPackParser::Priority::None,
-        HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+        HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+        nullptr);
 
     grpc_split_slices(mode, const_cast<grpc_slice*>(&input.c_slice()), 1,
                       &slices, &nslices);
@@ -440,19 +437,82 @@ INSTANTIATE_TEST_SUITE_P(
         Test{"Base64LegalEncoding",
              {},
              {},
-             {// Binary metadata: created using:
-              // tools/codegen/core/gen_header_frame.py
-              //    --compression inc --no_framing --output hexstr
-              //    < test/core/transport/chttp2/bad-base64.headers
-              {"4009612e622e632d62696e1c6c75636b696c7920666f722075732c206974"
-               "27732074756573646179",
-               absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
-                                   "illegal base64 encoding"),
-               0},
-              {"be",
-               absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
-                                   "illegal base64 encoding"),
-               0}}},
+             {
+                 // Binary metadata: created using:
+                 // tools/codegen/core/gen_header_frame.py
+                 //    --compression inc --no_framing --output hexstr
+                 //    < test/core/transport/chttp2/bad-base64.headers
+                 {"4009612e622e632d62696e1c6c75636b696c7920666f722075732c206974"
+                  "27732074756573646179",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  0},
+                 {"be",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  kEndOfHeaders},
+                 {"82", ":method: GET\n", 0},
+             }},
+        Test{"Base64LegalEncodingWorksAfterFailure",
+             {},
+             {},
+             {
+                 // Binary metadata: created using:
+                 // tools/codegen/core/gen_header_frame.py
+                 //    --compression inc --no_framing --output hexstr
+                 //    < test/core/transport/chttp2/bad-base64.headers
+                 {"4009612e622e632d62696e1c6c75636b696c7920666f722075732c206974"
+                  "27732074756573646179",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  0},
+                 {"be",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  0},
+                 {"400e636f6e74656e742d6c656e6774680135",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  kEndOfHeaders},
+                 {"be", "content-length: 5\n", 0},
+             }},
+        Test{"Base64LegalEncodingWorksAfterFailure2",
+             {},
+             {},
+             {
+                 {// Generated with: tools/codegen/core/gen_header_frame.py
+                  // --compression inc --output hexstr --no_framing <
+                  // test/core/transport/chttp2/MiXeD-CaSe.headers
+                  "400a4d695865442d436153651073686f756c64206e6f74207061727365",
+                  absl::InternalError("Illegal header key: MiXeD-CaSe"), 0},
+                 // Binary metadata: created using:
+                 // tools/codegen/core/gen_header_frame.py
+                 //    --compression inc --no_framing --output hexstr
+                 //    < test/core/transport/chttp2/bad-base64.headers
+                 {"4009612e622e632d62696e1c6c75636b696c7920666f722075732c206974"
+                  "27732074756573646179",
+                  absl::InternalError("Illegal header key: MiXeD-CaSe"), 0},
+                 {"be", absl::InternalError("Illegal header key: MiXeD-CaSe"),
+                  0},
+                 {"400e636f6e74656e742d6c656e6774680135",
+                  absl::InternalError("Illegal header key: MiXeD-CaSe"),
+                  kEndOfHeaders},
+                 {"be", "content-length: 5\n", 0},
+                 {"bf",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  0},
+                 // Only the first error in each frame is reported, so we should
+                 // still see the same error here...
+                 {"c0",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  kEndOfHeaders},
+                 // ... but if we look at the next frame we should see the
+                 // stored error
+                 {"c0", absl::InternalError("Illegal header key: MiXeD-CaSe"),
+                  kEndOfHeaders},
+             }},
         Test{"TeIsTrailers",
              {},
              {},
@@ -637,7 +697,7 @@ INSTANTIATE_TEST_SUITE_P(
                  "makes "
                  "it text.\nUseful for storing files.\n",
                  0},
-                // Third entry should be unprobable (it's no longer in the
+                // Third entry should be improbable (it's no longer in the
                 // table!)
                 {"c0", absl::InternalError("Invalid HPACK index received"),
                  kFailureIsConnectionError},
@@ -695,7 +755,7 @@ INSTANTIATE_TEST_SUITE_P(
                  "makes "
                  "it text.\nUseful for storing files.\n",
                  0},
-                // Third entry should be unprobable (it's no longer in the
+                // Third entry should be improbable (it's no longer in the
                 // table!)
                 {"c0", absl::InternalError("Invalid HPACK index received"),
                  kFailureIsConnectionError},
@@ -766,6 +826,114 @@ INSTANTIATE_TEST_SUITE_P(
                    "Malicious varint encoding detected in HPACK stream"),
                kFailureIsConnectionError}}}),
     NameFromConfig);
+
+class MockMitigationEngine : public MitigationEngine {
+ public:
+  enum class Behavior { kNone, kRejectRpc, kCloseConnection };
+  explicit MockMitigationEngine(Behavior behavior) : behavior_(behavior) {}
+
+  std::optional<Action> EvaluateIncomingConnection(absl::string_view) override {
+    return std::nullopt;
+  }
+
+  std::optional<Action> EvaluateIncomingMetadata(absl::string_view key,
+                                                 absl::string_view) override {
+    if (behavior_ == Behavior::kRejectRpc && key == "custom-key") {
+      return Action::kRejectRpc;
+    }
+    return std::nullopt;
+  }
+
+  std::optional<Action> EvaluateAllIncomingMetadata(
+      const grpc_metadata_batch&) override {
+    if (behavior_ == Behavior::kCloseConnection) {
+      return Action::kCloseConnection;
+    }
+    return std::nullopt;
+  }
+
+ private:
+  Behavior behavior_;
+};
+
+class MitigationEngineParseTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    grpc_init();
+    parser_ = std::make_unique<HPackParser>();
+  }
+  void TearDown() override {
+    ExecCtx exec_ctx;
+    parser_.reset();
+    grpc_shutdown();
+  }
+  std::unique_ptr<HPackParser> parser_;
+};
+
+TEST_F(MitigationEngineParseTest, RejectRpc) {
+  ExecCtx exec_ctx;
+  auto engine = MakeRefCounted<MockMitigationEngine>(
+      MockMitigationEngine::Behavior::kRejectRpc);
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::None, HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+      engine.get());
+
+  auto input =
+      ParseHexstring("400a637573746f6d2d6b65790d637573746f6d2d686561646572");
+
+  absl::BitGen bitgen;
+  auto err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+
+  EXPECT_FALSE(err.ok());
+  intptr_t stream_id;
+  EXPECT_TRUE(
+      grpc_error_get_int(err, StatusIntProperty::kStreamId, &stream_id));
+
+  grpc_status_code code;
+  std::string message;
+  grpc_error_get_status(err, Timestamp::InfFuture(), &code, &message, nullptr,
+                        nullptr);
+  EXPECT_EQ(code, GRPC_STATUS_INTERNAL);
+  EXPECT_THAT(message, ::testing::HasSubstr(
+                           "Mitigation engine triggered action Reject RPC for "
+                           "key: custom-key"));
+}
+
+TEST_F(MitigationEngineParseTest, CloseConnection) {
+  ExecCtx exec_ctx;
+  auto engine = MakeRefCounted<MockMitigationEngine>(
+      MockMitigationEngine::Behavior::kCloseConnection);
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+      engine.get());
+
+  auto input =
+      ParseHexstring("400a637573746f6d2d6b65790d637573746f6d2d686561646572");
+
+  absl::BitGen bitgen;
+  auto err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+
+  EXPECT_FALSE(err.ok());
+  intptr_t stream_id;
+  EXPECT_FALSE(
+      grpc_error_get_int(err, StatusIntProperty::kStreamId, &stream_id));
+
+  grpc_status_code code;
+  std::string message;
+  grpc_error_get_status(err, Timestamp::InfFuture(), &code, &message, nullptr,
+                        nullptr);
+  EXPECT_EQ(code, GRPC_STATUS_INTERNAL);
+  EXPECT_THAT(message,
+              ::testing::HasSubstr(
+                  "Mitigation engine triggered action Close Connection"));
+}
 
 }  // namespace
 }  // namespace grpc_core

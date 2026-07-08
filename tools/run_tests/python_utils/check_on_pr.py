@@ -59,7 +59,7 @@ def _jwt_token():
         {
             "iat": int(time.time()),
             "exp": int(time.time() + 60 * 10),  # expire in 10 minutes
-            "iss": _GITHUB_APP_ID,
+            "iss": f"{_GITHUB_APP_ID}",
         },
         github_app_key,
         algorithm="RS256",
@@ -215,10 +215,5 @@ def label_significance_on_pr(name, change, labels=_CHANGE_LABELS):
     print("Result of setting labels on PR:", resp.text)
 
 
-def label_increase_decrease_on_pr(name, change, significant):
-    if change <= -significant:
-        label_significance_on_pr(name, -1, _INCREASE_DECREASE)
-    elif change >= significant:
-        label_significance_on_pr(name, 1, _INCREASE_DECREASE)
-    else:
-        label_significance_on_pr(name, 0, _INCREASE_DECREASE)
+def label_increase_decrease_on_pr(name, change):
+    label_significance_on_pr(name, change, _INCREASE_DECREASE)

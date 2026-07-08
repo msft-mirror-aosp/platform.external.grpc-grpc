@@ -18,18 +18,18 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-#include "absl/status/status.h"
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/support/alloc.h>
 
+#include <optional>
+
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/status_helper.h"
+#include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 static grpc_error_handle channel_init_func(grpc_channel_element* elem,
                                            grpc_channel_element_args* args) {
@@ -82,8 +82,6 @@ static void free_call(void* arg, grpc_error_handle /*error*/) {
 TEST(ChannelStackTest, CreateChannelStack) {
   const grpc_channel_filter filter = {
       call_func,
-      nullptr,
-      nullptr,
       channel_func,
       sizeof(int),
       call_init_func,
@@ -94,8 +92,8 @@ TEST(ChannelStackTest, CreateChannelStack) {
       grpc_channel_stack_no_post_init,
       channel_destroy_func,
       grpc_channel_next_get_info,
-      "some_test_filter"};
-  const grpc_channel_filter* filters = &filter;
+      GRPC_UNIQUE_TYPE_NAME_HERE("some_test_filter")};
+  std::vector<grpc_core::FilterAndConfig> filters = {{&filter, nullptr}};
   grpc_channel_stack* channel_stack;
   grpc_call_stack* call_stack;
   grpc_channel_element* channel_elem;
@@ -103,17 +101,16 @@ TEST(ChannelStackTest, CreateChannelStack) {
   int* channel_data;
   int* call_data;
   grpc_core::ExecCtx exec_ctx;
-  grpc_slice path = grpc_slice_from_static_string("/service/method");
 
   channel_stack = static_cast<grpc_channel_stack*>(
-      gpr_malloc(grpc_channel_stack_size(&filters, 1)));
+      gpr_malloc(grpc_channel_stack_size(filters)));
   auto channel_args = grpc_core::CoreConfiguration::Get()
                           .channel_args_preconditioning()
                           .PreconditionChannelArgs(nullptr)
                           .Set("test_key", 42);
   ASSERT_TRUE(GRPC_LOG_IF_ERROR(
       "grpc_channel_stack_init",
-      grpc_channel_stack_init(1, free_channel, channel_stack, &filters, 1,
+      grpc_channel_stack_init(1, free_channel, channel_stack, filters,
                               channel_args, "test", channel_stack)));
   EXPECT_EQ(channel_stack->count, 1);
   channel_elem = grpc_channel_stack_element(channel_stack, 0);
@@ -125,8 +122,6 @@ TEST(ChannelStackTest, CreateChannelStack) {
   const grpc_call_element_args args = {
       call_stack,                         // call_stack
       nullptr,                            // server_transport_data
-      nullptr,                            // context
-      path,                               // path
       gpr_get_cycle_counter(),            // start_time
       grpc_core::Timestamp::InfFuture(),  // deadline
       nullptr,                            // arena
@@ -148,8 +143,6 @@ TEST(ChannelStackTest, CreateChannelStack) {
   EXPECT_EQ(*channel_data, 2);
 
   GRPC_CHANNEL_STACK_UNREF(channel_stack, "done");
-
-  grpc_slice_unref(path);
 }
 
 int main(int argc, char** argv) {

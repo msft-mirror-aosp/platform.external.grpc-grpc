@@ -72,6 +72,7 @@ inline bool IsTestExperiment3Enabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_4
 inline bool IsTestExperiment4Enabled() { return true; }
+inline bool IsTestExperiment5Enabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTestExperiment1Enabled() { return false; }
@@ -88,6 +89,7 @@ inline bool IsTestExperiment3Enabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_4
 inline bool IsTestExperiment4Enabled() { return true; }
+inline bool IsTestExperiment5Enabled() { return false; }
 
 #else
 #ifndef NDEBUG
@@ -121,6 +123,7 @@ inline bool IsTestExperiment3Enabled() {
 #endif
 }
 inline bool IsTestExperiment4Enabled() { return false; }
+inline bool IsTestExperiment5Enabled() { return false; }
 #endif
 
 #else
@@ -129,23 +132,28 @@ enum ExperimentIds {
   kExperimentIdTestExperiment2,
   kExperimentIdTestExperiment3,
   kExperimentIdTestExperiment4,
+  kExperimentIdTestExperiment5,
   kNumTestExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_1
 inline bool IsTestExperiment1Enabled() {
-  return IsTestExperimentEnabled(kExperimentIdTestExperiment1);
+  return IsTestExperimentEnabled<kExperimentIdTestExperiment1>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_2
 inline bool IsTestExperiment2Enabled() {
-  return IsTestExperimentEnabled(kExperimentIdTestExperiment2);
+  return IsTestExperimentEnabled<kExperimentIdTestExperiment2>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_3
 inline bool IsTestExperiment3Enabled() {
-  return IsTestExperimentEnabled(kExperimentIdTestExperiment3);
+  return IsTestExperimentEnabled<kExperimentIdTestExperiment3>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_4
 inline bool IsTestExperiment4Enabled() {
-  return IsTestExperimentEnabled(kExperimentIdTestExperiment4);
+  return IsTestExperimentEnabled<kExperimentIdTestExperiment4>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_5
+inline bool IsTestExperiment5Enabled() {
+  return IsTestExperimentEnabled<kExperimentIdTestExperiment5>();
 }
 
 extern const ExperimentMetadata g_test_experiment_metadata[kNumTestExperiments];

@@ -33,21 +33,47 @@ def grpc_bad_ssl_tests():
         name = "bad_ssl_test_server",
         srcs = ["server_common.cc"],
         hdrs = ["server_common.h"],
+        external_deps = [
+            "absl/log:check",
+            "absl/log:log",
+        ],
         deps = [
-            "//test/core/util:grpc_test_util",
-            "//test/core/util:grpc_test_util_base",
+            "//test/core/test_util:grpc_test_util",
+            "//test/core/test_util:grpc_test_util_base",
             "//:grpc",
+            "//:gpr",
+            "//src/core:grpc_check",
         ],
     )
     for t in BAD_SSL_TESTS:
         grpc_cc_binary(
             name = "bad_ssl_%s_server" % t,
             srcs = ["servers/%s.cc" % t],
-            deps = [":bad_ssl_test_server"],
+            external_deps = [
+                "absl/log",
+                "absl/log:check",
+            ],
+            deps = [
+                ":bad_ssl_test_server",
+                "//:alts_util",
+                "//:gpr",
+                "//:grpc_base",
+                "//:grpc_core_credentials_header",
+                "//:grpc_slice",
+                "//src/core:error",
+                "//src/core:grpc_check",
+                "//src/core:grpc_transport_chttp2_alpn",
+                "//src/core:useful",
+                "//test/core/test_util:grpc_test_util",
+            ],
         )
         grpc_cc_test(
             name = "bad_ssl_%s_test" % t,
             srcs = ["bad_ssl_test.cc"],
+            external_deps = [
+                "absl/log:check",
+                "gtest",
+            ],
             data = [
                 ":bad_ssl_%s_server" % t,
                 "//src/core/tsi/test_creds:badserver.key",
@@ -57,11 +83,15 @@ def grpc_bad_ssl_tests():
                 "//src/core/tsi/test_creds:server1.pem",
             ],
             deps = [
-                "//test/core/util:grpc_test_util",
-                "//test/core/util:grpc_test_util_base",
+                "//test/core/test_util:grpc_test_util",
+                "//test/core/test_util:grpc_test_util_base",
+                "//:channel_arg_names",
                 "//:gpr",
                 "//:grpc",
+                "//:grpc_core_credentials_header",
                 "//:subprocess",
+                "//src/core:env",
+                "//src/core:grpc_check",
                 "//test/core/end2end:cq_verifier",
             ],
             tags = ["no_windows"],

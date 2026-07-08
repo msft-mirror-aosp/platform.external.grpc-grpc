@@ -20,15 +20,14 @@
 #include <tuple>
 #include <variant>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/wait_set.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 using testing::_;
 using testing::Mock;
@@ -49,7 +48,7 @@ class Barrier {
       if (cleared_) {
         return Result{};
       } else {
-        return wait_set_.AddPending(Activity::current()->MakeOwningWaker());
+        return wait_set_.AddPending(GetContext<Activity>()->MakeOwningWaker());
       }
     };
   }
@@ -80,7 +79,7 @@ class SingleBarrier {
       if (cleared_) {
         return Result{};
       } else {
-        waker_ = Activity::current()->MakeOwningWaker();
+        waker_ = GetContext<Activity>()->MakeOwningWaker();
         return Pending();
       }
     };

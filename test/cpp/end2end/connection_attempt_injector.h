@@ -18,8 +18,8 @@
 #include <memory>
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/util/time.h"
 
 namespace grpc {
 namespace testing {
@@ -35,9 +35,9 @@ namespace testing {
 //
 //  // To inject a hold for the next connection attempt for a given port.
 //  auto hold = injector.AddHold(port);
-//  hold.Wait();
+//  hold->Wait();
 //  // ...do stuff...
-//  hold.Resume();  // Or hold.Fail() if you want to force a failure.
+//  hold->Resume();  // Or hold->Fail() if you want to force a failure.
 //
 //  // Inject a fixed delay for all connection attempts.
 //  injector.SetDelay(grpc_core::Duration::Seconds(10));
@@ -182,7 +182,7 @@ class ConnectionAttemptInjector final {
   static bool TcpConnectCancel(int64_t connection_handle);
 
   std::vector<Hold*> holds_ ABSL_GUARDED_BY(&mu_);
-  absl::optional<grpc_core::Duration> delay_ ABSL_GUARDED_BY(&mu_);
+  std::optional<grpc_core::Duration> delay_ ABSL_GUARDED_BY(&mu_);
 };
 
 }  // namespace testing

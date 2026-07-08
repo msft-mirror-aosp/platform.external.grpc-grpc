@@ -16,9 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_stack_builder.h"
+
+#include <grpc/support/port_platform.h>
 
 #include <algorithm>
 
@@ -40,12 +40,16 @@ ChannelStackBuilder& ChannelStackBuilder::SetTarget(const char* target) {
   return *this;
 }
 
-void ChannelStackBuilder::PrependFilter(const grpc_channel_filter* filter) {
-  stack_.insert(stack_.begin(), filter);
+void ChannelStackBuilder::PrependFilter(
+    const grpc_channel_filter* filter,
+    RefCountedPtr<const FilterConfig> config) {
+  stack_.insert(stack_.begin(), {filter, std::move(config)});
 }
 
-void ChannelStackBuilder::AppendFilter(const grpc_channel_filter* filter) {
-  stack_.push_back(filter);
+void ChannelStackBuilder::AppendFilter(
+    const grpc_channel_filter* filter,
+    RefCountedPtr<const FilterConfig> config) {
+  stack_.push_back({filter, std::move(config)});
 }
 
 }  // namespace grpc_core

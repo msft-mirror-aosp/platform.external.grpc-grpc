@@ -19,30 +19,29 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_H
 
+#include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <cstdint>
 #include <utility>
 #include <vector>
 
+#include "src/core/call/metadata_batch.h"
+#include "src/core/call/metadata_compression_traits.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/timeout_encoding.h"
+#include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/time.h"
+#include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
-
-#include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/metadata_compression_traits.h"
-#include "src/core/lib/transport/timeout_encoding.h"
-#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -50,6 +49,26 @@ namespace grpc_core {
 class HPackCompressor;
 
 namespace hpack_encoder_detail {
+
+struct HPackWriter {
+  GRPC_MUST_USE_RESULT
+  static uint32_t EmitLitHdrWithNonBinaryStringKeyIncIdx(
+      Slice key_slice, Slice value_slice, SliceBuffer& output,
+      HPackEncoderTable& table);
+  GRPC_MUST_USE_RESULT
+  static uint32_t EmitLitHdrWithBinaryStringKeyIncIdx(
+      Slice key_slice, Slice value_slice, SliceBuffer& output,
+      HPackEncoderTable& table, bool use_true_binary_metadata);
+  static void EmitLitHdrWithBinaryStringKeyNotIdx(
+      Slice key_slice, Slice value_slice, SliceBuffer& output,
+      bool use_true_binary_metadata);
+  static void EmitLitHdrWithBinaryStringKeyNotIdx(
+      uint32_t key_index, Slice value_slice, SliceBuffer& output,
+      bool use_true_binary_metadata);
+  static void EmitLitHdrWithNonBinaryStringKeyNotIdx(Slice key_slice,
+                                                     Slice value_slice,
+                                                     SliceBuffer& output);
+};
 
 class Encoder {
  public:
@@ -83,10 +102,14 @@ class Encoder {
                                  const Slice& slice, uint32_t* index,
                                  size_t max_compression_size);
 
+  void NoteEncodingError() { saw_encoding_errors_ = true; }
+  bool saw_encoding_errors() const { return saw_encoding_errors_; }
+
   HPackEncoderTable& hpack_table();
 
  private:
   const bool use_true_binary_metadata_;
+  bool saw_encoding_errors_ = false;
   HPackCompressor* const compressor_;
   SliceBuffer& output_;
 };
@@ -101,7 +124,7 @@ class Encoder {
 // void EncodeWith(MetadataTrait, const MetadataTrait::ValueType, Encoder*);
 // This method figures out how to encode the value, and then delegates to
 // Encoder to perform the encoding.
-template <typename MetadataTrait, typename CompressonTraits>
+template <typename MetadataTrait, typename CompressionTraits>
 class Compressor;
 
 // No compression encoder: just emit the key and value as literals.
@@ -171,7 +194,7 @@ class Compressor<MetadataTrait, StableValueCompressor> {
                   Encoder* encoder) {
     auto& table = encoder->hpack_table();
     if (previously_sent_value_ == value &&
-        table.ConvertableToDynamicIndex(previously_sent_index_)) {
+        table.ConvertibleToDynamicIndex(previously_sent_index_)) {
       encoder->EmitIndexed(table.DynamicIndex(previously_sent_index_));
       return;
     }
@@ -205,9 +228,8 @@ class Compressor<
   void EncodeWith(MetadataTrait, const typename MetadataTrait::ValueType& value,
                   Encoder* encoder) {
     if (value != known_value) {
-      gpr_log(GPR_ERROR, "%s",
-              absl::StrCat("Not encoding bad ", MetadataTrait::key(), " header")
-                  .c_str());
+      LOG(ERROR) << "Not encoding bad " << MetadataTrait::key() << " header";
+      encoder->NoteEncodingError();
       return;
     }
     Slice encoded(MetadataTrait::Encode(known_value));
@@ -230,7 +252,7 @@ class Compressor<MetadataTrait, SmallIntegralValuesCompressor<N>> {
     auto& table = encoder->hpack_table();
     if (static_cast<size_t>(value) < N) {
       index = &previously_sent_[static_cast<uint32_t>(value)];
-      if (table.ConvertableToDynamicIndex(*index)) {
+      if (table.ConvertibleToDynamicIndex(*index)) {
         encoder->EmitIndexed(table.DynamicIndex(*index));
         return;
       }
@@ -331,6 +353,11 @@ class HPackCompressor {
   HPackCompressor() = default;
   ~HPackCompressor() = default;
 
+  HPackCompressor(const HPackCompressor&) = delete;
+  HPackCompressor& operator=(const HPackCompressor&) = delete;
+  HPackCompressor(HPackCompressor&&) = default;
+  HPackCompressor& operator=(HPackCompressor&&) = default;
+
   // Maximum table size we'll actually use.
   static constexpr uint32_t kMaxTableSize = 1024 * 1024;
 
@@ -346,23 +373,28 @@ class HPackCompressor {
     bool is_end_of_stream;
     bool use_true_binary_metadata;
     size_t max_frame_size;
-    grpc_transport_one_way_stats* stats;
+    CallTracerInterface* call_tracer;
+    Http2ZTraceCollector* ztrace_collector;
   };
 
   template <typename HeaderSet>
-  void EncodeHeaders(const EncodeHeaderOptions& options,
+  bool EncodeHeaders(const EncodeHeaderOptions& options,
                      const HeaderSet& headers, grpc_slice_buffer* output) {
     SliceBuffer raw;
     hpack_encoder_detail::Encoder encoder(
         this, options.use_true_binary_metadata, raw);
     headers.Encode(&encoder);
     Frame(options, raw, output);
+    return !encoder.saw_encoding_errors();
   }
 
   template <typename HeaderSet>
-  void EncodeRawHeaders(const HeaderSet& headers, SliceBuffer& output) {
-    hpack_encoder_detail::Encoder encoder(this, true, output);
+  bool EncodeRawHeaders(const HeaderSet& headers, SliceBuffer& output,
+                        bool allow_true_binary_metadata) {
+    hpack_encoder_detail::Encoder encoder(this, allow_true_binary_metadata,
+                                          output);
     headers.Encode(&encoder);
+    return !encoder.saw_encoding_errors();
   }
 
  private:
@@ -395,9 +427,84 @@ void Encoder::Encode(MetadataTrait,
           EncodeWith(MetadataTrait(), value, this);
 }
 
+inline uint32_t Encoder::EmitLitHdrWithNonBinaryStringKeyIncIdx(
+    Slice key_slice, Slice value_slice) {
+  return HPackWriter::EmitLitHdrWithNonBinaryStringKeyIncIdx(
+      std::move(key_slice), std::move(value_slice), output_,
+      compressor_->table_);
+}
+
+inline void Encoder::EmitLitHdrWithBinaryStringKeyNotIdx(Slice key_slice,
+                                                         Slice value_slice) {
+  HPackWriter::EmitLitHdrWithBinaryStringKeyNotIdx(
+      std::move(key_slice), std::move(value_slice), output_,
+      use_true_binary_metadata_);
+}
+
+inline uint32_t Encoder::EmitLitHdrWithBinaryStringKeyIncIdx(
+    Slice key_slice, Slice value_slice) {
+  return HPackWriter::EmitLitHdrWithBinaryStringKeyIncIdx(
+      std::move(key_slice), std::move(value_slice), output_,
+      compressor_->table_, use_true_binary_metadata_);
+}
+
+inline void Encoder::EmitLitHdrWithBinaryStringKeyNotIdx(uint32_t key_index,
+                                                         Slice value_slice) {
+  HPackWriter::EmitLitHdrWithBinaryStringKeyNotIdx(
+      key_index, std::move(value_slice), output_, use_true_binary_metadata_);
+}
+
+inline void Encoder::EmitLitHdrWithNonBinaryStringKeyNotIdx(Slice key_slice,
+                                                            Slice value_slice) {
+  HPackWriter::EmitLitHdrWithNonBinaryStringKeyNotIdx(
+      std::move(key_slice), std::move(value_slice), output_);
+}
+
 inline HPackEncoderTable& Encoder::hpack_table() { return compressor_->table_; }
 
 }  // namespace hpack_encoder_detail
+
+// Class to encode metadata in uncompressed and un-indexed form.
+class RawEncoder {
+ public:
+  explicit RawEncoder(bool is_true_binary_metadata);
+
+  void Encode(const Slice& key, const Slice& value);
+
+  // Status MUST be encoded at most once.
+  void Encode(GrpcStatusMetadata, grpc_status_code status);
+
+  // Message MUST be encoded at most once.
+  void Encode(GrpcMessageMetadata, const Slice& message);
+
+  template <typename MetadataTraits>
+  void Encode(const MetadataTraits&,
+              const typename MetadataTraits::ValueType& value);
+
+  uint32_t Length() const { return buffer_.Length(); }
+  void Flush(grpc_slice_buffer* output_buffer) &&;
+
+ private:
+  bool CheckLength(size_t length);
+  void MaybeAppend(SliceBuffer&& buffer);
+
+  // Size limit on all the key values combined. This is set to the minimum
+  // frame size that HTTP/2 can send. This is done to avoid sending a
+  // CONTINUATION frame in all cases.
+  static constexpr uint32_t kMaxSize = (1 << 14u);
+  static constexpr uint32_t kMaxKeyValueSize = /*2kb*/ 2 * 1024u;
+  bool status_encoded_ = false;
+  bool message_encoded_ = false;
+  const bool is_true_binary_metadata_ = false;
+  SliceBuffer buffer_;
+};
+
+template <typename MetadataTraits>
+void RawEncoder::Encode(const MetadataTraits&,
+                        const typename MetadataTraits::ValueType& value) {
+  Encode(Slice::FromCopiedString(MetadataTraits::key()),
+         MetadataValueAsSlice<MetadataTraits>(value).Ref());
+}
 
 }  // namespace grpc_core
 
